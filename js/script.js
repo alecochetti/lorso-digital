@@ -148,6 +148,13 @@ function setupContactForm() {
 
       if (!response.ok) throw new Error("Falha no envio");
 
+      // O FormSubmit pode responder 200 mesmo recusando o envio
+      // (ex.: formulário não ativado) — confere o campo "success".
+      const result = await response.json().catch(() => ({}));
+      if (String(result.success) !== "true") {
+        throw new Error(result.message || "Envio recusado pelo FormSubmit");
+      }
+
       showSuccess();
       form.reset();
     } catch (err) {
