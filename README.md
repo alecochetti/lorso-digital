@@ -45,14 +45,14 @@ Campos: **Nome, Empresa, E-mail, WhatsApp (com máscara automática), Faturament
 
 O envio é feito via **[FormSubmit.co](https://formsubmit.co/)** — um serviço gratuito que recebe o POST do formulário e encaminha por e-mail, sem precisar de backend próprio nem chave de API.
 
-- **E-mail de destino configurado:** `alessandro@lorsodigital.com`
+- **E-mail de destino configurado:** `alessandro@lorsodigital.com.br`
 - Está definido em dois lugares — troque nos dois se for mudar o e-mail:
   1. `action="https://formsubmit.co/SEU-EMAIL"` no `<form>` do `index.html`
   2. O JS (`js/script.js`) lê esse mesmo e-mail automaticamente para montar o endpoint de envio via AJAX — **não precisa editar o JS**, só o `action` do form.
 
 ### ⚠️ Ativação obrigatória (primeira vez)
 
-Na primeira submissão do formulário em produção, o FormSubmit envia um **e-mail de confirmação** para `alessandro@lorsodigital.com` pedindo para clicar em um link de ativação. Até essa confirmação, os envios seguintes não chegam à caixa de entrada. Ou seja: assim que subir o site, faça um teste de envio e confirme o e-mail que chegar do FormSubmit.
+Na primeira submissão do formulário em produção, o FormSubmit envia um **e-mail de confirmação** para `alessandro@lorsodigital.com.br` pedindo para clicar em um link de ativação. Até essa confirmação, os envios seguintes não chegam à caixa de entrada. Ou seja: assim que subir o site, faça um teste de envio e confirme o e-mail que chegar do FormSubmit.
 
 Depois de confirmado, o fluxo continua sem novas confirmações.
 
