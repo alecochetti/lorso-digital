@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assinatura de e-mail — Alessandro Cochetti</title>
+<style>
+  body { margin: 0; padding: 40px 16px; background: #eef1f4; font-family: Arial, Helvetica, sans-serif; color: #0f172a; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 6px; }
+  p.lead { margin: 0 0 24px; color: #475569; font-size: 14px; line-height: 21px; }
+  .box { background: #fff; border-radius: 10px; padding: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  button { margin-top: 20px; padding: 12px 22px; border: 0; border-radius: 8px; background: #00c46a; color: #fff; font-weight: bold; font-size: 14px; cursor: pointer; }
+  button:hover { background: #00a85a; }
+  .ok { margin-left: 12px; color: #00a85a; font-size: 14px; font-weight: bold; }
+  ol { margin: 28px 0 0; padding-left: 20px; color: #334155; font-size: 14px; line-height: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Assinatura de e-mail</h1>
+  <p class="lead">Clique em "Copiar assinatura" e cole em Gmail &gt; Configurações &gt; Ver todas as configurações &gt; Geral &gt; Assinatura.</p>
+
+  <div class="box">
+    <!-- ASSINATURA (tabela com estilos inline, que é o que o Gmail aceita) -->
+    <div id="assinatura">
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;">
+        <tr>
+          <td style="padding:0 18px 0 0;vertical-align:middle;">
+            <a href="https://www.lorsodigital.com.br" style="text-decoration:none;"><img src="https://www.lorsodigital.com.br/assets/img/email/logo-lorso-assinatura.png" width="150" height="53" alt="LORSO Digital" style="display:block;border:0;width:150px;height:53px;border-radius:8px;"></a>
+          </td>
+          <td style="padding:2px 0 2px 18px;border-left:3px solid #00ff87;vertical-align:middle;">
+            <p style="margin:0;font-size:16px;line-height:22px;font-weight:bold;color:#0f172a;">Alessandro Cochetti</p>
+            <p style="margin:0 0 8px;font-size:13px;line-height:18px;color:#00a85a;font-weight:bold;">Founder · LORSO Digital</p>
+            <p style="margin:0;font-size:13px;line-height:20px;color:#475569;">
+              <a href="https://wa.me/5511966480707" style="color:#475569;text-decoration:none;">(11) 96648-0707</a>
+              <span style="color:#cbd5e1;">&nbsp;|&nbsp;</span>
+              <a href="mailto:alessandro@lorsodigital.com.br" style="color:#475569;text-decoration:none;">alessandro@lorsodigital.com.br</a>
+            </p>
+            <p style="margin:0;font-size:13px;line-height:20px;">
+              <a href="https://www.lorsodigital.com.br" style="color:#00a85a;text-decoration:none;font-weight:bold;">lorsodigital.com.br</a>
+              <span style="color:#cbd5e1;">&nbsp;|&nbsp;</span>
+              <a href="https://www.instagram.com/lorsodigital/" style="color:#00a85a;text-decoration:none;font-weight:bold;">@lorsodigital</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <!-- /ASSINATURA -->
+
+    <button type="button" id="copiar">Copiar assinatura</button><span class="ok" id="ok"></span>
+  </div>
+
+  <ol>
+    <li>No Gmail, clique na engrenagem e em <b>Ver todas as configurações</b>.</li>
+    <li>Na aba <b>Geral</b>, desça até <b>Assinatura</b> e clique em <b>Criar nova</b> (nome: "LORSO").</li>
+    <li>Clique dentro da caixa e cole com <b>Cmd+V</b>.</li>
+    <li>Logo abaixo, em <b>Padrões de assinatura</b>, escolha "LORSO" para novos e-mails e para respostas.</li>
+    <li>Desça até o fim da página e clique em <b>Salvar alterações</b>.</li>
+  </ol>
+</div>
+
+<script>
+  document.getElementById("copiar").addEventListener("click", async () => {
+    const el = document.getElementById("assinatura");
+    const ok = document.getElementById("ok");
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([el.innerHTML], { type: "text/html" }),
+          "text/plain": new Blob([el.innerText], { type: "text/plain" }),
+        }),
+      ]);
+    } catch (err) {
+      // Navegadores sem ClipboardItem: copia pela seleção
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      document.execCommand("copy");
+      sel.removeAllRanges();
+    }
+    ok.textContent = "Copiada! Agora cole no Gmail.";
+  });
+</script>
+</body>
+</html>
