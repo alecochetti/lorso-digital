@@ -256,7 +256,7 @@
               </div>
               <div class="bg-surface-raised rounded-xl px-space-md py-space-sm flex flex-col gap-space-xxs">
                 <dt class="flex items-center gap-space-xs font-label-technical text-label-technical text-text-muted uppercase"><span class="material-symbols-outlined text-[16px]">badge</span>Contratação</dt>
-                <dd class="font-body-sm text-body-sm text-text-primary">CLT / PJ</dd>
+                <dd class="font-body-sm text-body-sm text-text-primary">CLT</dd>
               </div>
               <div class="bg-surface-raised rounded-xl px-space-md py-space-sm flex flex-col gap-space-xxs">
                 <dt class="flex items-center gap-space-xs font-label-technical text-label-technical text-text-muted uppercase"><span class="material-symbols-outlined text-[16px]">payments</span>Remuneração</dt>
@@ -379,7 +379,7 @@
         </div>
 
         <aside class="lg:col-span-4 flex flex-col gap-space-md lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto overscroll-contain scroll-mt-28" id="candidatura">
-          <!-- Envio via FormSubmit (POST normal, pois anexos não funcionam via AJAX). Anexos: PDF/Word até 5MB cada (limite do FormSubmit: 10MB no total). -->
+          <!-- Envio via FormSubmit (POST normal, pois anexos não funcionam via AJAX). Currículo: PDF/Word até 5MB (limite do FormSubmit: 10MB). -->
           <form class="bg-surface-raised rounded-xl p-space-lg flex flex-col gap-space-md" id="job-application-form" novalidate action="https://formsubmit.co/alessandro@lorsodigital.com.br" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="_subject" value="💼 Nova candidatura: Gerente de Marketing Educacional">
             <input type="hidden" name="_template" value="table">
@@ -424,16 +424,6 @@
                 <span class="file-drop-label" data-placeholder="Anexar currículo">Anexar currículo</span>
               </label>
               <input class="sr-only" id="cand-curriculo" name="Currículo" required type="file" accept=".pdf,.doc,.docx">
-              <span class="font-body-sm text-[12px] text-text-muted">PDF ou Word, até 5 MB.</span>
-            </div>
-
-            <div class="flex flex-col gap-space-xxs">
-              <span class="font-label-technical text-label-technical uppercase text-on-surface-variant">Portfólio <span class="normal-case text-text-muted">(opcional)</span></span>
-              <label class="file-drop" for="cand-portfolio">
-                <span class="material-symbols-outlined text-[20px]">attach_file</span>
-                <span class="file-drop-label" data-placeholder="Anexar portfólio">Anexar portfólio</span>
-              </label>
-              <input class="sr-only" id="cand-portfolio" name="Portfólio" type="file" accept=".pdf,.doc,.docx">
               <span class="font-body-sm text-[12px] text-text-muted">PDF ou Word, até 5 MB.</span>
             </div>
 
@@ -641,7 +631,7 @@
       if (badFile) {
         event.preventDefault();
         form.querySelector(`label[for="${badFile.id}"]`).classList.add("is-invalid");
-        showError("Os anexos devem ser PDF ou Word, com até 5 MB cada.");
+        showError("O currículo deve ser PDF ou Word, com até 5 MB.");
         return;
       }
 
