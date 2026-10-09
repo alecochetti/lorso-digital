@@ -577,6 +577,39 @@
 </section>
 
 <!-- ==========================================
+       SECTION 5.5: INSTAGRAM
+       Os posts vêm do Behold.so: preencher data-feed-id com o ID do feed.
+       Sem ID (ou se o feed falhar), ficam os quadros de link para o perfil.
+  ========================================== -->
+<section class="w-full bg-surface-base" id="instagram">
+  <div class="max-w-[1440px] mx-auto px-grid-margin-mobile md:px-grid-margin-tablet lg:px-grid-margin-desktop flex flex-col gap-space-xl">
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-space-sm">
+      <div class="flex flex-col gap-space-xs">
+        <div class="inline-flex items-center gap-space-xs text-primary-container font-label-technical text-label-technical uppercase tracking-widest">
+          <span class="text-text-muted">// 06</span>
+          <span>BASTIDORES &amp; CONTEÚDO</span>
+        </div>
+        <h2 class="font-headline-xl text-headline-lg md:text-headline-xl text-text-primary tracking-tight">ACOMPANHE NO INSTAGRAM</h2>
+      </div>
+      <a class="inline-flex items-center gap-space-xs font-label-technical text-label-technical text-text-muted hover:text-primary-container uppercase transition-colors" href="https://www.instagram.com/lorsodigital/" target="_blank" rel="noopener">
+        <span>@lorsodigital</span><span>↗</span>
+      </a>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-gutter-mobile lg:gap-gutter-desktop" id="instagram-feed" data-feed-id="" data-profile-url="https://www.instagram.com/lorsodigital/">
+      <a class="insta-tile insta-tile-profile group" href="https://www.instagram.com/lorsodigital/" target="_blank" rel="noopener" aria-label="Abrir o Instagram @lorsodigital">
+        <svg class="w-10 h-10 transition-transform duration-300 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+        <span class="font-headline-sm text-headline-sm">lorsodigital</span>
+        <span class="font-label-technical text-label-technical uppercase opacity-80">Seguir ↗</span>
+      </a>
+      <a class="insta-tile insta-tile-placeholder" href="https://www.instagram.com/lorsodigital/" target="_blank" rel="noopener" aria-label="Ver posts no Instagram"><svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
+      <a class="insta-tile insta-tile-placeholder" href="https://www.instagram.com/lorsodigital/" target="_blank" rel="noopener" aria-label="Ver posts no Instagram"><svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
+      <a class="insta-tile insta-tile-placeholder" href="https://www.instagram.com/lorsodigital/" target="_blank" rel="noopener" aria-label="Ver posts no Instagram"><svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================
        SECTION 6: CONTATO & FORMULÁRIO DE QUALIFICAÇÃO
   ========================================== -->
 <section class="w-full bg-surface-base py-space-4xl relative overflow-hidden" id="contato-diagnostico">

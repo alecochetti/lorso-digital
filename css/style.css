@@ -232,3 +232,68 @@ select.form-input {
   background-color: rgba(147, 0, 10, 0.15);
   color: #ffb4ab;
 }
+
+/* -----------------------------
+   Instagram (grade de posts)
+------------------------------ */
+.insta-tile {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #0d0f17;
+  color: #94a3b8;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.insta-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 24px rgba(0, 255, 135, 0.15);
+}
+
+.insta-tile-profile {
+  background: linear-gradient(135deg, #00ff87 0%, #00c46a 100%);
+  color: #090a0f;
+}
+
+.insta-tile-placeholder {
+  color: #2a324b;
+}
+
+.insta-tile img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.insta-tile:hover img {
+  transform: scale(1.04);
+}
+
+.insta-tile-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 0.75rem;
+  background: linear-gradient(0deg, rgba(9, 10, 15, 0.85) 0%, rgba(9, 10, 15, 0) 55%);
+  color: #ffffff;
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.insta-tile:hover .insta-tile-overlay,
+.insta-tile:focus-visible .insta-tile-overlay {
+  opacity: 1;
+}

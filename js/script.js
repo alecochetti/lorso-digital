@@ -3,6 +3,7 @@
    - Menu mobile (hambúrguer)
    - Máscara de telefone (WhatsApp)
    - Validação + envio do formulário via FormSubmit.co (AJAX)
+   - Grade de posts do Instagram (feed JSON do Behold.so)
    ========================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -11,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupFocusGlow();
   setupWhatsAppMask();
   setupContactForm();
+  setupInstagramFeed();
 });
 
 /* -----------------------------
@@ -236,5 +238,59 @@ function setupContactForm() {
   function hideFeedback() {
     successBox.classList.remove("is-visible");
     errorBox.classList.remove("is-visible");
+  }
+}
+
+/* -----------------------------
+   Instagram
+   Lê o feed JSON do Behold.so (ID em data-feed-id no #instagram-feed)
+   e substitui os quadros de placeholder pelos últimos posts.
+   Sem ID ou com erro, os placeholders continuam linkando para o perfil.
+------------------------------ */
+async function setupInstagramFeed() {
+  const grid = document.getElementById("instagram-feed");
+  const feedId = grid?.dataset.feedId;
+  if (!feedId) return;
+
+  try {
+    const response = await fetch(`https://feeds.behold.so/${feedId}`);
+    if (!response.ok) throw new Error("Feed indisponível");
+    const data = await response.json();
+    const posts = (Array.isArray(data) ? data : data.posts || []).slice(0, 3);
+    if (!posts.length) return;
+
+    grid.querySelectorAll(".insta-tile-placeholder").forEach((tile) => tile.remove());
+
+    posts.forEach((post) => {
+      const image =
+        post.sizes?.medium?.mediaUrl ||
+        (post.mediaType === "VIDEO" ? post.thumbnailUrl : post.mediaUrl);
+      if (!image) return;
+
+      const caption = (post.prunedCaption || post.caption || "").trim();
+      const tile = document.createElement("a");
+      tile.className = "insta-tile";
+      tile.href = post.permalink;
+      tile.target = "_blank";
+      tile.rel = "noopener";
+      tile.setAttribute("aria-label", caption ? caption.slice(0, 120) : "Post no Instagram");
+
+      const img = document.createElement("img");
+      img.src = image;
+      img.alt = caption ? caption.slice(0, 120) : "Post da LORSO Digital no Instagram";
+      img.loading = "lazy";
+      tile.appendChild(img);
+
+      if (caption) {
+        const overlay = document.createElement("span");
+        overlay.className = "insta-tile-overlay";
+        overlay.textContent = caption.length > 90 ? `${caption.slice(0, 90)}…` : caption;
+        tile.appendChild(overlay);
+      }
+
+      grid.appendChild(tile);
+    });
+  } catch (err) {
+    // Mantém os placeholders
   }
 }
