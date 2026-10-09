@@ -297,3 +297,61 @@ select.form-input {
 .insta-tile:focus-visible .insta-tile-overlay {
   opacity: 1;
 }
+
+/* ==========================================================
+   ANIMAÇÕES — Números (stats) e Metodologia em 5 etapas
+   ========================================================== */
+
+/* ---------- Stats: entrada, contador, ponto pulsante, barra ---------- */
+.js-anim .stat-card{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1),background-color .3s}
+.js-anim .stat-card.is-in{opacity:1;transform:none;transition-delay:calc(var(--i)*.12s),calc(var(--i)*.12s),0s}
+.stat-num{font-variant-numeric:tabular-nums}
+.stat-num.is-counting{color:#fff;text-shadow:0 0 18px rgba(0,255,135,.35)}
+.stat-dot{position:relative}
+.stat-dot::after{content:"";position:absolute;inset:0;border-radius:9999px;background:currentColor;animation:statPing 2s cubic-bezier(0,0,.2,1) infinite}
+@keyframes statPing{0%{transform:scale(1);opacity:.7}80%,100%{transform:scale(3.2);opacity:0}}
+.stat-bar{position:absolute;left:0;bottom:0;height:2px;width:100%;background:linear-gradient(90deg,#00ff87,#00eefc);transform:scaleX(0);transform-origin:left;transition:transform 1.8s cubic-bezier(.65,0,.35,1);opacity:.85}
+.stat-card.is-in .stat-bar{transform:scaleX(1);transition-delay:calc(var(--i)*.12s + .2s)}
+.stat-card::before{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.05),transparent);transform:skewX(-15deg)}
+.stat-card.is-in::before{animation:statShine 1.4s ease calc(var(--i)*.12s + 1.6s) 1 both}
+@keyframes statShine{to{left:130%}}
+
+/* ---------- Metodologia ---------- */
+.js-anim .metodo-head>*{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+.js-anim #o-metodo.is-in .metodo-head>*{opacity:1;transform:none}
+.js-anim #o-metodo.is-in .metodo-head>*:nth-child(2){transition-delay:.08s}
+.js-anim #o-metodo.is-in .metodo-head>*:nth-child(3){transition-delay:.16s}
+
+.metodo-track{display:none}
+@media (min-width:1024px){
+  .metodo-track{display:block;position:absolute;top:2.75rem;left:3rem;right:3rem;height:2px;background:#131722;border-radius:2px;z-index:0}
+  .metodo-track-fill{position:absolute;inset:0 auto 0 0;width:0;border-radius:2px;background:linear-gradient(90deg,#00ff87,#00eefc);
+    box-shadow:0 0 12px rgba(0,238,252,.55);transition:width .9s cubic-bezier(.65,0,.35,1)}
+  .metodo-track-fill::after{content:"";position:absolute;right:-5px;top:50%;width:10px;height:10px;border-radius:50%;transform:translateY(-50%);
+    background:#00eefc;box-shadow:0 0 14px 4px rgba(0,238,252,.7)}
+}
+
+.metodo-step{position:relative;border:1px solid rgba(255,255,255,.04);padding-bottom:2.25rem;
+  transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1),background-color .4s,border-color .4s,box-shadow .4s}
+.js-anim .metodo-step{opacity:0;transform:translateY(40px) scale(.97)}
+.js-anim #o-metodo.is-in .metodo-step{opacity:1;transform:none;transition-delay:calc(.25s + var(--i)*.12s),calc(.25s + var(--i)*.12s),0s,0s,0s}
+.metodo-num{background:#131722;color:#fff;transition:background-color .4s,color .4s,box-shadow .4s,transform .4s}
+.metodo-step h4,.metodo-step p{transition:color .4s}
+.metodo-bar{position:absolute;left:1.5rem;right:1.5rem;bottom:1.1rem;height:2px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
+.metodo-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#00ff87,#00eefc)}
+
+#o-metodo .metodo-step.is-active{background:#11151f;border-color:rgba(0,255,135,.25);
+  box-shadow:0 0 0 1px rgba(0,255,135,.08),0 18px 50px -12px rgba(0,255,135,.28);transform:translateY(-6px)}
+.metodo-step.is-active .metodo-num{background:#00ff87;color:#090A0F;transform:scale(1.08);box-shadow:0 0 20px rgba(0,255,135,.55)}
+.metodo-step.is-active p{color:#c3cad6}
+.metodo-step.is-active .metodo-bar i{animation:metodoFill 2.6s linear forwards}
+.metodo-steps.is-paused .metodo-step.is-active .metodo-bar i{animation-play-state:paused}
+.metodo-step.is-done .metodo-num{background:rgba(0,255,135,.12);color:#00ff87}
+@keyframes metodoFill{to{width:100%}}
+
+@media (prefers-reduced-motion:reduce){
+  .js-anim .stat-card,.js-anim .metodo-step,.js-anim .metodo-head>*{opacity:1!important;transform:none!important}
+  .stat-dot::after,.stat-card::before{animation:none!important}
+  .metodo-step.is-active .metodo-bar i{animation:none;width:100%}
+}

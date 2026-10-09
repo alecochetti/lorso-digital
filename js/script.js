@@ -13,6 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
   setupWhatsAppMask();
   setupContactForm();
   setupInstagramFeed();
+  setupStatsCounter();
+  setupMetodologia();
 });
 
 /* -----------------------------
@@ -293,4 +295,110 @@ async function setupInstagramFeed() {
   } catch (err) {
     // Mantém os placeholders
   }
+}
+
+/* -----------------------------
+   Números animados (contador)
+------------------------------ */
+function setupStatsCounter() {
+  const cards = document.querySelectorAll(".stat-card");
+  if (!cards.length) return;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.documentElement.classList.add("js-anim");
+  if (reduce || !("IntersectionObserver" in window)) {
+    cards.forEach((c) => c.classList.add("is-in"));
+    return;
+  }
+  const fmt = (el, v) => { el.textContent = (el.dataset.prefix || "") + v + (el.dataset.suffix || ""); };
+  cards.forEach((c) => { const n = c.querySelector(".stat-num"); if (n) fmt(n, 0); });
+
+  const count = (el, delay) => {
+    const target = parseInt(el.dataset.count, 10) || 0;
+    const dur = 1800;
+    setTimeout(() => {
+      el.classList.add("is-counting");
+      const t0 = performance.now();
+      const tick = (now) => {
+        const p = Math.min((now - t0) / dur, 1);
+        const eased = 1 - Math.pow(1 - p, 4);
+        fmt(el, Math.round(target * eased));
+        if (p < 1) requestAnimationFrame(tick);
+        else el.classList.remove("is-counting");
+      };
+      requestAnimationFrame(tick);
+    }, delay);
+  };
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      const card = e.target;
+      card.classList.add("is-in");
+      const i = parseInt(card.style.getPropertyValue("--i"), 10) || 0;
+      const n = card.querySelector(".stat-num");
+      if (n) count(n, 200 + i * 120);
+      io.unobserve(card);
+    });
+  }, { threshold: 0.4 });
+  cards.forEach((c) => io.observe(c));
+}
+
+/* -----------------------------
+   Metodologia em 5 etapas (timeline animada)
+------------------------------ */
+function setupMetodologia() {
+  const section = document.getElementById("o-metodo");
+  if (!section) return;
+  const wrap = section.querySelector(".metodo-steps");
+  const steps = [...section.querySelectorAll(".metodo-step")];
+  const fill = section.querySelector(".metodo-track-fill");
+  if (!wrap || !steps.length) return;
+  document.documentElement.classList.add("js-anim");
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const DUR = 2600;
+  let idx = -1, timer = null, started = false, visible = false, hovering = false;
+
+  const go = (i) => {
+    idx = i;
+    steps.forEach((s, k) => {
+      s.classList.toggle("is-active", k === i);
+      s.classList.toggle("is-done", k < i);
+      const bar = s.querySelector(".metodo-bar i");
+      if (bar) { bar.style.animation = "none"; void bar.offsetWidth; bar.style.animation = ""; }
+    });
+    if (fill) fill.style.width = (i / (steps.length - 1)) * 100 + "%";
+  };
+  const loop = () => {
+    clearTimeout(timer);
+    if (!visible || hovering) return;
+    timer = setTimeout(() => { go((idx + 1) % steps.length); loop(); }, DUR);
+  };
+
+  if (reduce || !("IntersectionObserver" in window)) {
+    section.classList.add("is-in");
+    go(steps.length - 1);
+    return;
+  }
+
+  new IntersectionObserver(([e]) => {
+    visible = e.isIntersecting;
+    if (visible && !started) {
+      started = true;
+      section.classList.add("is-in");
+      setTimeout(() => { go(0); loop(); }, 900);
+      return;
+    }
+    if (started) visible ? loop() : clearTimeout(timer);
+  }, { threshold: 0.3 }).observe(section);
+
+  steps.forEach((s, k) => {
+    s.addEventListener("mouseenter", () => {
+      if (!started) return;
+      hovering = true; wrap.classList.add("is-paused"); clearTimeout(timer); go(k);
+    });
+    s.addEventListener("mouseleave", () => {
+      if (!started) return;
+      hovering = false; wrap.classList.remove("is-paused"); loop();
+    });
+  });
 }

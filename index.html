@@ -83,6 +83,7 @@
 </script>
 
 <link rel="stylesheet" href="css/style.css">
+<script>document.documentElement.classList.add("js-anim");</script>
 </head>
 <body class="bg-surface-base font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container">
 
@@ -170,37 +171,41 @@
 
     <div class="pt-space-xl">
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-gutter-desktop">
-        <div class="bg-surface-raised p-space-lg rounded-xl flex flex-col justify-between gap-space-sm group hover:bg-surface-panel transition-all duration-300">
+        <div class="stat-card relative overflow-hidden bg-surface-raised p-space-lg rounded-xl flex flex-col justify-between gap-space-sm group hover:bg-surface-panel transition-all duration-300" style="--i:0">
           <div class="flex items-center justify-between">
             <span class="font-label-technical text-label-technical text-text-muted uppercase">// RESULTADO ACUMULADO</span>
-            <span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+            <span class="stat-dot w-1.5 h-1.5 rounded-full bg-primary-container text-primary-container"></span>
           </div>
-          <div class="font-headline-xl text-headline-lg lg:text-headline-xl text-text-primary font-bold tracking-tight group-hover:text-primary-container transition-colors">+R$ 40M</div>
+          <div class="font-headline-xl text-headline-lg lg:text-headline-xl text-text-primary font-bold tracking-tight group-hover:text-primary-container transition-colors stat-num" data-count="40" data-prefix="+R$ " data-suffix="M">+R$ 40M</div>
           <div class="font-body-sm text-body-sm text-text-muted">em receita incremental gerada para clientes ativos.</div>
+          <span class="stat-bar" aria-hidden="true"></span>
         </div>
-        <div class="bg-surface-raised p-space-lg rounded-xl flex flex-col justify-between gap-space-sm group hover:bg-surface-panel transition-all duration-300">
+        <div class="stat-card relative overflow-hidden bg-surface-raised p-space-lg rounded-xl flex flex-col justify-between gap-space-sm group hover:bg-surface-panel transition-all duration-300" style="--i:1">
           <div class="flex items-center justify-between">
             <span class="font-label-technical text-label-technical text-text-muted uppercase">// TRACK RECORD</span>
-            <span class="w-1.5 h-1.5 rounded-full bg-secondary-container"></span>
+            <span class="stat-dot w-1.5 h-1.5 rounded-full bg-secondary-container text-secondary-container"></span>
           </div>
-          <div class="font-headline-xl text-headline-lg lg:text-headline-xl text-text-primary font-bold tracking-tight group-hover:text-secondary-container transition-colors">17+ Anos</div>
+          <div class="font-headline-xl text-headline-lg lg:text-headline-xl text-text-primary font-bold tracking-tight group-hover:text-secondary-container transition-colors stat-num" data-count="17" data-prefix="" data-suffix="+ Anos">17+ Anos</div>
           <div class="font-body-sm text-body-sm text-text-muted">de liderança C-Level, vivência executiva e validação empírica.</div>
+          <span class="stat-bar" aria-hidden="true"></span>
         </div>
-        <div class="bg-surface-raised p-space-lg rounded-xl flex flex-col justify-between gap-space-sm group hover:bg-surface-panel transition-all duration-300">
+        <div class="stat-card relative overflow-hidden bg-surface-raised p-space-lg rounded-xl flex flex-col justify-between gap-space-sm group hover:bg-surface-panel transition-all duration-300" style="--i:2">
           <div class="flex items-center justify-between">
             <span class="font-label-technical text-label-technical text-text-muted uppercase">// COBERTURA FULL-STACK</span>
-            <span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+            <span class="stat-dot w-1.5 h-1.5 rounded-full bg-primary-container text-primary-container"></span>
           </div>
-          <div class="font-headline-xl text-headline-lg lg:text-headline-xl text-text-primary font-bold tracking-tight group-hover:text-primary-container transition-colors">4 Hubs</div>
+          <div class="font-headline-xl text-headline-lg lg:text-headline-xl text-text-primary font-bold tracking-tight group-hover:text-primary-container transition-colors stat-num" data-count="4" data-prefix="" data-suffix=" Hubs">4 Hubs</div>
           <div class="font-body-sm text-body-sm text-text-muted">de atuação integrados sincronizando marketing, canais e vendas.</div>
+          <span class="stat-bar" aria-hidden="true"></span>
         </div>
-        <div class="bg-surface-raised p-space-lg rounded-xl flex flex-col justify-between gap-space-sm group hover:bg-surface-panel transition-all duration-300">
+        <div class="stat-card relative overflow-hidden bg-surface-raised p-space-lg rounded-xl flex flex-col justify-between gap-space-sm group hover:bg-surface-panel transition-all duration-300" style="--i:3">
           <div class="flex items-center justify-between">
             <span class="font-label-technical text-label-technical text-text-muted uppercase">// RIGOR FISCAL</span>
-            <span class="w-1.5 h-1.5 rounded-full bg-secondary-container"></span>
+            <span class="stat-dot w-1.5 h-1.5 rounded-full bg-secondary-container text-secondary-container"></span>
           </div>
-          <div class="font-headline-xl text-headline-lg lg:text-headline-xl text-text-primary font-bold tracking-tight group-hover:text-secondary-container transition-colors">100%</div>
+          <div class="font-headline-xl text-headline-lg lg:text-headline-xl text-text-primary font-bold tracking-tight group-hover:text-secondary-container transition-colors stat-num" data-count="100" data-prefix="" data-suffix="%">100%</div>
           <div class="font-body-sm text-body-sm text-text-muted">orientado a LTV, margem de contribuição e sustentabilidade de caixa.</div>
+          <span class="stat-bar" aria-hidden="true"></span>
         </div>
       </div>
     </div>
@@ -425,7 +430,7 @@
   ========================================== -->
 <section class="w-full bg-surface-raised py-space-2xl lg:py-space-3xl relative overflow-hidden" id="o-metodo">
   <div class="max-w-[1440px] mx-auto px-grid-margin-mobile md:px-grid-margin-tablet lg:px-grid-margin-desktop flex flex-col gap-space-2xl">
-    <div class="flex flex-col gap-space-xs max-w-2xl">
+    <div class="metodo-head flex flex-col gap-space-xs max-w-2xl">
       <div class="inline-flex items-center gap-space-xs text-primary-container font-label-technical text-label-technical uppercase tracking-widest">
         <span class="text-text-muted">// 04</span>
         <span>PROCESSO VALIDADO</span>
@@ -434,50 +439,54 @@
       <p class="font-body-md text-body-md text-text-muted">Nossa metodologia em 5 etapas para garantir resultados previsíveis, eliminando achismos e alinhando execução diária aos objetivos financeiros da sua empresa.</p>
     </div>
 
-    <div class="relative w-full">
-      <div class="hidden lg:block absolute top-7 left-12 right-12 h-[2px] bg-surface-panel z-0"></div>
-      <div class="hidden lg:block absolute top-7 left-12 w-2/3 h-[2px] bg-gradient-to-r from-primary-container via-secondary-container to-transparent z-0"></div>
+    <div class="metodo-steps relative w-full">
+      <div class="metodo-track" aria-hidden="true"><div class="metodo-track-fill"></div></div>
       <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-gutter-desktop relative z-10">
-        <div class="bg-surface-base p-space-lg rounded-xl flex flex-col gap-space-md shadow-md hover:shadow-[0_0_24px_rgba(0,255,135,0.1)] transition-all">
+        <article class="metodo-step bg-surface-base p-space-lg rounded-xl flex flex-col gap-space-md" style="--i:0">
           <div class="flex items-center justify-between">
-            <span class="w-10 h-10 rounded-full bg-primary-container text-surface-base font-headline-sm text-headline-sm flex items-center justify-center font-bold">01</span>
+            <span class="metodo-num w-10 h-10 rounded-[10px] font-headline-sm text-headline-sm flex items-center justify-center font-bold">01</span>
             <span class="font-label-technical text-label-technical text-text-muted">FASE 1</span>
           </div>
           <h4 class="font-headline-sm text-headline-sm text-text-primary uppercase tracking-tight">Diagnóstico</h4>
           <p class="font-body-sm text-body-sm text-text-muted">Análise profunda da maturidade do seu negócio, auditoria de canais e localização cirúrgica dos gargalos de conversão.</p>
-        </div>
-        <div class="bg-surface-base p-space-lg rounded-xl flex flex-col gap-space-md shadow-md hover:shadow-[0_0_24px_rgba(0,255,135,0.1)] transition-all">
+          <span class="metodo-bar" aria-hidden="true"><i></i></span>
+        </article>
+        <article class="metodo-step bg-surface-base p-space-lg rounded-xl flex flex-col gap-space-md" style="--i:1">
           <div class="flex items-center justify-between">
-            <span class="w-10 h-10 rounded-full bg-surface-panel text-text-primary font-headline-sm text-headline-sm flex items-center justify-center font-bold">02</span>
+            <span class="metodo-num w-10 h-10 rounded-[10px] font-headline-sm text-headline-sm flex items-center justify-center font-bold">02</span>
             <span class="font-label-technical text-label-technical text-text-muted">FASE 2</span>
           </div>
           <h4 class="font-headline-sm text-headline-sm text-text-primary uppercase tracking-tight">Estratégia</h4>
           <p class="font-body-sm text-body-sm text-text-muted">Plano de ação executivo com metas trimestrais, desenho de funil, alocação de verba e projeção de retorno financeiro.</p>
-        </div>
-        <div class="bg-surface-base p-space-lg rounded-xl flex flex-col gap-space-md shadow-md hover:shadow-[0_0_24px_rgba(0,255,135,0.1)] transition-all">
+          <span class="metodo-bar" aria-hidden="true"><i></i></span>
+        </article>
+        <article class="metodo-step bg-surface-base p-space-lg rounded-xl flex flex-col gap-space-md" style="--i:2">
           <div class="flex items-center justify-between">
-            <span class="w-10 h-10 rounded-full bg-surface-panel text-text-primary font-headline-sm text-headline-sm flex items-center justify-center font-bold">03</span>
+            <span class="metodo-num w-10 h-10 rounded-[10px] font-headline-sm text-headline-sm flex items-center justify-center font-bold">03</span>
             <span class="font-label-technical text-label-technical text-text-muted">FASE 3</span>
           </div>
           <h4 class="font-headline-sm text-headline-sm text-text-primary uppercase tracking-tight">Execução</h4>
           <p class="font-body-sm text-body-sm text-text-muted">Time de especialistas selecionado para cada desafio, implementando campanhas, fluxos de automação e páginas com agilidade e alto rigor técnico.</p>
-        </div>
-        <div class="bg-surface-base p-space-lg rounded-xl flex flex-col gap-space-md shadow-md hover:shadow-[0_0_24px_rgba(0,255,135,0.1)] transition-all">
+          <span class="metodo-bar" aria-hidden="true"><i></i></span>
+        </article>
+        <article class="metodo-step bg-surface-base p-space-lg rounded-xl flex flex-col gap-space-md" style="--i:3">
           <div class="flex items-center justify-between">
-            <span class="w-10 h-10 rounded-full bg-surface-panel text-secondary-container font-headline-sm text-headline-sm flex items-center justify-center font-bold">04</span>
+            <span class="metodo-num w-10 h-10 rounded-[10px] font-headline-sm text-headline-sm flex items-center justify-center font-bold">04</span>
             <span class="font-label-technical text-label-technical text-text-muted">FASE 4</span>
           </div>
           <h4 class="font-headline-sm text-headline-sm text-text-primary uppercase tracking-tight">Otimização</h4>
           <p class="font-body-sm text-body-sm text-text-muted">Inteligência Artificial e engenharia de dados refinando criativos, segmentações e taxas de conversão de ponta a ponta.</p>
-        </div>
-        <div class="bg-surface-base p-space-lg rounded-xl flex flex-col gap-space-md shadow-md hover:shadow-[0_0_24px_rgba(0,255,135,0.1)] transition-all">
+          <span class="metodo-bar" aria-hidden="true"><i></i></span>
+        </article>
+        <article class="metodo-step bg-surface-base p-space-lg rounded-xl flex flex-col gap-space-md" style="--i:4">
           <div class="flex items-center justify-between">
-            <span class="w-10 h-10 rounded-full bg-primary-container text-surface-base font-headline-sm text-headline-sm flex items-center justify-center font-bold">05</span>
+            <span class="metodo-num w-10 h-10 rounded-[10px] font-headline-sm text-headline-sm flex items-center justify-center font-bold">05</span>
             <span class="font-label-technical text-label-technical text-text-muted">FASE 5</span>
           </div>
           <h4 class="font-headline-sm text-headline-sm text-text-primary uppercase tracking-tight">Resultados</h4>
           <p class="font-body-sm text-body-sm text-text-muted">Dashboards em tempo real, transparência sem filtros, tração acelerada e comprovação contínua de retorno sobre investimento (ROI).</p>
-        </div>
+          <span class="metodo-bar" aria-hidden="true"><i></i></span>
+        </article>
       </div>
     </div>
   </div>
