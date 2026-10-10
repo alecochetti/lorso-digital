@@ -32,7 +32,7 @@ function norm(d){
 let cur = null;          // diagnóstico aberto
 let all = {};            // lista de diagnósticos: id -> {id, nome, updated_at}
 let ui = {view:'fases', stage:'diagnostico', area:'reitoria', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}, fofaSug:{}, drePreview:null, dreTxt:'', dstep:'base', cursoPreview:null, open:{}};
-try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(['base','reitoria','entrevistas'].includes(u.dstep))ui.dstep=u.dstep; if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','equipe','como','visao','perfil','internas'].includes(u.view))ui.view=u.view;}catch(e){}
+try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(['base','reitoria','entrevistas'].includes(u.dstep))ui.dstep=u.dstep; if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','equipe','como','visao','perfil','internas','dre','lancamento'].includes(u.view))ui.view=u.view;}catch(e){}
 const saveUi=()=>lsSet('cd.ui',JSON.stringify({stage:ui.stage,area:ui.area,view:ui.view,dstep:ui.dstep}));
 const member=id=>cur.equipe.find(m=>m.id===id);
 const initials=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(p=>p[0]||'').join('').toUpperCase()||'?';
@@ -353,7 +353,7 @@ function fieldHtml(key,label,type){
   const v=cur.campos[key]??'';
   if(type==='t') return `<div class="field ${label.length>34?'wide':''}"><label for="c-${esc(key)}">${esc(label)}</label><textarea id="c-${esc(key)}" data-campo="${esc(key)}" rows="2">${esc(v)}</textarea></div>`;
   const u={'R$':'R$','%':'%','min':'min','d':'dias','n':''}[type]||''; const pre=type==='R$';
-  return `<div class="field"><label for="c-${esc(key)}">${esc(label)}</label><div class="inu ${pre?'pre':''}"><input id="c-${esc(key)}" data-campo="${esc(key)}" inputmode="decimal" value="${esc(v)}" placeholder="0">${u?`<span class="u">${u}</span>`:''}</div></div>`;
+  return `<div class="field"><label for="c-${esc(key)}">${esc(label)}${mdAuto().has(key)?' <span class="tag ok" title="Preenchido pelo módulo DRE. Digite outro valor para usar o seu.">do DRE</span>':''}</label><div class="inu ${pre?'pre':''}"><input id="c-${esc(key)}" data-campo="${esc(key)}" inputmode="decimal" value="${esc(v)}" placeholder="0">${u?`<span class="u">${u}</span>`:''}</div></div>`;
 }
 function qHtml(x){
   const n=cur.resp[x[0]];
@@ -1152,7 +1152,7 @@ const ICO={
  internas:'M9 4h6v3H9zM6 6H5v15h14V6h-1M9 12h6M9 16h4'
 };
 /* outras ferramentas da LORSO no menu (abrem em outra aba; só equipe e administradores) */
-const FERRAMENTAS=[['dre','DRE completo','/admin/financeiro-loja/'],['lancamento','Lançamento de curso','/admin/lancamento-curso/'],['lancamento','Lançamento perpétuo','/admin/lancamento-perpetuo/']];
+const FERRAMENTAS=[['dre','Financeiro da loja','/admin/financeiro-loja/'],['lancamento','Lançamento de curso','/admin/lancamento-curso/'],['lancamento','Lançamento perpétuo','/admin/lancamento-perpetuo/']];
 const ico=(k,sz)=>!ICO[k]?'':`<svg class="ic" viewBox="0 0 24 24" width="${sz||18}" height="${sz||18}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICO[k]}"/></svg>`;
 const temaAtual=()=>document.documentElement.dataset.theme==='light'?'light':'dark';
 function setPref(k,v){ lsSet('cd.'+k,v); const d=document.documentElement;
@@ -1171,7 +1171,7 @@ function sideItem(k,label,act,v,meta,hot){
 function renderSide(INS){
   const adm=me&&me.papel==='admin', pc=x=>Math.round(x*100)+'%';
   let h=`<div class="sb-brand"><span class="sb-logo">L</span><span><b>LORSO Digital</b><small>Central de Diagnóstico</small></span></div>`;
-  if(podeInternas()){ const mn=minhasAbertas(), lt=internas.filter(t=>t.responsavel===me.id&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · ferramentas</span>${sideItem('internas','Tarefas da equipe','view','internas',mn||'',lt>0)}${FERRAMENTAS.map(([k,l,u])=>`<a class="sn" href="${u}" target="_blank" rel="noopener" title="Abre em outra aba">${ico(k)}<span class="lb">${l}</span><span class="mt" aria-hidden="true">↗</span></a>`).join('')}</nav>`; }
+  if(podeInternas()){ const mn=minhasAbertas(), lt=internas.filter(t=>t.responsavel===me.id&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas','Tarefas da equipe','view','internas',mn||'',lt>0)}</nav>`; }
   if(cur){
     const x=crossTasks(INS), hot=x.late.length+x.semTarefa.length, g=overall();
     h+=`<nav class="sb-nav" aria-label="Etapas">
@@ -1182,6 +1182,9 @@ function renderSide(INS){
      ${sideItem('visao','Diagnóstico','view','visao',g.level?'N'+g.level:'')}
      <span class="sb-g">Fases 2 a 5</span>
      ${STAGES.slice(1).map(st=>sideItem(st.id,st.nome,'stage',st.id,st.id==='execucao'&&cur.acoes.some(isPlano)?`${cur.acoes.filter(t=>isPlano(t)&&t.status==='Concluída').length}/${cur.acoes.filter(isPlano).length}`:st.q&&st.q.length?pc(stageProgress(st)):'',st.id==='execucao'&&hot)).join('')}
+     <span class="sb-g">Módulos</span>
+     ${sideItem('dre','DRE e orçamento','view','dre',cur.mods&&cur.mods.dre&&cur.mods.dre.meses?cur.mods.dre.meses.filter(M=>M.lancado).length+'/12':'')}
+     ${sideItem('lancamento','Lançamento de curso','view','lancamento')}
      <span class="sb-g">Operação</span>
      ${sideItem('dores','Dores e gargalos','view','dores',cur.dores.length||'')}
      ${sideItem('sistemas','Sistemas','view','sistemas',cur.sistemas.filter(y=>y.nome).length||'')}
@@ -1245,7 +1248,7 @@ function renderPerfil(){
      <form id="f-senha" class="fields"><label class="field"><span>Nova senha</span><input name="s1" type="password" minlength="8" autocomplete="new-password" required></label><label class="field"><span>Repita a nova senha</span><input name="s2" type="password" minlength="8" autocomplete="new-password" required></label><div><button class="btn primary" type="submit">Salvar nova senha</button></div></form></section>
     ${adm?`<section class="block"><div class="block-h"><h3>Administração</h3><p>Só administradores veem esta parte.</p></div>
      <div class="kpis k3"><div class="kpi"><b>${profiles.length}</b><span>${profiles.length===1?'pessoa com acesso':'pessoas com acesso'}</span></div><div class="kpi"><b>${nConv}</b><span>${nConv===1?'convite aguardando':'convites aguardando'}</span></div><div class="kpi"><b>${Object.keys(all).length}</b><span>${Object.keys(all).length===1?'diagnóstico':'diagnósticos'}</span></div></div>
-     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="view" data-v="equipe">Equipe e convites</button><button class="btn" data-act="view" data-v="como">Como funciona (proposta)</button>${me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo diagnóstico</button>`:''}</div></section>`:''}
+     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="view" data-v="equipe">Equipe e convites</button><button class="btn" data-act="view" data-v="como">Como funciona (proposta)</button>${FERRAMENTAS.map(([k,l,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">${l} (versão avulsa) ↗</a>`).join('')}${me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo diagnóstico</button>`:''}</div></section>`:''}
    </div></section>`;
 }
 /* ================= TAREFAS INTERNAS DA EQUIPE LORSO (fora do cliente) ================= */
@@ -1539,6 +1542,7 @@ function renderInner(){
   else if(ui.view==='sistemas') renderSistemas();
   else if(ui.view==='equipe') renderEquipe();
   else if(ui.view==='visao') renderVisao(INS);
+  else if(ui.view==='dre') renderDRE();
   else if(ui.view==='internas'&&podeInternas()) renderInternas();
   else if(ui.view==='perfil') renderPerfil();
   else { ({diagnostico:renderDiagnostico,estrategia:renderEstrategia,execucao:renderExecucao,otimizacao:renderOtimizacao,resultados:renderResultados})[ui.stage](INS); }
@@ -1728,7 +1732,7 @@ const ARR_DB={
  iniciativas:{t:'iniciativas',to:x=>({id:x.id,titulo:nz(x.titulo),bloco:nz(x.bloco),area:nz(x.area),horizonte:nz(x.horizonte),impacto:toInt(x.impacto),esforco:toInt(x.esforco),risco:toInt(x.risco),dependencias:nz(x.dependencias),alinhamento:nz(x.alinhamento),recomendacao:nz(x.recomendacao),motivo:nz(x.motivo),indicador:nz(x.indicador),ordem:toInt(x.ordem)??0}),from:r=>({id:r.id,titulo:r.titulo||'',bloco:r.bloco||'',area:r.area||'',horizonte:r.horizonte||'',impacto:r.impacto??'',esforco:r.esforco??'',risco:r.risco??'',dependencias:r.dependencias||'',alinhamento:r.alinhamento||'',recomendacao:r.recomendacao||'',motivo:r.motivo||'',indicador:r.indicador||'',ordem:r.ordem||0})},
  sistemas:{t:'sistemas',to:x=>({id:x.id,nome:nz(x.nome),uso:nz(x.uso),usuarios:nz(x.quem),satisfacao:toInt(x.satisf),integra:nz(x.integra),custo_mensal:nz(x.custo),problemas:nz(x.prob)}),from:r=>({id:r.id,nome:r.nome||'',uso:r.uso||'',quem:r.usuarios||'',satisf:r.satisfacao!=null?String(r.satisfacao):'',integra:r.integra||'',custo:r.custo_mensal||'',prob:r.problemas||''})},
 };
-const DIAG_TABLES=['respostas','campos','responsaveis_area','fofa_itens',...Object.values(ARR_DB).map(m=>m.t)];
+const DIAG_TABLES=['respostas','campos','responsaveis_area','fofa_itens','modulos',...Object.values(ARR_DB).map(m=>m.t)];
 const ok=r=>{ if(r&&r.error) throw r.error; return r?r.data:null; };
 function equipeList(){ return profiles.filter(p=>p.ativo).map(p=>({id:p.id,nome:p.nome||p.email,papel:p.funcao||'',contato:p.contato||'',email:p.email,role:p.papel})); }
 async function loadList(){ const d=ok(await sb.from('diagnosticos').select('id,nome,updated_at').order('updated_at',{ascending:false})); all=Object.fromEntries((d||[]).map(x=>[x.id,x])); }
@@ -1748,7 +1752,8 @@ async function loadDiag(id){
   resA.forEach(r=>{ o.dono_area[r.area]=r.user_id; });
   fofa.forEach(r=>{ o.fofa[r.chave]=o.fofa[r.chave]||{}; (o.fofa[r.chave][r.quadrante]=o.fofa[r.chave][r.quadrante]||[]).push(r.texto); });
   Object.keys(ARR_DB).forEach((k,i)=>{ o[k]=arrs[i].map(ARR_DB[k].from); });
-  o.equipe=equipeList();
+  o.equipe=equipeList(); o.mods={};
+  try{ const mr=await sb.from('modulos').select('modulo,dados').eq('diagnostico_id',id); if(!mr.error)(mr.data||[]).forEach(r=>{ o.mods[r.modulo]=r.dados; }); }catch(e){ /* módulos opcionais */ }
   return o;
 }
 function diffMap(now,was){ const up=[],del=[]; new Set([...Object.keys(now),...Object.keys(was)]).forEach(k=>{ const a=now[k], b=was[k]; if(JSON.stringify(a??null)===JSON.stringify(b??null))return; if(a==null||a==='')del.push(k); else up.push(k); }); return {up,del}; }
@@ -1804,7 +1809,7 @@ function isTyping(){const a=document.activeElement;return a&&/INPUT|TEXTAREA|SEL
 /* tempo real: quando outra pessoa salva, recarrega e aplica assim que você para de digitar */
 let remoteT=null;
 function remoteSoon(){ clearTimeout(remoteT); remoteT=setTimeout(async()=>{
-  if(!cur)return; if(ver!==savedVer||saving){ pendingRemote=true; return; }
+  if(!cur)return; if(ver!==savedVer||saving||(typeof mdPend!=='undefined'&&mdPend)){ pendingRemote=true; return; }
   try{ const o=await loadDiag(cur.id); if(ver!==savedVer||!cur||o.id!==cur.id){ pendingRemote=true; return; } pendingData=o; adoptRemote(); }catch(e){}
  },700); }
 function adoptRemote(){
@@ -1824,7 +1829,7 @@ function subscribe(id){
 async function openDiag(id){
   if(cur&&ver!==savedVer) await flush();
   $('#main').innerHTML='<p class="loading">Carregando diagnóstico…</p>';
-  try{ const o=await loadDiag(id); cur=o; snap=clone(o); ver=savedVer=0; saveErr=null; ui.openTask=null; lsSet('cd.last',id); subscribe(id); render(); }
+  try{ const o=await loadDiag(id); cur=o; snap=clone(o); ver=savedVer=0; saveErr=null; ui.openTask=null; lsSet('cd.last',id); subscribe(id); if(mdSync()) touch(false); render(); }
   catch(e){ console.error(e); toast('Não foi possível abrir o diagnóstico'); }
 }
 async function createDiag(nome){
@@ -1912,6 +1917,7 @@ document.addEventListener('click',e=>{
   if(act==='auth-mode'){ authMode=d.v; authMsg=null; renderAuth(); return; }
   if(act==='sair'){ flush(); sb.auth.signOut(); return; }
   if(b.closest('#sb')&&act!=='tema') ui.sbOpen=false;
+  if(act.startsWith('md-')&&cur){ mdClick(act,d); return; }
   if(act==='sb-open'){ ui.sbOpen=true; document.body.classList.add('sb-on'); const f=document.querySelector('#sb .sn.on')||document.querySelector('#sb .sn'); f&&f.focus(); return; }
   if(act==='sb-close'){ ui.sbOpen=false; document.body.classList.remove('sb-on'); return; }
   if(act==='tema'){ setPref('theme',temaAtual()==='light'?'dark':'light'); render(); return; }
@@ -2044,7 +2050,7 @@ document.addEventListener('input',e=>{
   if(d.mem!=null){ const p=profiles.find(x=>x.id===d.mem); if(p){ const f={nome:'nome',papel:'funcao',contato:'contato'}[d.f]; p[f]=t.value; if(cur)cur.equipe=equipeList(); saveProfile(p.id); } return; }
   if(!cur) return;
   if(d.nota!=null){ if(t.value)cur.notas[d.nota]=t.value; else delete cur.notas[d.nota]; autoGrow(t); touch(false); }
-  else if(d.campo!=null){ if(t.value)cur.campos[d.campo]=t.value; else delete cur.campos[d.campo]; if(t.tagName==='TEXTAREA')autoGrow(t); touch(false); }
+  else if(d.campo!=null){ mdSoltarCampo(d.campo); if(t.value)cur.campos[d.campo]=t.value; else delete cur.campos[d.campo]; if(t.tagName==='TEXTAREA')autoGrow(t); touch(false); }
   else if(t.id==='nome-diag'){ cur.nome=t.value||'Sem nome'; touch(false); }
   else if(d.ent!=null&&t.type!=='date'){ cur.entrevistas[+d.ent][d.f]=t.value; touch(false); }
   else if(d.taskF==='txt'){ const x=cur.acoes.find(a=>a.id===d.id); if(x){ x.txt=t.value; autoGrow(t); touch(false); } }
@@ -2057,6 +2063,7 @@ document.addEventListener('input',e=>{
 document.addEventListener('change',e=>{
   const t=e.target, d=t.dataset;
   if(t.id==='fonte-file'&&t.files&&t.files.length){ importarArquivos([...t.files]); t.value=''; return; }
+  if(d.md!=null&&cur&&cur.mods&&cur.mods.dre){ mdChange(t); return; }
   if(t.id==='itf-resp'||t.id==='itf-cli'){ ui.itf=ui.itf||{resp:'',cli:''}; ui.itf[t.id==='itf-resp'?'resp':'cli']=t.value; render(); return; }
   if(d.itF&&d.itF!=='titulo'&&d.itF!=='descricao'){ const x=internas.find(y=>y.id===d.id); if(x){ x[d.itF]=t.value; itSave(x); } return; }
   if(!cur) return;
