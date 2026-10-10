@@ -203,3 +203,115 @@ const STG = Object.fromEntries(STAGES.map(s=>[s.id,s]));
 const UNS = AREAS.filter(a=>a.un);
 const nameOf = id => (AREA[id]||STG[id]||{nome:id}).nome;
 
+
+/* ================= BIBLIOTECA DE FOFA POR ÁREA =================
+   Opções estratégicas prontas para incluir com um clique na matriz de cada área.
+   f = Forças (interno, positivo) · w = Fraquezas (interno, negativo)
+   o = Oportunidades (externo ou de evolução) · a = Ameaças (externo ou risco) */
+const FOFA_LIB = {
+ demandas:{
+  f:['Coordenadores reconhecem o marketing como parceiro e procuram o time','Time conhece bem o calendário acadêmico e os picos de cada UN','Existe um canal oficial de pedidos, mesmo que pouco usado','Gestor do marketing tem acesso direto à diretoria para priorizar'],
+  w:['Pedidos chegam por WhatsApp individual e se perdem','Não há critério público de prioridade: vence quem pressiona mais','Coordenadores não sabem o status do que pediram','Urgências constantes impedem trabalho planejado','Ninguém mede prazo de entrega nem volume por UN'],
+  o:['Formulário único de pedido com campos obrigatórios e prazo mínimo por tipo de peça','Calendário semestral de demandas combinado com cada coordenação','Cota de capacidade reservada por UN para dar previsibilidade','Portal de status para o solicitante acompanhar sem perguntar','Kit de autosserviço (templates aprovados) para pedidos simples'],
+  a:['Coordenadores contratam fornecedores por fora e quebram a marca','Desgaste político entre UNs disputando o mesmo time','Perda de prazos de captação por fila de demandas internas','Saída de pessoas-chave que concentram o conhecimento dos pedidos']},
+ fluxo:{
+  f:['Time pequeno e próximo, decide rápido quando tem clareza','Já existe alguma ferramenta de gestão em uso por parte do time','Peças recorrentes já têm modelo de referência','Gestor disposto a mudar o método de trabalho'],
+  w:['Muitos aprovadores e rodadas ilimitadas de alteração','Briefing incompleto gera retrabalho e atraso','Sem limite de trabalho em andamento: todos fazem tudo ao mesmo tempo','Etapas do fluxo não estão definidas nem visíveis','Capacidade do time não é medida'],
+  o:['Kanban com etapas claras e limite de tarefas por pessoa','Aprovador único por demanda e no máximo 2 rodadas','Aprovação tácita depois do prazo de resposta','Rituais curtos: daily de 15 minutos e revisão semanal de fila','Medir tempo parado por etapa para atacar o gargalo certo'],
+  a:['Burnout do time por excesso de urgências','Queda de qualidade das peças em período de captação','Perda de credibilidade do marketing junto à reitoria','Rotatividade alta do time criativo']},
+ sistemas:{
+  f:['A instituição já investe em ferramentas pagas','Parte do time domina bem as ferramentas principais','Existe sistema acadêmico com dados confiáveis de matrícula','Abertura da TI para integrar sistemas'],
+  w:['Ferramentas duplicadas fazendo a mesma coisa','Muito trabalho manual copiando dados entre sistemas','Logins compartilhados e sem controle de acesso','Ferramentas subutilizadas por falta de treinamento','Nenhuma ferramenta concentra pedidos e tarefas do marketing'],
+  o:['Consolidar o conjunto de ferramentas e cortar licenças sobrepostas','Integrar formulário de pedidos à ferramenta de tarefas','Automações simples (n8n, Zapier) para eliminar digitação manual','Trilha de capacitação por ferramenta com um responsável','Painel único de indicadores alimentado automaticamente'],
+  a:['Dependência de um fornecedor que pode aumentar preço ou descontinuar','Vazamento de dados de alunos por acessos sem controle (LGPD)','Troca de sistema acadêmico sem envolver o marketing','Custos de licença crescendo sem retorno medido']},
+ smarketing:{
+  f:['Comercial próximo do marketing e aberto a conversar','CRM já recebe os leads do digital','Consultores conhecem bem as objeções de cada curso','Existe meta comercial clara por UN'],
+  w:['Não há definição compartilhada de lead qualificado','Comercial não devolve motivo de perda ao marketing','Lead chega ao consultor sem histórico de interesse','Primeiro contato demora horas ou dias','Distribuição manual e desigual entre consultores'],
+  o:['SLA de lead qualificado com 3 critérios obrigatórios','Reunião semanal de 30 minutos marketing e comercial','Primeiro contato automático por WhatsApp em até 2 minutos','Distribuição automática por curso ou UN','Relatório de motivos de perda alimentando campanhas'],
+  a:['CAC subindo por volume de leads sem perfil','Concorrentes que respondem em minutos levam o aluno','Conflito aberto entre times por culpa de resultado','Consultores desmotivados com leads frios']},
+ plataforma:{
+  f:['Site institucional com boa autoridade de domínio','Tags e pixels básicos já instalados','Equipe de TI interna disponível','Páginas de curso já estruturadas'],
+  w:['Rastreamento de conversão incompleto ou quebrado','Marketing depende da TI para qualquer página','Site lento no celular','Sistemas sem integração com o CRM'],
+  o:['Plano de tagueamento por UN com eventos de inscrição','Construtor de landing pages com templates aprovados','Melhorar velocidade mobile para ganhar conversão e SEO','Páginas de curso otimizadas para busca e IA'],
+  a:['Mudanças de privacidade reduzindo dados de mídia','Queda de tráfego orgânico com buscas respondidas por IA','Incidente de segurança ou indisponibilidade em pico de captação','Fila da TI travando lançamentos de campanha']},
+ crm:{
+  f:['CRM implantado e com licenças disponíveis','Funil com etapas já configuradas','Base histórica de leads e alunos','Automação de e-mail disponível'],
+  w:['Parte dos contatos (balcão, telefone, visitas) fica fora do CRM','Consultores preenchem pouco ou usam WhatsApp pessoal','Sem lead scoring nem prioridade de atendimento','Bases de UNs separadas, sem cruzamento'],
+  o:['Réguas automáticas por etapa e por curso','Cruzar base de formandos com a pós-graduação','Lead scoring baseado em matrículas reais','Integração do WhatsApp oficial ao CRM'],
+  a:['Dados desatualizados levando a decisões erradas','Descumprimento da LGPD em disparos sem consentimento','Perda do histórico quando um consultor sai','Custo de licença sem uso efetivo']},
+ redes:{
+  f:['Perfis com audiência engajada de alunos e ex-alunos','Conteúdo de bastidores e vida acadêmica que performa bem','Professores com boa presença digital','Volume consistente de publicações'],
+  w:['Mesma mensagem para pais, vestibulandos e profissionais','Directs respondidos com atraso e sem registro','Redes sem meta de geração de leads','Linha editorial inexistente ou genérica'],
+  o:['Programa de embaixadores com alunos e professores','Linha editorial por UN e por etapa da jornada','Lead ads integrados ao CRM','Conteúdo de carreira e empregabilidade para graduação e pós'],
+  a:['Crise de reputação viral sem protocolo de resposta','Queda de alcance orgânico pelos algoritmos','Concorrentes com creators fortes no mesmo público','Comentários negativos de alunos sem tratamento']},
+ captacao:{
+  f:['Volume de leads atende ou supera a meta','Marca reconhecida na região','Mix de canais pago e orgânico funcionando','Bom custo por lead em mídia'],
+  w:['Dependência de um único canal de mídia','Leads sem nutrição depois do cadastro','Qualidade de lead questionada pelo comercial','Captação concentrada só nos meses de campanha'],
+  o:['Captação contínua fora dos picos com conteúdo e eventos','Parcerias com escolas e empresas da região','SEO local e páginas por curso','Réguas de nutrição por curso e etapa'],
+  a:['Aumento do custo de mídia em período de vestibular','Concorrência de EAD com preço agressivo','Mudanças em políticas de anúncios para educação','Queda de demanda por cursos específicos']},
+ criacao:{
+  f:['Time criativo com boa qualidade visual','Identidade de marca reconhecida','Banco de imagens próprio da instituição','Agilidade em peças simples'],
+  w:['Fila de demandas maior que a capacidade','Retrabalho por briefing incompleto','Manual de marca sem diretrizes por UN','Cada peça nasce do zero'],
+  o:['Templates aprovados por UN para pedidos recorrentes','Biblioteca de ativos organizada e compartilhada','IA para variações de peças e adaptações de formato','Reaproveitar 1 conteúdo em vários formatos'],
+  a:['Coordenadores produzindo peças fora da marca','Picos de captação estourando prazos','Dependência de um único designer','Queda de qualidade por pressa constante']},
+ growth:{
+  f:['Cultura de olhar dados já começando','Ferramentas de análise disponíveis','Pessoas com perfil analítico no time','Histórico de campanhas para comparar'],
+  w:['Não se sabe qual canal gerou a matrícula','Testes esporádicos e sem documentação','Relatórios manuais e atrasados','Decisões tomadas por opinião'],
+  o:['Atribuição até a matrícula via UTM e CRM','Backlog de testes priorizado por impacto','Dashboard por UN com meta e realizado','Programa de otimização das páginas de inscrição'],
+  a:['Cortar o canal errado por falta de atribuição','Perda de sinais de dados por privacidade','Verba desperdiçada em campanhas sem retorno','Concorrentes otimizando mais rápido']},
+ callcenter:{
+  f:['Atendentes experientes e que conhecem os cursos','Volume de atendimento bem distribuído fora dos picos','Roteiro básico de atendimento existente','Canal telefônico confiável'],
+  w:['Fila e abandono altos nos picos de captação','Contatos não registrados no CRM','Respostas dependem do conhecimento de cada atendente','Pouca autonomia para resolver na hora'],
+  o:['Chatbot e WhatsApp para dúvidas simples','Base de conhecimento por UN','Dimensionamento pelo calendário de captação','Monitoria de qualidade com feedback semanal'],
+  a:['Candidatos desistindo na fila e indo para o concorrente','Reclamações públicas por mau atendimento','Rotatividade alta de atendentes','Custos crescentes de telefonia']},
+ b2b:{
+  f:['Relacionamento com empresas e convênios existentes','Portfólio relevante para educação corporativa','Ticket médio alto por contrato','Consultores com bom networking'],
+  w:['Qualificação fraca antes da proposta','Sem previsão de receita B2B','Passagem para a entrega sem contexto','Motivos de perda não registrados'],
+  o:['Programas in company e trilhas customizadas','Convênios com descontos para colaboradores','Parcerias com associações e sindicatos','Cadência de prospecção ativa por setor'],
+  a:['Empresas cortando verba de treinamento','Concorrência de plataformas de cursos livres','Ciclo de venda longo afetando caixa','Dependência de poucos grandes clientes']},
+ atendimento:{
+  f:['Proximidade com alunos e boa reputação no relacionamento','Pesquisa de satisfação já aplicada','Equipe de secretaria experiente','Canais de contato variados'],
+  w:['Evasão descoberta só no pedido de cancelamento','Postura reativa','Sem programa de indicação','Onboarding do aluno inexistente'],
+  o:['Alertas de risco de evasão com playbook de retenção','Programa de indicação com benefício','Onboarding nas primeiras semanas de curso','Upsell para pós e cursos livres'],
+  a:['Evasão por questões financeiras','Insatisfação virando reclamação pública','Concorrentes oferecendo transferência com desconto','Perda de rematrículas por atendimento lento']},
+ eventos:{
+  f:['Estrutura física para eventos presenciais','Professores dispostos a palestrar','Eventos com boa adesão de público','Marca forte em eventos tradicionais'],
+  w:['Sem contato com o participante depois do evento','Inscrições fora do CRM','Retorno dos eventos não medido','Calendário desconectado da captação'],
+  o:['Open house e aulas experimentais ligadas ao funil','Webinars com professores para pós e mestrado','Leads quentes ao comercial em até 24 horas','Eventos em parceria com empresas e escolas'],
+  a:['Baixa presença por excesso de eventos concorrentes','Custo alto sem retorno em matrícula','Cancelamentos por clima ou logística','Desgaste da marca com eventos mal executados']},
+ colegio:{
+  f:['Reputação pedagógica reconhecida pelas famílias','Alta taxa de rematrícula','Indicação espontânea de pais','Estrutura física diferenciada'],
+  w:['Visitas sem roteiro e sem acompanhamento','Conversão visita para matrícula não medida','Comunicação genérica, igual às outras UNs','Rematrícula tratada só no fim do ano'],
+  o:['Programa de indicação de pais com benefício','Open house com roteiro de encantamento','SEO local e presença no Google Meu Negócio','Gestão de risco de rematrícula ao longo do ano'],
+  a:['Queda de natalidade reduzindo o público','Escolas de rede com preço agressivo','Inadimplência das famílias','Crise de reputação em grupos de pais']},
+ graduacao:{
+  f:['Volume de inscritos estável','Cursos com boa empregabilidade','Diversas formas de ingresso','Marca forte na região'],
+  w:['Candidato recebe só o boleto ou o link da prova','Abandono de inscrição sem recuperação','Aprovados que não se matriculam','Mesma régua para todos os cursos'],
+  o:['Régua por curso com conteúdo de carreira','Recuperação automática de inscrição abandonada','Ofertas para transferência e segunda graduação','Parcerias com escolas de ensino médio'],
+  a:['EAD de baixo custo atraindo o mesmo público','Mudanças em FIES e programas de bolsa','Queda de demanda em cursos tradicionais','Evasão no primeiro ano']},
+ pos:{
+  f:['Base de ex-alunos da graduação','Corpo docente com atuação de mercado','Cursos alinhados a demandas profissionais','Marca reconhecida por empregadores'],
+  w:['Venda por preço e parcelamento, sem consultoria','Base de formandos não é trabalhada','Pouca prova social de resultado','Sem parcerias corporativas estruturadas'],
+  o:['Régua de antecipação para formandos','Venda consultiva focada em carreira','Turmas in company e convênios','Cases de egressos com cargo e empresa'],
+  a:['Cursos livres e certificações substituindo a pós','Concorrência de MBAs online de grandes marcas','Profissionais adiando decisão por crise econômica','Desvalorização de títulos genéricos']},
+ mestrado:{
+  f:['Linhas de pesquisa reconhecidas','Orientadores com produção relevante','Nota da CAPES competitiva','Laboratórios e estrutura de pesquisa'],
+  w:['Divulgação limitada ao edital','Seleção fora do CRM','Orientadores pouco envolvidos na captação','Informação sobre bolsas difícil de achar'],
+  o:['Webinars com orientadores por linha de pesquisa','Conteúdo científico e divulgação de artigos','Prospecção ativa de pesquisadores e egressos','Orientação sobre fomento durante o processo'],
+  a:['Cortes de bolsas e fomento','Programas concorrentes com melhor nota','Baixa procura em linhas específicas','Dependência de poucos orientadores']},
+ estrategia:{
+  f:['Diretoria apoia o marketing','Metas de matrícula definidas','Verba de marketing garantida no orçamento','Posicionamento institucional claro'],
+  w:['Metas sem desdobramento por UN e canal','Verba repetida do ano anterior','Sem projeção de retorno do investimento','Proposta de valor genérica'],
+  o:['Matriz de priorização com critérios públicos','Modelo LTV/CAC por UN','Planejamento trimestral com revisão mensal','Posicionamento por UN validado com pesquisa'],
+  a:['Corte de verba sem dados de retorno','Mudanças regulatórias no ensino superior','Concorrência crescente com preço baixo','Desalinhamento entre reitoria e UNs']},
+ otimizacao:{
+  f:['Abertura do time para testar e aprender','Dados de várias fontes disponíveis','Ferramentas com recursos de IA já contratadas','Histórico para comparar resultados'],
+  w:['Aprendizados não são registrados','Dados espalhados e sem cruzamento','Criativos rodam até cansar','Segmentação apenas por UN'],
+  o:['Repositório de aprendizados e playbooks','IA aplicada a segmentação, criativos e atendimento','Base unificada de marketing, CRM e acadêmico','Testes contínuos de criativos e páginas'],
+  a:['Concorrentes aprendendo mais rápido','Uso de IA sem governança expondo dados','Decisões baseadas em dados incompletos','Dependência de consultorias externas']},
+ geral:{
+  f:['Marca reconhecida e com reputação no mercado educacional','Demanda de captação saudável','Diretoria aberta a reorganizar o marketing','Time comprometido e conhecedor do negócio'],
+  w:['Marketing não consegue atender coordenadores e UNs com velocidade','Falta de processo de priorização e de fluxo de trabalho','Sistemas desconectados e trabalho manual','Indicadores pouco usados nas decisões'],
+  o:['Redesenhar o fluxo de demandas com SLA e cota por UN','Unificar ferramentas e automatizar tarefas repetitivas','Planejamento conjunto com as UNs por semestre','Painel único de resultados por UN'],
+  a:['Perda de matrículas por lentidão de resposta ao mercado','Desgaste interno levando UNs a agir por conta própria','Concorrentes mais rápidos e digitais','Saída de pessoas-chave do marketing']}
+};

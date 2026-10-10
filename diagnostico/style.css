@@ -149,6 +149,10 @@ p{margin:0}
 .fq li .t{flex:1;min-width:0}
 .fq form{display:flex;gap:6px}
 .fq form input{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line-2);border-radius:7px;padding:6px 9px;font-size:13.5px}
+.sugtoggle{align-self:flex-start;background:none;border:0;padding:2px 0;font-size:13px;color:var(--c);text-decoration:underline;text-underline-offset:3px}
+.sugchips{display:flex;flex-direction:column;gap:6px}
+.sugchip{text-align:left;font-size:13px;line-height:1.35;background:var(--surface);border:1px dashed var(--line-2);border-radius:8px;padding:7px 10px;color:var(--fg)}
+.sugchip:hover{border-style:solid;border-color:var(--c)}
 .fq.f{--c:var(--n4)} .fq.w{--c:var(--n1)} .fq.o{--c:var(--n3)} .fq.a{--c:var(--n2)}
 
 /* insights */

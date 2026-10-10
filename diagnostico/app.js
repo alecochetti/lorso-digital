@@ -25,7 +25,7 @@ function norm(d){
 }
 let cur = null;          // diagnóstico aberto
 let all = {};            // lista de diagnósticos: id -> {id, nome, updated_at}
-let ui = {view:'fases', stage:'diagnostico', area:'demandas', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}};
+let ui = {view:'fases', stage:'diagnostico', area:'demandas', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}, fofaSug:{}};
 try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','tarefas','equipe'].includes(u.view))ui.view=u.view;}catch(e){}
 const saveUi=()=>lsSet('cd.ui',JSON.stringify({stage:ui.stage,area:ui.area,view:ui.view}));
 const member=id=>cur.equipe.find(m=>m.id===id);
@@ -292,13 +292,17 @@ function interviewsHtml(areaId){
    <div><button class="btn sm" data-act="ent-add" data-area="${areaId}">+ Adicionar entrevistado</button></div></section>`;
 }
 function fofaHtml(key, auto, title, note){
-  const man=cur.fofa[key]||{};
-  return `<section class="block"><div class="block-h"><h3>${title||'Matriz FOFA'}</h3><p>${note||'Itens automáticos vêm das respostas e do motor de cruzamento. Inclua os seus abaixo de cada quadrante.'}</p></div>
-  <div class="fofa">${FQ.map(([k,nm])=>{const a=(auto[k]||[]); const m=man[k]||[]; return `<div class="fq ${k}"><h4>${nm}<small>${a.length+m.length} itens</small></h4>
+  const man=cur.fofa[key]||{}; const lib=FOFA_LIB[key]||{};
+  const nomeArea=key==='geral'?'o diagnóstico geral':nameOf(key);
+  return `<section class="block"><div class="block-h"><h3>${title||'Matriz FOFA'}</h3><p>${note||'Itens automáticos vêm das respostas e do motor de cruzamento. Inclua os seus ou escolha entre as sugestões estratégicas.'}</p></div>
+  <div class="fofa">${FQ.map(([k,nm])=>{const a=(auto[k]||[]); const m=man[k]||[]; const sug=(lib[k]||[]).filter(t=>!m.includes(t)); const open=ui.fofaSug[key+'.'+k];
+   return `<div class="fq ${k}"><h4>${nm}<small>${a.length+m.length} itens</small></h4>
    <ul>${a.map(it=>`<li><span class="src">${it.src?esc(it.src):'auto'}</span><span class="t">${esc(it.t)}</span></li>`).join('')}
-   ${m.map((t,i)=>`<li><span class="src man">seu</span><span class="t">${esc(t)}</span><button class="xbtn" data-act="fofa-del" data-key="${esc(key)}" data-k="${k}" data-i="${i}" aria-label="Remover">×</button></li>`).join('')}
+   ${m.map((t,i)=>`<li><span class="src man">${(lib[k]||[]).includes(t)?'sugestão':'seu'}</span><span class="t">${esc(t)}</span><button class="xbtn" data-act="fofa-del" data-key="${esc(key)}" data-k="${k}" data-i="${i}" aria-label="Remover">×</button></li>`).join('')}
    ${!a.length&&!m.length?'<li class="muted" style="font-size:13px">Nada ainda.</li>':''}</ul>
-   <form data-fofa="${esc(key)}" data-k="${k}"><input placeholder="Adicionar em ${nm.toLowerCase()}" aria-label="Adicionar em ${nm}"><button class="btn sm" type="submit">Incluir</button></form></div>`;}).join('')}</div></section>`;
+   ${sug.length?`<button class="sugtoggle" data-act="fofa-sug" data-key="${esc(key)}" data-k="${k}" aria-expanded="${!!open}">${open?'Esconder sugestões':`Sugestões para ${esc(nomeArea)} (${sug.length})`}</button>
+   ${open?`<div class="sugchips">${sug.map(t=>`<button class="sugchip" data-act="fofa-pick" data-key="${esc(key)}" data-k="${k}" data-t="${esc(t)}">+ ${esc(t)}</button>`).join('')}</div>`:''}`:''}
+   <form data-fofa="${esc(key)}" data-k="${k}"><input placeholder="Escrever em ${nm.toLowerCase()}" aria-label="Adicionar em ${nm}"><button class="btn sm" type="submit">Incluir</button></form></div>`;}).join('')}</div></section>`;
 }
 function insightHtml(s, withPlan){
   return `<article class="insight ${s.sev}"><span class="stripe"></span><div>
@@ -877,6 +881,8 @@ document.addEventListener('click',e=>{
   else if(act==='note'){ ui.notesOpen[d.q]=true; render(); const t=document.querySelector(`[data-nota="${d.q}"]`); t&&t.focus(); }
   else if(act==='ent-add'){ cur.entrevistas.push({id:uid(),area:d.area,nome:'',cargo:'',depto:nameOf(d.area),data:today()}); touch(true); const els=document.querySelectorAll('[data-ent][data-f="nome"]'); els.length&&els[els.length-1].focus(); }
   else if(act==='ent-del'){ cur.entrevistas.splice(+d.i,1); touch(true); }
+  else if(act==='fofa-sug'){ const k=d.key+'.'+d.k; ui.fofaSug[k]=!ui.fofaSug[k]; render(); }
+  else if(act==='fofa-pick'){ cur.fofa[d.key]=cur.fofa[d.key]||{}; const L=(cur.fofa[d.key][d.k]=cur.fofa[d.key][d.k]||[]); if(!L.includes(d.t)){ L.push(d.t); touch(true); } }
   else if(act==='fofa-del'){ const f=cur.fofa[d.key]; if(f&&f[d.k]){ f[d.k].splice(+d.i,1); touch(true);} }
   else if(act==='acao-add'){ newTask({txt:d.txt,area:d.area,origem:d.src||''}); touch(true); toast('Tarefa adicionada ao kanban'); }
   else if(act==='plan-ins'){ computeAll(); const r=runEngine().find(i=>i.id===d.id&&i.t===d.t); if(r){ const n=genFromInsight(r); touch(true); toast(n?`${n} tarefas criadas`:'Essas tarefas já estão no kanban'); } }
