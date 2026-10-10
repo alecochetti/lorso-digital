@@ -440,3 +440,32 @@ details.paste[open]{display:flex;flex-direction:column;gap:8px}
 .minibar span{display:block;height:100%}
 details.allins summary{cursor:pointer}
 @media (max-width:860px){ .plano{grid-template-columns:minmax(0,1fr)} }
+
+/* como funciona */
+.niveis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.nivel{border:1px solid var(--line);border-top:3px solid var(--c);border-radius:12px;padding:14px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px}
+.nivel.n1{--c:var(--n1)} .nivel.n2{--c:var(--n2)} .nivel.n3{--c:var(--n3)} .nivel.n4{--c:var(--n4)}
+.nivel .lv{align-self:flex-start}
+.nivel b{font-size:18px}
+.nivel p{font-size:14px}
+.nivel small{color:var(--muted);font-size:12.5px;line-height:1.4}
+.escala{display:grid;grid-template-columns:repeat(4,1fr);height:6px;border-radius:4px;overflow:hidden;gap:2px}
+.pils{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.pilc{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--surface-2)}
+.pilc b{display:block;margin-bottom:6px;font-size:16px}
+.pilc p{font-size:14px;color:var(--muted)}
+.regras{margin:0;padding-left:18px;color:var(--muted);font-size:14px;display:flex;flex-direction:column;gap:4px}
+.jornada{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.jf{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--surface-2);display:flex;flex-direction:column;gap:6px}
+.jf.on{border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
+.jf .nb{font-family:var(--mono);font-size:12px;color:var(--accent)}
+.jf small{color:var(--muted);font-size:12.5px}
+.jf ol{margin:4px 0 0;padding-left:18px;font-size:13px}
+@media (max-width:900px){ .niveis{grid-template-columns:repeat(2,minmax(0,1fr))} .jornada{grid-template-columns:minmax(0,1fr)} }
+@media print{
+  :root{--bg:#fff;--surface:#fff;--surface-2:#f6f7f6;--line:#dfe3e0;--line-2:#cfd5d1;--fg:#0d120f;--muted:#4a524d;--faint:#6b736e;--accent:#0a8f45;--n1:#c83a3a;--n2:#a96f0a;--n3:#1f62c0;--n4:#0a8f45;color-scheme:light}
+  body{background:#fff !important;background-image:none !important}
+  .top,.subnav,.rail,#toast,.ph .btn,.dsteps{display:none !important}
+  .block,.nivel,.pilc,.jf{break-inside:avoid}
+  .wrap{padding:0}
+}

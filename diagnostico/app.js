@@ -32,7 +32,7 @@ function norm(d){
 let cur = null;          // diagnóstico aberto
 let all = {};            // lista de diagnósticos: id -> {id, nome, updated_at}
 let ui = {view:'fases', stage:'diagnostico', area:'reitoria', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}, fofaSug:{}, drePreview:null, dreTxt:'', dstep:'base', cursoPreview:null};
-try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(['base','reitoria','entrevistas'].includes(u.dstep))ui.dstep=u.dstep; if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','tarefas','equipe'].includes(u.view))ui.view=u.view;}catch(e){}
+try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(['base','reitoria','entrevistas'].includes(u.dstep))ui.dstep=u.dstep; if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','tarefas','equipe','como'].includes(u.view))ui.view=u.view;}catch(e){}
 const saveUi=()=>lsSet('cd.ui',JSON.stringify({stage:ui.stage,area:ui.area,view:ui.view,dstep:ui.dstep}));
 const member=id=>cur.equipe.find(m=>m.id===id);
 const initials=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(p=>p[0]||'').join('').toUpperCase()||'?';
@@ -999,9 +999,46 @@ document.addEventListener('keydown',e=>{
   else if(e.key==='ArrowRight'){ ui.iv.i=Math.min(a.q.length,ui.iv.i+1); render(); }
   else if(e.key==='ArrowLeft'){ ui.iv.i=Math.max(0,ui.iv.i-1); render(); }
 });
+/* ---------- Como funciona (apresentação da metodologia) ---------- */
+const NIV_EX=['', 'Pedidos chegam por WhatsApp e cada coordenador cobra de um jeito.','Existe uma planilha de pedidos, mas metade chega por fora dela.','Todo pedido entra por formulário, com prazo por tipo de peça, e o prazo é medido.','O pedido entra, é priorizado e acompanhado sozinho, e os dados mostram onde ajustar.'];
+const PIL_DESC={P:'Como o trabalho acontece: etapas, regras, prazos e passagens entre áreas.',E:'Quem faz: papéis, capacidade, autonomia e dependência de pessoas-chave.',F:'Com o que faz: sistemas, integrações, dados e automação.',C:'Como decide: uso de dados, planejamento, aprendizado e patrocínio da liderança.'};
+const QUEM=[
+ ['Base de conhecimento','Organiza, valida e cruza os números','Envia cursos, preços, vagas, metas e calendário (planilha)'],
+ ['Reitoria e pró-reitorias','Conduz as entrevistas e registra dores, metas e direcionamentos','Participa das entrevistas; envia DRE, orçamento e plano de ações do ano'],
+ ['Entrevistas por área e UN','Conduz 1 a 1, registra respostas, evidências e dores','Gestores e coordenadores respondem; enviam números (Trello, indicadores)'],
+ ['Sistemas e fluxo','Inventaria ferramentas, mede a fila e os gargalos','Informa ferramentas, acessos, custos e o quadro de projetos'],
+ ['Cruzamento e análise','Motor de cruzamento + análise do consultor','—'],
+ ['Resultados e plano','Agrupa causas raiz, prioriza e apresenta','Valida o diagnóstico e o plano com a reitoria'],
+ ['Acompanhamento (12 meses)','Ritos mensais, indicadores e nova avaliação de maturidade','Executa o plano com o apoio da LORSO']];
+const ENTREG=[['Apresentação executiva','Slides com gráficos, causas raiz e plano de curto, médio e longo prazo para a reitoria.'],['Relatório completo','Todas as áreas, notas por pilar, evidências, dores, sistemas, números e FOFA.'],['Plano no tempo','Diretrizes de 0 a 3, 3 a 6 e 6 a 12 meses, que ficam com a instituição.'],['Kanban de ações','Tarefas com responsável e prazo, ligadas às causas raiz.']];
+const PRAZOS=[['base','Base de conhecimento','1 semana'],['reitoria','Reitoria e direcionamentos','1 semana'],['entrevistas','Entrevistas por área e UN','2 a 3 semanas'],['analise','Análise, causas raiz e plano','1 semana'],['apresentacao','Apresentação à reitoria','1 reunião']];
+function comoHtml(){
+  const pz=k=>cur?(cur.campos['met.prazo.'+k]||''):'';
+  return `<section class="panel como">
+   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">// LORSO Digital · <b>Metodologia</b></span><h2 style="margin-top:8px">Como funciona o diagnóstico</h2><p class="lead">Um diagnóstico de maturidade do marketing educacional que olha processos, pessoas, ferramentas e cultura em cada área e unidade de negócio, cruza as respostas com os números da instituição e entrega causas raiz e um plano no tempo.</p></div>
+    <div><button class="btn" data-act="print-como">Salvar em PDF</button></div></header>
+   <section class="block"><div class="block-h"><h3>A escala de maturidade</h3><p>Cada pergunta tem quatro respostas possíveis, uma por nível.</p></div>
+    <div class="niveis">${[1,2,3,4].map(n=>`<div class="nivel n${n}"><span class="lv l${n}">N${n}</span><b>${LVL[n]}</b><p>${esc((t=>t.charAt(0).toUpperCase()+t.slice(1))(LVL_DESC[n].replace(/^N\d [^:]+: /,'')))}</p><small>Exemplo: ${esc(NIV_EX[n])}</small></div>`).join('')}</div>
+    <div class="escala"><span style="background:var(--n1)"></span><span style="background:var(--n2)"></span><span style="background:var(--n3)"></span><span style="background:var(--n4)"></span></div>
+    <p class="muted" style="font-size:13px">A nota vai de 1,0 a 4,0. Faixas: até 1,74 = N1 · até 2,49 = N2 · até 3,24 = N3 · acima = N4.</p></section>
+   <section class="block"><div class="block-h"><h3>Os quatro pilares</h3></div>
+    <div class="pils">${Object.entries(PIL).map(([k,n])=>`<div class="pilc"><b>${n}</b><p>${PIL_DESC[k]}</p></div>`).join('')}</div>
+    <ul class="regras"><li>Perguntas de impacto alto pesam mais na nota.</li><li>Uma área nunca fica mais de um nível acima do seu pilar mais fraco.</li><li>Algumas perguntas são eliminatórias: resposta N1 limita a área a N2.</li><li>Área com menos da metade das perguntas respondidas fica sem nota.</li></ul></section>
+   <section class="block"><div class="block-h"><h3>A jornada</h3><p>Cinco fases. O diagnóstico, na fase 1, acontece em três passos.</p></div>
+    <div class="jornada">${STAGES.map(st=>`<div class="jf ${st.n===1?'on':''}"><span class="nb">${String(st.n).padStart(2,'0')}</span><b>${st.nome}</b><small>${esc(st.ds)}</small>${st.n===1?`<ol>${DSTEPS.map(([,nm])=>`<li>${nm}</li>`).join('')}</ol>`:''}</div>`).join('')}</div></section>
+   <section class="block"><div class="block-h"><h3>Quem faz o quê</h3><p>O que a LORSO preenche e o que a instituição entrega.</p></div>
+    <div class="tblw"><table class="tbl"><thead><tr><th>Etapa</th><th>LORSO (consultores)</th><th>Instituição (reitoria, UNs e marketing)</th></tr></thead><tbody>${QUEM.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table></div>
+    <p class="muted" style="font-size:13px">As respostas individuais são confidenciais. A matriz de priorização interna é compartilhada apenas com a reitoria.</p></section>
+   <section class="block"><div class="block-h"><h3>Cruzamento de dados</h3></div>
+    <p style="max-width:80ch">O diferencial do método é o cruzamento. Uma área bem avaliada ao lado de outra frágil na mesma cadeia revela onde o investimento é desperdiçado. Exemplo: CRM maduro com visitas do colégio sem registro, ou captação forte com o marketing sem capacidade de atender as unidades. O sistema aponta essas incongruências e as agrupa em poucas causas raiz.</p></section>
+   <section class="block"><div class="block-h"><h3>O que a instituição recebe</h3></div><div class="pils">${ENTREG.map(([t,d])=>`<div class="pilc"><b>${t}</b><p>${d}</p></div>`).join('')}</div></section>
+   <section class="block"><div class="block-h"><h3>Prazo estimado</h3><p>${cur?'Ajuste os prazos para a proposta deste cliente.':'Estimativa padrão.'}</p></div>
+    <div class="tblw"><table class="tbl"><tbody>${PRAZOS.map(([k,n,d])=>`<tr><td>${n}</td><td style="width:220px">${cur?`<input data-campo="met.prazo.${k}" value="${esc(pz(k))}" placeholder="${d}" aria-label="Prazo de ${n}">`:d}</td></tr>`).join('')}</tbody></table></div></section>
+  </section>`;
+}
 function renderSubnav(INS){
   const x=crossTasks(INS); const hot=x.late.length+x.semTarefa.length;
-  $('#subnav').innerHTML=`<button class="tab ${ui.view==='fases'?'on':''}" data-act="view" data-v="fases">Metodologia</button>
+  $('#subnav').innerHTML=`<button class="tab ${ui.view==='como'?'on':''}" data-act="view" data-v="como">Como funciona</button><button class="tab ${ui.view==='fases'?'on':''}" data-act="view" data-v="fases">Diagnóstico</button>
    <button class="tab ${ui.view==='dores'?'on':''}" data-act="view" data-v="dores">Dores e gargalos <span class="ct">${cur.dores.length}</span></button>
    <button class="tab ${ui.view==='sistemas'?'on':''}" data-act="view" data-v="sistemas">Sistemas <span class="ct">${cur.sistemas.filter(x=>x.nome).length}</span></button>
    <button class="tab ${ui.view==='tarefas'?'on':''}" data-act="view" data-v="tarefas">Tarefas <span class="ct ${hot?'hot':''}">${x.open.length}</span></button>
@@ -1027,8 +1064,9 @@ function render(){
 }
 function renderInner(){
   if(!cur){ renderBar(); $('#rail').hidden=true;
-    $('#subnav').innerHTML=me&&me.papel==='admin'?`<button class="tab ${ui.view!=='equipe'?'on':''}" data-act="view" data-v="fases">Diagnósticos</button><button class="tab ${ui.view==='equipe'?'on':''}" data-act="view" data-v="equipe">Equipe</button>`:'';
+    $('#subnav').innerHTML=me&&me.papel==='admin'?`<button class="tab ${ui.view==='como'?'on':''}" data-act="view" data-v="como">Como funciona</button><button class="tab ${ui.view!=='equipe'&&ui.view!=='como'?'on':''}" data-act="view" data-v="fases">Diagnósticos</button><button class="tab ${ui.view==='equipe'?'on':''}" data-act="view" data-v="equipe">Equipe</button>`:'';
     if(ui.view==='equipe'&&me&&me.papel==='admin'){ SC={}; renderEquipe(); return; }
+    if(ui.view==='como'){ $('#main').innerHTML=comoHtml(); return; }
     $('#main').innerHTML=`<section class="auth" style="min-height:auto"><div class="auth-box"><h2>Nenhum diagnóstico ainda</h2><p>${me&&me.papel!=='cliente'?'Crie o primeiro com o nome do cliente. Depois convide a equipe e distribua as áreas.':'Nenhum diagnóstico foi liberado para você ainda. Fale com a LORSO Digital.'}</p>${me&&me.papel!=='cliente'?`<form id="f-novo2"><label>Cliente<input id="novo-nome2" required placeholder="Nome da instituição"></label><button class="btn primary" type="submit">Criar diagnóstico</button></form>`:''}</div></section>`;
     return; }
   computeAll(); const INS=runEngine();
@@ -1036,6 +1074,7 @@ function renderInner(){
   $('#rail').hidden = ui.view!=='fases';
   if(ui.view==='tarefas') renderTarefas(INS);
   else if(ui.view==='dores') renderDores(INS);
+  else if(ui.view==='como') $('#main').innerHTML=comoHtml();
   else if(ui.view==='sistemas') renderSistemas();
   else if(ui.view==='equipe') renderEquipe();
   else { renderRail(); ({diagnostico:renderDiagnostico,estrategia:renderEstrategia,execucao:renderExecucao,otimizacao:renderOtimizacao,resultados:renderResultados})[ui.stage](INS); }
@@ -1274,6 +1313,7 @@ document.addEventListener('click',e=>{
   if(act==='auth-mode'){ authMode=d.v; authMsg=null; renderAuth(); return; }
   if(act==='sair'){ flush(); sb.auth.signOut(); return; }
   if(act==='view'){ go(d.v); return; }
+  if(act==='print-como'){ document.body.classList.add('printing'); setTimeout(()=>{ window.print(); document.body.classList.remove('printing'); },50); return; }
   if(act==='novo'){ ui.novo=true; renderBar(); setTimeout(()=>{const i=$('#novo-nome');i&&i.focus();},0); return; }
   if(act==='novo-cancel'){ ui.novo=false; renderBar(); return; }
   if(act==='conv-copy'){ const c=convites.find(x=>x.email===d.email); if(c) copyText(conviteTexto(c),'Convite copiado'); return; }
