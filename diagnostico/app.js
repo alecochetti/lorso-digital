@@ -1168,6 +1168,10 @@ function sideItem(k,label,act,v,meta,hot){
   const on=navOn(k);
   return `<button class="sn ${on?'on':''}" data-act="${act}" data-v="${v}" ${on?'aria-current="page"':''}>${ico(k)}<span class="lb">${label}</span>${meta!=null&&meta!==''?`<span class="mt ${hot?'hot':''}">${meta}</span>`:''}</button>`;
 }
+const MODS_TODOS=[['diagnostico','Diagnóstico de maturidade'],['dre','DRE e orçamento'],['lancamento','Lançamento de curso']];
+function modsAtivos(){ const m=cur&&all[cur.id]&&Array.isArray(all[cur.id].modulos)?all[cur.id].modulos:null; return m&&m.length?m:['diagnostico','dre','lancamento']; }
+const temMod=k=>modsAtivos().includes(k);
+async function setMods(lista){ if(!cur)return; const r=await sb.from('diagnosticos').update({modulos:lista}).eq('id',cur.id); if(r.error){ toast('Não foi possível mudar os módulos: '+r.error.message); return; } all[cur.id]=Object.assign(all[cur.id]||{},{modulos:lista}); render(); toast('Módulos do cliente atualizados'); }
 function renderSide(INS){
   const adm=me&&me.papel==='admin', pc=x=>Math.round(x*100)+'%';
   let h=`<div class="sb-brand"><span class="sb-logo">L</span><span><b>LORSO Digital</b><small>Central de Diagnóstico</small></span></div>`;
@@ -1175,21 +1179,22 @@ function renderSide(INS){
   if(cur){
     const x=crossTasks(INS), hot=x.late.length+x.semTarefa.length, g=overall();
     h+=`<nav class="sb-nav" aria-label="Etapas">
-     <span class="sb-g">Fase 1 · Diagnóstico</span>
+     ${temMod('diagnostico')?`<span class="sb-g">Fase 1 · Diagnóstico</span>
      ${sideItem('base','Base de conhecimento','dstep','base',pc(stepProgress('base')))}
      ${sideItem('reitoria','Reitoria','dstep','reitoria',pc(stepProgress('reitoria')))}
      ${sideItem('entrevistas','Entrevistas','dstep','entrevistas',pc(stepProgress('entrevistas')))}
      ${sideItem('visao','Diagnóstico','view','visao',g.level?'N'+g.level:'')}
      <span class="sb-g">Fases 2 a 5</span>
      ${STAGES.slice(1).map(st=>sideItem(st.id,st.nome,'stage',st.id,st.id==='execucao'&&cur.acoes.some(isPlano)?`${cur.acoes.filter(t=>isPlano(t)&&t.status==='Concluída').length}/${cur.acoes.filter(isPlano).length}`:st.q&&st.q.length?pc(stageProgress(st)):'',st.id==='execucao'&&hot)).join('')}
-     <span class="sb-g">Módulos</span>
-     ${sideItem('dre','DRE e orçamento','view','dre',cur.mods&&cur.mods.dre&&cur.mods.dre.meses?cur.mods.dre.meses.filter(M=>M.lancado).length+'/12':'')}
-     ${sideItem('lancamento','Lançamento de curso','view','lancamento')}
-     <span class="sb-g">Operação</span>
+`:''}
+     ${temMod('dre')||temMod('lancamento')?'<span class="sb-g">Módulos</span>':''}
+     ${temMod('dre')?sideItem('dre','DRE e orçamento','view','dre',cur.mods&&cur.mods.dre&&cur.mods.dre.meses?cur.mods.dre.meses.filter(M=>M.lancado).length+'/12':''):''}
+     ${temMod('lancamento')?sideItem('lancamento','Lançamento de curso','view','lancamento'):''}
+     ${temMod('diagnostico')?`<span class="sb-g">Operação</span>
      ${sideItem('dores','Dores e gargalos','view','dores',cur.dores.length||'')}
      ${sideItem('sistemas','Sistemas','view','sistemas',cur.sistemas.filter(y=>y.nome).length||'')}
      <span class="sb-g">Apoio</span>
-     ${sideItem('como','Como funciona','view','como')}
+     ${sideItem('como','Como funciona','view','como')}`:'<span class="sb-g">Apoio</span>'}
      ${sideItem('equipe','Equipe','view','equipe',cur.equipe.length||'')}
     </nav>`;
   } else {
@@ -1248,6 +1253,7 @@ function renderPerfil(){
      <form id="f-senha" class="fields"><label class="field"><span>Nova senha</span><input name="s1" type="password" minlength="8" autocomplete="new-password" required></label><label class="field"><span>Repita a nova senha</span><input name="s2" type="password" minlength="8" autocomplete="new-password" required></label><div><button class="btn primary" type="submit">Salvar nova senha</button></div></form></section>
     ${adm?`<section class="block"><div class="block-h"><h3>Administração</h3><p>Só administradores veem esta parte.</p></div>
      <div class="kpis k3"><div class="kpi"><b>${profiles.length}</b><span>${profiles.length===1?'pessoa com acesso':'pessoas com acesso'}</span></div><div class="kpi"><b>${nConv}</b><span>${nConv===1?'convite aguardando':'convites aguardando'}</span></div><div class="kpi"><b>${Object.keys(all).length}</b><span>${Object.keys(all).length===1?'diagnóstico':'diagnósticos'}</span></div></div>
+     ${cur?`<div class="prow" style="border-top:0;padding-top:0"><span><b>Módulos de ${esc(cur.nome)}</b><small>O que este cliente vê. Quem entra como cliente só enxerga os módulos ligados.</small></span><div class="seg" role="group">${MODS_TODOS.map(([k,l])=>`<button class="${temMod(k)?'on':''}" data-act="mod-toggle" data-v="${k}" aria-pressed="${temMod(k)}">${l}</button>`).join('')}</div></div>`:''}
      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="view" data-v="equipe">Equipe e convites</button><button class="btn" data-act="view" data-v="como">Como funciona (proposta)</button>${FERRAMENTAS.map(([k,l,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">${l} (versão avulsa) ↗</a>`).join('')}${me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo diagnóstico</button>`:''}</div></section>`:''}
    </div></section>`;
 }
@@ -1568,6 +1574,8 @@ function renderInner(){
     $('#main').innerHTML=`<section class="auth" style="min-height:auto"><div class="auth-box"><h2>Nenhum diagnóstico ainda</h2><p>${me&&me.papel!=='cliente'?'Crie o primeiro com o nome do cliente. Depois convide a equipe e distribua as áreas.':'Nenhum diagnóstico foi liberado para você ainda. Fale com a LORSO Digital.'}</p>${me&&me.papel!=='cliente'?`<form id="f-novo2"><label>Cliente<input id="novo-nome2" required placeholder="Nome da instituição"></label><button class="btn primary" type="submit">Criar diagnóstico</button></form>`:''}</div></section>`;
     return; }
   if(ui.view==='tarefas'){ ui.view='fases'; ui.stage='execucao'; }
+  if(!temMod('diagnostico')&&['fases','visao','dores','sistemas','como','relatorio'].includes(ui.view)) ui.view=temMod('dre')?'dre':temMod('lancamento')?'lancamento':'perfil';
+  if((ui.view==='dre'&&!temMod('dre'))||(ui.view==='lancamento'&&!temMod('lancamento'))) ui.view=temMod('diagnostico')?'fases':temMod('dre')?'dre':'lancamento';
   computeAll(); const INS=runEngine();
   renderBar(); renderSide(INS);
   document.body.classList.toggle('rp-mode', ui.view==='relatorio');
@@ -1772,7 +1780,7 @@ const ARR_DB={
 const DIAG_TABLES=['respostas','campos','responsaveis_area','fofa_itens','modulos',...Object.values(ARR_DB).map(m=>m.t)];
 const ok=r=>{ if(r&&r.error) throw r.error; return r?r.data:null; };
 function equipeList(){ return profiles.filter(p=>p.ativo).map(p=>({id:p.id,nome:p.nome||p.email,papel:p.funcao||'',contato:p.contato||'',email:p.email,role:p.papel})); }
-async function loadList(){ const d=ok(await sb.from('diagnosticos').select('id,nome,updated_at').order('updated_at',{ascending:false})); all=Object.fromEntries((d||[]).map(x=>[x.id,x])); }
+async function loadList(){ let r=await sb.from('diagnosticos').select('id,nome,updated_at,modulos').order('updated_at',{ascending:false}); if(r.error) r=await sb.from('diagnosticos').select('id,nome,updated_at').order('updated_at',{ascending:false}); const d=ok(r); all=Object.fromEntries((d||[]).map(x=>[x.id,x])); }
 async function loadTeam(){
   const p=ok(await sb.from('profiles').select('*').order('nome'));
   profiles=p||[];
@@ -1982,6 +1990,7 @@ document.addEventListener('click',e=>{
     touch(true); toast(n?`${n} cursos adicionados`:'Esses cursos já estão na tabela'); return; }
   if(act==='base-md'){ dlFile(`base-${slugN(cur.nome)}.md`,baseMarkdown(),'text/markdown;charset=utf-8'); return; }
   if(act==='base-json'){ dlFile(`base-${slugN(cur.nome)}.json`,baseJson(),'application/json'); return; }
+  if(act==='mod-toggle'){ const L=modsAtivos(); const n=L.includes(d.v)?L.filter(x=>x!==d.v):[...L,d.v]; if(!n.length){ toast('O cliente precisa de pelo menos um módulo'); return; } setMods(MODS_TODOS.map(x=>x[0]).filter(k=>n.includes(k))); return; }
   if(act==='view'){ go(d.v); return; }
   if(act==='print-rel'){ setTimeout(()=>window.print(),50); return; }
   if(act==='print-como'){ document.body.classList.add('printing'); setTimeout(()=>{ window.print(); document.body.classList.remove('printing'); },50); return; }
