@@ -2,7 +2,12 @@
 const $ = s=>document.querySelector(s);
 const esc = s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dec = (x,d=1)=>x==null||isNaN(x)?'—':x.toFixed(d).replace('.',',');
-const num = v=>{ if(v==null||v==='')return null; const s=String(v).trim().replace(/\s/g,'').replace(/R\$/i,'').replace(/%/,''); const n=Number(s.includes(',')?s.replace(/\./g,'').replace(',','.'):s); return isNaN(n)?null:n; };
+const num = v=>{ if(v==null||v==='')return null; if(typeof v==='number')return isFinite(v)?v:null;
+  let s=String(v).trim().replace(/\s/g,'').replace(/R\$/i,'').replace(/%/g,'');
+  const neg=/^\(.*\)$/.test(s)||/^-/.test(s); s=s.replace(/[()\-]/g,'');
+  if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');          // 1.234.567,89
+  else if(/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');       // 1.234.567 (milhar sem centavos)
+  const n=Number(s); return isNaN(n)||s===''?null:(neg?-n:n); };
 const brl = n=>n==null?'—':n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
 const pct = n=>n==null||!isFinite(n)?'—':(n*100).toFixed(1).replace('.',',')+'%';
 const lvOf = s=>s==null?0:s<1.75?1:s<2.5?2:s<3.25?3:4;
@@ -25,7 +30,7 @@ function norm(d){
 }
 let cur = null;          // diagnóstico aberto
 let all = {};            // lista de diagnósticos: id -> {id, nome, updated_at}
-let ui = {view:'fases', stage:'diagnostico', area:'reitoria', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}, fofaSug:{}};
+let ui = {view:'fases', stage:'diagnostico', area:'reitoria', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}, fofaSug:{}, drePreview:null, dreTxt:''};
 try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','tarefas','equipe'].includes(u.view))ui.view=u.view;}catch(e){}
 const saveUi=()=>lsSet('cd.ui',JSON.stringify({stage:ui.stage,area:ui.area,view:ui.view}));
 const member=id=>cur.equipe.find(m=>m.id===id);
@@ -274,6 +279,7 @@ function renderBar(){
     ${cur?`<label class="lbl" for="sel-diag">Diagnóstico</label>
     <select id="sel-diag">${list.map(d=>`<option value="${esc(d.id)}" ${d.id===cur.id?'selected':''}>${esc(d.id===cur.id?cur.nome:d.nome)}</option>`).join('')}</select>
     <input id="nome-diag" value="${esc(cur.nome)}" aria-label="Nome do cliente">`:''}
+    ${cur?`<button class="btn" data-act="dre-go">Importar DRE</button>`:''}
     ${me&&me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo</button>`:''}
     ${cur?`<span id="status">${statusHtml()}</span>`:''}${who}`;
 }
@@ -363,6 +369,7 @@ function renderDiagnostico(INS){
       <span style="margin-left:auto">${areaTasks.length?`<button class="chip" data-act="tasks-area" data-v="${a.id}">${areaTasks.filter(t=>t.status!=='Concluída').length} tarefas abertas nesta área</button>`:`<button class="chip" data-act="task-new" data-area="${a.id}">+ Tarefa para esta área</button>`}</span></div>
      ${interviewsHtml(a.id)}
      ${a.roteiro?volBlock:''}
+     ${a.id==='financeiro'?dreHtmlImport():''}
      ${a.q.map(qHtml).join('')}
      <section class="block"><div class="block-h"><h3>Dores relatadas nesta área</h3><p>${cur.dores.filter(d=>d.area===a.id).length} registradas · alimentam o mapa de gargalos</p></div>
       ${cur.dores.some(d=>d.area===a.id)?`<div class="tblw"><table class="tbl"><thead><tr><th>Dor</th><th>Etapa</th><th>Tipo</th><th>Gravidade</th><th>Frequência</th><th>Relatado por</th><th></th></tr></thead><tbody>${cur.dores.filter(d=>d.area===a.id).map(d=>dorRow(d,true)).join('')}</tbody></table></div>`:''}
@@ -629,6 +636,50 @@ function renderSistemas(){
       <td class="r mono">${sysDores(x.nome)||'·'}</td>
       <td class="x"><button class="xbtn" data-act="sys-del" data-id="${x.id}" aria-label="Remover sistema">×</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Nenhum sistema mapeado ainda.</p>'}
    </section></section>`;
+}
+/* ---------- Importar DRE ---------- */
+// Lê linhas coladas de uma DRE (planilha ou sistema): "linha | orçado | realizado | UN (opcional)".
+// Reconhece só o que o diagnóstico usa e mostra uma prévia antes de aplicar.
+const UN_MATCH=[['pos',/p[oó]s[\s-]*gradua|\bmba\b|especializa|^\s*p[oó]s\s*$/i],['mestrado',/mestrado|doutorado|stricto/i],['colegio',/col[eé]gio|educa[cç][aã]o b[aá]sica|ensino (fundamental|m[eé]dio)/i],['graduacao',/gradua[cç][aã]o/i]];
+function dreParse(txt){
+  const out=[], ign=[];
+  txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).forEach(l=>{
+    const c=l.split(/\t|;|\|/).map(x=>x.trim()); if(c.length<2){ign.push(l);return;}
+    const label=c[0], o=num(c[1]), r=c.length>2?num(c[2]):null, unTxt=(c[3]||'')+' '+label;
+    if(o==null&&r==null){ign.push(l);return;}
+    const un=(UN_MATCH.find(([,re])=>re.test(c[3]||''))||(c[3]?null:UN_MATCH.find(([,re])=>re.test(label)))||[])[0]||null;
+    const L=label.toLowerCase();
+    let kind=null;
+    if(/folha|pessoal|sal[aá]rio/.test(L)) kind=/marketing|mkt|comunica/.test(L)||!un?'folha':'folha';
+    else if(/marketing|publicidade|propaganda|m[ií]dia|capta[cç][aã]o/.test(L)) kind='verba';
+    else if(/ebitda|resultado|lucro/.test(L)) kind='ebitda';
+    else if(/receita|faturamento/.test(L)) kind='receita';
+    else if(/custo|despesa/.test(L)) kind='custo';
+    if(!kind){ign.push(l);return;}
+    const sets=[];
+    if(un){
+      if(kind==='receita'){ if(o!=null)sets.push([un+'.meta_rec',o]); if(r!=null)sets.push([un+'.receita',r]); }
+      else if(kind==='verba'){ const v=r??o; if(v!=null)sets.push([un+'.orcamento',v]); }
+      else if(kind==='folha'){ const v=r??o; if(v!=null)sets.push([un+'.folha',v]); }
+      else { ign.push(l); return; }
+    } else {
+      const map={receita:['receita_orcada','receita_realizada'],custo:['custo_orcado','custo_realizado'],ebitda:['ebitda_orcado','ebitda_realizado'],verba:['verba_orcada','verba_realizada']};
+      if(kind==='folha'){ if(/marketing|mkt|comunica/.test(L)){ const v=r??o; sets.push(['financeiro.folha_mkt',v]); } else { ign.push(l); return; } }
+      else { if(o!=null)sets.push(['financeiro.'+map[kind][0],o]); if(r!=null)sets.push(['financeiro.'+map[kind][1],r]); }
+    }
+    sets.forEach(([k,v])=>out.push({k,v,label,un}));
+  });
+  return {out,ign};
+}
+const CAMPO_NOME=k=>{ const [a,f]=k.split('.'); const area=AREA[a]; const v=area&&area.vol.find(x=>x[0]===f); return `${area?area.nome:a} · ${v?v[1]:f}`; };
+function dreHtmlImport(){
+  const pv=ui.drePreview;
+  return `<section class="block" id="dre-import"><div class="block-h"><h3>Importar da DRE</h3><p>Cole as linhas exportadas da DRE: nome da linha, orçado, realizado e, se tiver, a UN.</p></div>
+   <textarea id="dre-txt" rows="6" placeholder="Receita líquida;100.000.000;88.000.000&#10;Despesas com marketing;5.000.000;3.500.000&#10;Folha marketing;90.000;90.000&#10;Receita;30.000.000;27.500.000;Graduação" style="width:100%;font-family:var(--mono);font-size:13px">${esc(ui.dreTxt||'')}</textarea>
+   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="dre-ler">Ler DRE</button>${pv&&pv.out.length?`<button class="btn primary" data-act="dre-aplicar">Aplicar ${pv.out.length} valores</button>`:''}</div>
+   ${pv?`${pv.out.length?`<div class="tblw"><table class="tbl"><thead><tr><th>Linha da DRE</th><th>Vai preencher</th><th class="r">Valor</th><th class="r">Hoje</th></tr></thead><tbody>${pv.out.map(x=>`<tr><td>${esc(x.label)}${x.un?` <span class="chip">${esc(nameOf(x.un))}</span>`:''}</td><td>${esc(CAMPO_NOME(x.k))}</td><td class="r">${brl(x.v)}</td><td class="r muted">${cur.campos[x.k]?brl(num(cur.campos[x.k])):'vazio'}</td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Nenhuma linha reconhecida. Use o formato: nome da linha; orçado; realizado; UN.</p>'}
+   ${pv.ign.length?`<p class="muted" style="font-size:13px">${pv.ign.length} linha(s) ignorada(s) por não serem usadas no diagnóstico: ${esc(pv.ign.slice(0,4).map(l=>l.split(/\t|;|\|/)[0]).join(', '))}${pv.ign.length>4?'…':''}</p>`:''}`:''}
+  </section>`;
 }
 function renderSubnav(INS){
   const x=crossTasks(INS); const hot=x.late.length+x.semTarefa.length;
@@ -918,6 +969,9 @@ document.addEventListener('click',e=>{
   else if(act==='note'){ ui.notesOpen[d.q]=true; render(); const t=document.querySelector(`[data-nota="${d.q}"]`); t&&t.focus(); }
   else if(act==='ent-add'){ cur.entrevistas.push({id:uid(),area:d.area,nome:'',cargo:'',depto:nameOf(d.area),data:today()}); touch(true); const els=document.querySelectorAll('[data-ent][data-f="nome"]'); els.length&&els[els.length-1].focus(); }
   else if(act==='ent-del'){ cur.entrevistas.splice(+d.i,1); touch(true); }
+  else if(act==='dre-go'){ ui.view='fases'; ui.stage='diagnostico'; ui.area='financeiro'; saveUi(); render(); const el=document.getElementById('dre-import'); el&&el.scrollIntoView({block:'start'}); const t=$('#dre-txt'); t&&t.focus({preventScroll:true}); }
+  else if(act==='dre-ler'){ ui.dreTxt=($('#dre-txt')||{}).value||''; ui.drePreview=dreParse(ui.dreTxt); render(); }
+  else if(act==='dre-aplicar'){ const pv=ui.drePreview; if(pv){ pv.out.forEach(x=>{ cur.campos[x.k]=String(x.v); }); const n=pv.out.length; ui.drePreview=null; ui.dreTxt=''; touch(true); toast(`${n} valores da DRE aplicados`); } }
   else if(act==='fofa-sug'){ const k=d.key+'.'+d.k; ui.fofaSug[k]=!ui.fofaSug[k]; render(); }
   else if(act==='fofa-pick'){ cur.fofa[d.key]=cur.fofa[d.key]||{}; const L=(cur.fofa[d.key][d.k]=cur.fofa[d.key][d.k]||[]); if(!L.includes(d.t)){ L.push(d.t); touch(true); } }
   else if(act==='fofa-del'){ const f=cur.fofa[d.key]; if(f&&f[d.k]){ f[d.k].splice(+d.i,1); touch(true);} }
