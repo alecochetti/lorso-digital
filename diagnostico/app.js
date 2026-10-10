@@ -629,15 +629,15 @@ function renderExecucao(INS){
   bindDnD();
 }
 function bindDnD(){
-  document.querySelectorAll('.kcard[draggable]').forEach(c=>{
+  document.querySelectorAll('.kcard[draggable],.eqcard[draggable]').forEach(c=>{
     c.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',c.dataset.task||c.dataset.it);e.dataTransfer.effectAllowed='move';c.classList.add('dragging');});
     c.addEventListener('dragend',()=>c.classList.remove('dragging'));
   });
-  document.querySelectorAll('.kcol').forEach(col=>{
+  document.querySelectorAll('.kcol,.eqcol').forEach(col=>{
     col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('drop');});
     col.addEventListener('dragleave',()=>col.classList.remove('drop'));
     col.addEventListener('drop',e=>{e.preventDefault();col.classList.remove('drop');const id=e.dataTransfer.getData('text/plain');
-      if(col.dataset.board==='it'){ const it=internas.find(x=>x.id===id); if(it&&it.status!==col.dataset.col){ it.status=col.dataset.col; itSave(it,true); render(); } return; }
+      if(col.dataset.board==='it'){ const it=internas.find(x=>x.id===id); if(it&&it.status!==col.dataset.col){ itStatus(it,col.dataset.col); render(); } return; }
       const t=cur.acoes.find(x=>x.id===id);if(t&&t.status!==col.dataset.col){t.status=col.dataset.col;mark('acoes');touch(true);}});
   });
 }
@@ -1184,7 +1184,7 @@ async function setMods(lista){ if(!cur)return; const r=await sb.from('diagnostic
 function renderSide(INS){
   const adm=me&&me.papel==='admin', pc=x=>Math.round(x*100)+'%';
   let h=`<div class="sb-brand">${LOGO_SVG}<span class="sb-word"><b>LORSO</b><i>DIGITAL<em>.</em></i></span></div><div class="sb-prod">Central de Diagnóstico</div>`;
-  if(podeInternas()){ const mn=minhasAbertas(), lt=internas.filter(t=>t.responsavel===me.id&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas','Tarefas da equipe','view','internas',mn||'',lt>0)}</nav>`; }
+  if(podeInternas()){ const mn=minhasAbertas(), lt=internas.filter(t=>itDono(t,me.id)&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas','Tarefas da equipe','view','internas',mn||'',lt>0)}</nav>`; }
   if(cur){
     const x=crossTasks(INS), hot=x.late.length+x.semTarefa.length, g=overall();
     h+=`<nav class="sb-nav" aria-label="Etapas">
@@ -1265,68 +1265,6 @@ function renderPerfil(){
      ${cur?`<div class="prow" style="border-top:0;padding-top:0"><span><b>Módulos de ${esc(cur.nome)}</b><small>O que este cliente vê. Quem entra como cliente só enxerga os módulos ligados.</small></span><div class="seg" role="group">${MODS_TODOS.map(([k,l])=>`<button class="${temMod(k)?'on':''}" data-act="mod-toggle" data-v="${k}" aria-pressed="${temMod(k)}">${l}</button>`).join('')}</div></div>`:''}
      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="view" data-v="equipe">Equipe e convites</button><button class="btn" data-act="view" data-v="como">Método LORSO (proposta)</button>${FERRAMENTAS.map(([k,l,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">${l} (versão avulsa) ↗</a>`).join('')}${me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo diagnóstico</button>`:''}</div></section>`:''}
    </div></section>`;
-}
-/* ================= TAREFAS INTERNAS DA EQUIPE LORSO (fora do cliente) ================= */
-let internas=[], itCh=null, itT={};
-const PRIO=['Alta','Média','Baixa'];
-const itFrom=r=>({id:r.id,titulo:r.titulo||'',descricao:r.descricao||'',responsavel:r.responsavel||'',diagnostico_id:r.diagnostico_id||'',area:r.area||'',prazo:r.prazo||'',prioridade:r.prioridade||'Média',status:r.status||'A fazer',origem:r.origem||'',created_at:r.created_at});
-const itTo=t=>({id:t.id,titulo:nz(t.titulo),descricao:nz(t.descricao),responsavel:nz(t.responsavel),diagnostico_id:nz(t.diagnostico_id),area:nz(t.area),prazo:nz(t.prazo),prioridade:t.prioridade||'Média',status:t.status||'A fazer',origem:nz(t.origem),updated_at:new Date().toISOString()});
-const podeInternas=()=>me&&me.papel!=='cliente';
-async function loadInternas(){
-  if(!podeInternas()){ internas=[]; return; }
-  const r=await sb.from('tarefas_internas').select('*').order('created_at');
-  if(r.error){ console.warn('tarefas_internas',r.error.message); internas=[]; return; }
-  internas=(r.data||[]).map(itFrom);
-  if(!itCh){ itCh=sb.channel('internas'); itCh.on('postgres_changes',{event:'*',schema:'public',table:'tarefas_internas'},()=>{ clearTimeout(itT._r); itT._r=setTimeout(async()=>{ if(isTyping())return; const r2=await sb.from('tarefas_internas').select('*').order('created_at'); if(!r2.error){ internas=(r2.data||[]).map(itFrom); render(); } },600); }); itCh.subscribe(); }
-}
-function itSave(t,now){ clearTimeout(itT[t.id]); const go=async()=>{ const r=await sb.from('tarefas_internas').upsert(itTo(t)); if(r.error) toast('Não foi possível salvar a tarefa: '+r.error.message); }; if(now) go(); else itT[t.id]=setTimeout(go,600); }
-async function itDel(id){ internas=internas.filter(t=>t.id!==id); const r=await sb.from('tarefas_internas').delete().eq('id',id); if(r.error) toast('Não foi possível excluir a tarefa'); }
-function itNew(o){ const t={id:uid(),titulo:'',descricao:'',responsavel:'',diagnostico_id:'',area:'',prazo:'',prioridade:'Média',status:'A fazer',origem:'',...o}; internas.push(t); itSave(t,true); return t; }
-const itLate=t=>t.prazo&&t.status!=='Concluída'&&t.prazo<today();
-const pessoa=id=>profiles.find(p=>p.id===id);
-const diagNome=id=>id?(cur&&cur.id===id?cur.nome:(all[id]||{}).nome||'Cliente'):'';
-function minhasAbertas(){ return me?internas.filter(t=>t.responsavel===me.id&&t.status!=='Concluída').length:0; }
-function itCard(t){
-  const p=pessoa(t.responsavel);
-  if(ui.openIt===t.id) return `<article class="kcard open" data-it="${t.id}"><div class="kedit">
-    <textarea data-it-f="titulo" data-id="${t.id}" aria-label="Tarefa" placeholder="O que precisa ser feito">${esc(t.titulo)}</textarea>
-    <textarea data-it-f="descricao" data-id="${t.id}" aria-label="Detalhes" placeholder="Detalhes, links, combinados (opcional)" rows="2">${esc(t.descricao)}</textarea>
-    <select data-it-f="responsavel" data-id="${t.id}" aria-label="Responsável"><option value="">Sem responsável</option>${profiles.filter(x=>x.ativo&&x.papel!=='cliente').map(x=>`<option value="${x.id}" ${t.responsavel===x.id?'selected':''}>${esc(x.nome||x.email)}</option>`).join('')}</select>
-    <select data-it-f="diagnostico_id" data-id="${t.id}" aria-label="Cliente"><option value="">Interno LORSO</option>${Object.values(all).map(d=>`<option value="${d.id}" ${t.diagnostico_id===d.id?'selected':''}>${esc(diagNome(d.id))}</option>`).join('')}</select>
-    <div class="row2"><input type="date" data-it-f="prazo" data-id="${t.id}" value="${esc(t.prazo)}" aria-label="Prazo"><select data-it-f="prioridade" data-id="${t.id}" aria-label="Prioridade">${PRIO.map(x=>`<option ${t.prioridade===x?'selected':''}>${x}</option>`).join('')}</select></div>
-    <select data-it-f="status" data-id="${t.id}" aria-label="Coluna">${COLS.map(c=>`<option ${t.status===c?'selected':''}>${c}</option>`).join('')}</select>
-    <div class="row"><button class="btn sm ghost" data-act="it-del" data-id="${t.id}">Excluir</button><button class="btn sm primary" data-act="it-close">Pronto</button></div>
-   </div></article>`;
-  const pc=t.prioridade==='Alta'?'alta':t.prioridade==='Baixa'?'baixa':'media';
-  return `<button class="kcard" draggable="true" data-it="${t.id}" data-act="it-open" data-id="${t.id}">
-    <span class="ktags">${t.area&&AREA[t.area]?`<span class="tag area">${esc(AREA[t.area].nome)}</span>`:'<span class="tag area">Interno</span>'}<span class="tag ${pc}">${esc(t.prioridade||'Média')}</span></span>
-    <span class="kt">${esc(t.titulo||'Sem título')}</span>
-    ${t.descricao?`<span class="muted" style="font-size:12.5px;line-height:1.4">${esc(t.descricao.slice(0,110))}${t.descricao.length>110?'…':''}</span>`:''}
-    <span class="kf">${p?`<span class="av" title="${esc(p.nome||p.email)}">${esc(initials(p.nome||p.email))}</span>`:'<span class="muted">Sem responsável</span>'}${t.diagnostico_id?`<span class="chip">${esc(diagNome(t.diagnostico_id))}</span>`:''}${t.prazo?`<span class="due ${itLate(t)?'late':''}">${ico('relogio',13)}${itLate(t)?'Atrasada · ':''}${fmtDate(t.prazo)}</span>`:''}</span></button>`;
-}
-function renderInternas(){
-  const f=ui.itf||(ui.itf={resp:'',cli:''});
-  const L=internas.filter(t=>(!f.resp||(f.resp==='-'?!t.responsavel:f.resp==='eu'?t.responsavel===me.id:t.responsavel===f.resp))&&(!f.cli||(f.cli==='-'?!t.diagnostico_id:t.diagnostico_id===f.cli)));
-  const ab=internas.filter(t=>t.status!=='Concluída'), late=ab.filter(itLate);
-  const porPessoa=profiles.filter(p=>p.ativo&&p.papel!=='cliente').map(p=>({p,n:ab.filter(t=>t.responsavel===p.id).length,l:late.filter(t=>t.responsavel===p.id).length}));
-  $('#main').innerHTML=`<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">LORSO · <b>Equipe</b></span><h2 style="margin-top:8px">Tarefas da equipe</h2><p class="lead">O que você pede para a equipe e o que cada um tem na mão. Fica fora do diagnóstico: o cliente não vê este quadro.</p></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">${cur?`<button class="btn" data-act="gen-coleta" title="Cria uma tarefa por área ainda incompleta de ${esc(cur.nome)}">Gerar tarefas de coleta</button>`:''}</div></header>
-   <div class="stats">
-    <div class="stat"><span class="si">${ico('internas',20)}</span><b>${ab.length}</b><span>tarefas abertas</span><span class="sp"><i style="width:${internas.length?Math.round(ab.filter(t=>t.status!=='A fazer').length/Math.max(1,ab.length)*100):0}%"></i></span><small>${ab.filter(t=>t.status!=='A fazer').length} já em andamento</small></div>
-    <div class="stat ${late.length?'bad':''}"><span class="si">${ico('relogio',20)}</span><b>${late.length}</b><span>atrasadas</span><small>${late.length?esc(late[0].titulo||'').slice(0,34):'Nada atrasado'}</small></div>
-    <div class="stat ${ab.filter(t=>!t.responsavel).length?'warn':''}"><span class="si">${ico('pessoa',20)}</span><b>${ab.filter(t=>!t.responsavel).length}</b><span>sem responsável</span><small>Clique no cartão para atribuir</small></div>
-    <div class="stat"><span class="si">${ico('check',20)}</span><b>${internas.filter(t=>t.status==='Concluída').length}</b><span>concluídas</span><span class="sp"><i style="width:${internas.length?Math.round(internas.filter(t=>t.status==='Concluída').length/internas.length*100):0}%"></i></span><small>${internas.length?Math.round(internas.filter(t=>t.status==='Concluída').length/internas.length*100):0}% do quadro</small></div>
-   </div>
-   <div class="people">${porPessoa.map(x=>`<button class="pchip ${f.resp===x.p.id?'on':''}" data-act="itf" data-k="resp" data-v="${f.resp===x.p.id?'':x.p.id}"><span class="av">${esc(initials(x.p.nome||x.p.email))}</span>${esc((x.p.nome||x.p.email).split(' ')[0])}<b>${x.n}</b>${x.l?`<em>${x.l} atras.</em>`:''}</button>`).join('')}</div>
-   <div class="kfilters">
-    <select id="itf-resp" aria-label="Filtrar por responsável"><option value="">Todos os responsáveis</option><option value="eu" ${f.resp==='eu'?'selected':''}>Minhas tarefas</option><option value="-" ${f.resp==='-'?'selected':''}>Sem responsável</option>${profiles.filter(p=>p.ativo&&p.papel!=='cliente').map(p=>`<option value="${p.id}" ${f.resp===p.id?'selected':''}>${esc(p.nome||p.email)}</option>`).join('')}</select>
-    <select id="itf-cli" aria-label="Filtrar por cliente"><option value="">Todos os clientes</option><option value="-" ${f.cli==='-'?'selected':''}>Só internas</option>${Object.values(all).map(d=>`<option value="${d.id}" ${f.cli===d.id?'selected':''}>${esc(diagNome(d.id))}</option>`).join('')}</select>
-    ${f.resp||f.cli?`<button class="chip" data-act="itf-clear">Limpar filtros</button>`:''}
-    <span class="muted" style="font-size:13px;margin-left:auto">Arraste os cartões entre colunas</span></div>
-   <div class="kanban">${COLS.map(c=>{const items=L.filter(t=>t.status===c).sort((a,b)=>PRIO.indexOf(a.prioridade)-PRIO.indexOf(b.prioridade)||(a.prazo||'9').localeCompare(b.prazo||'9'));return `<section class="kcol" data-col="${c}" data-board="it"><div class="kcol-h"><b>${c}</b><span class="ct">${items.length}</span></div>${items.map(itCard).join('')}<button class="kadd" data-act="it-new" data-col="${c}">+ Tarefa</button></section>`;}).join('')}</div>
-  </section>`;
-  bindDnD();
 }
 /* coleta: conclui sozinha quando a área fica completa */
 function autoColeta(){
@@ -1955,7 +1893,7 @@ async function start(session){
 async function boot(){
   sb.auth.onAuthStateChange((ev,session)=>{
     if(ev==='PASSWORD_RECOVERY'){ authMode='nova-senha'; authMsg=null; started=false; showAuth(); return; }
-    if(ev==='SIGNED_OUT'){ started=false; me=null; cur=null; snap=null; internas=[]; if(itCh){sb.removeChannel(itCh);itCh=null;} if(channel){sb.removeChannel(channel);channel=null;} showAuth(); return; }
+    if(ev==='SIGNED_OUT'){ started=false; me=null; cur=null; snap=null; internas=[]; projetos=[]; if(itCh){sb.removeChannel(itCh);itCh=null;} if(channel){sb.removeChannel(channel);channel=null;} showAuth(); return; }
     if((ev==='SIGNED_IN'||ev==='INITIAL_SESSION')&&session&&authMode!=='nova-senha') setTimeout(()=>start(session),0);
     if(ev==='INITIAL_SESSION'&&!session) showAuth();
   });
@@ -1974,16 +1912,11 @@ document.addEventListener('click',e=>{
   if(act==='sair'){ flush(); sb.auth.signOut(); return; }
   if(b.closest('#sb')&&act!=='tema') ui.sbOpen=false;
   if(act.startsWith('md-')&&cur){ mdClick(act,d); return; }
+  if(act.startsWith('eq-')&&eqClick(act,d)) return;
   if(act==='sb-open'){ ui.sbOpen=true; document.body.classList.add('sb-on'); const f=document.querySelector('#sb .sn.on')||document.querySelector('#sb .sn'); f&&f.focus(); return; }
   if(act==='sb-close'){ ui.sbOpen=false; document.body.classList.remove('sb-on'); return; }
   if(act==='tema'){ setPref('theme',temaAtual()==='light'?'dark':'light'); render(); return; }
   if(act==='pref'){ setPref(d.k,d.v); render(); return; }
-  if(act==='it-new'){ const t=itNew({status:d.col||'A fazer',responsavel:ui.itf&&ui.itf.resp&&ui.itf.resp!=='-'?(ui.itf.resp==='eu'?me.id:ui.itf.resp):'',diagnostico_id:ui.itf&&ui.itf.cli&&ui.itf.cli!=='-'?ui.itf.cli:''}); ui.openIt=t.id; render(); const ta=document.querySelector(`[data-it-f="titulo"][data-id="${t.id}"]`); ta&&ta.focus(); return; }
-  if(act==='it-open'){ ui.openIt=d.id; render(); const ta=document.querySelector(`[data-it-f="titulo"][data-id="${d.id}"]`); ta&&ta.focus(); return; }
-  if(act==='it-close'){ const t=internas.find(x=>x.id===ui.openIt); if(t)itSave(t,true); ui.openIt=null; render(); return; }
-  if(act==='it-del'){ itDel(d.id); ui.openIt=null; render(); return; }
-  if(act==='itf'){ ui.itf=ui.itf||{resp:'',cli:''}; ui.itf[d.k]=d.v; render(); return; }
-  if(act==='itf-clear'){ ui.itf={resp:'',cli:''}; render(); return; }
   if(act==='pri-add'||act==='pri-rm'||act==='pri-mv'||act==='pri-outra'){ if(!cur)return; const k=d.k; let L=priList(k);
     if(act==='pri-add'){ if(!L.includes(d.v))L.push(d.v); }
     else if(act==='pri-rm'){ L.splice(+d.i,1); }
@@ -2073,7 +2006,7 @@ document.addEventListener('click',e=>{
   else if(act==='sys-add'){ const x={id:uid(),nome:d.n,uso:'',quem:'',satisf:'',integra:'',custo:'',prob:''}; cur.sistemas.push(x); touch(true); const i=document.querySelector(`[data-sys="${x.id}"][data-f="${d.n?'uso':'nome'}"]`); i&&i.focus(); }
   else if(act==='sys-del'){ cur.sistemas=cur.sistemas.filter(x=>x.id!==d.id); touch(true); }
 });
-function syncColetaDono(areaId){ const t=cur.acoes.find(x=>x.origem==='coleta:'+areaId&&x.status!=='Concluída'); if(t){ t.dono=cur.dono_area[areaId]||''; } const it=internas.find(x=>x.diagnostico_id===cur.id&&x.origem==='coleta:'+areaId&&x.status!=='Concluída'); if(it){ it.responsavel=cur.dono_area[areaId]||''; itSave(it); } }
+function syncColetaDono(areaId){ const t=cur.acoes.find(x=>x.origem==='coleta:'+areaId&&x.status!=='Concluída'); if(t){ t.dono=cur.dono_area[areaId]||''; } const it=internas.find(x=>x.diagnostico_id===cur.id&&x.origem==='coleta:'+areaId&&x.status!=='Concluída'); if(it){ it.responsaveis=cur.dono_area[areaId]?[cur.dono_area[areaId]]:[]; itSave(it); } }
 
 document.addEventListener('dragover',e=>{ const z=e.target.closest&&e.target.closest('.drop'); if(z){ e.preventDefault(); z.classList.add('over'); } });
 document.addEventListener('dragleave',e=>{ const z=e.target.closest&&e.target.closest('.drop'); if(z)z.classList.remove('over'); });
@@ -2082,6 +2015,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.dataset&&e
 document.addEventListener('submit',e=>{
   e.preventDefault(); const f=e.target;
   if(f.id==='f-auth'){ submitAuth(f); return; }
+  if(eqSubmit(f)) return;
   if(f.id==='f-fonte-nb'&&cur){ const t=f.titulo.value.trim(), c=f.conteudo.value.trim(); if(!c)return; addFonte({tipo:'notebooklm',titulo:t||'NotebookLM',conteudo:c}); ui.fonteAba=''; render(); toast('Fonte guardada'); return; }
   if(f.id==='f-fonte-site'&&cur){ lerSite(f.url.value.trim(),f.paginas.value); return; }
   if(f.id==='f-senha'){ const a=f.s1.value, b2=f.s2.value; if(a!==b2){ toast('As duas senhas não são iguais'); return; } if(a.length<8){ toast('Use pelo menos 8 caracteres'); return; }
@@ -2100,9 +2034,9 @@ document.addEventListener('submit',e=>{
 });
 document.addEventListener('input',e=>{
   const t=e.target, d=t.dataset;
+  if(eqInput(t)) return;
   if(t.id==='curso-txt'){ ui.cursoTxt=t.value; return; }
   if(t.id==='dre-txt'){ ui.dreTxt=t.value; return; }
-  if(d.itF==='titulo'||d.itF==='descricao'){ const x=internas.find(y=>y.id===d.id); if(x){ x[d.itF]=t.value; itSave(x); } return; }
   if(d.me!=null&&me){ me[d.me]=t.value; let p=profiles.find(x=>x.id===me.id); if(!p){ p={...me}; profiles.push(p); } p[d.me]=t.value; if(cur)cur.equipe=equipeList(); saveProfile(me.id); return; }
   if(d.mem!=null){ const p=profiles.find(x=>x.id===d.mem); if(p){ const f={nome:'nome',papel:'funcao',contato:'contato'}[d.f]; p[f]=t.value; if(cur)cur.equipe=equipeList(); saveProfile(p.id); } return; }
   if(!cur) return;
@@ -2119,10 +2053,9 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target, d=t.dataset;
+  if(eqChange(t)) return;
   if(t.id==='fonte-file'&&t.files&&t.files.length){ importarArquivos([...t.files]); t.value=''; return; }
   if(d.md!=null&&cur&&cur.mods&&cur.mods.dre){ mdChange(t); return; }
-  if(t.id==='itf-resp'||t.id==='itf-cli'){ ui.itf=ui.itf||{resp:'',cli:''}; ui.itf[t.id==='itf-resp'?'resp':'cli']=t.value; render(); return; }
-  if(d.itF&&d.itF!=='titulo'&&d.itF!=='descricao'){ const x=internas.find(y=>y.id===d.id); if(x){ x[d.itF]=t.value; itSave(x); } return; }
   if(!cur) return;
   if(t.id==='sel-diag'){ openDiag(t.value); }
   else if(t.id==='area-sel'){ ui.area=t.value; saveUi(); render(); window.scrollTo({top:0}); }
