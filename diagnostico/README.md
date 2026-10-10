@@ -58,5 +58,5 @@ Cada pergunta em `perguntas.js` é:
 - Impacto: 3 alto, 2 médio, 1 baixo. Eliminatória: `1` limita a área a Estruturado se a resposta for N1.
 - Nunca reaproveite um `id` para outra pergunta: as respostas ficam gravadas pelo id.
 
-As regras do motor de cruzamento (`CRZ-01` a `CRZ-36`) ficam em `app.js`, na seção
+As regras do motor de cruzamento (`CRZ-01` a `CRZ-52`) ficam em `app.js`, na seção
 `MOTOR DE CRUZAMENTO`.

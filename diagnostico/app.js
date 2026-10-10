@@ -31,7 +31,7 @@ function norm(d){
 }
 let cur = null;          // diagnóstico aberto
 let all = {};            // lista de diagnósticos: id -> {id, nome, updated_at}
-let ui = {view:'fases', stage:'diagnostico', area:'reitoria', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}, fofaSug:{}, drePreview:null, dreTxt:'', dstep:'base', cursoPreview:null};
+let ui = {view:'fases', stage:'diagnostico', area:'reitoria', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}, fofaSug:{}, drePreview:null, dreTxt:'', dstep:'base', cursoPreview:null, open:{}};
 try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(['base','reitoria','entrevistas'].includes(u.dstep))ui.dstep=u.dstep; if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','tarefas','equipe','como'].includes(u.view))ui.view=u.view;}catch(e){}
 const saveUi=()=>lsSet('cd.ui',JSON.stringify({stage:ui.stage,area:ui.area,view:ui.view,dstep:ui.dstep}));
 const member=id=>cur.equipe.find(m=>m.id===id);
@@ -478,7 +478,7 @@ function baseHtml(INS){
       <td><input data-curso="${c.id}" data-f="lancamento" value="${esc(c.lancamento)}" placeholder="mês/ano" aria-label="Lançamento" style="width:90px"></td>
       <td class="x"><button class="xbtn" data-act="curso-del" data-id="${c.id}" aria-label="Remover curso">×</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Nenhum curso ainda. Adicione um por um ou cole a lista da planilha da instituição.</p>'}
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="curso-add">+ Curso</button></div>
-    <details class="paste" ${pv?'open':''}><summary>Colar lista de cursos da planilha</summary>
+    <details class="paste" data-keep="curso-paste" ${pv||ui.open['curso-paste']?'open':''}><summary>Colar lista de cursos da planilha</summary>
      <p class="muted" style="font-size:13px">Colunas, nesta ordem: UN · Curso · Modalidade · Turno · Mensalidade · Vagas · Matriculados · Status · Lançamento. Copie direto do Excel.</p>
      <textarea id="curso-txt" rows="5" style="width:100%;font-family:var(--mono);font-size:13px" placeholder="Graduação	Administração	Presencial	Noturno	1.290	120	96	Vigente">${esc(ui.cursoTxt||'')}</textarea>
      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="curso-ler">Ler lista</button>${pv&&pv.length?`<button class="btn sm primary" data-act="curso-aplicar">Adicionar ${pv.length} cursos</button>`:''}</div>
@@ -701,7 +701,7 @@ function blocosHtml(INS){
   return `<div class="blocos">${B.map((b,k)=>`<article class="bloco"><div class="bh"><span class="bn">${k+1}</span><div><h4>${esc(b.t)}</h4><p>${esc(b.r)}</p></div></div>
     <div class="bm"><span class="chip">${pl(b.ins.length,'incongruência','incongruências')}</span>${b.crit?`<span class="chip" style="color:var(--n1);border-color:color-mix(in srgb,var(--n1) 45%,transparent)">${pl(b.crit,'crítica','críticas')}</span>`:''}<span class="muted" style="font-size:12.5px">Indicador: ${esc(b.kpi)}</span></div>
     <div class="bareas">${b.areas.slice(0,8).map(a=>`<button class="chip" data-act="goto" data-v="${a}">${esc(nameOf(a))}</button>`).join('')}</div>
-    <details><summary>Ver as evidências</summary><ul>${b.ins.map(i=>`<li><b>${esc(i.t)}.</b> ${esc(i.txt)}</li>`).join('')}</ul></details></article>`).join('')}</div>`;
+    <details data-keep="ev-${b.id}" ${ui.open['ev-'+b.id]?'open':''}><summary>Ver as evidências</summary><ul>${b.ins.map(i=>`<li><b>${esc(i.t)}.</b> ${esc(i.txt)}</li>`).join('')}</ul></details></article>`).join('')}</div>`;
 }
 function planoHtml(INS){
   const B=blocosDe(INS).slice(0,5);
@@ -801,7 +801,7 @@ function renderResultados(INS){
    <section class="block"><div class="block-h"><h3>Cruzamento financeiro das UNs</h3><p>${anyFin?'Preenchido na Reitoria (Orçamento e DRE) e em cada UN.':'Preencha meta, receita, folha e orçamento em cada UN.'}</p></div>${finTbl}</section>
    ${fofaHtml('geral',cons,'FOFA consolidada','Os 8 itens de maior impacto de cada quadrante, de todas as áreas. Inclua a leitura estratégica abaixo.')}
    <section class="block"><div class="block-h"><h3>Indicadores: meta x realizado</h3><p>Digite os números do período.</p></div>${kpiTbl}</section>
-   <section class="block"><details class="allins"><summary><h3 style="display:inline">Todas as incongruências (${INS.length})</h3></summary>${INS.length?`<div class="ins" style="margin-top:12px">${INS.map(i=>insightHtml(i,true)).join('')}</div>`:'<p class="empty">Nenhuma incongruência ainda.</p>'}</details></section>
+   <section class="block"><details class="allins" data-keep="allins" ${ui.open.allins?'open':''}><summary><h3 style="display:inline">Todas as incongruências (${INS.length})</h3></summary>${INS.length?`<div class="ins" style="margin-top:12px">${INS.map(i=>insightHtml(i,true)).join('')}</div>`:'<p class="empty">Nenhuma incongruência ainda.</p>'}</details></section>
    ${stageQs(st)}
    <div class="pager"><button class="btn" data-act="stage" data-v="otimizacao">← Otimização</button><span></span></div>
   </section>`;
@@ -1097,6 +1097,7 @@ function render(){
   const ae=document.activeElement, fk=focusKey(ae); let selS=null,selE=null; try{selS=ae.selectionStart;selE=ae.selectionEnd;}catch(e){}
   const DRAFT='form[data-dorform] input, form[data-dorform] select, form[data-fofa] input, #f-convite input, #f-convite select, #novo-nome, #novo-nome2';
   const drafts=[...document.querySelectorAll(DRAFT)].map(el=>[focusKey(el),el.value]).filter(x=>x[0]&&x[1]);
+  document.querySelectorAll('details[data-keep]').forEach(d=>{ ui.open[d.dataset.keep]=d.open; });
   renderInner();
   drafts.forEach(([k,v])=>{ const el=document.querySelector(k); if(el&&!el.value) el.value=v; });
   if(fk){ const el=document.querySelector(fk); if(el&&el!==document.activeElement){ el.focus({preventScroll:true}); try{ if(selS!=null) el.setSelectionRange(selS,selE);}catch(e){} } }
@@ -1573,6 +1574,8 @@ document.addEventListener('submit',e=>{
 });
 document.addEventListener('input',e=>{
   const t=e.target, d=t.dataset;
+  if(t.id==='curso-txt'){ ui.cursoTxt=t.value; return; }
+  if(t.id==='dre-txt'){ ui.dreTxt=t.value; return; }
   if(d.mem!=null){ const p=profiles.find(x=>x.id===d.mem); if(p){ const f={nome:'nome',papel:'funcao',contato:'contato'}[d.f]; p[f]=t.value; if(cur)cur.equipe=equipeList(); saveProfile(p.id); } return; }
   if(!cur) return;
   if(d.nota!=null){ if(t.value)cur.notas[d.nota]=t.value; else delete cur.notas[d.nota]; autoGrow(t); touch(false); }
@@ -1604,6 +1607,7 @@ document.addEventListener('change',e=>{
   else if(d.ini!=null){ const x=cur.iniciativas.find(y=>y.id===d.ini); if(x){ x[d.f]=t.value; touch(false); soon(); } }
   else if(d.curso!=null){ const x=cur.cursos.find(y=>y.id===d.curso); if(x){ x[d.f]=t.value; touch(false); soon(); } }
 });
+document.addEventListener('toggle',e=>{ const d=e.target; if(d&&d.dataset&&d.dataset.keep) ui.open[d.dataset.keep]=d.open; },true);
 document.addEventListener('focusout',()=>{ setTimeout(()=>{ if(!isTyping()&&(pendingData||pendingRemote))adoptRemote(); },0); });
 window.addEventListener('pagehide',()=>{ if(ver!==savedVer) flush(); });
 window.addEventListener('beforeunload',e=>{ if(ver!==savedVer){ flush(); e.preventDefault(); e.returnValue=''; } });
