@@ -212,7 +212,7 @@ const AREAS = [
 ];
 
 const STAGES = [
- {n:1,id:'diagnostico',nome:'Diagnóstico',ds:'Entrevistas 1 a 1 por área e UN, maturidade e FOFA.'},
+ {n:1,id:'diagnostico',nome:'Diagnóstico',ds:'Base de conhecimento, reitoria e entrevistas 1 a 1.'},
  {n:2,id:'estrategia',nome:'Estratégia',ds:'Metas, funil, verba e projeção de retorno.',
   intro:'Com o diagnóstico feito, esta fase mede se o plano existe e se está amarrado a números.',
   vol:[['metas_un','Metas trimestrais por UN','t'],['verba_total','Verba total de marketing no ano','R$'],['funil_alvo','Funil-alvo (taxas por etapa)','t'],['riscos','Riscos estratégicos','t']],

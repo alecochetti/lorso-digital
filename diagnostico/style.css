@@ -346,3 +346,23 @@ p{margin:0}
 .segb:hover{color:var(--fg);border-color:var(--muted)}
 .segb.on{background:color-mix(in srgb,var(--accent) 16%,transparent);border-color:color-mix(in srgb,var(--accent) 60%,transparent);color:var(--fg)}
 .unx-row .field{max-width:220px}
+
+/* passos da fase 1 */
+.dsteps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.dstep{display:flex;align-items:center;gap:12px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.dstep:hover{border-color:var(--line-2)}
+.dstep .dn{flex:none;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-weight:700;background:var(--surface-2);border:1px solid var(--line-2)}
+.dstep .dt{display:flex;flex-direction:column;min-width:0}
+.dstep .dt small{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dstep .dp{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--faint)}
+.dstep.on{border-color:color-mix(in srgb,var(--accent) 55%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 30%,transparent)}
+.dstep.on .dn{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.star{color:var(--n2)}
+.tbl.cap .inu{display:flex;position:relative}
+.tbl.cap input{text-align:right;min-width:90px}
+.tbl.cap .inu.pre input{padding-left:30px}
+.tbl.cap .inu .u{position:absolute;left:9px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--faint)}
+details.paste{border-top:1px solid var(--line);padding-top:12px}
+details.paste summary{cursor:pointer;color:var(--accent);font-size:14px}
+details.paste[open]{display:flex;flex-direction:column;gap:8px}
+@media (max-width:760px){ .dsteps{grid-template-columns:minmax(0,1fr)} }

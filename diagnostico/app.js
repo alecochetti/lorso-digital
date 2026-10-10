@@ -17,9 +17,9 @@ function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 
 /* ================= ESTADO ================= */
-const MAPS=['resp','evid','notas','campos','fofa','dono_area'], ARRS=['entrevistas','acoes','testes','kpis','equipe','dores','sistemas'];
+const MAPS=['resp','evid','notas','campos','fofa','dono_area'], ARRS=['entrevistas','acoes','testes','kpis','equipe','dores','sistemas','cursos','iniciativas'];
 const COLS=['A fazer','Em andamento','Em revisão','Concluída'];
-function blank(nome){return {id:uid(),nome:nome||'Novo diagnóstico',exemplo:false,resp:{},evid:{},notas:{},campos:{},fofa:{},dono_area:{},entrevistas:[],acoes:[],testes:[],kpis:[],equipe:[],dores:[],sistemas:[],criadoEm:new Date().toISOString(),atualizadoEm:null};}
+function blank(nome){return {id:uid(),nome:nome||'Novo diagnóstico',exemplo:false,resp:{},evid:{},notas:{},campos:{},fofa:{},dono_area:{},entrevistas:[],acoes:[],testes:[],kpis:[],equipe:[],dores:[],sistemas:[],cursos:[],iniciativas:[],criadoEm:new Date().toISOString(),atualizadoEm:null};}
 function norm(d){
   const b=blank(); const o=Object.assign(b,JSON.parse(JSON.stringify(d||{})));
   MAPS.forEach(k=>{ if(!o[k]||typeof o[k]!=='object'||Array.isArray(o[k]))o[k]={}; Object.keys(o[k]).forEach(x=>{if(o[k][x]==null)delete o[k][x];}); });
@@ -30,9 +30,9 @@ function norm(d){
 }
 let cur = null;          // diagnóstico aberto
 let all = {};            // lista de diagnósticos: id -> {id, nome, updated_at}
-let ui = {view:'fases', stage:'diagnostico', area:'reitoria', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}, fofaSug:{}, drePreview:null, dreTxt:''};
-try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','tarefas','equipe'].includes(u.view))ui.view=u.view;}catch(e){}
-const saveUi=()=>lsSet('cd.ui',JSON.stringify({stage:ui.stage,area:ui.area,view:ui.view}));
+let ui = {view:'fases', stage:'diagnostico', area:'reitoria', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}, fofaSug:{}, drePreview:null, dreTxt:'', dstep:'base', cursoPreview:null};
+try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(['base','reitoria','entrevistas'].includes(u.dstep))ui.dstep=u.dstep; if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','tarefas','equipe'].includes(u.view))ui.view=u.view;}catch(e){}
+const saveUi=()=>lsSet('cd.ui',JSON.stringify({stage:ui.stage,area:ui.area,view:ui.view,dstep:ui.dstep}));
 const member=id=>cur.equipe.find(m=>m.id===id);
 const initials=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(p=>p[0]||'').join('').toUpperCase()||'?';
 const isLate=t=>t.prazo&&t.status!=='Concluída'&&t.prazo<today();
@@ -233,6 +233,20 @@ RULES.push(
   txt:()=>`${UNS.filter(u=>unxGet(u.id,'expect')==='Crescer'&&unxGet(u.id,'esforco')==='Reduzir').map(u=>u.nome).join(', ')}: a reitoria espera crescimento com redução de investimento. Só fecha a conta com ganho de eficiência (CAC, conversão, retenção) comprovado.`,
   rec:['Mostrar o CAC atual e a conversão por etapa da UN','Definir quanto do crescimento virá de eficiência e quanto de verba']}
 );
+
+RULES.push(
+ {id:'CRZ-47',sev:'alta',pad:'Capacidade de vagas',areas:()=>['reitoria',...[...new Set(capRows().filter(r=>r.ocup!=null&&r.ocup<0.7&&/Crescer|Recuperar/.test(unxGet(r.un,'expect'))).map(r=>r.un))]],t:'Vagas ociosas onde a reitoria quer crescer',
+  test:()=>capRows().some(r=>r.ocup!=null&&r.ocup<0.7&&/Crescer|Recuperar/.test(unxGet(r.un,'expect'))),
+  txt:()=>capRows().filter(r=>r.ocup!=null&&r.ocup<0.7&&/Crescer|Recuperar/.test(unxGet(r.un,'expect'))).map(r=>`${r.nm} (${r.mod}): ${pct(r.ocup)} das vagas ocupadas (${r.captados} de ${r.vagas}).`).join(' ')+' Antes de abrir cursos novos, há turma para encher nos cursos que já existem.',
+  rec:['Plano de ocupação por curso com meta mensal','Priorizar cursos com mais vagas ociosas e melhor margem','Rever preço e condição nos cursos abaixo de 50% de ocupação']},
+ {id:'CRZ-48',sev:'alta',pad:'Gargalo de fluxo',areas:['proreitoria','demandas'],t:'Lançamentos sem antecedência de divulgação',
+  test:()=>cur.cursos.some(c=>c.status==='Lançamento')&&le(R('pro2'),2), txt:()=>`Há ${cur.cursos.filter(c=>c.status==='Lançamento').length} cursos em lançamento (${cur.cursos.filter(c=>c.status==='Lançamento').slice(0,4).map(c=>c.nome).join(', ')}${cur.cursos.filter(c=>c.status==='Lançamento').length>4?'…':''}), e o calendário acadêmico chega ao marketing com pouca antecedência. Cada lançamento vira urgência na fila.`,
+  rec:['Pacote padrão de lançamento com prazo mínimo de 90 dias','Calendário de lançamentos aprovado pela reitoria']},
+ {id:'CRZ-49',sev:'media',pad:'Contradição declarada',areas:()=>['captacao',...[...new Set(capRows().filter(r=>r.ating!=null&&r.ating<0.8).map(r=>r.un))]],t:'Captação bem avaliada, mas abaixo da meta',
+  test:()=>ge(L('captacao'),3)&&capRows().some(r=>r.ating!=null&&r.ating<0.8),
+  txt:()=>`A captação está no nível ${L('captacao')}, mas ${capRows().filter(r=>r.ating!=null&&r.ating<0.8).map(r=>`${r.nm} (${r.mod}) está em ${pct(r.ating)} da meta`).join('; ')}. Vale checar se a meta é realista ou se a conversão trava depois do lead.`,
+  rec:['Funil por curso: lead, inscrito, matriculado','Comparar a meta com a capacidade e o histórico']}
+);
 function finRows(){
   const rows=UNS.map(u=>{const f=unFin(u.id);return {id:u.id,nome:u.nome,level:L(u.id),score:SC[u.id].score,...f};});
   const totO=rows.reduce((a,r)=>a+(r.orcamento||0),0), totR=rows.reduce((a,r)=>a+(r.receita||0),0);
@@ -271,7 +285,7 @@ function autoFofa(id, INS){
 /* ================= RENDER ================= */
 function lvChip(l){return `<span class="lv l${l}">${l?'N'+l+' · '+LVL[l]:'Sem nota'}</span>`;}
 function stageProgress(s){
-  if(s.id==='diagnostico'){let t=0,a=0;AREAS.forEach(x=>{t+=x.q.length;a+=x.q.filter(q=>cur.resp[q[0]]).length;});return a/t;}
+  if(s.id==='diagnostico'){let t=0,a=0;AREAS.forEach(x=>{t+=x.q.length;a+=x.q.filter(q=>cur.resp[q[0]]).length;});return (a/t)*0.9+baseProgress()*0.1;}
   const q=s.q||[]; return q.length?q.filter(x=>cur.resp[x[0]]).length/q.length:0;
 }
 function renderRail(){
@@ -358,27 +372,29 @@ function insightHtml(s, withPlan){
    ${withPlan?`<button class="btn sm" data-act="plan-ins" data-id="${s.id}" data-t="${esc(s.t)}" style="margin-left:auto">Levar ao plano de ação</button>`:''}</div></div></article>`;
 }
 
-function renderDiagnostico(INS){
-  const a=AREA[ui.area], s=SC[a.id];
-  const groups=[...new Set(AREAS.map(x=>x.g))];
-  const nav=groups.map(g=>`<div class="grp"><span class="eyebrow">${g}</span>${AREAS.filter(x=>x.g===g).map(x=>{const sx=SC[x.id];return `<button class="anav ${x.id===a.id?'on':''}" data-act="area" data-v="${x.id}"><span>${x.nome}</span>${sx.score!=null?`<span class="lv l${sx.level}">N${sx.level}</span>`:`<span class="cnt">${sx.ans}/${sx.total}</span>`}</button>`;}).join('')}</div>`).join('');
-  const sel=`<select class="anav-sel" id="area-sel" aria-label="Área">${groups.map(g=>`<optgroup label="${g}">${AREAS.filter(x=>x.g===g).map(x=>`<option value="${x.id}" ${x.id===a.id?'selected':''}>${x.nome} (${SC[x.id].ans}/${SC[x.id].total})</option>`).join('')}</optgroup>`).join('')}</select>`;
-  const idx=AREAS.indexOf(a), prev=AREAS[idx-1], next=AREAS[idx+1];
+function renderAreaPanel(INS, LIST, override){
+  if(override==null&&!LIST.some(x=>x.id===ui.area)) ui.area=LIST[0].id;
+  const a=AREA[override!=null?LIST[0].id:ui.area], s=SC[a.id];
+  const pri=jornadaIds();
+  const groups=[...new Set(LIST.map(x=>x.g))];
+  const nav=groups.map(g=>`<div class="grp"><span class="eyebrow">${g}</span>${LIST.filter(x=>x.g===g).map(x=>{const sx=SC[x.id];return `<button class="anav ${x.id===ui.area?'on':''}" data-act="area" data-v="${x.id}"><span>${pri.includes(x.id)?'<b class="star" title="Prioridade da reitoria">★</b> ':''}${x.nome}</span>${sx.score!=null?`<span class="lv l${sx.level}">N${sx.level}</span>`:`<span class="cnt">${sx.ans}/${sx.total}</span>`}</button>`;}).join('')}</div>`).join('');
+  const sel=`<select class="anav-sel" id="area-sel" aria-label="Área">${groups.map(g=>`<optgroup label="${g}">${LIST.filter(x=>x.g===g).map(x=>`<option value="${x.id}" ${x.id===a.id?'selected':''}>${x.nome} (${SC[x.id].ans}/${SC[x.id].total})</option>`).join('')}</optgroup>`).join('')}</select>`;
+  const ORD=ui.dstep==='entrevistas'?jornadaLista():LIST; const idx=ORD.indexOf(a), prev=ORD[idx-1], next=ORD[idx+1];
   const avaliadas=AREAS.filter(x=>SC[x.id].score!=null).length, crit=INS.filter(i=>i.sev==='crit').length;
   const myIns=INS.filter(i=>i.areas.includes(a.id));
   const volTitle=a.volTitle||(a.un?'Números da UN':'Volume operacional e KPIs');
   const volNote=a.roteiro?'Perguntas abertas para conduzir a conversa. Os números entram nos cruzamentos do motor.':a.un?'Meta, receita, folha e orçamento entram no cruzamento financeiro entre UNs.':'Números do período. Entram nos cruzamentos do motor.';
   const volBlock=`<section class="block"><div class="block-h"><h3>${volTitle}</h3><p>${volNote}</p></div><div class="fields">${a.vol.map(v=>fieldHtml(a.id+'.'+v[0],v[1],v[2])).join('')}${fieldHtml(a.id+'.contexto','Contexto da entrevista: dores, citações, o que chamou atenção','t')}</div></section>`;
-  const pend=AREAS.find(x=>SC[x.id].ans<x.q.length);
+  const pend=ORD.find(x=>SC[x.id].ans<x.q.length);
   const areaTasks=cur.acoes.filter(t=>t.area===a.id);
   const dono=cur.dono_area[a.id];
-  $('#main').innerHTML=`
+  const html=`
    <div class="banner"><span><b>${avaliadas}</b> de ${AREAS.length} áreas com nota · <b>${INS.length}</b> incongruências${crit?` · <b style="color:var(--n1)">${crit} críticas</b>`:''}</span>
     <span style="display:flex;gap:8px;flex-wrap:wrap">${pend&&pend.id!==a.id?`<button class="btn sm" data-act="area" data-v="${pend.id}">Continuar de onde parei</button>`:''}<button class="btn sm" data-act="stage" data-v="resultados">Ver resultados →</button></span></div>
    <div class="work" style="margin-top:16px">
-    <aside class="side" aria-label="Áreas">${nav}</aside>
+    <aside class="side" aria-label="Áreas">${ui.dstep==='entrevistas'&&pri.length?`<div class="grp"><span class="eyebrow">Jornada priorizada</span>${jornadaLista().filter(x=>pri.includes(x.id)).map((x,i)=>`<button class="anav ${x.id===a.id?'on':''}" data-act="area" data-v="${x.id}"><span>${i+1}. ${x.nome}</span>${SC[x.id].score!=null?`<span class="lv l${SC[x.id].level}">N${SC[x.id].level}</span>`:`<span class="cnt">${SC[x.id].ans}/${SC[x.id].total}</span>`}</button>`).join('')}</div>`:''}${nav}${ui.dstep==='reitoria'?`<div class="grp"><span class="eyebrow">Saída da reitoria</span><button class="anav ${ui.area==='direcionamentos'?'on':''}" data-act="area" data-v="direcionamentos"><span>Direcionamentos</span><span class="cnt">${pri.length}</span></button></div>`:''}</aside>
     <section class="panel">${sel}
-     ${headHtml(`// ${a.g} · <b>${String(idx+1).padStart(2,'0')}/${AREAS.length}</b>`,a.nome,a.desc,s)}
+     ${headHtml(`// ${a.g} · <b>${String(idx+1).padStart(2,'0')}/${ORD.length}</b>`,a.nome,a.desc,s)}
      ${a.un&&unExpResumo(a.id)?`<div class="banner"><span><b>Reitoria:</b> ${esc(unExpResumo(a.id))}</span><button class="chip" data-act="area" data-v="reitoria">Ver na Reitoria</button></div>`:''}
      <div class="collector"><span>Coleta desta área:</span><select data-dono-area="${a.id}" aria-label="Responsável pela coleta"><option value="">Sem responsável</option>${cur.equipe.map(m=>`<option value="${m.id}" ${dono===m.id?'selected':''}>${esc(m.nome||'Sem nome')}</option>`).join('')}</select>
       ${!cur.equipe.length?`<button class="chip" data-act="view" data-v="equipe">+ Cadastrar equipe</button>`:''}
@@ -394,10 +410,95 @@ function renderDiagnostico(INS){
      ${a.roteiro?'':volBlock}
      ${myIns.length?`<section class="block"><div class="block-h"><h3>Incongruências desta área</h3></div><div class="ins">${myIns.map(i=>insightHtml(i,false)).join('')}</div></section>`:''}
      ${fofaHtml(a.id, autoFofa(a.id,INS))}
-     <div class="pager">${prev?`<button class="btn" data-act="area" data-v="${prev.id}">← ${prev.nome}</button>`:'<span></span>'}${next?`<button class="btn primary" data-act="area" data-v="${next.id}">${next.nome} →</button>`:`<button class="btn primary" data-act="stage" data-v="estrategia">Ir para Estratégia →</button>`}</div>
+     <div class="pager">${prev?`<button class="btn" data-act="area" data-v="${prev.id}">← ${prev.nome}</button>`:'<span></span>'}${next?`<button class="btn primary" data-act="area" data-v="${next.id}">${next.nome} →</button>`:ui.dstep==='reitoria'?`<button class="btn primary" data-act="area" data-v="direcionamentos">Direcionamentos →</button>`:`<button class="btn primary" data-act="stage" data-v="estrategia">Ir para Estratégia →</button>`}</div>
     </section></div>`;
+  if(override!=null){ const i=html.indexOf('<section class="panel">'); return html.slice(0,i)+'<section class="panel">'+override+'</section></div>'; }
+  return html;
 }
 
+/* ---------- Fase 1 em 3 passos ---------- */
+const LID=AREAS.filter(a=>a.g==='Liderança e governança'), ENT=AREAS.filter(a=>a.g!=='Liderança e governança');
+const DSTEPS=[['base','Base de conhecimento','Cursos, preços, vagas e capacidade'],['reitoria','Reitoria e direcionamentos','Dores, metas, DRE, autonomia e foco'],['entrevistas','Entrevistas','Jornada 1 a 1 pelas áreas e UNs']];
+const stepOf=id=>id==='direcionamentos'||LID.some(a=>a.id===id)?'reitoria':'entrevistas';
+const jornadaIds=()=>(cur.campos['jornada.ordem']||'').split('|').filter(id=>ENT.some(a=>a.id===id));
+const jornadaLista=()=>{ const p=jornadaIds(); return [...p.map(id=>AREA[id]), ...ENT.filter(a=>!p.includes(a.id))]; };
+const CAPROWS=[['colegio','colegio','Colégio','Ano letivo'],['grad_diurno','graduacao','Graduação','Presencial diurno'],['grad_noturno','graduacao','Graduação','Presencial noturno'],['grad_ead','graduacao','Graduação','EAD'],['pos_noturno','pos','Pós-Graduação','Noturno'],['pos_ead','pos','Pós-Graduação','EAD'],['pos_hibrido','pos','Pós-Graduação','Híbrido'],['mestrado','mestrado','Mestrado','Presencial']];
+function capRows(){ return CAPROWS.map(([k,un,nm,mod])=>{ const g=f=>num(cur.campos[`base.cap.${k}.${f}`]); const r={k,un,nm,mod,vagas:g('vagas'),meta:g('meta'),captados:g('captados'),ticket:g('ticket')}; r.ocup=r.vagas>0&&r.captados!=null?r.captados/r.vagas:null; r.ating=r.meta>0&&r.captados!=null?r.captados/r.meta:null; return r; }); }
+function baseProgress(){ const filled=capRows().filter(r=>r.vagas!=null).length; return Math.min(1,(filled/CAPROWS.length)*0.6+(cur.cursos.length?0.4:0)); }
+function stepProgress(id){ if(id==='base')return baseProgress(); const L=id==='reitoria'?LID:ENT; let t=0,a=0; L.forEach(x=>{t+=x.q.length;a+=x.q.filter(q=>cur.resp[q[0]]).length;}); return t?a/t:0; }
+function stepperHtml(){ return `<nav class="dsteps" aria-label="Passos do diagnóstico">${DSTEPS.map(([id,nm,ds],i)=>`<button class="dstep ${ui.dstep===id?'on':''}" data-act="dstep" data-v="${id}"><span class="dn">${i+1}</span><span class="dt"><b>${nm}</b><small>${ds}</small></span><span class="dp">${Math.round(stepProgress(id)*100)}%</span></button>`).join('')}</nav>`; }
+function renderDiagnostico(INS){
+  let inner;
+  if(ui.dstep==='base') inner=baseHtml(INS);
+  else if(ui.dstep==='reitoria'&&ui.area==='direcionamentos') inner=renderAreaPanel(INS,LID,direcHtml());
+  else inner=renderAreaPanel(INS, ui.dstep==='reitoria'?LID:ENT);
+  $('#main').innerHTML=stepperHtml()+inner;
+}
+function cap$(k,f,unit){ const key=`base.cap.${k}.${f}`; return `<div class="inu ${unit==='R$'?'pre':''}"><input data-campo="${key}" id="c-${key}" inputmode="decimal" value="${esc(cur.campos[key]||'')}" placeholder="0" aria-label="${f}">${unit?`<span class="u">${unit}</span>`:''}</div>`; }
+function baseHtml(INS){
+  const rows=capRows(); const tot=k=>{const v=rows.map(r=>r[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0):null;};
+  const vig=cur.cursos.filter(c=>c.status==='Vigente').length, lan=cur.cursos.filter(c=>c.status==='Lançamento').length;
+  const tv=tot('vagas'), tc=tot('captados'), tm=tot('meta');
+  const pctCell=(x,warn)=>x==null?'<td class="r muted">—</td>':`<td class="r" style="${x<warn?'color:var(--n1);font-weight:600':''}">${pct(x)}</td>`;
+  const opt=(v,list)=>list.map(o=>`<option ${v===o?'selected':''}>${o}</option>`).join('');
+  const pv=ui.cursoPreview;
+  return `<section class="panel">
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">// Passo 1 · <b>Base de conhecimento</b></span><h2 style="margin-top:8px">Base de conhecimento</h2><p class="lead">Antes das entrevistas: o que a instituição vende, por quanto, com quantas vagas e quanto já captou. Esses números entram nos cruzamentos com as expectativas da reitoria.</p></div></header>
+   <div class="stats"><div class="stat"><b>${vig}</b><span>cursos vigentes</span></div><div class="stat"><b>${lan}</b><span>lançamentos previstos</span></div><div class="stat"><b>${tv!=null?tv.toLocaleString('pt-BR'):'—'}</b><span>vagas no ciclo</span></div><div class="stat ${tv&&tc!=null&&tc/tv<0.7?'warn':''}"><b>${tv&&tc!=null?pct(tc/tv):'—'}</b><span>ocupação das vagas</span></div><div class="stat ${tm&&tc!=null&&tc/tm<0.8?'bad':''}"><b>${tm&&tc!=null?pct(tc/tm):'—'}</b><span>da meta de captação</span></div></div>
+   <section class="block"><div class="block-h"><h3>Capacidade de captação por UN e turno</h3><p>Vagas do ciclo, meta, quantos já captou e a mensalidade média.</p></div>
+    <div class="tblw"><table class="tbl cap"><thead><tr><th>UN</th><th>Turno ou modalidade</th><th class="r">Vagas</th><th class="r">Meta de captação</th><th class="r">Captados</th><th class="r">Mensalidade média</th><th class="r">Ocupação</th><th class="r">Da meta</th></tr></thead><tbody>
+     ${rows.map(r=>`<tr><td>${r.nm}</td><td class="muted">${r.mod}</td><td>${cap$(r.k,'vagas')}</td><td>${cap$(r.k,'meta')}</td><td>${cap$(r.k,'captados')}</td><td>${cap$(r.k,'ticket','R$')}</td>${pctCell(r.ocup,0.7)}${pctCell(r.ating,0.8)}</tr>`).join('')}
+     <tr><td><b>Total</b></td><td></td><td class="r"><b>${tv!=null?tv.toLocaleString('pt-BR'):'—'}</b></td><td class="r"><b>${tm!=null?tm.toLocaleString('pt-BR'):'—'}</b></td><td class="r"><b>${tc!=null?tc.toLocaleString('pt-BR'):'—'}</b></td><td></td>${pctCell(tv&&tc!=null?tc/tv:null,0.7)}${pctCell(tm&&tc!=null?tc/tm:null,0.8)}</tr>
+    </tbody></table></div></section>
+   <section class="block"><div class="block-h"><h3>Cursos vigentes e lançamentos</h3><p>${cur.cursos.length} cursos cadastrados</p></div>
+    ${cur.cursos.length?`<div class="tblw"><table class="tbl"><thead><tr><th>UN</th><th style="min-width:200px">Curso</th><th>Modalidade</th><th>Turno</th><th>Mensalidade</th><th>Vagas</th><th>Matriculados</th><th>Status</th><th>Lançamento</th><th></th></tr></thead><tbody>${cur.cursos.map(c=>`<tr>
+      <td><select data-curso="${c.id}" data-f="un" aria-label="UN"><option value=""></option>${UNS.map(u=>`<option value="${u.id}" ${c.un===u.id?'selected':''}>${u.nome}</option>`).join('')}</select></td>
+      <td><input data-curso="${c.id}" data-f="nome" value="${esc(c.nome)}" aria-label="Curso"></td>
+      <td><select data-curso="${c.id}" data-f="modalidade" aria-label="Modalidade"><option value=""></option>${opt(c.modalidade,['Presencial','EAD','Híbrido'])}</select></td>
+      <td><select data-curso="${c.id}" data-f="turno" aria-label="Turno"><option value=""></option>${opt(c.turno,['Diurno','Noturno','Integral','Flexível'])}</select></td>
+      <td><input data-curso="${c.id}" data-f="preco" value="${esc(c.preco)}" inputmode="decimal" aria-label="Mensalidade" style="width:110px"></td>
+      <td><input data-curso="${c.id}" data-f="vagas" value="${esc(c.vagas)}" inputmode="decimal" aria-label="Vagas" style="width:80px"></td>
+      <td><input data-curso="${c.id}" data-f="matriculados" value="${esc(c.matriculados)}" inputmode="decimal" aria-label="Matriculados" style="width:90px"></td>
+      <td><select data-curso="${c.id}" data-f="status" aria-label="Status">${opt(c.status,['Vigente','Lançamento','Descontinuado'])}</select></td>
+      <td><input data-curso="${c.id}" data-f="lancamento" value="${esc(c.lancamento)}" placeholder="mês/ano" aria-label="Lançamento" style="width:90px"></td>
+      <td class="x"><button class="xbtn" data-act="curso-del" data-id="${c.id}" aria-label="Remover curso">×</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Nenhum curso ainda. Adicione um por um ou cole a lista da planilha da instituição.</p>'}
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="curso-add">+ Curso</button></div>
+    <details class="paste" ${pv?'open':''}><summary>Colar lista de cursos da planilha</summary>
+     <p class="muted" style="font-size:13px">Colunas, nesta ordem: UN · Curso · Modalidade · Turno · Mensalidade · Vagas · Matriculados · Status · Lançamento. Copie direto do Excel.</p>
+     <textarea id="curso-txt" rows="5" style="width:100%;font-family:var(--mono);font-size:13px" placeholder="Graduação	Administração	Presencial	Noturno	1.290	120	96	Vigente">${esc(ui.cursoTxt||'')}</textarea>
+     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="curso-ler">Ler lista</button>${pv&&pv.length?`<button class="btn sm primary" data-act="curso-aplicar">Adicionar ${pv.length} cursos</button>`:''}</div>
+     ${pv?`<p class="muted" style="font-size:13px">${pv.length} cursos reconhecidos${pv.filter(c=>!c.un).length?`, ${pv.filter(c=>!c.un).length} sem UN reconhecida (ajuste depois na tabela)`:''}.</p>`:''}
+    </details></section>
+   <section class="block"><div class="block-h"><h3>Contexto do mercado</h3></div><div class="fields">${fieldHtml('base.calendario','Calendário de captação: períodos, vestibulares, editais e marcos do ano','t')}${fieldHtml('base.concorrentes','Principais concorrentes por UN e como se posicionam','t')}${fieldHtml('base.diferenciais','Diferenciais da instituição por UN (o que ela tem e o concorrente não)','t')}</div></section>
+   <div class="pager"><span></span><button class="btn primary" data-act="dstep" data-v="reitoria">Ir para Reitoria →</button></div>
+  </section>`;
+}
+const UN_ALIAS=[['pos',/p[oó]s|mba|especializa/i],['mestrado',/mestrado|doutorado|stricto/i],['colegio',/col[eé]gio|b[aá]sica|fundamental|m[eé]dio|infantil/i],['graduacao',/gradua|bacharel|licenciatura|tecn[oó]logo/i]];
+function cursoParse(txt){
+  return txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{ const c=l.split(/\t|;/).map(x=>x.trim());
+    if(/^un$|^unidade/i.test(c[0]||''))return null;
+    const un=(UN_ALIAS.find(([,re])=>re.test(c[0]||''))||[])[0]||'';
+    const st=/lan[cç]/i.test(c[7]||'')?'Lançamento':/descon/i.test(c[7]||'')?'Descontinuado':'Vigente';
+    const mod=/ead|dist/i.test(c[2]||'')?'EAD':/h[ií]br/i.test(c[2]||'')?'Híbrido':(c[2]?'Presencial':'');
+    const tur=/not/i.test(c[3]||'')?'Noturno':/diur|manh|tarde/i.test(c[3]||'')?'Diurno':/integ/i.test(c[3]||'')?'Integral':(c[3]?'Flexível':'');
+    return {id:uid(),un,nome:c[1]||'',modalidade:mod,turno:tur,preco:c[4]||'',vagas:c[5]||'',matriculados:c[6]||'',status:st,lancamento:c[8]||'',obs:''};
+  }).filter(x=>x&&x.nome);
+}
+function direcHtml(){
+  const pri=jornadaIds();
+  return `<header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">// Passo 2 · <b>Saída da reitoria</b></span><h2 style="margin-top:8px">Direcionamentos</h2><p class="lead">Com o que a reitoria contou, escolha por onde começar as entrevistas. A ordem dos cliques é a ordem da jornada.</p></div></header>
+   ${UNS.some(u=>unExpResumo(u.id))?`<section class="block"><div class="block-h"><h3>O que a reitoria espera de cada UN</h3></div><div class="xlist">${UNS.filter(u=>unExpResumo(u.id)).map(u=>`<div class="xitem media"><span class="t">${esc(u.nome)}<small>${esc(unExpResumo(u.id))}</small></span></div>`).join('')}</div></section>`:''}
+   <section class="block"><div class="block-h"><h3>Áreas e UNs para entrevistar</h3><p>${pri.length} escolhidas</p></div>
+    <div class="areachips">${ENT.map(a=>{const i=pri.indexOf(a.id);return `<button class="achip ${i>=0?'on':''}" data-act="jornada-toggle" data-v="${a.id}">${i>=0?`<b>${i+1}</b> · `:''}${esc(a.nome)}</button>`;}).join('')}</div>
+    ${pri.length?`<div class="tblw"><table class="tbl"><thead><tr><th>#</th><th>Área ou UN</th><th style="min-width:200px">Quem entrevistar</th><th>Data prevista</th><th>Responsável pela coleta</th><th></th></tr></thead><tbody>${pri.map((id,i)=>`<tr><td class="mono">${i+1}</td><td>${esc(AREA[id].nome)}</td>
+      <td><input data-campo="jornada.${id}.quem" value="${esc(cur.campos['jornada.'+id+'.quem']||'')}" placeholder="Nome e cargo" aria-label="Quem entrevistar"></td>
+      <td><input type="date" data-campo="jornada.${id}.data" value="${esc(cur.campos['jornada.'+id+'.data']||'')}" aria-label="Data prevista"></td>
+      <td><select data-dono-area="${id}" aria-label="Responsável"><option value="">Sem responsável</option>${cur.equipe.map(m=>`<option value="${m.id}" ${cur.dono_area[id]===m.id?'selected':''}>${esc(m.nome||'Sem nome')}</option>`).join('')}</select></td>
+      <td style="white-space:nowrap"><button class="xbtn" data-act="jornada-up" data-v="${id}" aria-label="Subir" ${i?'':'disabled'}>↑</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Toque nas áreas acima na ordem em que quer entrevistar.</p>'}
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${pri.length?`<button class="btn" data-act="jornada-tarefas">Criar entrevistas no kanban</button>`:''}<button class="btn primary" data-act="dstep" data-v="entrevistas">Começar entrevistas →</button></div>
+   </section>
+   ${fieldHtml('jornada.notas','Direcionamentos da reitoria para a consultoria (o que olhar com mais atenção, quem ouvir, o que evitar)','t')}`;
+}
 function stageHead(st){return headHtml(`// ${String(st.n).padStart(2,'0')} · <b>Fase ${st.n}</b>`,st.nome,st.intro,SC[st.id]);}
 function stageQs(st){return `${st.q.map(qHtml).join('')}${st.vol&&st.vol.length?`<section class="block"><div class="block-h"><h3>Campos abertos</h3><p>Anotações e números desta fase.</p></div><div class="fields">${st.vol.map(v=>fieldHtml(st.id+'.'+v[0],v[1],v[2])).join('')}</div></section>`:''}`;}
 function nextBtn(st){const n=STAGES[st.n]; return n?`<div class="pager"><button class="btn" data-act="stage" data-v="${STAGES[st.n-2].id}">← ${STAGES[st.n-2].nome}</button><button class="btn primary" data-act="stage" data-v="${n.id}">${n.nome} →</button></div>`:'';}
@@ -827,6 +928,8 @@ const ARR_DB={
  testes:{t:'experimentos',to:x=>({id:x.id,hipotese:nz(x.hip),area:nz(x.area),impacto:toInt(x.i),confianca:toInt(x.c),facilidade:toInt(x.f)}),from:r=>({id:r.id,hip:r.hipotese||'',area:r.area||'',i:r.impacto??'',c:r.confianca??'',f:r.facilidade??''})},
  kpis:{t:'indicadores',to:x=>({id:x.id,nome:nz(x.nome),un:nz(x.un),meta:nz(x.meta),realizado:nz(x.real)}),from:r=>({id:r.id,nome:r.nome||'',un:r.un||'',meta:r.meta||'',real:r.realizado||''})},
  dores:{t:'dores',to:x=>({id:x.id,descricao:x.txt,area:nz(x.area),etapa:nz(x.etapa),tipo:nz(x.tipo),gravidade:toInt(x.sev),frequencia:nz(x.freq),relatado_por:nz(x.quem),sistema:nz(x.sistema),data:nz(x.data)}),from:r=>({id:r.id,txt:r.descricao,area:r.area||'',etapa:r.etapa||'',tipo:r.tipo||'',sev:String(r.gravidade||2),freq:r.frequencia||'',quem:r.relatado_por||'',sistema:r.sistema||'',data:r.data||''})},
+ cursos:{t:'cursos',to:x=>({id:x.id,un:nz(x.un),nome:nz(x.nome),modalidade:nz(x.modalidade),turno:nz(x.turno),preco:nz(x.preco),vagas:nz(x.vagas),matriculados:nz(x.matriculados),status:x.status||'Vigente',lancamento:nz(x.lancamento),obs:nz(x.obs)}),from:r=>({id:r.id,un:r.un||'',nome:r.nome||'',modalidade:r.modalidade||'',turno:r.turno||'',preco:r.preco||'',vagas:r.vagas||'',matriculados:r.matriculados||'',status:r.status||'Vigente',lancamento:r.lancamento||'',obs:r.obs||''})},
+ iniciativas:{t:'iniciativas',to:x=>({id:x.id,titulo:nz(x.titulo),bloco:nz(x.bloco),area:nz(x.area),horizonte:nz(x.horizonte),impacto:toInt(x.impacto),esforco:toInt(x.esforco),risco:toInt(x.risco),dependencias:nz(x.dependencias),alinhamento:nz(x.alinhamento),recomendacao:nz(x.recomendacao),motivo:nz(x.motivo),indicador:nz(x.indicador),ordem:toInt(x.ordem)??0}),from:r=>({id:r.id,titulo:r.titulo||'',bloco:r.bloco||'',area:r.area||'',horizonte:r.horizonte||'',impacto:r.impacto??'',esforco:r.esforco??'',risco:r.risco??'',dependencias:r.dependencias||'',alinhamento:r.alinhamento||'',recomendacao:r.recomendacao||'',motivo:r.motivo||'',indicador:r.indicador||'',ordem:r.ordem||0})},
  sistemas:{t:'sistemas',to:x=>({id:x.id,nome:nz(x.nome),uso:nz(x.uso),usuarios:nz(x.quem),satisfacao:toInt(x.satisf),integra:nz(x.integra),custo_mensal:nz(x.custo),problemas:nz(x.prob)}),from:r=>({id:r.id,nome:r.nome||'',uso:r.uso||'',quem:r.usuarios||'',satisf:r.satisfacao!=null?String(r.satisfacao):'',integra:r.integra||'',custo:r.custo_mensal||'',prob:r.problemas||''})},
 };
 const DIAG_TABLES=['respostas','campos','responsaveis_area','fofa_itens',...Object.values(ARR_DB).map(m=>m.t)];
@@ -931,7 +1034,7 @@ async function openDiag(id){
 async function createDiag(nome){
   const r=await sb.from('diagnosticos').insert({nome,cliente:nome}).select('id,nome,updated_at').single();
   if(r.error){ toast('Não foi possível criar: '+r.error.message); return; }
-  all[r.data.id]=r.data; ui.novo=false; ui.view='fases'; ui.stage='diagnostico'; ui.area='reitoria'; saveUi(); await openDiag(r.data.id);
+  all[r.data.id]=r.data; ui.novo=false; ui.view='fases'; ui.stage='diagnostico'; ui.area='reitoria'; ui.dstep='base'; saveUi(); await openDiag(r.data.id);
 }
 const profT={};
 function saveProfile(id){ clearTimeout(profT[id]); profT[id]=setTimeout(async()=>{ const p=profiles.find(x=>x.id===id); if(!p)return; const r=await sb.from('profiles').update({nome:p.nome,funcao:p.funcao,contato:p.contato}).eq('id',id); if(r.error)toast('Não foi possível salvar o perfil'); },700); }
@@ -1020,7 +1123,15 @@ document.addEventListener('click',e=>{
   if(act==='mem-off'){ (async()=>{ const r=await sb.from('profiles').update({ativo:false}).eq('id',d.id); if(r.error){toast('Não foi possível desativar');return;} await loadTeam(); render(); toast('Acesso desativado'); })(); return; }
   if(!cur) return;
   if(act==='stage'){ ui.view='fases'; ui.stage=d.v; ui.copy=null; saveUi(); render(); window.scrollTo({top:0}); }
-  else if(act==='area'||act==='goto'){ ui.view='fases'; if(AREA[d.v]){ui.stage='diagnostico';ui.area=d.v;} else if(STG[d.v]) ui.stage=d.v; saveUi(); render(); window.scrollTo({top:0}); }
+  else if(act==='area'||act==='goto'){ ui.view='fases'; if(AREA[d.v]||d.v==='direcionamentos'){ui.stage='diagnostico';ui.area=d.v;ui.dstep=stepOf(d.v);} else if(STG[d.v]) ui.stage=d.v; saveUi(); render(); window.scrollTo({top:0}); }
+  else if(act==='dstep'){ ui.view='fases'; ui.stage='diagnostico'; ui.dstep=d.v; if(d.v==='reitoria'&&!LID.some(a=>a.id===ui.area)&&ui.area!=='direcionamentos')ui.area='reitoria'; if(d.v==='entrevistas'&&!ENT.some(a=>a.id===ui.area))ui.area=jornadaLista()[0].id; saveUi(); render(); window.scrollTo({top:0}); }
+  else if(act==='curso-add'){ cur.cursos.push({id:uid(),un:'',nome:'',modalidade:'',turno:'',preco:'',vagas:'',matriculados:'',status:'Vigente',lancamento:'',obs:''}); touch(true); const els=document.querySelectorAll('[data-curso][data-f="nome"]'); els.length&&els[els.length-1].focus(); }
+  else if(act==='curso-del'){ cur.cursos=cur.cursos.filter(c=>c.id!==d.id); touch(true); }
+  else if(act==='curso-ler'){ ui.cursoTxt=($('#curso-txt')||{}).value||''; ui.cursoPreview=cursoParse(ui.cursoTxt); render(); }
+  else if(act==='curso-aplicar'){ const pv=ui.cursoPreview||[]; cur.cursos.push(...pv); ui.cursoPreview=null; ui.cursoTxt=''; touch(true); toast(`${pv.length} cursos adicionados`); }
+  else if(act==='jornada-toggle'){ let L=jornadaIds(); L=L.includes(d.v)?L.filter(x=>x!==d.v):[...L,d.v]; if(L.length)cur.campos['jornada.ordem']=L.join('|'); else delete cur.campos['jornada.ordem']; touch(true); }
+  else if(act==='jornada-up'){ const L=jornadaIds(); const i=L.indexOf(d.v); if(i>0){ [L[i-1],L[i]]=[L[i],L[i-1]]; cur.campos['jornada.ordem']=L.join('|'); touch(true);} }
+  else if(act==='jornada-tarefas'){ let n=0; jornadaIds().forEach(id=>{ if(cur.acoes.some(t=>t.origem==='coleta:'+id))return; const quem=cur.campos['jornada.'+id+'.quem']; newTask({txt:`Entrevistar ${quem||'responsável'} · ${AREA[id].nome}`,area:id,origem:'coleta:'+id,prazo:cur.campos['jornada.'+id+'.data']||''}); n++; }); touch(true); toast(n?`${n} entrevistas criadas no kanban`:'As entrevistas já estão no kanban'); }
   else if(act==='opt'){
     const q=d.q, n=+d.n, wasEmpty=!cur.resp[q];
     if(cur.resp[q]===n)delete cur.resp[q]; else cur.resp[q]=n;
@@ -1092,6 +1203,7 @@ document.addEventListener('input',e=>{
   else if(d.teste!=null&&(d.f==='hip'||d.f==='area')){ cur.testes[+d.teste][d.f]=t.value; touch(false); }
   else if(d.kpi!=null&&(d.f==='nome'||d.f==='un')){ cur.kpis[+d.kpi][d.f]=t.value; touch(false); }
   else if(d.sys!=null&&t.tagName==='INPUT'){ const x=cur.sistemas.find(y=>y.id===d.sys); if(x){ x[d.f]=t.value; touch(false); } }
+  else if(d.curso!=null&&t.tagName==='INPUT'){ const x=cur.cursos.find(y=>y.id===d.curso); if(x){ x[d.f]=t.value; touch(false); } }
 });
 document.addEventListener('change',e=>{
   const t=e.target, d=t.dataset;
@@ -1108,6 +1220,7 @@ document.addEventListener('change',e=>{
   else if(d.teste!=null&&['i','c','f'].includes(d.f)){ cur.testes[+d.teste][d.f]=t.value; touch(false); soon(); }
   else if(d.kpi!=null&&(d.f==='meta'||d.f==='real')){ cur.kpis[+d.kpi][d.f]=t.value; touch(false); soon(); }
   else if(d.sys!=null){ const x=cur.sistemas.find(y=>y.id===d.sys); if(x){ x[d.f]=t.value; touch(false); soon(); } }
+  else if(d.curso!=null){ const x=cur.cursos.find(y=>y.id===d.curso); if(x){ x[d.f]=t.value; touch(false); soon(); } }
 });
 document.addEventListener('focusout',()=>{ setTimeout(()=>{ if(!isTyping()&&(pendingData||pendingRemote))adoptRemote(); },0); });
 window.addEventListener('pagehide',()=>{ if(ver!==savedVer) flush(); });
