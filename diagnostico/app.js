@@ -718,6 +718,46 @@ function unScoreHtml(){
     <td><div class="minibar"><span style="width:${r.s.score!=null?((r.s.score-1)/3*100).toFixed(0):0}%;background:var(--n${r.s.level||1})"></span></div><span class="mono" style="font-size:12px">${r.s.score!=null?dec(r.s.score)+' · N'+r.s.level:'sem nota'}</span></td>
     ${cell(r.ocup,0.7)}${cell(r.ating,0.8)}${cell(r.rec,0.9)}<td class="r">${r.svc?`<span class="lv l${r.svc}" title="${LVL[r.svc]}">N${r.svc}</span>`:'—'}</td></tr>`).join('')}</tbody></table></div>`;
 }
+/* ---------- Matriz de priorização interna (só LORSO e reitoria) ---------- */
+const RECS=['Fazer agora','Próximo','Não agora'];
+const priScore=x=>{const i=+x.impacto||0,e=+x.esforco||0,r=+x.risco||0; return i? (i*2-e-r*0.5):null;};
+function iniciativasOrd(){ return [...cur.iniciativas].sort((a,b)=>RECS.indexOf(a.recomendacao||'Próximo')-RECS.indexOf(b.recomendacao||'Próximo')||(priScore(b)??-99)-(priScore(a)??-99)); }
+function matriz2x2(L){
+  const W=520,H=360,pad=44, X=e=>pad+(e-1)/4*(W-pad-16), Y=i=>H-pad-(i-1)/4*(H-pad-16);
+  const pts=L.filter(x=>+x.impacto&&+x.esforco);
+  const col={'Fazer agora':'var(--accent)','Próximo':'var(--n3)','Não agora':'var(--faint)'};
+  return `<svg viewBox="0 0 ${W} ${H}" class="m2x2" role="img" aria-label="Matriz impacto por esforço">
+   <rect x="${X(1)}" y="${Y(5)}" width="${X(3)-X(1)}" height="${Y(3)-Y(5)}" fill="color-mix(in srgb,var(--accent) 7%,transparent)"/>
+   <line x1="${X(3)}" y1="${Y(5)}" x2="${X(3)}" y2="${Y(1)}" stroke="var(--line-2)" stroke-dasharray="4 4"/><line x1="${X(1)}" y1="${Y(3)}" x2="${X(5)}" y2="${Y(3)}" stroke="var(--line-2)" stroke-dasharray="4 4"/>
+   <rect x="${X(1)}" y="${Y(5)}" width="${X(5)-X(1)}" height="${Y(1)-Y(5)}" fill="none" stroke="var(--line-2)"/>
+   <text x="${X(1)+8}" y="${Y(5)+18}" fill="var(--accent)" font-size="12" font-weight="600">Ganhos rápidos</text>
+   <text x="${X(5)-8}" y="${Y(5)+18}" fill="var(--muted)" font-size="12" font-weight="600" text-anchor="end">Projetos estruturantes</text>
+   <text x="${X(1)+8}" y="${Y(1)-10}" fill="var(--muted)" font-size="12">Ajustes</text>
+   <text x="${X(5)-8}" y="${Y(1)-10}" fill="var(--muted)" font-size="12" text-anchor="end">Evitar agora</text>
+   <text x="${(X(1)+X(5))/2}" y="${H-10}" fill="var(--muted)" font-size="12" text-anchor="middle">Esforço →</text>
+   <text x="14" y="${(Y(1)+Y(5))/2}" fill="var(--muted)" font-size="12" text-anchor="middle" transform="rotate(-90 14 ${(Y(1)+Y(5))/2})">Impacto →</text>
+   ${pts.map(x=>{const k=L.indexOf(x)+1; const jx=((k*37)%11-5)*1.6, jy=((k*53)%11-5)*1.6; return `<g><circle cx="${X(+x.esforco)+jx}" cy="${Y(+x.impacto)+jy}" r="11" fill="${col[x.recomendacao||'Próximo']}" fill-opacity=".9"/><text x="${X(+x.esforco)+jx}" y="${Y(+x.impacto)+jy+4}" font-size="11" font-weight="700" text-anchor="middle" fill="var(--bg)">${k}</text></g>`;}).join('')}
+  </svg>`;
+}
+function priorizacaoHtml(INS){
+  if(!me||me.papel==='cliente') return '';
+  const L=iniciativasOrd(); const agora=L.filter(x=>x.recomendacao==='Fazer agora').length;
+  const sel=(id,f,v,opts)=>`<select data-ini="${id}" data-f="${f}" aria-label="${f}">${opts.map(o=>Array.isArray(o)?`<option value="${o[0]}" ${String(v)===String(o[0])?'selected':''}>${o[1]}</option>`:`<option ${v===o?'selected':''}>${o}</option>`).join('')}</select>`;
+  const n15=[['','—'],['1','1'],['2','2'],['3','3'],['4','4'],['5','5']];
+  return `<section class="block pri"><div class="block-h"><h3>Priorização do marketing <span class="tag warn" style="vertical-align:middle">Interno · só LORSO e reitoria</span></h3><p>O que o marketing faz primeiro, o que fica para depois e por quê.</p></div>
+   ${L.length?`<div class="two pri-top"><div>${matriz2x2(L)}<div class="legend"><span class="lg"><i style="background:var(--accent)"></i>Fazer agora</span><span class="lg"><i style="background:var(--n3)"></i>Próximo</span><span class="lg"><i style="background:var(--faint)"></i>Não agora</span></div></div>
+    <div class="pri-note"><div class="stat ${agora>4?'warn':''}"><b>${agora}</b><span>iniciativas em "Fazer agora"${agora>4?'. Acima de 4 ao mesmo tempo, o time não dá conta: mova algumas para Próximo.':''}</span></div>
+     <p class="muted" style="font-size:13.5px">Regras de sequência: primeiro o que destrava (regras, mandato, ferramenta), depois o que acelera. Para cada "Não agora", escreva o motivo e a condição para reabrir: é esse texto que sustenta o não para coordenadores e UNs.</p></div></div>
+    <div class="tblw"><table class="tbl"><thead><tr><th>#</th><th style="min-width:240px">Iniciativa</th><th>Horizonte</th><th>Impacto</th><th>Esforço</th><th>Risco</th><th style="min-width:160px">Depende de</th><th>Recomendação</th><th style="min-width:220px">Motivo (e quando reabrir)</th><th style="min-width:160px">Indicador</th><th></th></tr></thead><tbody>
+    ${L.map((x,k)=>`<tr><td class="mono">${k+1}</td><td><input data-ini="${x.id}" data-f="titulo" value="${esc(x.titulo)}" aria-label="Iniciativa"><small class="muted">${esc((BLOCOS.find(b=>b.id===x.bloco)||{}).t||'')}</small></td>
+     <td>${sel(x.id,'horizonte',x.horizonte,['Curto','Médio','Longo'])}</td><td>${sel(x.id,'impacto',x.impacto,n15)}</td><td>${sel(x.id,'esforco',x.esforco,n15)}</td><td>${sel(x.id,'risco',x.risco,n15)}</td>
+     <td><input data-ini="${x.id}" data-f="dependencias" value="${esc(x.dependencias)}" aria-label="Dependências"></td><td>${sel(x.id,'recomendacao',x.recomendacao,RECS)}</td>
+     <td><input data-ini="${x.id}" data-f="motivo" value="${esc(x.motivo)}" placeholder="${x.recomendacao==='Não agora'?'Por que não agora e quando reabrir':''}" aria-label="Motivo"></td>
+     <td><input data-ini="${x.id}" data-f="indicador" value="${esc(x.indicador)}" aria-label="Indicador"></td>
+     <td class="x"><button class="xbtn" data-act="ini-del" data-id="${x.id}" aria-label="Remover">×</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Gere as iniciativas a partir das causas raiz e ajuste impacto, esforço e risco.</p>'}
+   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ${L.length?'':'primary'}" data-act="ini-gerar">Gerar iniciativas das causas raiz</button><button class="btn sm" data-act="ini-add">+ Iniciativa</button></div>
+  </section>`;
+}
 function renderResultados(INS){
   const st=STG.resultados, ov=overall();
   const rows=AREAS.map(a=>({a,s:SC[a.id]}));
@@ -766,8 +806,7 @@ function renderResultados(INS){
    <div class="pager"><button class="btn" data-act="stage" data-v="otimizacao">← Otimização</button><span></span></div>
   </section>`;
 }
-const OUT_BTNS=()=>'';
-function priorizacaoHtml(){ return ''; }
+const OUT_BTNS=()=>`<button class="btn primary" data-act="export-pptx">Apresentação (.pptx)</button><button class="btn" data-act="view" data-v="relatorio">Relatório completo</button>`;
 /* ---------- Dores e gargalos ---------- */
 function quemList(){ return [...new Set([...cur.entrevistas.map(e=>e.nome),...cur.dores.map(d=>d.quem)].filter(Boolean))]; }
 function dorFormHtml(preset){
@@ -1072,9 +1111,11 @@ function renderInner(){
   computeAll(); const INS=runEngine();
   renderBar(); renderSubnav(INS);
   $('#rail').hidden = ui.view!=='fases';
+  document.body.classList.toggle('rp-mode', ui.view==='relatorio');
   if(ui.view==='tarefas') renderTarefas(INS);
   else if(ui.view==='dores') renderDores(INS);
   else if(ui.view==='como') $('#main').innerHTML=comoHtml();
+  else if(ui.view==='relatorio') renderRelatorio(INS);
   else if(ui.view==='sistemas') renderSistemas();
   else if(ui.view==='equipe') renderEquipe();
   else { renderRail(); ({diagnostico:renderDiagnostico,estrategia:renderEstrategia,execucao:renderExecucao,otimizacao:renderOtimizacao,resultados:renderResultados})[ui.stage](INS); }
@@ -1092,6 +1133,134 @@ function autoTasks(){
 function newTask(o){ const t={id:uid(),txt:'',area:'',dono:'',prazo:'',status:'A fazer',origem:'',...o}; if(!t.dono&&t.area&&cur.dono_area[t.area])t.dono=cur.dono_area[t.area]; cur.acoes.push(t); mark('acoes'); return t; }
 function autoGrow(t){t.style.height='auto';t.style.height=Math.min(t.scrollHeight+2,420)+'px';}
 
+/* ================= SAÍDAS: APRESENTAÇÃO (.pptx) E RELATÓRIO ================= */
+function loadScript(src){ return new Promise((ok,err)=>{ if(document.querySelector(`script[src="${src}"]`)) return ok(); const s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=()=>err(new Error('Não foi possível carregar '+src)); document.head.appendChild(s); }); }
+const C={bg:'0A0A0A',card:'141917',line:'2A302D',fg:'F2F1EC',mut:'A3A8A5',acc:'00FF87',n1:'FF6B6B',n2:'F5B740',n3:'4FB3FF',n4:'00FF87'};
+const lvColor=l=>[C.mut,C.n1,C.n2,C.n3,C.n4][l]||C.mut;
+async function exportPptx(){
+  toast('Montando a apresentação…');
+  await loadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js');
+  computeAll(); const INS=runEngine(), ov=overall(), B=blocosDe(INS).slice(0,5), t=trelloStats(), leit=leituraAuto(INS);
+  const pptx=new PptxGenJS(); pptx.layout='LAYOUT_WIDE'; pptx.author='LORSO Digital'; pptx.title='Diagnóstico de Maturidade · '+cur.nome;
+  const F='Arial';
+  const base=(title,eyebrow)=>{ const sl=pptx.addSlide(); sl.background={color:C.bg};
+    sl.addShape(pptx.ShapeType.rect,{x:0.5,y:0.42,w:0.09,h:0.3,fill:{color:C.acc}});
+    if(eyebrow) sl.addText(eyebrow.toUpperCase(),{x:0.7,y:0.36,w:10,h:0.3,fontFace:F,fontSize:10,color:C.acc,charSpacing:2});
+    if(title) sl.addText(title,{x:0.5,y:0.7,w:12.3,h:0.7,fontFace:F,fontSize:26,bold:true,color:C.fg});
+    sl.addText('LORSO Digital · '+cur.nome,{x:0.5,y:7.05,w:8,h:0.3,fontFace:F,fontSize:9,color:C.mut});
+    return sl; };
+  // 1 capa
+  let sl=pptx.addSlide(); sl.background={color:C.bg};
+  sl.addShape(pptx.ShapeType.rect,{x:0,y:0,w:0.18,h:7.5,fill:{color:C.acc}});
+  sl.addText('DIAGNÓSTICO DE MATURIDADE DE MARKETING',{x:0.8,y:2.0,w:11,h:0.4,fontFace:F,fontSize:13,color:C.acc,charSpacing:3});
+  sl.addText(cur.nome,{x:0.8,y:2.5,w:11.5,h:1.2,fontFace:F,fontSize:40,bold:true,color:C.fg});
+  sl.addText('Apresentação à reitoria · '+new Date().toLocaleDateString('pt-BR',{month:'long',year:'numeric'}),{x:0.8,y:3.8,w:11,h:0.4,fontFace:F,fontSize:16,color:C.mut});
+  sl.addText('LORSO Digital',{x:0.8,y:6.5,w:5,h:0.4,fontFace:F,fontSize:14,bold:true,color:C.fg});
+  // 2 como ler
+  sl=base('Como ler o diagnóstico','Metodologia');
+  [1,2,3,4].forEach((n,i)=>{ const x=0.5+i*3.12; sl.addShape(pptx.ShapeType.rect,{x,y:1.8,w:2.95,h:3.2,fill:{color:C.card},line:{color:lvColor(n),width:1}});
+    sl.addShape(pptx.ShapeType.rect,{x,y:1.8,w:2.95,h:0.08,fill:{color:lvColor(n)}});
+    sl.addText('N'+n,{x:x+0.2,y:2.0,w:1,h:0.5,fontFace:F,fontSize:22,bold:true,color:lvColor(n)});
+    sl.addText(LVL[n],{x:x+0.2,y:2.5,w:2.6,h:0.4,fontFace:F,fontSize:16,bold:true,color:C.fg});
+    sl.addText((t=>t.charAt(0).toUpperCase()+t.slice(1))(LVL_DESC[n].replace(/^N\d [^:]+: /,'')),{x:x+0.2,y:3.0,w:2.6,h:1.8,fontFace:F,fontSize:12,color:C.mut,valign:'top'}); });
+  sl.addText('Quatro pilares em cada área: Processos, Pessoas, Ferramentas e Cultura. Nota de 1,0 a 4,0.',{x:0.5,y:5.4,w:12,h:0.4,fontFace:F,fontSize:13,color:C.fg});
+  // 3 resumo executivo
+  sl=base('Resumo executivo','Diagnóstico');
+  sl.addShape(pptx.ShapeType.rect,{x:0.5,y:1.7,w:3.4,h:3.6,fill:{color:C.card},line:{color:C.line}});
+  sl.addText('MATURIDADE GERAL',{x:0.7,y:1.9,w:3,h:0.3,fontFace:F,fontSize:10,color:C.mut,charSpacing:2});
+  sl.addText(ov.score!=null?dec(ov.score):'—',{x:0.7,y:2.3,w:3,h:1.5,fontFace:F,fontSize:72,bold:true,color:C.fg});
+  sl.addText(ov.level?`N${ov.level} · ${LVL[ov.level]}`:'',{x:0.7,y:3.9,w:3,h:0.4,fontFace:F,fontSize:16,bold:true,color:lvColor(ov.level)});
+  sl.addText('de 4,0',{x:0.7,y:4.4,w:3,h:0.3,fontFace:F,fontSize:11,color:C.mut});
+  const lt=[...leit, ...(cur.campos['res.leitura']?[cur.campos['res.leitura']]:[])];
+  sl.addText(lt.map(x=>({text:x,options:{bullet:true,breakLine:true}})),{x:4.2,y:1.7,w:8.6,h:4.6,fontFace:F,fontSize:15,color:C.fg,valign:'top',paraSpaceAfter:8});
+  // 4 maturidade por área (gráfico)
+  sl=base('Maturidade por área e unidade','Diagnóstico');
+  const rows=AREAS.filter(a=>SC[a.id].score!=null);
+  if(rows.length){ sl.addChart(pptx.ChartType.bar,[{name:'Maturidade',labels:rows.map(a=>a.nome),values:rows.map(a=>+SC[a.id].score.toFixed(2))}],
+    {x:0.5,y:1.5,w:12.3,h:5.4,barDir:'bar',catAxisOrientation:'maxMin',valAxisMinVal:1,valAxisMaxVal:4,valAxisMajorUnit:1,chartColors:rows.map(a=>lvColor(SC[a.id].level)),
+     catAxisLabelColor:C.fg,valAxisLabelColor:C.mut,catAxisLabelFontSize:10,valAxisLabelFontSize:9,valGridLine:{color:C.line,size:0.5},catGridLine:{style:'none'},showValue:true,dataLabelColor:C.fg,dataLabelFontSize:9,dataLabelFormatCode:'0.0',barGapWidthPct:40,plotArea:{fill:{color:C.bg}},catAxisLineShow:false}); }
+  // 5 causas raiz
+  sl=base('As causas raiz','O que explica as incongruências');
+  B.forEach((b,i)=>{ const y=1.6+i*1.08; sl.addShape(pptx.ShapeType.rect,{x:0.5,y,w:12.3,h:0.95,fill:{color:C.card},line:{color:C.line}});
+    sl.addText(String(i+1),{x:0.65,y:y+0.2,w:0.55,h:0.55,fontFace:F,fontSize:18,bold:true,color:C.bg,fill:{color:C.acc},align:'center',valign:'middle'});
+    sl.addText([{text:b.t,options:{bold:true,fontSize:15,color:C.fg,breakLine:true}},{text:b.r,options:{fontSize:11,color:C.mut}}],{x:1.4,y:y+0.05,w:9.6,h:0.85,fontFace:F,valign:'middle'});
+    sl.addText(`${b.ins.length} evidências${b.crit?` · ${b.crit} críticas`:''}`,{x:11.0,y:y+0.05,w:1.7,h:0.85,fontFace:F,fontSize:10,color:b.crit?C.n1:C.mut,align:'right',valign:'middle'}); });
+  // 6+ um slide por causa raiz (top 3)
+  B.slice(0,3).forEach((b,i)=>{ const s2=base(b.t,`Causa raiz ${i+1}`);
+    s2.addText(b.r,{x:0.5,y:1.45,w:12.3,h:0.6,fontFace:F,fontSize:14,color:C.mut});
+    s2.addText(b.ins.slice(0,5).map(x=>({text:`${x.t}. `,options:{bold:true,color:C.fg,bullet:true}})).flatMap((o,k)=>[o,{text:b.ins[k].txt,options:{color:C.mut,breakLine:true}}]),{x:0.5,y:2.2,w:8.2,h:4.6,fontFace:F,fontSize:12,valign:'top',paraSpaceAfter:6});
+    s2.addShape(pptx.ShapeType.rect,{x:9.0,y:2.2,w:3.8,h:4.4,fill:{color:C.card},line:{color:C.line}});
+    s2.addText([{text:'O QUE FAZER',options:{fontSize:10,color:C.acc,charSpacing:2,breakLine:true}},...HZ.flatMap(([k,nm])=>[{text:nm,options:{bold:true,fontSize:12,color:C.fg,breakLine:true}},...(b.h[k]||[]).map(a=>({text:a,options:{bullet:true,fontSize:11,color:C.mut,breakLine:true}}))]),{text:'Indicador: '+b.kpi,options:{fontSize:10,color:C.acc,breakLine:true}}],{x:9.15,y:2.3,w:3.5,h:4.2,fontFace:F,valign:'top',paraSpaceAfter:4}); });
+  // expectativa x realidade
+  sl=base('Expectativa da reitoria x realidade das UNs','Unidades de negócio');
+  const hdr=['UN','A reitoria espera','Maturidade','Ocupação de vagas','Captação x meta','Receita x meta'].map(h=>({text:h,options:{bold:true,color:C.mut,fontSize:11,fill:{color:C.card}}}));
+  const urows=UNS.map(u=>{ const caps=capRows().filter(r=>r.un===u.id); const sm=k=>{const v=caps.map(r=>r[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0):null;}; const vg=sm('vagas'),cp=sm('captados'),mt=sm('meta'),f=unFin(u.id),sc=SC[u.id];
+    const c=(v,w)=>({text:v==null?'—':pct(v),options:{color:v!=null&&v<w?C.n1:C.fg}});
+    return [{text:u.nome,options:{bold:true,color:C.fg}},{text:unxGet(u.id,'expect')||'—',options:{color:C.fg}},{text:sc.score!=null?`${dec(sc.score)} · N${sc.level}`:'sem nota',options:{color:lvColor(sc.level),bold:true}},c(vg&&cp!=null?cp/vg:null,0.7),c(mt&&cp!=null?cp/mt:null,0.8),c(f.meta_rec&&f.receita!=null?f.receita/f.meta_rec:null,0.9)]; });
+  sl.addTable([hdr,...urows],{x:0.5,y:1.7,w:12.3,fontFace:F,fontSize:13,color:C.fg,border:{type:'solid',color:C.line,pt:0.5},rowH:0.55,fill:{color:C.bg}});
+  const exps=UNS.map(u=>[u.nome,unExpResumo(u.id)]).filter(x=>x[1]);
+  if(exps.length) sl.addText(exps.map(([n,tx])=>({text:`${n}: ${tx}`,options:{bullet:true,breakLine:true}})),{x:0.5,y:4.8,w:12.3,h:2,fontFace:F,fontSize:11,color:C.mut,valign:'top'});
+  // capacidade
+  if(t||cur.dores.length){ sl=base('Capacidade do marketing e onde o trabalho trava','Operação');
+    if(t){ const lab=TRELLO.filter(([k])=>t.v[k]).map(([,l])=>l), val=TRELLO.filter(([k])=>t.v[k]).map(([k])=>t.v[k]);
+      sl.addChart(pptx.ChartType.bar,[{name:'Projetos',labels:lab,values:val}],{x:0.5,y:1.6,w:6.2,h:3.6,barDir:'col',chartColors:[C.acc],catAxisLabelColor:C.fg,valAxisLabelColor:C.mut,catAxisLabelFontSize:9,valAxisLabelFontSize:9,valGridLine:{color:C.line,size:0.5},showValue:true,dataLabelColor:C.fg,dataLabelFontSize:10,plotArea:{fill:{color:C.bg}}});
+      sl.addText([{text:`${t.abertos} projetos abertos`,options:{bold:true,fontSize:16,color:C.fg,breakLine:true}},{text:`${pct(t.pFuram)} furam o fluxo (urgência + gohorse) · ${pct(t.pParados)} parados`,options:{fontSize:12,color:C.mut,breakLine:true}},{text:t.semanas!=null?`${dec(t.semanas,0)} semanas para zerar a fila no ritmo atual`:'',options:{fontSize:12,color:t.semanas>=6?C.n1:C.mut}}],{x:0.5,y:5.4,w:6.2,h:1.4,fontFace:F,valign:'top'}); }
+    if(cur.dores.length){ const g=gargalos(); sl.addChart(pptx.ChartType.bar,[{name:'Pontuação de dores',labels:g.map(r=>r.etapa),values:g.map(r=>r.score)}],{x:t?7.0:0.5,y:1.6,w:t?5.8:12.3,h:3.6,barDir:'bar',catAxisOrientation:'maxMin',chartColors:[C.n2],catAxisLabelColor:C.fg,valAxisLabelColor:C.mut,catAxisLabelFontSize:10,valAxisLabelFontSize:9,valGridLine:{color:C.line,size:0.5},plotArea:{fill:{color:C.bg}}});
+      const top=g.reduce((a,b)=>b.score>a.score?b:a,g[0]); sl.addText(`Principal gargalo: ${top.etapa} (${pl(top.n,'dor relatada','dores relatadas')}, ${pl(top.graves,'grave','graves')})`,{x:t?7.0:0.5,y:5.4,w:5.8,h:0.6,fontFace:F,fontSize:13,bold:true,color:C.fg}); } }
+  // plano no tempo
+  sl=base('Plano no tempo','Diretrizes');
+  HZ.forEach(([k,nm,pr],i)=>{ const x=0.5+i*4.15; sl.addShape(pptx.ShapeType.rect,{x,y:1.6,w:4.0,h:5.2,fill:{color:C.card},line:{color:C.line}});
+    sl.addText([{text:nm,options:{bold:true,fontSize:17,color:C.fg,breakLine:true}},{text:pr,options:{fontSize:11,color:C.acc}}],{x:x+0.2,y:1.7,w:3.6,h:0.8,fontFace:F});
+    const its=B.slice(0,4).flatMap((b,bi)=>(b.h[k]||[]).slice(0,2).map(a=>`${bi+1} · ${a}`)).slice(0,8);
+    sl.addText(its.map(a=>({text:a,options:{breakLine:true}})),{x:x+0.2,y:2.5,w:3.6,h:4.2,fontFace:F,fontSize:11,color:C.fg,valign:'top',paraSpaceAfter:6}); });
+  // priorização (interno)
+  const L=iniciativasOrd().filter(x=>x.titulo);
+  if(L.length&&me&&me.papel!=='cliente'){ sl=base('Priorização do marketing','Uso interno · reitoria');
+    const pts=L.filter(x=>+x.impacto&&+x.esforco);
+    if(pts.length){ sl.addChart(pptx.ChartType.scatter,[{name:'Esforço',values:pts.map((x,k)=>+x.esforco+((k*37)%7-3)*0.06)},{name:'Impacto',values:pts.map((x,k)=>+x.impacto+((k*53)%7-3)*0.06),labels:pts.map(x=>String(L.indexOf(x)+1))}],
+      {x:0.5,y:1.5,w:5.6,h:5.2,valAxisMinVal:0.5,valAxisMaxVal:5.5,catAxisMinVal:0.5,catAxisMaxVal:5.5,valAxisTitle:'Impacto',catAxisTitle:'Esforço',showValAxisTitle:true,showCatAxisTitle:true,valAxisTitleColor:C.mut,catAxisTitleColor:C.mut,catAxisLabelColor:C.mut,valAxisLabelColor:C.mut,chartColors:[C.acc],lineSize:0,lineDataSymbolSize:12,valGridLine:{color:C.line,size:0.5},catGridLine:{color:C.line,size:0.5},showLabel:true,dataLabelColor:C.fg,dataLabelPosition:'r',plotArea:{fill:{color:C.bg}}}); }
+    const rowsP=L.slice(0,10).map((x,k)=>[{text:String(k+1),options:{color:C.mut}},{text:x.titulo,options:{color:C.fg}},{text:x.horizonte||'—',options:{color:C.mut}},{text:x.recomendacao||'—',options:{color:x.recomendacao==='Fazer agora'?C.acc:x.recomendacao==='Não agora'?C.mut:C.n3,bold:true}}]);
+    sl.addTable([[{text:'#'},{text:'Iniciativa'},{text:'Horizonte'},{text:'Recomendação'}].map(h=>({...h,options:{bold:true,color:C.mut,fill:{color:C.card}}})),...rowsP],{x:6.4,y:1.5,w:6.4,colW:[0.4,3.8,1.0,1.2],fontFace:F,fontSize:10.5,border:{type:'solid',color:C.line,pt:0.5},rowH:0.42,fill:{color:C.bg}}); }
+  // próximos passos
+  sl=base('Próximos passos','Acompanhamento');
+  sl.addText([{text:'Validar o diagnóstico e as causas raiz com a reitoria',options:{bullet:{type:'number'},breakLine:true}},{text:'Pactuar os indicadores de sucesso e o mandato da transformação',options:{bullet:{type:'number'},breakLine:true}},{text:'Iniciar o curto prazo (0 a 3 meses) com responsáveis e prazos no kanban',options:{bullet:{type:'number'},breakLine:true}},{text:'Ritos mensais de acompanhamento e nova avaliação de maturidade em 12 meses',options:{bullet:{type:'number'},breakLine:true}}],{x:0.5,y:1.7,w:12.3,h:3.5,fontFace:F,fontSize:18,color:C.fg,valign:'top',paraSpaceAfter:12});
+  sl.addText('O relatório completo, com todas as áreas, evidências e números, acompanha esta apresentação.',{x:0.5,y:5.8,w:12.3,h:0.5,fontFace:F,fontSize:12,color:C.mut});
+  const fname=`Diagnostico-${cur.nome.replace(/[^\w\-]+/g,'-').replace(/-+/g,'-')}.pptx`;
+  await pptx.writeFile({fileName:fname});
+  toast('Apresentação baixada');
+}
+/* ---------- Relatório completo (página para PDF) ---------- */
+function respostaTxt(x){ const n=cur.resp[x[0]]; return n?`N${n} · ${x[6][n-1]}`:'Sem resposta'; }
+function renderRelatorio(INS){
+  const ov=overall(), B=blocosDe(INS), t=trelloStats(), leit=leituraAuto(INS), interno=me&&me.papel!=='cliente';
+  const areaSec=a=>{ const s=SC[a.id]; return `<section class="rp-area"><div class="rp-ah"><h3>${esc(a.nome)}</h3>${lvChip(s.score!=null?s.level:0)}<b class="num">${s.score!=null?dec(s.score):'—'}</b></div>
+    <p class="muted">${esc(a.desc)}</p>
+    <div class="rp-pil">${Object.entries(PIL).map(([k,n])=>`<span>${n}: <b>${s.pil[k]!=null?dec(s.pil[k]):'—'}</b></span>`).join('')}</div>
+    <table class="tbl"><tbody>${a.q.map(x=>`<tr><td style="width:34%"><b>${esc(x[1])}</b><br><small class="muted">${esc(x[5])}</small></td><td>${esc(respostaTxt(x))}${cur.evid[x[0]]?' <span class="tag">comprovado</span>':''}${cur.notas[x[0]]?`<br><small class="muted">${esc(cur.notas[x[0]])}</small>`:''}</td></tr>`).join('')}</tbody></table>
+    ${(a.vol||[]).filter(v=>cur.campos[a.id+'.'+v[0]]).length?`<div class="rp-kv">${a.vol.filter(v=>cur.campos[a.id+'.'+v[0]]).map(v=>`<div><small class="muted">${esc(v[1])}</small><div>${esc(v[2]==='R$'?brl(num(cur.campos[a.id+'.'+v[0]])):cur.campos[a.id+'.'+v[0]]+(v[2]==='%'?'%':''))}</div></div>`).join('')}</div>`:''}
+    ${cur.campos[a.id+'.contexto']?`<p><small class="muted">Contexto da entrevista</small><br>${esc(cur.campos[a.id+'.contexto'])}</p>`:''}
+   </section>`; };
+  $('#main').innerHTML=`<article class="report">
+   <div class="rp-tools"><button class="btn" data-act="view" data-v="fases">← Voltar</button><button class="btn primary" data-act="print-rel">Salvar em PDF</button></div>
+   <header class="rp-capa"><span class="eyebrow">// LORSO Digital · <b>Relatório completo</b></span><h1>${esc(cur.nome)}</h1><p class="muted">Diagnóstico de maturidade de marketing · ${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</p></header>
+   <section><h2>1. Resumo executivo</h2><div class="rp-score"><b>${ov.score!=null?dec(ov.score):'—'}</b><span>/ 4 · ${ov.level?`N${ov.level} ${LVL[ov.level]}`:''}</span></div><ul>${leit.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>${cur.campos['res.leitura']?`<p><b>Leitura do consultor.</b> ${esc(cur.campos['res.leitura'])}</p>`:''}</section>
+   <section><h2>2. Causas raiz</h2>${B.map((b,i)=>`<div class="rp-bloco"><h3>${i+1}. ${esc(b.t)}</h3><p>${esc(b.r)}</p><p class="muted">Indicador: ${esc(b.kpi)}</p><ul>${b.ins.map(x=>`<li><b>${esc(x.t)} (${SEV[x.sev]}).</b> ${esc(x.txt)}<br><small class="muted">Ações: ${x.rec.map(esc).join(' · ')}</small></li>`).join('')}</ul></div>`).join('')||'<p>Sem incongruências.</p>'}</section>
+   <section><h2>3. Plano no tempo</h2>${planoHtml(INS)}</section>
+   ${interno&&cur.iniciativas.length?`<section><h2>4. Priorização do marketing <span class="tag warn">Interno · reitoria</span></h2><table class="tbl"><thead><tr><th>#</th><th>Iniciativa</th><th>Horizonte</th><th>Impacto</th><th>Esforço</th><th>Risco</th><th>Recomendação</th><th>Motivo</th></tr></thead><tbody>${iniciativasOrd().map((x,k)=>`<tr><td>${k+1}</td><td>${esc(x.titulo)}</td><td>${esc(x.horizonte)}</td><td>${esc(x.impacto)}</td><td>${esc(x.esforco)}</td><td>${esc(x.risco)}</td><td>${esc(x.recomendacao)}</td><td>${esc(x.motivo)}</td></tr>`).join('')}</tbody></table></section>`:''}
+   <section><h2>${interno&&cur.iniciativas.length?5:4}. Unidades de negócio</h2>${unScoreHtml()}</section>
+   <section><h2>Base de conhecimento</h2>${(()=>{const R=capRows().filter(r=>r.vagas!=null||r.captados!=null);return R.length?`<table class="tbl"><thead><tr><th>UN</th><th>Turno ou modalidade</th><th class="r">Vagas</th><th class="r">Meta</th><th class="r">Captados</th><th class="r">Ocupação</th><th class="r">Da meta</th></tr></thead><tbody>${R.map(r=>`<tr><td>${r.nm}</td><td>${r.mod}</td><td class="r">${r.vagas??'—'}</td><td class="r">${r.meta??'—'}</td><td class="r">${r.captados??'—'}</td><td class="r">${pct(r.ocup)}</td><td class="r">${pct(r.ating)}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Não preenchida.</p>';})()}
+    ${cur.cursos.length?`<p class="muted">${pl(cur.cursos.length,'curso cadastrado','cursos cadastrados')}, ${pl(cur.cursos.filter(c=>c.status==='Lançamento').length,'lançamento','lançamentos')}.</p>`:''}</section>
+   ${t?`<section><h2>Capacidade do marketing</h2>${trelloView(t)}</section>`:''}
+   ${cur.dores.length?`<section><h2>Dores e gargalos</h2>${gargaloChart(false)}<table class="tbl"><thead><tr><th>Dor</th><th>Área</th><th>Etapa</th><th>Gravidade</th><th>Frequência</th><th>Relatado por</th></tr></thead><tbody>${[...cur.dores].sort((a,b)=>dorScore(b)-dorScore(a)).map(d=>`<tr><td>${esc(d.txt)}</td><td>${esc(nameOf(d.area)||'—')}</td><td>${esc(d.etapa)}</td><td>${SEVN[d.sev]||'—'}</td><td>${esc(d.freq)}</td><td>${esc(d.quem||'—')}</td></tr>`).join('')}</tbody></table></section>`:''}
+   ${cur.sistemas.some(x=>x.nome)?`<section><h2>Sistemas</h2><table class="tbl"><thead><tr><th>Sistema</th><th>Uso</th><th>Satisfação</th><th>Integra</th><th>Problemas</th></tr></thead><tbody>${cur.sistemas.filter(x=>x.nome).map(x=>`<tr><td>${esc(x.nome)}</td><td>${esc(x.uso)}</td><td>${esc(x.satisf||'—')}</td><td>${esc(x.integra||'—')}</td><td>${esc(x.prob)}</td></tr>`).join('')}</tbody></table></section>`:''}
+   ${dreHtml()}
+   <section><h2>Maturidade por área</h2><table class="tbl heat"><thead><tr><th>Área</th>${Object.values(PIL).map(p=>`<th style="text-align:center">${p}</th>`).join('')}<th style="text-align:center">Geral</th></tr></thead><tbody>${AREAS.map(a=>{const s=SC[a.id];return `<tr><td>${esc(a.nome)}</td>${Object.keys(PIL).map(k=>`<td class="h l${lvOf(s.pil[k])}">${s.pil[k]==null?'—':dec(s.pil[k])}</td>`).join('')}<td class="h l${s.level}">${s.score==null?'—':dec(s.score)}</td></tr>`;}).join('')}</tbody></table></section>
+   <section><h2>Detalhamento por área</h2>${AREAS.map(areaSec).join('')}</section>
+   <section><h2>FOFA consolidada</h2>${(()=>{const man=cur.fofa.geral||{};const cons={f:[],w:[],o:[],a:[]};AREAS.forEach(a=>{const f=autoFofa(a.id,[]);FQ.forEach(([k])=>f[k].forEach(it=>cons[k].push(it)));});INS.forEach(i=>cons.a.push({t:i.t,i:SEVW[i.sev]+1}));return `<div class="fofa">${FQ.map(([k,nm])=>`<div class="fq ${k}"><h4>${nm}</h4><ul>${[...(man[k]||[]).map(t=>({t})),...cons[k].sort((x,y)=>y.i-x.i).slice(0,6)].map(it=>`<li><span class="t">${esc(it.t)}</span></li>`).join('')}</ul></div>`).join('')}</div>`;})()}</section>
+   <section><h2>Entrevistados</h2>${cur.entrevistas.filter(e=>e.nome).length?`<table class="tbl"><thead><tr><th>Nome</th><th>Cargo</th><th>Área</th><th>Data</th></tr></thead><tbody>${cur.entrevistas.filter(e=>e.nome).map(e=>`<tr><td>${esc(e.nome)}</td><td>${esc(e.cargo)}</td><td>${esc(nameOf(e.area))}</td><td>${esc(e.data?fmtDate(e.data):'')}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Nenhum registrado.</p>'}</section>
+   <footer class="muted" style="font-size:12px;margin-top:24px">LORSO Digital · Central de Diagnóstico · documento confidencial</footer>
+  </article>`;
+}
 /* ================= RESUMO ================= */
 function summary(){
   computeAll(); const INS=runEngine(), ov=overall(); const L2=[];
@@ -1313,6 +1482,7 @@ document.addEventListener('click',e=>{
   if(act==='auth-mode'){ authMode=d.v; authMsg=null; renderAuth(); return; }
   if(act==='sair'){ flush(); sb.auth.signOut(); return; }
   if(act==='view'){ go(d.v); return; }
+  if(act==='print-rel'){ setTimeout(()=>window.print(),50); return; }
   if(act==='print-como'){ document.body.classList.add('printing'); setTimeout(()=>{ window.print(); document.body.classList.remove('printing'); },50); return; }
   if(act==='novo'){ ui.novo=true; renderBar(); setTimeout(()=>{const i=$('#novo-nome');i&&i.focus();},0); return; }
   if(act==='novo-cancel'){ ui.novo=false; renderBar(); return; }
@@ -1327,6 +1497,11 @@ document.addEventListener('click',e=>{
   else if(act==='iv-go'){ if(ui.iv){ ui.iv.i=Math.max(0,+d.v); render(); } }
   else if(act==='iv-area'){ const a=AREA[d.v]; const first=a.q.findIndex(q=>!cur.resp[q[0]]); ui.iv={area:d.v,i:first<0?0:first}; ui.area=d.v; ui.dstep=stepOf(d.v); saveUi(); render(); }
   else if(act==='iv-pick'){ const q=d.q,n=+d.n; const was=cur.resp[q]; if(was===n)delete cur.resp[q]; else cur.resp[q]=n; autoTasks(); touch(true); if(was!==n&&ui.iv){ const a=AREA[ui.iv.area]; clearTimeout(ui.ivT); ui.ivT=setTimeout(()=>{ if(!ui.iv)return; ui.iv.i=Math.min(a.q.length,ui.iv.i+1); render(); },reduced()?0:280); } }
+  else if(act==='ini-gerar'){ computeAll(); const B=blocosDe(runEngine()).slice(0,5); const have=new Set(cur.iniciativas.map(x=>x.titulo)); let n=0;
+    B.forEach((b,bi)=>HZ.forEach(([k])=>(b.h[k]||[]).forEach(t=>{ if(have.has(t))return; const hz={c:'Curto',m:'Médio',l:'Longo'}[k]; cur.iniciativas.push({id:uid(),titulo:t,bloco:b.id,area:b.areas[0]||'',horizonte:hz,impacto:String(Math.max(2,5-Math.floor(bi/2))),esforco:String({c:2,m:3,l:4}[k]),risco:'2',dependencias:'',alinhamento:b.t,recomendacao:k==='c'?'Fazer agora':'Próximo',motivo:'',indicador:b.kpi,ordem:0}); n++; })));
+    touch(true); toast(n?`${n} iniciativas criadas`:'As iniciativas das causas raiz já estão na matriz'); }
+  else if(act==='ini-add'){ cur.iniciativas.push({id:uid(),titulo:'',bloco:'',area:'',horizonte:'Curto',impacto:'',esforco:'',risco:'',dependencias:'',alinhamento:'',recomendacao:'Próximo',motivo:'',indicador:'',ordem:0}); touch(true); }
+  else if(act==='ini-del'){ cur.iniciativas=cur.iniciativas.filter(x=>x.id!==d.id); touch(true); }
   else if(act==='dstep'){ ui.view='fases'; ui.stage='diagnostico'; ui.dstep=d.v; if(d.v==='reitoria'&&!LID.some(a=>a.id===ui.area)&&ui.area!=='direcionamentos')ui.area='reitoria'; if(d.v==='entrevistas'&&!ENT.some(a=>a.id===ui.area))ui.area=jornadaLista()[0].id; saveUi(); render(); window.scrollTo({top:0}); }
   else if(act==='curso-add'){ cur.cursos.push({id:uid(),un:'',nome:'',modalidade:'',turno:'',preco:'',vagas:'',matriculados:'',status:'Vigente',lancamento:'',obs:''}); touch(true); const els=document.querySelectorAll('[data-curso][data-f="nome"]'); els.length&&els[els.length-1].focus(); }
   else if(act==='curso-del'){ cur.cursos=cur.cursos.filter(c=>c.id!==d.id); touch(true); }
@@ -1369,6 +1544,7 @@ document.addEventListener('click',e=>{
   else if(act==='kpi-add'){ cur.kpis.push({id:uid(),nome:d.n,un:'',meta:'',real:''}); touch(true); }
   else if(act==='kpi-del'){ cur.kpis.splice(+d.i,1); touch(true); }
   else if(act==='mem-area'){ const a=d.v, id=d.id; if(cur.dono_area[a]===id) delete cur.dono_area[a]; else cur.dono_area[a]=id; syncColetaDono(a); touch(true); }
+  else if(act==='export-pptx'){ exportPptx().catch(e=>{ console.error(e); toast('Não foi possível gerar a apresentação: '+e.message); }); }
   else if(act==='copy'){ copyText(summary(),'Resumo copiado'); }
   else if(act==='copy-close'){ ui.copy=null; render(); }
   else if(act==='dor-del'){ cur.dores=cur.dores.filter(x=>x.id!==d.id); touch(true); }
@@ -1407,6 +1583,7 @@ document.addEventListener('input',e=>{
   else if(d.teste!=null&&(d.f==='hip'||d.f==='area')){ cur.testes[+d.teste][d.f]=t.value; touch(false); }
   else if(d.kpi!=null&&(d.f==='nome'||d.f==='un')){ cur.kpis[+d.kpi][d.f]=t.value; touch(false); }
   else if(d.sys!=null&&t.tagName==='INPUT'){ const x=cur.sistemas.find(y=>y.id===d.sys); if(x){ x[d.f]=t.value; touch(false); } }
+  else if(d.ini!=null&&t.tagName==='INPUT'){ const x=cur.iniciativas.find(y=>y.id===d.ini); if(x){ x[d.f]=t.value; touch(false); } }
   else if(d.curso!=null&&t.tagName==='INPUT'){ const x=cur.cursos.find(y=>y.id===d.curso); if(x){ x[d.f]=t.value; touch(false); } }
 });
 document.addEventListener('change',e=>{
@@ -1424,6 +1601,7 @@ document.addEventListener('change',e=>{
   else if(d.teste!=null&&['i','c','f'].includes(d.f)){ cur.testes[+d.teste][d.f]=t.value; touch(false); soon(); }
   else if(d.kpi!=null&&(d.f==='meta'||d.f==='real')){ cur.kpis[+d.kpi][d.f]=t.value; touch(false); soon(); }
   else if(d.sys!=null){ const x=cur.sistemas.find(y=>y.id===d.sys); if(x){ x[d.f]=t.value; touch(false); soon(); } }
+  else if(d.ini!=null){ const x=cur.iniciativas.find(y=>y.id===d.ini); if(x){ x[d.f]=t.value; touch(false); soon(); } }
   else if(d.curso!=null){ const x=cur.cursos.find(y=>y.id===d.curso); if(x){ x[d.f]=t.value; touch(false); soon(); } }
 });
 document.addEventListener('focusout',()=>{ setTimeout(()=>{ if(!isTyping()&&(pendingData||pendingRemote))adoptRemote(); },0); });
