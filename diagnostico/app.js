@@ -12,6 +12,7 @@ const brl = n=>n==null?'—':n.toLocaleString('pt-BR',{style:'currency',currency
 const pct = n=>n==null||!isFinite(n)?'—':(n*100).toFixed(1).replace('.',',')+'%';
 const lvOf = s=>s==null?0:s<1.75?1:s<2.5?2:s<3.25?3:4;
 const uid = ()=>(crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);}));
+const pl=(n,a,b)=>`${n} ${n===1?a:b}`;
 const today = ()=>new Date().toISOString().slice(0,10);
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
@@ -247,6 +248,18 @@ RULES.push(
   txt:()=>`A captação está no nível ${L('captacao')}, mas ${capRows().filter(r=>r.ating!=null&&r.ating<0.8).map(r=>`${r.nm} (${r.mod}) está em ${pct(r.ating)} da meta`).join('; ')}. Vale checar se a meta é realista ou se a conversão trava depois do lead.`,
   rec:['Funil por curso: lead, inscrito, matriculado','Comparar a meta com a capacidade e o histórico']}
 );
+
+RULES.push(
+ {id:'CRZ-50',sev:'crit',pad:'Gargalo de fluxo',areas:['demandas','fluxo'],t:'Boa parte da fila fura o fluxo (urgência e gohorse)',
+  test:()=>{const t=trelloStats();return t&&t.pFuram!=null&&t.pFuram>=0.3;}, txt:()=>{const t=trelloStats();return `${t.furam} dos ${t.abertos} projetos abertos no Trello (${pct(t.pFuram)}) estão em urgência ou gohorse. Com essa proporção, o planejado sempre perde para o que grita mais alto.`;},
+  rec:['Critério escrito do que é urgência e quem pode pedir','Cota semanal fixa para urgências; o resto entra na fila','Revisão semanal dos gohorse: virar processo ou recusar']},
+ {id:'CRZ-51',sev:'alta',pad:'Gargalo de fluxo',areas:['demandas','fluxo'],t:'Projetos parados ocupando a fila',
+  test:()=>{const t=trelloStats();return t&&t.pParados!=null&&t.pParados>=0.2;}, txt:()=>{const t=trelloStats();return `${t.v.parados} projetos parados (${pct(t.pParados)} do que está aberto)${num(cur.campos['demandas.trello_dias_parado'])?`, parados em média há ${cur.campos['demandas.trello_dias_parado']} dias`:''}. Parado ainda consome atenção e esconde a fila real.`;},
+  rec:['Mutirão para cancelar ou destravar os parados','Regra: parado há 15 dias volta para o solicitante']},
+ {id:'CRZ-52',sev:'alta',pad:'Gargalo de capacidade',areas:['demandas','financeiro'],t:'A fila leva semanas para zerar',
+  test:()=>{const t=trelloStats();return t&&t.semanas!=null&&t.semanas>=6;}, txt:()=>{const t=trelloStats();return `No ritmo atual (${t.concl} projetos concluídos por mês), a fila de ${t.abertos} projetos abertos leva cerca de ${dec(t.semanas,0)} semanas para zerar, sem contar o que ainda vai chegar.`;},
+  rec:['Limitar o que entra por semana à capacidade real','Cortar ou adiar o backlog sem dono','Medir a vazão semanal e mostrar à reitoria']}
+);
 function finRows(){
   const rows=UNS.map(u=>{const f=unFin(u.id);return {id:u.id,nome:u.nome,level:L(u.id),score:SC[u.id].score,...f};});
   const totO=rows.reduce((a,r)=>a+(r.orcamento||0),0), totR=rows.reduce((a,r)=>a+(r.receita||0),0);
@@ -396,6 +409,7 @@ function renderAreaPanel(INS, LIST, override){
     <section class="panel">${sel}
      ${headHtml(`// ${a.g} · <b>${String(idx+1).padStart(2,'0')}/${ORD.length}</b>`,a.nome,a.desc,s)}
      ${a.un&&unExpResumo(a.id)?`<div class="banner"><span><b>Reitoria:</b> ${esc(unExpResumo(a.id))}</span><button class="chip" data-act="area" data-v="reitoria">Ver na Reitoria</button></div>`:''}
+     <div class="ivcta"><button class="btn primary" data-act="iv-start" data-v="${a.id}">▶ Modo entrevista: ${esc(a.nome)}</button><span class="muted">Uma pergunta por tela, com o roteiro ao lado.</span></div>
      <div class="collector"><span>Coleta desta área:</span><select data-dono-area="${a.id}" aria-label="Responsável pela coleta"><option value="">Sem responsável</option>${cur.equipe.map(m=>`<option value="${m.id}" ${dono===m.id?'selected':''}>${esc(m.nome||'Sem nome')}</option>`).join('')}</select>
       ${!cur.equipe.length?`<button class="chip" data-act="view" data-v="equipe">+ Cadastrar equipe</button>`:''}
       <span style="margin-left:auto">${areaTasks.length?`<button class="chip" data-act="tasks-area" data-v="${a.id}">${areaTasks.filter(t=>t.status!=='Concluída').length} tarefas abertas nesta área</button>`:`<button class="chip" data-act="task-new" data-area="${a.id}">+ Tarefa para esta área</button>`}</span></div>
@@ -403,6 +417,7 @@ function renderAreaPanel(INS, LIST, override){
      ${a.roteiro?volBlock:''}
      ${a.id==='financeiro'?dreHtmlImport():''}
      ${a.id==='reitoria'?unExpHtml():''}
+     ${a.id==='demandas'?trelloHtml():''}
      ${a.q.map(qHtml).join('')}
      <section class="block"><div class="block-h"><h3>Dores relatadas nesta área</h3><p>${cur.dores.filter(d=>d.area===a.id).length} registradas · alimentam o mapa de gargalos</p></div>
       ${cur.dores.some(d=>d.area===a.id)?`<div class="tblw"><table class="tbl"><thead><tr><th>Dor</th><th>Etapa</th><th>Tipo</th><th>Gravidade</th><th>Frequência</th><th>Relatado por</th><th></th></tr></thead><tbody>${cur.dores.filter(d=>d.area===a.id).map(d=>dorRow(d,true)).join('')}</tbody></table></div>`:''}
@@ -710,7 +725,7 @@ function gargaloChart(click){
   const g=gargalos(); const max=Math.max(1,...g.map(r=>r.score)); const top=g.reduce((a,b)=>b.score>a.score?b:a,g[0]);
   return `<div class="chart" role="img" aria-label="Pontuação de dores por etapa do fluxo">${g.map(r=>`<div class="crow"><${click?'button':'span'} class="nm" ${click?`data-act="dor-filter" data-v="${r.etapa}"`:''}>${r.etapa}</${click?'button':'span'}>
    <div class="track">${r.score?`<span style="width:${(r.score/max*100).toFixed(1)}%;min-width:4px;background:${r===top&&r.score?'var(--n1)':'var(--n2)'};opacity:${r===top?1:.75}"></span>`:''}</div>
-   <span class="mono num" style="font-size:12px">${r.n} dores${r.graves?` · ${r.graves} graves`:''}</span></div>`).join('')}</div>
+   <span class="mono num" style="font-size:12px">${pl(r.n,'dor','dores')}${r.graves?` · ${pl(r.graves,'grave','graves')}`:''}</span></div>`).join('')}</div>
    <p class="muted" style="font-size:12.5px">Pontuação = gravidade × frequência (diária 3, semanal 2, mensal 1,5, pontual 1). A barra vermelha é o principal gargalo.</p>`;
 }
 function renderDores(INS){
@@ -725,7 +740,7 @@ function renderDores(INS){
    ${cur.dores.length?`<div class="two">
     <section class="block"><div class="block-h"><h3>Gargalos por etapa</h3>${f.etapa?`<button class="chip" data-act="dor-filter" data-v="">Limpar filtro: ${esc(f.etapa)}</button>`:'<p>Clique numa etapa para filtrar</p>'}</div>${gargaloChart(true)}</section>
     <section class="block"><div class="block-h"><h3>Etapa × tipo de dor</h3><p>Quantidade de dores</p></div>${heat}</section></div>
-   <section class="block"><div class="block-h"><h3>Quem mais sente</h3><p>Áreas e UNs pela pontuação das dores</p></div><div class="chart">${byArea.map(r=>`<div class="crow"><button class="nm" data-act="dor-farea" data-v="${r.a.id}">${esc(r.a.nome)}</button><div class="track"><span style="width:${(r.s/maxA*100).toFixed(1)}%;min-width:4px;background:var(--n2)"></span></div><span class="mono num" style="font-size:12px">${r.n} dores</span></div>`).join('')}</div></section>
+   <section class="block"><div class="block-h"><h3>Quem mais sente</h3><p>Áreas e UNs pela pontuação das dores</p></div><div class="chart">${byArea.map(r=>`<div class="crow"><button class="nm" data-act="dor-farea" data-v="${r.a.id}">${esc(r.a.nome)}</button><div class="track"><span style="width:${(r.s/maxA*100).toFixed(1)}%;min-width:4px;background:var(--n2)"></span></div><span class="mono num" style="font-size:12px">${pl(r.n,'dor','dores')}</span></div>`).join('')}</div></section>
    <section class="block"><div class="block-h"><h3>Dores relatadas</h3><p>${list.length} de ${cur.dores.length}${f.area?` · ${esc(nameOf(f.area))} <button class="chip" data-act="dor-farea" data-v="">limpar</button>`:''} · da mais pesada para a mais leve</p></div>
     <div class="tblw"><table class="tbl"><thead><tr><th>Dor</th><th>Área</th><th>Etapa</th><th>Tipo</th><th>Gravidade</th><th>Frequência</th><th>Relatado por</th><th>Sistema</th><th></th></tr></thead><tbody>${list.map(d=>dorRow(d,false)).join('')}</tbody></table></div></section>`
    :'<p class="empty">Nenhuma dor registrada ainda. Use o formulário acima durante as entrevistas; o mapa de gargalos aparece a partir do primeiro registro.</p>'}
@@ -843,6 +858,77 @@ function unExpHtml(){
     ${fieldHtml(unxKey(u.id,'obs'),'Observação da reitoria sobre esta UN','t')}
    </div>`).join('')}</div></section>`;
 }
+/* ---------- Retrato do Trello (Gestão de demandas) ---------- */
+const TRELLO=[['backlog','Backlog','var(--faint)'],['priorizacao','Em priorização','var(--n3)'],['andamento','Em produção','var(--accent)'],['urgencia','Urgência','var(--n2)'],['gohorse','Gohorse (fora do fluxo)','var(--n1)'],['parados','Parados','#9b7bd4']];
+function trelloStats(){
+  const g=k=>num(cur.campos['demandas.trello_'+k]);
+  const v=Object.fromEntries(TRELLO.map(([k])=>[k,g(k)])); const concl=g('concluidos'), hc=V('financeiro','headcount');
+  const filled=TRELLO.some(([k])=>v[k]!=null); if(!filled) return null;
+  const abertos=TRELLO.reduce((a,[k])=>a+(v[k]||0),0);
+  const furam=(v.urgencia||0)+(v.gohorse||0);
+  return {v,concl,abertos,furam,pFuram:abertos?furam/abertos:null,pParados:abertos?(v.parados||0)/abertos:null,semanas:concl>0?abertos/(concl/4.33):null,porPessoa:hc>0?abertos/hc:null,hc};
+}
+function trelloHtml(){
+  const t=trelloStats();
+  const inp=(k,l)=>`<div class="field"><label for="c-demandas.trello_${k}">${l}</label><div class="inu"><input id="c-demandas.trello_${k}" data-campo="demandas.trello_${k}" inputmode="decimal" value="${esc(cur.campos['demandas.trello_'+k]||'')}" placeholder="0"></div></div>`;
+  return `<section class="block"><div class="block-h"><h3>Retrato do Trello</h3><p>Quantos projetos estão em cada lista hoje. É a medida real da capacidade.</p></div>
+   <div class="fields">${TRELLO.map(([k,l])=>inp(k,l)).join('')}${inp('concluidos','Concluídos no último mês')}${inp('dias_parado','Tempo médio parado (dias)')}</div>
+   ${t?`<div class="stack" role="img" aria-label="Distribuição dos projetos abertos">${TRELLO.filter(([k])=>t.v[k]).map(([k,l,c])=>`<span style="flex:${t.v[k]};background:${c}" title="${l}: ${t.v[k]}"></span>`).join('')}</div>
+    <div class="legend">${TRELLO.filter(([k])=>t.v[k]).map(([k,l,c])=>`<span class="lg"><i style="background:${c}"></i>${l} <b class="num">${t.v[k]}</b></span>`).join('')}</div>
+    <div class="stats"><div class="stat"><b>${t.abertos}</b><span>projetos abertos</span></div>
+     <div class="stat ${t.pFuram>=0.3?'bad':t.pFuram>=0.15?'warn':''}"><b>${pct(t.pFuram)}</b><span>furam o fluxo (urgência + gohorse)</span></div>
+     <div class="stat ${t.pParados>=0.2?'warn':''}"><b>${pct(t.pParados)}</b><span>parados</span></div>
+     <div class="stat ${t.semanas>=6?'bad':''}"><b>${t.semanas!=null?dec(t.semanas,1).replace(',0','')+' sem.':'—'}</b><span>para zerar a fila no ritmo atual</span></div>
+     <div class="stat"><b>${t.porPessoa!=null?dec(t.porPessoa,1):'—'}</b><span>${t.hc?'projetos abertos por pessoa':'por pessoa (informe o time em Orçamento e DRE)'}</span></div></div>`:''}
+  </section>`;
+}
+/* ---------- Modo entrevista ---------- */
+// Uma pergunta por tela, botões grandes, teclas 1 a 4 e roteiro aberto ao lado.
+function ivOrder(){ return stepOf(ui.iv.area)==='reitoria'?LID:jornadaLista(); }
+function ivHtml(){
+  const a=AREA[ui.iv.area]; if(!a) return '';
+  const qs=a.q, i=Math.min(ui.iv.i,qs.length), done=i>=qs.length, x=qs[i];
+  const ans=qs.filter(q=>cur.resp[q[0]]).length, s=SC[a.id];
+  const ORD=ivOrder(), nextA=ORD[ORD.indexOf(a)+1];
+  const ents=cur.entrevistas.filter(e=>e.area===a.id&&e.nome);
+  const rot=(a.vol||[]).filter(v=>v[2]==='t');
+  const nums=(a.vol||[]).filter(v=>v[2]!=='t');
+  const main = done ? `<div class="iv-done"><span class="eyebrow">// Área concluída</span><h2>${esc(a.nome)}</h2>
+      <div class="iv-score">${lvChip(s.score!=null?s.level:0)}<b>${s.score!=null?dec(s.score):'—'}</b><small>/ 4 · ${ans} de ${qs.length} respondidas</small></div>
+      ${nums.length?`<div class="fields">${nums.map(v=>fieldHtml(a.id+'.'+v[0],v[1],v[2])).join('')}</div>`:''}
+      <div class="iv-nav"><button class="btn" data-act="iv-go" data-v="${qs.length-1}">← Revisar</button>${nextA?`<button class="btn primary big" data-act="iv-area" data-v="${nextA.id}">Próxima: ${esc(nextA.nome)} →</button>`:''}<button class="btn ghost" data-act="iv-exit">Sair do modo entrevista</button></div></div>`
+   : `<div class="iv-prog"><span>${esc(a.nome)} · pergunta ${i+1} de ${qs.length}</span><span class="iv-dots">${qs.map((q,k)=>`<button class="iv-dot ${k===i?'on':''} ${cur.resp[q[0]]?'ok':''}" data-act="iv-go" data-v="${k}" aria-label="Pergunta ${k+1}"></button>`).join('')}</span></div>
+      <div class="iv-tags"><span class="tag">${PIL[x[2]]}</span><span class="tag">${IMP[x[3]]}</span>${x[4]?'<span class="tag warn">Eliminatória</span>':''}</div>
+      <h2 class="iv-q">${esc(x[5])}</h2>
+      <div class="iv-opts">${x[6].map((o,k)=>{const n=k+1, on=cur.resp[x[0]]===n;return `<button class="iv-opt n${n} ${on?'on':''}" data-act="iv-pick" data-q="${x[0]}" data-n="${n}" aria-pressed="${on}"><span class="k">${n}</span><span class="t">${esc(o)}</span><span class="l">${LVL[n]}</span></button>`;}).join('')}</div>
+      <div class="iv-note"><textarea data-nota="${x[0]}" rows="2" placeholder="O que a pessoa disse que sustenta a resposta (opcional)">${esc(cur.notas[x[0]]||'')}</textarea><label class="evid"><input type="checkbox" data-evid="${x[0]}" ${cur.evid[x[0]]?'checked':''}>Comprovado com evidência</label></div>
+      <div class="iv-nav"><button class="btn" data-act="iv-go" data-v="${i-1}" ${i?'':'disabled'}>← Anterior</button><span class="muted iv-hint">Teclas 1 a 4 respondem · setas navegam · Esc sai</span><button class="btn primary" data-act="iv-go" data-v="${i+1}">${cur.resp[x[0]]?'Próxima →':'Pular →'}</button></div>`;
+  return `<div class="iv-wrap" role="dialog" aria-label="Modo entrevista">
+   <div class="iv-top"><span class="logo"><i></i>Modo entrevista</span><span class="muted">${esc(cur.nome)}</span><button class="btn sm" data-act="iv-exit">Sair (Esc)</button></div>
+   <div class="iv-grid"><main class="iv-main">${main}</main>
+    <aside class="iv-side">
+     <section><h3>Entrevistado</h3>${ents.length?`<p>${ents.map(e=>`<b>${esc(e.nome)}</b>${e.cargo?` · ${esc(e.cargo)}`:''}`).join('<br>')}</p>`:''}
+      <form id="f-iv-ent" class="iv-ent"><input name="nome" placeholder="Nome" aria-label="Nome do entrevistado" required><input name="cargo" placeholder="Cargo" aria-label="Cargo"><button class="btn sm" type="submit">${ents.length?'+ Outro':'Registrar'}</button></form></section>
+     ${rot.length?`<section><h3>Roteiro</h3><div class="fields one">${rot.map(v=>fieldHtml(a.id+'.'+v[0],v[1],v[2])).join('')}</div></section>`:''}
+     <section><h3>Dor relatada agora</h3><form class="dorform mini" data-dorform="1" data-area="${a.id}"><input name="txt" class="dtxt" placeholder="Descreva a dor" aria-label="Dor relatada" required>
+      <select name="etapa" aria-label="Onde trava">${FLUXO.map(o=>`<option ${ui.dorDef.etapa===o?'selected':''}>${o}</option>`).join('')}</select>
+      <select name="sev" aria-label="Gravidade">${[['1','Baixa'],['2','Média'],['3','Alta']].map(([v,l])=>`<option value="${v}" ${ui.dorDef.sev===v?'selected':''}>${l}</option>`).join('')}</select>
+      <input type="hidden" name="tipo" value="${esc(ui.dorDef.tipo)}"><input type="hidden" name="freq" value="${esc(ui.dorDef.freq)}"><input type="hidden" name="quem" value="${esc((ents[0]||{}).nome||'')}"><input type="hidden" name="sistema" value="">
+      <button class="btn sm" type="submit">Registrar dor</button></form>
+      ${cur.dores.filter(d=>d.area===a.id).length?`<p class="muted" style="font-size:13px">${pl(cur.dores.filter(d=>d.area===a.id).length,'dor registrada','dores registradas')} nesta área</p>`:''}</section>
+     <section>${fieldHtml(a.id+'.contexto','Anotações livres da conversa','t')}</section>
+    </aside></div></div>`;
+}
+function renderIV(){ let el=$('#iv'); if(!el){ el=document.createElement('div'); el.id='iv'; document.body.appendChild(el); } if(!ui.iv||!cur){ el.hidden=true; el.innerHTML=''; document.body.style.overflow=''; return; } el.hidden=false; el.innerHTML=ivHtml(); document.body.style.overflow='hidden'; }
+document.addEventListener('keydown',e=>{
+  if(!ui.iv||!cur) return; const tag=(document.activeElement||{}).tagName;
+  if(e.key==='Escape'){ ui.iv=null; render(); return; }
+  if(/INPUT|TEXTAREA|SELECT/.test(tag)) return;
+  const a=AREA[ui.iv.area]; const x=a.q[ui.iv.i];
+  if(x&&/^[1-4]$/.test(e.key)){ const b=document.querySelector(`[data-act="iv-pick"][data-n="${e.key}"]`); b&&b.click(); e.preventDefault(); }
+  else if(e.key==='ArrowRight'){ ui.iv.i=Math.min(a.q.length,ui.iv.i+1); render(); }
+  else if(e.key==='ArrowLeft'){ ui.iv.i=Math.max(0,ui.iv.i-1); render(); }
+});
 function renderSubnav(INS){
   const x=crossTasks(INS); const hot=x.late.length+x.semTarefa.length;
   $('#subnav').innerHTML=`<button class="tab ${ui.view==='fases'?'on':''}" data-act="view" data-v="fases">Metodologia</button>
@@ -883,6 +969,7 @@ function renderInner(){
   else if(ui.view==='sistemas') renderSistemas();
   else if(ui.view==='equipe') renderEquipe();
   else { renderRail(); ({diagnostico:renderDiagnostico,estrategia:renderEstrategia,execucao:renderExecucao,otimizacao:renderOtimizacao,resultados:renderResultados})[ui.stage](INS); }
+  renderIV();
   document.querySelectorAll('textarea[data-nota],.field textarea,.kedit textarea').forEach(autoGrow);
 }
 /* tarefas de coleta acompanham o preenchimento */
@@ -903,6 +990,7 @@ function summary(){
   L2.push('MATURIDADE POR ÁREA'); AREAS.forEach(a=>{const s=SC[a.id]; L2.push(`- ${a.nome}: ${s.score!=null?dec(s.score)+' (N'+s.level+' '+LVL[s.level]+')':'sem nota'}`);}); L2.push('');
   L2.push('INCONGRUÊNCIAS'); if(!INS.length)L2.push('- Nenhuma'); INS.forEach(i=>{L2.push(`- [${SEV[i.sev]}] ${i.t}: ${i.txt}`); i.rec.forEach(r=>L2.push(`    • ${r}`));}); L2.push('');
   { const ex=UNS.map(u=>[u.nome,unExpResumo(u.id)]).filter(x=>x[1]); if(ex.length){ L2.push('EXPECTATIVAS DA REITORIA POR UN'); ex.forEach(([n,t])=>L2.push(`- ${n}: ${t}`)); L2.push(''); } }
+  { const t=trelloStats(); if(t){ L2.push('RETRATO DO TRELLO'); L2.push(`- ${t.abertos} projetos abertos: `+TRELLO.filter(([k])=>t.v[k]).map(([k,l])=>`${l} ${t.v[k]}`).join(', ')); if(t.concl!=null)L2.push(`- ${t.concl} concluídos no último mês${t.semanas!=null?` · ${dec(t.semanas,0)} semanas para zerar a fila`:''}`); L2.push(''); } }
   if(cur.campos['ctx.problema'])L2.push('PROBLEMA CENTRAL RELATADO: '+cur.campos['ctx.problema']);
   if(cur.campos['ctx.hipotese'])L2.push('HIPÓTESE DO CONSULTOR: '+cur.campos['ctx.hipotese']);
   if(cur.dores.length){ L2.push(''); L2.push('GARGALOS POR ETAPA'); gargalos().filter(g=>g.n).sort((a,b)=>b.score-a.score).forEach(g=>L2.push(`- ${g.etapa}: ${g.n} dores (${g.graves} graves)`)); L2.push(''); L2.push('DORES MAIS PESADAS'); [...cur.dores].sort((a,b)=>dorScore(b)-dorScore(a)).slice(0,10).forEach(d=>L2.push(`- ${d.txt} [${nameOf(d.area)||'Geral'} · ${d.etapa} · ${SEVN[d.sev]} · ${d.freq}${d.quem?' · '+d.quem:''}]`)); L2.push(''); }
@@ -1124,6 +1212,11 @@ document.addEventListener('click',e=>{
   if(!cur) return;
   if(act==='stage'){ ui.view='fases'; ui.stage=d.v; ui.copy=null; saveUi(); render(); window.scrollTo({top:0}); }
   else if(act==='area'||act==='goto'){ ui.view='fases'; if(AREA[d.v]||d.v==='direcionamentos'){ui.stage='diagnostico';ui.area=d.v;ui.dstep=stepOf(d.v);} else if(STG[d.v]) ui.stage=d.v; saveUi(); render(); window.scrollTo({top:0}); }
+  else if(act==='iv-start'){ const a=AREA[d.v]; const first=a.q.findIndex(q=>!cur.resp[q[0]]); ui.iv={area:d.v,i:first<0?0:first}; render(); }
+  else if(act==='iv-exit'){ ui.area=ui.iv?ui.iv.area:ui.area; ui.iv=null; render(); }
+  else if(act==='iv-go'){ if(ui.iv){ ui.iv.i=Math.max(0,+d.v); render(); } }
+  else if(act==='iv-area'){ const a=AREA[d.v]; const first=a.q.findIndex(q=>!cur.resp[q[0]]); ui.iv={area:d.v,i:first<0?0:first}; ui.area=d.v; ui.dstep=stepOf(d.v); saveUi(); render(); }
+  else if(act==='iv-pick'){ const q=d.q,n=+d.n; const was=cur.resp[q]; if(was===n)delete cur.resp[q]; else cur.resp[q]=n; autoTasks(); touch(true); if(was!==n&&ui.iv){ const a=AREA[ui.iv.area]; clearTimeout(ui.ivT); ui.ivT=setTimeout(()=>{ if(!ui.iv)return; ui.iv.i=Math.min(a.q.length,ui.iv.i+1); render(); },reduced()?0:280); } }
   else if(act==='dstep'){ ui.view='fases'; ui.stage='diagnostico'; ui.dstep=d.v; if(d.v==='reitoria'&&!LID.some(a=>a.id===ui.area)&&ui.area!=='direcionamentos')ui.area='reitoria'; if(d.v==='entrevistas'&&!ENT.some(a=>a.id===ui.area))ui.area=jornadaLista()[0].id; saveUi(); render(); window.scrollTo({top:0}); }
   else if(act==='curso-add'){ cur.cursos.push({id:uid(),un:'',nome:'',modalidade:'',turno:'',preco:'',vagas:'',matriculados:'',status:'Vigente',lancamento:'',obs:''}); touch(true); const els=document.querySelectorAll('[data-curso][data-f="nome"]'); els.length&&els[els.length-1].focus(); }
   else if(act==='curso-del'){ cur.cursos=cur.cursos.filter(c=>c.id!==d.id); touch(true); }
@@ -1182,6 +1275,7 @@ document.addEventListener('submit',e=>{
   if(f.id==='f-auth'){ submitAuth(f); return; }
   if(f.id==='f-novo'){ const nm=$('#novo-nome').value.trim(); if(nm) createDiag(nm); return; }
   if(f.id==='f-novo2'){ const nm=$('#novo-nome2').value.trim(); if(nm) createDiag(nm); return; }
+  if(f.id==='f-iv-ent'&&cur&&ui.iv){ const fd=new FormData(f); const nome=String(fd.get('nome')||'').trim(); if(!nome)return; cur.entrevistas.push({id:uid(),area:ui.iv.area,nome,cargo:String(fd.get('cargo')||'').trim(),depto:nameOf(ui.iv.area),data:today()}); f.reset(); touch(true); toast('Entrevistado registrado'); return; }
   if(f.id==='f-convite'){ const fd=new FormData(f); const c={email:String(fd.get('email')||'').trim().toLowerCase(),nome:String(fd.get('nome')||'').trim(),funcao:String(fd.get('funcao')||'').trim()||null,papel:fd.get('papel'),convidado_por:me.id};
     (async()=>{ const r=await sb.from('convites').upsert(c); if(r.error){ toast('Não foi possível convidar: '+r.error.message); return; } f.reset(); await loadTeam(); render(); copyText(conviteTexto(c),'Convite registrado e texto copiado'); })(); return; }
   if(!cur) return;
