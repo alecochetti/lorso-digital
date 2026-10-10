@@ -330,9 +330,8 @@ function renderBar(){
   $('#diagbar').innerHTML = ui.novo ? `
     <form id="f-novo" class="diag"><label class="lbl" for="novo-nome">Cliente</label><input id="novo-nome" placeholder="Nome do grupo ou instituição" required style="width:min(260px,100%)">
     <button class="btn primary" type="submit">Criar diagnóstico</button><button class="btn ghost" type="button" data-act="novo-cancel">Cancelar</button></form>${who}` : `
-    ${cur?`<label class="lbl" for="sel-diag">Diagnóstico</label>
-    <select id="sel-diag">${list.map(d=>`<option value="${esc(d.id)}" ${d.id===cur.id?'selected':''}>${esc(d.id===cur.id?cur.nome:d.nome)}</option>`).join('')}</select>
-    <input id="nome-diag" value="${esc(cur.nome)}" aria-label="Nome do cliente">`:''}
+    ${cur?`<label class="lbl" for="sel-diag">Cliente</label>
+    <select id="sel-diag">${list.map(d=>`<option value="${esc(d.id)}" ${d.id===cur.id?'selected':''}>${esc(d.id===cur.id?cur.nome:d.nome)}</option>`).join('')}</select>`:''}
     ${cur?`<button class="btn" data-act="dre-go">Importar DRE</button>`:''}
     ${me&&me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo</button>`:''}
     ${cur?`<span id="status">${statusHtml()}</span>`:''}${who}`;
@@ -430,7 +429,7 @@ function renderAreaPanel(INS, LIST, override){
    <div class="work" style="margin-top:16px">
     <aside class="side" aria-label="Áreas">${ui.dstep==='entrevistas'&&pri.length?`<div class="grp"><span class="eyebrow">Jornada priorizada</span>${jornadaLista().filter(x=>pri.includes(x.id)).map((x,i)=>`<button class="anav ${x.id===a.id?'on':''}" data-act="area" data-v="${x.id}"><span>${i+1}. ${x.nome}</span>${SC[x.id].score!=null?`<span class="lv l${SC[x.id].level}">N${SC[x.id].level}</span>`:`<span class="cnt">${SC[x.id].ans}/${SC[x.id].total}</span>`}</button>`).join('')}</div>`:''}${nav}${ui.dstep==='reitoria'?`<div class="grp"><span class="eyebrow">Saída da reitoria</span><button class="anav ${ui.area==='direcionamentos'?'on':''}" data-act="area" data-v="direcionamentos"><span>Direcionamentos</span><span class="cnt">${pri.length}</span></button></div>`:''}</aside>
     <section class="panel">${sel}
-     ${headHtml(`// ${a.g} · <b>${String(idx+1).padStart(2,'0')}/${ORD.length}</b>`,a.nome,a.desc,s)}
+     ${headHtml(`${a.g} · <b>${idx+1} de ${ORD.length}</b>`,a.nome,a.desc,s)}
      ${a.un&&unExpResumo(a.id)?`<div class="banner"><span><b>Reitoria:</b> ${esc(unExpResumo(a.id))}</span><button class="chip" data-act="area" data-v="reitoria">Ver na Reitoria</button></div>`:''}
      <div class="ivcta"><button class="btn primary" data-act="iv-start" data-v="${a.id}">▶ Modo entrevista: ${esc(a.nome)}</button><span class="muted">Uma pergunta por tela, com o roteiro ao lado.</span></div>
      <div class="collector"><span>Coleta desta área:</span><select data-dono-area="${a.id}" aria-label="Responsável pela coleta"><option value="">Sem responsável</option>${cur.equipe.map(m=>`<option value="${m.id}" ${dono===m.id?'selected':''}>${esc(m.nome||'Sem nome')}</option>`).join('')}</select>
@@ -481,8 +480,8 @@ function baseHtml(INS){
   const opt=(v,list)=>list.map(o=>`<option ${v===o?'selected':''}>${o}</option>`).join('');
   const pv=ui.cursoPreview;
   return `<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">// Passo 1 · <b>Base de conhecimento</b></span><h2 style="margin-top:8px">Base de conhecimento</h2><p class="lead">Antes das entrevistas: o que a instituição vende, por quanto, com quantas vagas e quanto já captou. Esses números entram nos cruzamentos com as expectativas da reitoria.</p></div></header>
-   <div class="stats"><div class="stat"><b>${vig}</b><span>cursos vigentes</span></div><div class="stat"><b>${lan}</b><span>lançamentos previstos</span></div><div class="stat"><b>${tv!=null?tv.toLocaleString('pt-BR'):'—'}</b><span>vagas no ciclo</span></div><div class="stat ${tv&&tc!=null&&tc/tv<0.7?'warn':''}"><b>${tv&&tc!=null?pct(tc/tv):'—'}</b><span>ocupação das vagas</span></div><div class="stat ${tm&&tc!=null&&tc/tm<0.8?'bad':''}"><b>${tm&&tc!=null?pct(tc/tm):'—'}</b><span>da meta de captação</span></div></div>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Passo 1 · <b>Base de conhecimento</b></span><h2 style="margin-top:8px">Base de conhecimento</h2><p class="lead">Antes das entrevistas: o que a instituição vende, por quanto, com quantas vagas e quanto já captou. Esses números entram nos cruzamentos com as expectativas da reitoria.</p></div></header>
+   <div class="stats"><div class="stat"><span class="si">${ico('base',20)}</span><b>${vig}</b><span>cursos vigentes</span></div><div class="stat"><span class="si">${ico('lancamento',20)}</span><b>${lan}</b><span>lançamentos previstos</span></div><div class="stat"><span class="si">${ico('equipe',20)}</span><b>${tv!=null?tv.toLocaleString('pt-BR'):'—'}</b><span>vagas no ciclo</span></div><div class="stat ${tv&&tc!=null&&tc/tv<0.7?'warn':''}"><span class="si">${ico('visao',20)}</span><b>${tv&&tc!=null?pct(tc/tv):'—'}</b><span>ocupação das vagas</span>${tv&&tc!=null?`<span class="sp"><i style="width:${Math.min(100,tc/tv*100)}%"></i></span>`:''}</div><div class="stat ${tm&&tc!=null&&tc/tm<0.8?'bad':''}"><span class="si">${ico('alvo',20)}</span><b>${tm&&tc!=null?pct(tc/tm):'—'}</b><span>da meta de captação</span>${tm&&tc!=null?`<span class="sp"><i style="width:${Math.min(100,tc/tm*100)}%"></i></span>`:''}</div></div>
    ${fontesHtml()}
    <section class="block"><div class="block-h"><h3>Capacidade de captação por UN e turno</h3><p>Vagas do ciclo, meta, quantos já captou e a mensalidade média.</p></div>
     <div class="tblw"><table class="tbl cap"><thead><tr><th>UN</th><th>Turno ou modalidade</th><th class="r">Vagas</th><th class="r">Meta de captação</th><th class="r">Captados</th><th class="r">Mensalidade média</th><th class="r">Ocupação</th><th class="r">Da meta</th></tr></thead><tbody>
@@ -525,7 +524,7 @@ function cursoParse(txt){
 }
 function direcHtml(){
   const pri=jornadaIds();
-  return `<header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">// Passo 2 · <b>Saída da reitoria</b></span><h2 style="margin-top:8px">Direcionamentos</h2><p class="lead">Com o que a reitoria contou, escolha por onde começar as entrevistas. A ordem dos cliques é a ordem da jornada.</p></div></header>
+  return `<header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Passo 2 · <b>Saída da reitoria</b></span><h2 style="margin-top:8px">Direcionamentos</h2><p class="lead">Com o que a reitoria contou, escolha por onde começar as entrevistas. A ordem dos cliques é a ordem da jornada.</p></div></header>
    ${UNS.some(u=>unExpResumo(u.id))?`<section class="block"><div class="block-h"><h3>O que a reitoria espera de cada UN</h3></div><div class="xlist">${UNS.filter(u=>unExpResumo(u.id)).map(u=>`<div class="xitem media"><span class="t">${esc(u.nome)}<small>${esc(unExpResumo(u.id))}</small></span></div>`).join('')}</div></section>`:''}
    <section class="block"><div class="block-h"><h3>Áreas e UNs para entrevistar</h3><p>${pri.length} escolhidas</p></div>
     <div class="areachips">${ENT.map(a=>{const i=pri.indexOf(a.id);return `<button class="achip ${i>=0?'on':''}" data-act="jornada-toggle" data-v="${a.id}">${i>=0?`<b>${i+1}</b> · `:''}${esc(a.nome)}</button>`;}).join('')}</div>
@@ -538,7 +537,7 @@ function direcHtml(){
    </section>
    ${fieldHtml('jornada.notas','Direcionamentos da reitoria para a consultoria (o que olhar com mais atenção, quem ouvir, o que evitar)','t')}`;
 }
-function stageHead(st){return headHtml(`// ${String(st.n).padStart(2,'0')} · <b>Fase ${st.n}</b>`,st.nome,st.intro,SC[st.id]);}
+function stageHead(st){return headHtml(`<b>Fase ${st.n}</b> de 5`,st.nome,st.intro,SC[st.id]);}
 function stageQs(st){return `${st.q.map(qHtml).join('')}${st.vol&&st.vol.length?`<section class="block"><div class="block-h"><h3>Campos abertos</h3><p>Anotações e números desta fase.</p></div><div class="fields">${st.vol.map(v=>fieldHtml(st.id+'.'+v[0],v[1],v[2])).join('')}</div></section>`:''}`;}
 function nextBtn(st){const n=STAGES[st.n]; return n?`<div class="pager"><button class="btn" data-act="stage" data-v="${STAGES[st.n-2].id}">← ${STAGES[st.n-2].nome}</button><button class="btn primary" data-act="stage" data-v="${n.id}">${n.nome} →</button></div>`:'';}
 
@@ -568,9 +567,11 @@ function cardHtml(t){
      <select data-task-f="status" data-id="${t.id}" aria-label="Coluna">${COLS.map(c=>`<option ${t.status===c?'selected':''}>${c}</option>`).join('')}</select>
      <div class="row"><button class="btn sm ghost" data-act="task-del" data-id="${t.id}">Excluir</button><button class="btn sm primary" data-act="task-close">Pronto</button></div>
     </div></article>`;
+  const hz=planoHz(t), crz=t.origem&&t.origem.startsWith('CRZ');
   return `<button class="kcard" draggable="true" data-task="${t.id}" data-act="task-open" data-id="${t.id}">
+    <span class="ktags">${t.area?`<span class="tag area">${esc(nameOf(t.area))}</span>`:''}${hz?`<span class="tag hz-${hz}">${HZN[hz]} prazo</span>`:''}${crz?`<span class="tag">${esc(t.origem)}</span>`:''}</span>
     <span class="kt">${esc(t.txt||'Sem título')}</span>
-    <span class="km">${planoHz(t)?`<span class="chip hz-${planoHz(t)}">${HZN[planoHz(t)]} prazo</span>`:''}${t.area?`<span class="chip">${esc(nameOf(t.area))}</span>`:''}${t.origem&&t.origem.startsWith('CRZ')?`<span class="chip">${esc(t.origem)}</span>`:''}${t.prazo?`<span class="due ${isLate(t)?'late':''}">${isLate(t)?'Atrasada · ':''}${fmtDate(t.prazo)}</span>`:''}${m?`<span class="av" title="${esc(m.nome)}" style="margin-left:auto">${esc(initials(m.nome))}</span>`:''}</span></button>`;
+    <span class="kf">${m?`<span class="av" title="${esc(m.nome)}">${esc(initials(m.nome))}</span><span>${esc(String(m.nome||'').split(' ')[0])}</span>`:'<span class="muted">Sem responsável</span>'}${t.prazo?`<span class="due ${isLate(t)?'late':''}">${ico('relogio',13)}${isLate(t)?'Atrasada · ':''}${fmtDate(t.prazo)}</span>`:''}</span></button>`;
 }
 function kanbanHtml(){
   const f=ui.kf; const list=cur.acoes.filter(t=>isPlano(t)&&(!f.dono||t.dono===f.dono||(f.dono==='-'&&!t.dono))&&(!f.area||t.area===f.area));
@@ -591,7 +592,7 @@ function crossTasks(INS){
 function renderTarefas(INS){
   const x=crossTasks(INS);
   $('#main').innerHTML=`<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">// <b>Tarefas</b></span><h2 style="margin-top:8px">Kanban do diagnóstico</h2><p class="lead">Tarefas de coleta e de ação, cruzadas com as áreas e as incongruências. Tarefas de coleta se concluem sozinhas quando a área fica completa.</p></div>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow"><b>Tarefas</b></span><h2 style="margin-top:8px">Kanban do diagnóstico</h2><p class="lead">Tarefas de coleta e de ação, cruzadas com as áreas e as incongruências. Tarefas de coleta se concluem sozinhas quando a área fica completa.</p></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="gen-coleta">Gerar tarefas de coleta</button><button class="btn primary" data-act="gen-ins">Gerar tarefas das incongruências</button></div></header>
    <div class="stats">
     <div class="stat"><b>${x.open.length}</b><span>tarefas abertas</span></div>
@@ -647,7 +648,7 @@ function renderEquipe(){
   const isAdm=me&&me.papel==='admin';
   const mem=cur?cur.equipe:equipeList();
   $('#main').innerHTML=`<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">// <b>Equipe</b></span><h2 style="margin-top:8px">Quem coleta com você</h2><p class="lead">Cada pessoa entra com o próprio e-mail e senha. Só quem foi convidado consegue criar acesso. Distribua as áreas de coleta e as tarefas entre a equipe.</p></div></header>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow"><b>Equipe</b></span><h2 style="margin-top:8px">Quem coleta com você</h2><p class="lead">Cada pessoa entra com o próprio e-mail e senha. Só quem foi convidado consegue criar acesso. Distribua as áreas de coleta e as tarefas entre a equipe.</p></div></header>
    ${isAdm?`<section class="block"><div class="block-h"><h3>Convidar pessoa</h3><p>Depois de convidar, envie o texto do convite para a pessoa.</p></div>
     <form id="f-convite" class="invite">
      <label>Nome<input name="nome" required placeholder="Nome completo"></label>
@@ -817,23 +818,30 @@ function renderResultados(INS){
     <div style="display:flex;flex-wrap:wrap;gap:6px">${['Matrículas','CAC','CPL','Conversão lead → matrícula','NPS','Taxa de rematrícula','ROAS'].map(n=>`<button class="chip" data-act="kpi-add" data-n="${n}">+ ${n}</button>`).join('')}<button class="chip" data-act="kpi-add" data-n="">+ Outro</button></div>`;
   const leit=leituraAuto(INS), t=trelloStats(), nB=blocosDe(INS).length;
   $('#main').innerHTML=`<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">// 05 · <b>Fase 5</b></span><h2 style="margin-top:8px">Resultados</h2><p class="lead">Do resumo para a reitoria aos detalhes: diagnóstico, causas raiz, plano no tempo e as evidências.</p></div>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow"><b>Fase 5</b> de 5</span><h2 style="margin-top:8px">Resultados</h2><p class="lead">Do resumo para a reitoria aos detalhes: diagnóstico, causas raiz, plano no tempo e as evidências.</p></div>
    <div class="res-actions">${OUT_BTNS()}<button class="btn" data-act="copy">Copiar resumo</button></div></header>
    ${ui.copy!=null?`<section class="block"><div class="block-h"><h3>Resumo para colar</h3><button class="btn sm" data-act="copy-close">Fechar</button></div><textarea class="copyout" id="copyout" readonly>${esc(ui.copy)}</textarea></section>`:''}
-   <section class="hero"><div><span class="eyebrow">Maturidade geral</span><div class="big" style="margin-top:6px">${ov.score!=null?dec(ov.score):'—'}<small> / 4</small></div><div style="margin-top:8px">${lvChip(ov.level)}</div></div>
-    <div class="exec"><span class="eyebrow">Resumo executivo</span>${leit.length?`<ul class="leit">${leit.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`:'<p class="muted">O resumo aparece quando houver respostas suficientes.</p>'}
-     <div class="kpis"><div class="kpi"><b>${avaliadas}/${AREAS.length}</b><span>áreas com nota</span></div><div class="kpi"><b>${cur.entrevistas.length}</b><span>pessoas entrevistadas</span></div><div class="kpi"><b>${nB}</b><span>causas raiz</span></div><div class="kpi"><b style="color:var(--n1)">${INS.filter(i=>i.sev==='crit').length}</b><span>incongruências críticas</span></div></div></div></section>
-   ${fieldHtml('res.leitura','Leitura do consultor (entra na apresentação e no relatório)','t')}
+   <section class="rx-hero"><div class="gauge">${gaugeSvg(ov.score,ov.level)}<div class="gv"><b>${ov.score!=null?dec(ov.score):'—'}</b><small>de 4 · maturidade geral</small>${lvChip(ov.level)}</div></div>
+    <div class="rx-sum"><h3>Resumo executivo</h3>${leit.length?`<ul class="leit">${leit.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`:'<p class="muted">O resumo aparece quando houver respostas suficientes.</p>'}</div>
+    <div class="rx-kpis"><div><b>${avaliadas}/${AREAS.length}</b><span>áreas avaliadas</span></div><div><b>${cur.entrevistas.length}</b><span>pessoas ouvidas</span></div><div><b>${nB}</b><span>causas raiz</span></div><div class="${INS.filter(i=>i.sev==='crit').length?'bad':''}"><b>${INS.filter(i=>i.sev==='crit').length}</b><span>incongruências críticas</span></div></div></section>
+   <section class="block"><div class="block-h"><h3>Leitura do consultor</h3><p>Entra na apresentação e no relatório.</p></div><div class="fields">${fieldHtml('res.leitura','Sua leitura em poucas frases','t')}</div></section>
+   <section class="block"><div class="block-h"><h3>Os quatro pilares</h3><p>Média de todas as áreas, de 1 a 4.</p></div>
+    <div class="rings">${Object.entries(PIL).map(([k,n])=>{ const v=pilarMedia()[k], l=v!=null?lvOf(v):0; return `<div class="ring"><div class="rw">${ringSvg(v,l)}<span class="rv">${v!=null?dec(v):'—'}</span></div><b>${esc(n)}</b>${lvChip(l)}<p>${esc(PIL_DESC[k])}</p></div>`; }).join('')}</div></section>
+   <div class="rx-two">
+    <section class="block"><div class="block-h"><h3>Maturidade por área</h3><p>A linha tracejada é a meta N3.</p></div>${areaBars()}</section>
+    <section class="block"><div class="block-h"><h3>Onde atacar primeiro</h3><p>Maturidade x pressão</p></div>${bubbleSvg(INS)}</section>
+   </div>
+   <div class="rx-two">
+    <section class="block"><div class="block-h"><h3>O que explica os problemas</h3><p>Peso de cada causa raiz</p></div>${causasDonut(INS)}</section>
+    ${tempoStats()?`<section class="block"><div class="block-h"><h3>Para onde vai o tempo do marketing</h3><button class="chip" data-act="goto" data-v="demandas">Editar horas</button></div>${tempoDonut()}</section>`:`<section class="block"><div class="block-h"><h3>Unidades de negócio</h3></div>${unTiles()}</section>`}
+   </div>
+   ${tempoStats()?`<section class="block"><div class="block-h"><h3>Unidades de negócio</h3><p>Maturidade e receita contra a meta</p></div>${unTiles()}</section>`:''}
    <section class="block"><div class="block-h"><h3>Causas raiz</h3><p>${INS.length} incongruências agrupadas em ${pl(nB,'bloco','blocos')}, do mais pesado para o mais leve.</p></div>${blocosHtml(INS)}</section>
    ${nB?`<section class="block"><div class="block-h"><h3>Plano no tempo</h3><p>Diretrizes por horizonte para as causas raiz acima.</p></div>${planoHtml(INS)}</section>`:''}
    ${priorizacaoHtml(INS)}
    <section class="block"><div class="block-h"><h3>Expectativa da reitoria x realidade das UNs</h3><p>O que a reitoria quer de cada UN frente à maturidade, às vagas e aos números.</p></div>${unScoreHtml()}</section>
-   ${tempoStats()?`<section class="block"><div class="block-h"><h3>Para onde vai o tempo do marketing</h3><button class="chip" data-act="goto" data-v="demandas">Editar horas</button></div><div class="tsum"><b class="${tempoStats().pAdm>=0.45?'bad':tempoStats().pAdm>=0.3?'warn':''}">${pct(tempoStats().pAdm)}</b><span>no administrativo e interno · ${pct(1-tempoStats().pAdm-(tempoStats().p.institucional||0))} direto nas unidades de negócio</span></div>${tempoView(tempoStats())}</section>`:''}
    ${t||cur.dores.length?`<div class="two">${t?`<section class="block"><div class="block-h"><h3>Capacidade do marketing</h3><button class="chip" data-act="goto" data-v="demandas">Retrato do Trello</button></div>${trelloView(t)}</section>`:''}${cur.dores.length?`<section class="block"><div class="block-h"><h3>Onde o trabalho trava</h3><button class="chip" data-act="view" data-v="dores">Mapa de dores</button></div>${gargaloChart(false)}</section>`:''}</div>`:''}
-   <div class="two">
-    <section class="block"><div class="block-h"><h3>Maturidade por área</h3><div class="legend">${[1,2,3,4].map(l=>`<span class="lv l${l}" title="${LVL[l]}">N${l} ${LVL[l]}</span>`).join('')}</div></div>${chart}</section>
-    <section class="block"><div class="block-h"><h3>Mapa por pilar</h3><p>Nota de 1 a 4</p></div>${heat}</section>
-   </div>
+   <section class="block"><div class="block-h"><h3>Mapa por pilar</h3><p>Nota de 1 a 4 em cada área</p></div>${heat}</section>
    ${dreHtml()}
    <section class="block"><div class="block-h"><h3>Cruzamento financeiro das UNs</h3><p>${anyFin?'Preenchido na Reitoria (Orçamento e DRE) e em cada UN.':'Preencha meta, receita, folha e orçamento em cada UN.'}</p></div>${finTbl}</section>
    ${fofaHtml('geral',cons,'FOFA consolidada','Os 8 itens de maior impacto de cada quadrante, de todas as áreas. Inclua a leitura estratégica abaixo.')}
@@ -878,7 +886,7 @@ function renderDores(INS){
   const byArea=AREAS.map(a=>{const ds=cur.dores.filter(d=>d.area===a.id);return {a,n:ds.length,s:ds.reduce((x,d)=>x+dorScore(d),0)};}).filter(r=>r.n).sort((x,y)=>y.s-x.s);
   const maxA=Math.max(1,...byArea.map(r=>r.s));
   $('#main').innerHTML=`<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">// <b>Dores e gargalos</b></span><h2 style="margin-top:8px">Onde o trabalho trava</h2><p class="lead">Registre cada dor no momento da entrevista. O sistema soma gravidade e frequência por etapa do fluxo e mostra onde está o gargalo, quem sente e que sistema está envolvido.</p></div></header>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow"><b>Dores e gargalos</b></span><h2 style="margin-top:8px">Onde o trabalho trava</h2><p class="lead">Registre cada dor no momento da entrevista. O sistema soma gravidade e frequência por etapa do fluxo e mostra onde está o gargalo, quem sente e que sistema está envolvido.</p></div></header>
    <section class="block"><div class="block-h"><h3>Contexto do cliente</h3></div><div class="fields">${fieldHtml('ctx.problema','Problema central relatado pelo cliente','t')}${fieldHtml('ctx.hipotese','Sua hipótese inicial','t')}</div></section>
    <section class="block"><div class="block-h"><h3>Registrar dor</h3><p>As opções ficam lembradas para o próximo registro.</p></div>${dorFormHtml('')}</section>
    ${cur.dores.length?`<div class="two">
@@ -898,7 +906,7 @@ function renderSistemas(){
   const custo=named.reduce((a,x)=>a+(num(x.custo)||0),0);
   const opt=(v,list)=>list.map(o=>Array.isArray(o)?`<option value="${o[0]}" ${String(v)===String(o[0])?'selected':''}>${o[1]}</option>`:`<option ${v===o?'selected':''}>${o}</option>`).join('');
   $('#main').innerHTML=`<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">// <b>Sistemas</b></span><h2 style="margin-top:8px">Sistemas em uso</h2><p class="lead">Inventário dos sistemas do marketing e de quem trabalha com ele. A coluna Dores conta quantas dores registradas citam cada sistema.</p></div></header>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow"><b>Sistemas</b></span><h2 style="margin-top:8px">Sistemas em uso</h2><p class="lead">Inventário dos sistemas do marketing e de quem trabalha com ele. A coluna Dores conta quantas dores registradas citam cada sistema.</p></div></header>
    <div class="stats"><div class="stat"><b>${named.length}</b><span>sistemas mapeados</span></div><div class="stat ${avg!=null&&avg<3?'warn':''}"><b>${avg!=null?dec(avg):'—'}</b><span>satisfação média (1 a 5)</span></div><div class="stat ${named.filter(x=>x.integra==='Não').length>=3?'warn':''}"><b>${named.filter(x=>x.integra==='Não').length}</b><span>sem integração</span></div><div class="stat"><b>${custo?brl(custo):'—'}</b><span>custo mensal informado</span></div></div>
    <section class="block"><div class="block-h"><h3>Inventário</h3><p>Clique num sistema comum para incluir, ou adicione outro.</p></div>
     <div style="display:flex;flex-wrap:wrap;gap:6px">${SYS_SUG.filter(n=>!L1.some(x=>x.nome===n)).map(n=>`<button class="chip" data-act="sys-add" data-n="${esc(n)}">+ ${esc(n)}</button>`).join('')}<button class="chip" data-act="sys-add" data-n="">+ Outro</button></div>
@@ -1039,7 +1047,7 @@ function ivHtml(){
   const ents=cur.entrevistas.filter(e=>e.area===a.id&&e.nome);
   const rot=(a.vol||[]).filter(v=>v[2]==='t'||v[2]==='p');
   const nums=(a.vol||[]).filter(v=>v[2]!=='t'&&v[2]!=='p');
-  const main = done ? `<div class="iv-done"><span class="eyebrow">// Área concluída</span><h2>${esc(a.nome)}</h2>
+  const main = done ? `<div class="iv-done"><span class="eyebrow">Área concluída</span><h2>${esc(a.nome)}</h2>
       <div class="iv-score">${lvChip(s.score!=null?s.level:0)}<b>${s.score!=null?dec(s.score):'—'}</b><small>/ 4 · ${ans} de ${qs.length} respondidas</small></div>
       ${nums.length?`<div class="fields">${nums.map(v=>fieldHtml(a.id+'.'+v[0],v[1],v[2])).join('')}</div>`:''}
       <div class="iv-nav"><button class="btn" data-act="iv-go" data-v="${qs.length-1}">← Revisar</button>${nextA?`<button class="btn primary big" data-act="iv-area" data-v="${nextA.id}">Próxima: ${esc(nextA.nome)} →</button>`:''}<button class="btn ghost" data-act="iv-exit">Sair do modo entrevista</button></div></div>`
@@ -1091,7 +1099,7 @@ const PRAZOS=[['base','Base de conhecimento','1 semana'],['reitoria','Reitoria e
 function comoHtml(){
   const pz=k=>cur?(cur.campos['met.prazo.'+k]||''):'';
   return `<section class="panel como">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">// LORSO Digital · <b>Metodologia</b></span><h2 style="margin-top:8px">Como funciona o diagnóstico</h2><p class="lead">Um diagnóstico de maturidade do marketing educacional que olha processos, pessoas, ferramentas e cultura em cada área e unidade de negócio, cruza as respostas com os números da instituição e entrega causas raiz e um plano no tempo.</p></div>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">LORSO Digital · <b>Metodologia</b></span><h2 style="margin-top:8px">Como funciona o diagnóstico</h2><p class="lead">Um diagnóstico de maturidade do marketing educacional que olha processos, pessoas, ferramentas e cultura em cada área e unidade de negócio, cruza as respostas com os números da instituição e entrega causas raiz e um plano no tempo.</p></div>
     <div><button class="btn" data-act="print-como">Salvar em PDF</button></div></header>
    <section class="block"><div class="block-h"><h3>A escala de maturidade</h3><p>Cada pergunta tem quatro respostas possíveis, uma por nível.</p></div>
     <div class="niveis">${[1,2,3,4].map(n=>`<div class="nivel n${n}"><span class="lv l${n}">N${n}</span><b>${LVL[n]}</b><p>${esc((t=>t.charAt(0).toUpperCase()+t.slice(1))(LVL_DESC[n].replace(/^N\d [^:]+: /,'')))}</p><small>Exemplo: ${esc(NIV_EX[n])}</small></div>`).join('')}</div>
@@ -1131,6 +1139,12 @@ const ICO={
  lua:'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z',
  sair:'M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10',
  lista:'M4 6h16M4 12h16M4 18h10',
+ relogio:'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM12 7.5V12l3 2',
+ alerta:'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM12 7.5v5.5M12 16v.4',
+ check:'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM8 12.2l2.7 2.7L16.2 9.4',
+ pessoa:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20.5a7.5 7.5 0 0 1 15 0',
+ alvo:'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zm0 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
+ chat:'M21 12a8 8 0 0 1-11.7 7.1L4 20.5l1.4-5A8 8 0 1 1 21 12z',
  site:'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z',
  fases:'M4 5h16v4H4zM4 11h16v4H4zM4 17h10v3H4z',
  dre:'M12 3v18M16.5 7.5c0-1.9-2-3-4.5-3s-4.5 1.2-4.5 3.2c0 4.5 9 2.3 9 6.8 0 2-2 3.3-4.5 3.3s-4.5-1.2-4.5-3.1',
@@ -1196,7 +1210,7 @@ function renderVisao(INS){
   const row=a=>{ const s=SC[a.id]||{}; const n=a.q.filter(q=>cur.resp[q[0]]).length; const dono=member(cur.dono_area[a.id]);
     return `<button class="vrow" data-act="area" data-v="${a.id}"><span class="vn">${esc(a.nome)}</span><span class="vb" aria-hidden="true"><span style="width:${Math.round(n/a.q.length*100)}%"></span></span><span class="vc mono">${n}/${a.q.length}</span>${lvChip(s.score!=null?s.level:0)}<span class="vd muted">${dono?esc(dono.nome||''):''}</span></button>`; };
   $('#main').innerHTML=`<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">// Fase 1 · <b>Visão geral</b></span><h2 style="margin-top:8px">Diagnóstico</h2><p class="lead">Onde a coleta está, o nível de cada área e o que já aparece de incongruência. Clique numa área para abrir as perguntas.</p></div></header>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Fase 1 · <b>Visão geral</b></span><h2 style="margin-top:8px">Diagnóstico</h2><label class="field" style="max-width:380px;margin-top:12px"><span class="lbl">Nome do cliente</span><input id="nome-diag" value="${esc(cur.nome)}"></label><p class="lead">Onde a coleta está, o nível de cada área e o que já aparece de incongruência. Clique numa área para abrir as perguntas.</p></div></header>
    <div class="kpis">
     <div class="kpi"><b>${g.level?'N'+g.level:'—'}</b><span>${g.level?esc(LVL[g.level]):'nível geral ainda sem nota'}${g.score!=null?' · '+dec(g.score,2):''}</span></div>
     <div class="kpi"><b>${tt?Math.round(aa/tt*100):0}%</b><span>das perguntas respondidas (${aa} de ${tt})</span></div>
@@ -1210,11 +1224,11 @@ function renderVisao(INS){
   </section>`;
 }
 function renderPerfil(){
-  const adm=me&&me.papel==='admin', th=pref('theme','dark'), fs=pref('fs','md'), sd=pref('side','left');
+  const adm=me&&me.papel==='admin', th=pref('theme','light'), fs=pref('fs','md'), sd=pref('side','left');
   const seg=(k,v,opts)=>`<div class="seg" role="group">${opts.map(([val,lab])=>`<button class="${v===val?'on':''}" data-act="pref" data-k="${k}" data-v="${val}" aria-pressed="${v===val}">${lab}</button>`).join('')}</div>`;
   const nConv=convites.filter(c=>!profiles.some(p=>p.email===c.email)).length;
   $('#main').innerHTML=`<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">// <b>${adm?'Perfil · Administrador':'Meu perfil'}</b></span><h2 style="margin-top:8px">${esc(me?(me.nome||me.email):'')}</h2><p class="lead">${esc(me?me.email:'')}</p></div></header>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow"><b>${adm?'Perfil · Administrador':'Meu perfil'}</b></span><h2 style="margin-top:8px">${esc(me?(me.nome||me.email):'')}</h2><p class="lead">${esc(me?me.email:'')}</p></div></header>
    <div class="pgrid">
     <section class="block"><div class="block-h"><h3>Aparência</h3><p>Vale para este navegador. Cada pessoa escolhe a sua.</p></div>
      <div class="prow"><span><b>Versão</b><small>A clara é mais confortável para leitura longa e em salas com luz.</small></span>${seg('theme',th,[['light','Clara'],['dark','Escura'],['auto','Automática']])}</div>
@@ -1265,9 +1279,12 @@ function itCard(t){
     <select data-it-f="status" data-id="${t.id}" aria-label="Coluna">${COLS.map(c=>`<option ${t.status===c?'selected':''}>${c}</option>`).join('')}</select>
     <div class="row"><button class="btn sm ghost" data-act="it-del" data-id="${t.id}">Excluir</button><button class="btn sm primary" data-act="it-close">Pronto</button></div>
    </div></article>`;
+  const pc=t.prioridade==='Alta'?'alta':t.prioridade==='Baixa'?'baixa':'media';
   return `<button class="kcard" draggable="true" data-it="${t.id}" data-act="it-open" data-id="${t.id}">
-    <span class="kt">${t.prioridade==='Alta'?'<span class="prio">Alta</span> ':''}${esc(t.titulo||'Sem título')}</span>
-    <span class="km">${t.diagnostico_id?`<span class="chip">${esc(diagNome(t.diagnostico_id))}</span>`:'<span class="chip">Interno</span>'}${t.area&&AREA[t.area]?`<span class="chip">${esc(AREA[t.area].nome)}</span>`:''}${t.prazo?`<span class="due ${itLate(t)?'late':''}">${itLate(t)?'Atrasada · ':''}${fmtDate(t.prazo)}</span>`:''}${p?`<span class="av" title="${esc(p.nome||p.email)}" style="margin-left:auto">${esc(initials(p.nome||p.email))}</span>`:''}</span></button>`;
+    <span class="ktags">${t.area&&AREA[t.area]?`<span class="tag area">${esc(AREA[t.area].nome)}</span>`:'<span class="tag area">Interno</span>'}<span class="tag ${pc}">${esc(t.prioridade||'Média')}</span></span>
+    <span class="kt">${esc(t.titulo||'Sem título')}</span>
+    ${t.descricao?`<span class="muted" style="font-size:12.5px;line-height:1.4">${esc(t.descricao.slice(0,110))}${t.descricao.length>110?'…':''}</span>`:''}
+    <span class="kf">${p?`<span class="av" title="${esc(p.nome||p.email)}">${esc(initials(p.nome||p.email))}</span>`:'<span class="muted">Sem responsável</span>'}${t.diagnostico_id?`<span class="chip">${esc(diagNome(t.diagnostico_id))}</span>`:''}${t.prazo?`<span class="due ${itLate(t)?'late':''}">${ico('relogio',13)}${itLate(t)?'Atrasada · ':''}${fmtDate(t.prazo)}</span>`:''}</span></button>`;
 }
 function renderInternas(){
   const f=ui.itf||(ui.itf={resp:'',cli:''});
@@ -1275,13 +1292,13 @@ function renderInternas(){
   const ab=internas.filter(t=>t.status!=='Concluída'), late=ab.filter(itLate);
   const porPessoa=profiles.filter(p=>p.ativo&&p.papel!=='cliente').map(p=>({p,n:ab.filter(t=>t.responsavel===p.id).length,l:late.filter(t=>t.responsavel===p.id).length}));
   $('#main').innerHTML=`<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">// LORSO · <b>Equipe</b></span><h2 style="margin-top:8px">Tarefas da equipe</h2><p class="lead">O que você pede para a equipe e o que cada um tem na mão. Fica fora do diagnóstico: o cliente não vê este quadro.</p></div>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">LORSO · <b>Equipe</b></span><h2 style="margin-top:8px">Tarefas da equipe</h2><p class="lead">O que você pede para a equipe e o que cada um tem na mão. Fica fora do diagnóstico: o cliente não vê este quadro.</p></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">${cur?`<button class="btn" data-act="gen-coleta" title="Cria uma tarefa por área ainda incompleta de ${esc(cur.nome)}">Gerar tarefas de coleta</button>`:''}</div></header>
    <div class="stats">
-    <div class="stat"><b>${ab.length}</b><span>tarefas abertas</span></div>
-    <div class="stat ${late.length?'bad':''}"><b>${late.length}</b><span>atrasadas</span></div>
-    <div class="stat"><b>${ab.filter(t=>!t.responsavel).length}</b><span>sem responsável</span></div>
-    <div class="stat"><b>${internas.filter(t=>t.status==='Concluída').length}</b><span>concluídas</span></div>
+    <div class="stat"><span class="si">${ico('internas',20)}</span><b>${ab.length}</b><span>tarefas abertas</span><span class="sp"><i style="width:${internas.length?Math.round(ab.filter(t=>t.status!=='A fazer').length/Math.max(1,ab.length)*100):0}%"></i></span><small>${ab.filter(t=>t.status!=='A fazer').length} já em andamento</small></div>
+    <div class="stat ${late.length?'bad':''}"><span class="si">${ico('relogio',20)}</span><b>${late.length}</b><span>atrasadas</span><small>${late.length?esc(late[0].titulo||'').slice(0,34):'Nada atrasado'}</small></div>
+    <div class="stat ${ab.filter(t=>!t.responsavel).length?'warn':''}"><span class="si">${ico('pessoa',20)}</span><b>${ab.filter(t=>!t.responsavel).length}</b><span>sem responsável</span><small>Clique no cartão para atribuir</small></div>
+    <div class="stat"><span class="si">${ico('check',20)}</span><b>${internas.filter(t=>t.status==='Concluída').length}</b><span>concluídas</span><span class="sp"><i style="width:${internas.length?Math.round(internas.filter(t=>t.status==='Concluída').length/internas.length*100):0}%"></i></span><small>${internas.length?Math.round(internas.filter(t=>t.status==='Concluída').length/internas.length*100):0}% do quadro</small></div>
    </div>
    <div class="people">${porPessoa.map(x=>`<button class="pchip ${f.resp===x.p.id?'on':''}" data-act="itf" data-k="resp" data-v="${f.resp===x.p.id?'':x.p.id}"><span class="av">${esc(initials(x.p.nome||x.p.email))}</span>${esc((x.p.nome||x.p.email).split(' ')[0])}<b>${x.n}</b>${x.l?`<em>${x.l} atras.</em>`:''}</button>`).join('')}</div>
    <div class="kfilters">
@@ -1421,6 +1438,68 @@ async function lerSite(url,paginas){
   }catch(e){ console.error(e); toast('Não foi possível ler o site: '+(e.message||e)); }
   ui.lendoSite=false; render();
 }
+
+/* ================= GRÁFICOS DE APRESENTAÇÃO (Resultados) ================= */
+const LVC=l=>`var(--n${l||1})`;
+const fx=(n,d=1)=>Number(n).toFixed(d);
+function arcPath(cx,cy,r,a0,a1){ const p=a=>[cx+r*Math.cos(a),cy+r*Math.sin(a)]; const [x0,y0]=p(a0),[x1,y1]=p(a1); return `M${fx(x0)} ${fx(y0)}A${r} ${r} 0 ${a1-a0>Math.PI?1:0} 1 ${fx(x1)} ${fx(y1)}`; }
+function gaugeSvg(score,level){
+  const a0=Math.PI*0.75, span=Math.PI*1.5, f=score==null?0:Math.max(0,Math.min(1,(score-1)/3));
+  const ticks=[1.75,2.5,3.25].map(v=>{ const a=a0+span*(v-1)/3; return `<line x1="${fx(100+70*Math.cos(a))}" y1="${fx(100+70*Math.sin(a))}" x2="${fx(100+92*Math.cos(a))}" y2="${fx(100+92*Math.sin(a))}" stroke="var(--surface)" stroke-width="3"/>`; }).join('');
+  return `<svg viewBox="0 0 200 200" aria-hidden="true"><path d="${arcPath(100,100,81,a0,a0+span)}" fill="none" stroke="var(--surface-2)" stroke-width="18" stroke-linecap="round"/>
+   ${f>0?`<path class="arc" d="${arcPath(100,100,81,a0,a0+Math.max(0.02,span*f))}" fill="none" stroke="${LVC(level)}" stroke-width="18" stroke-linecap="round"/>`:''}${ticks}
+</svg>`;
+}
+function ringSvg(score,level){ const r=52,c=2*Math.PI*r,f=score==null?0:Math.max(0,Math.min(1,(score-1)/3));
+  return `<svg viewBox="0 0 128 128" aria-hidden="true"><circle cx="64" cy="64" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="12"/>${f>0?`<circle cx="64" cy="64" r="${r}" fill="none" stroke="${LVC(level)}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${fx(c*f)} ${fx(c)}" transform="rotate(-90 64 64)"/>`:''}</svg>`; }
+function donutSvg(segs){ const tot=segs.reduce((a,s)=>a+s.v,0)||1, r=70, c=2*Math.PI*r; let acc=0;
+  return `<svg viewBox="0 0 180 180" aria-hidden="true"><circle cx="90" cy="90" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="26"/>${segs.filter(s=>s.v>0).map(s=>{ const len=c*s.v/tot, gap=segs.filter(x=>x.v>0).length>1?2:0; const el=`<circle cx="90" cy="90" r="${r}" fill="none" stroke="${s.c}" stroke-width="26" stroke-dasharray="${fx(Math.max(0,len-gap))} ${fx(c)}" stroke-dashoffset="${fx(-acc)}" transform="rotate(-90 90 90)" data-tip="${esc(s.l)}: ${pct(s.v/tot)}"/>`; acc+=len; return el; }).join('')}</svg>`; }
+function pilarMedia(){ const o={}; Object.keys(PIL).forEach(k=>{ const v=AREAS.map(a=>SC[a.id]&&SC[a.id].pil[k]).filter(x=>x!=null); o[k]=v.length?v.reduce((a,b)=>a+b,0)/v.length:null; }); return o; }
+function areaBars(){
+  const grupos=[...new Set(AREAS.map(a=>a.g))]; const tx=v=>((v-1)/3*100).toFixed(1)+'%';
+  return `<div class="hbar" role="img" aria-label="Maturidade por área, de 1 a 4, com a meta N3 tracejada">${grupos.map(g=>`<div class="hb-g">${esc(g)}</div>${AREAS.filter(a=>a.g===g).map(a=>{ const s=SC[a.id]||{};
+     return `<button class="hb-row" data-act="goto" data-v="${a.id}" data-tip="${esc(a.nome)}: ${s.score!=null?dec(s.score)+' · N'+s.level+' '+LVL[s.level]:'sem nota'}"><span class="hn">${esc(a.nome)}</span><span class="ht">${s.score!=null?`<i style="width:max(10px,${tx(s.score)});background:${LVC(s.level)}"></i>`:''}<span class="tgt" style="left:${tx(3)}"></span></span><span class="hv">${s.score!=null?dec(s.score)+' · N'+s.level:'<span class="muted">sem nota</span>'}</span></button>`; }).join('')}`).join('')}
+   <div class="hb-ax"><span></span><span class="tk"><span>1</span><span>2</span><span>3 · meta</span><span>4</span></span><span></span></div></div>`;
+}
+function pressaoArea(INS){ const m={}; AREAS.forEach(a=>m[a.id]={d:0,i:0,n:0});
+  cur.dores.forEach(d=>{ if(m[d.area]){ m[d.area].d+=dorScore(d); m[d.area].n++; } });
+  INS.forEach(i=>(i.areas||[]).forEach(id=>{ if(m[id]){ m[id].i+=SEVW[i.sev]||1; m[id].n++; } }));
+  return m; }
+function bubbleSvg(INS){
+  const P=pressaoArea(INS); const pts=AREAS.filter(a=>SC[a.id]&&SC[a.id].score!=null).map(a=>({a,x:SC[a.id].score,l:SC[a.id].level,y:P[a.id].d+P[a.id].i,n:P[a.id].n}));
+  if(pts.length<3) return '<p class="empty">O gráfico aparece com pelo menos 3 áreas com nota.</p>';
+  const W=620,H=400,L=46,R=18,T=40,B=40, maxY=Math.max(4,...pts.map(p=>p.y))*1.18, maxN=Math.max(1,...pts.map(p=>p.n));
+  const X=v=>L+(v-1)/3*(W-L-R), Y=v=>H-B-(v/maxY)*(H-T-B), rad=n=>8+Math.sqrt(n/maxN)*20;
+  const ys=pts.map(p=>p.y).sort((a,b)=>a-b), mid=ys[Math.floor(ys.length/2)]||maxY/2;
+  const top=[...pts].sort((p,q)=>(q.y-(q.x-1)*4)-(p.y-(p.x-1)*4)).slice(0,6).map(p=>p.a.id);
+  return `<div class="bubble"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Áreas por maturidade e pressão">
+   <rect x="${L}" y="${T}" width="${fx(X(2.5)-L)}" height="${fx(Y(mid)-T)}" fill="color-mix(in srgb,var(--n1) 7%,transparent)" rx="10"/>
+   <line x1="${fx(X(2.5))}" x2="${fx(X(2.5))}" y1="${T}" y2="${H-B}" stroke="var(--line-2)" stroke-dasharray="4 4"/><line x1="${L}" x2="${W-R}" y1="${fx(Y(mid))}" y2="${fx(Y(mid))}" stroke="var(--line-2)" stroke-dasharray="4 4"/>
+   <text class="qd hot" x="${L+4}" y="${T-14}">● Atacar primeiro</text><text class="qd" x="${W-R-4}" y="${T-14}" text-anchor="end">Destravar</text><text class="qd" x="${L+10}" y="${H-B-10}">Estruturar</text><text class="qd" x="${W-R-10}" y="${H-B-10}" text-anchor="end">Manter e escalar</text>
+   <line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" stroke="var(--line-2)"/>${[1,2,3,4].map(v=>`<text x="${fx(X(v))}" y="${H-B+18}" text-anchor="middle" font-size="12" fill="var(--faint)">N${v}</text>`).join('')}
+   <text x="${fx((L+W-R)/2)}" y="${H-4}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--muted)">Maturidade →</text><text transform="translate(14 ${fx((T+H-B)/2)}) rotate(-90)" text-anchor="middle" font-size="12" font-weight="700" fill="var(--muted)">Pressão (dores e incongruências) →</text>
+   ${[...pts].sort((p,q)=>q.n-p.n).map(p=>`<circle class="b" cx="${fx(X(p.x))}" cy="${fx(Y(p.y))}" r="${fx(rad(p.n))}" fill="${LVC(p.l)}" data-act="goto" data-v="${p.a.id}" data-tip="${esc(p.a.nome)} · N${p.l} (${dec(p.x)}) · pressão ${dec(p.y,0)} · ${pl(p.n,'evidência','evidências')}"/>`).join('')}
+   ${pts.filter(p=>top.includes(p.a.id)).map(p=>`<text class="bl" x="${fx(X(p.x)+rad(p.n)+5)}" y="${fx(Y(p.y)+4)}">${esc(p.a.nome.length>22?p.a.nome.slice(0,21)+'…':p.a.nome)}</text>`).join('')}
+  </svg></div><p class="muted" style="font-size:12.5px">Cada bola é uma área. Mais à esquerda, menos madura; mais alta, mais dores e incongruências; maior, mais evidências. O canto vermelho é por onde começar.</p>`;
+}
+function causasDonut(INS){ const B=blocosDe(INS); if(!B.length) return '<p class="empty">As causas raiz aparecem quando houver incongruências.</p>';
+  const cols=['var(--s1)','var(--s2)','var(--s3)','var(--s4)','var(--s5)','var(--s6)'];
+  const segs=B.map(b=>({l:b.t,v:b.peso,c:cols[BLOCOS.findIndex(x=>x.id===b.id)%cols.length]})); const tot=segs.reduce((a,s)=>a+s.v,0);
+  return `<div class="donutw"><div class="donut">${donutSvg(segs)}<div class="dv"><b>${B.length}</b><small>${B.length===1?'causa raiz':'causas raiz'}</small></div></div>
+   <div class="dleg">${segs.map(s=>`<div><i style="background:${s.c}"></i><span>${esc(s.l)}</span><b>${pct(s.v/tot).replace(',0%','%')}</b></div>`).join('')}</div></div>
+   <p class="muted" style="font-size:12.5px">Fatia = peso das evidências de cada causa (crítica 5, alta 2, média 1).</p>`; }
+function tempoDonut(){ const s=tempoStats(); if(!s) return '';
+  const segs=TEMPO.filter(([k])=>s.v[k]).map(([k,l,,c])=>({l,v:s.v[k],c:k==='adm'?'var(--n1)':c}));
+  return `<div class="donutw"><div class="donut">${donutSvg(segs)}<div class="dv"><b>${pct(s.pAdm).replace(',0%','%')}</b><small>no administrativo</small></div></div>
+   <div class="dleg">${segs.map(x=>`<div><i style="background:${x.c}"></i><span>${esc(x.l)}</span><b>${pct(x.v/s.tot)}</b></div>`).join('')}</div></div>`; }
+function unTiles(){ const fin=finRows();
+  return `<div class="untiles">${UNS.map(u=>{ const s=SC[u.id]||{}, f=fin.find(r=>r.id===u.id)||{}, at=f.meta_rec&&f.receita!=null?f.receita/f.meta_rec:null, exp=unxGet(u.id,'expect');
+    return `<button class="untile" data-act="goto" data-v="${u.id}" style="text-align:left"><div class="rw">${ringSvg(s.score,s.level)}<span class="rv">${s.score!=null?dec(s.score):'—'}</span></div>
+     <div><b>${esc(u.nome)}</b><small>${s.level?'N'+s.level+' · '+LVL[s.level]:'sem nota'}${exp?' · reitoria quer '+esc(exp.toLowerCase()):''}</small>
+     ${at!=null?`<div class="mb"><i style="width:${Math.min(100,at*100).toFixed(0)}%;background:${at>=0.95?'var(--n4)':at>=0.85?'var(--n2)':'var(--n1)'}"></i></div><small>${pct(at)} da meta de receita</small>`:''}</div></button>`; }).join('')}</div>`; }
+let vtipEl=null;
+document.addEventListener('mousemove',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]'); if(!vtipEl){ vtipEl=document.createElement('div'); vtipEl.className='vtip'; vtipEl.setAttribute('aria-hidden','true'); document.body.appendChild(vtipEl); }
+  if(t){ vtipEl.textContent=t.getAttribute('data-tip'); vtipEl.classList.add('on'); const x=Math.min(e.clientX+14,innerWidth-vtipEl.offsetWidth-10); vtipEl.style.left=x+'px'; vtipEl.style.top=(e.clientY-40)+'px'; } else vtipEl.classList.remove('on'); });
 
 function focusKey(el){
   if(!el||el===document.body||!el.tagName||!/INPUT|TEXTAREA|SELECT/.test(el.tagName))return null;
@@ -1591,7 +1670,7 @@ function renderRelatorio(INS){
    </section>`; };
   $('#main').innerHTML=`<article class="report">
    <div class="rp-tools"><button class="btn" data-act="view" data-v="fases">← Voltar</button><button class="btn primary" data-act="print-rel">Salvar em PDF</button></div>
-   <header class="rp-capa"><span class="eyebrow">// LORSO Digital · <b>Relatório completo</b></span><h1>${esc(cur.nome)}</h1><p class="muted">Diagnóstico de maturidade de marketing · ${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</p></header>
+   <header class="rp-capa"><span class="eyebrow">LORSO Digital · <b>Relatório completo</b></span><h1>${esc(cur.nome)}</h1><p class="muted">Diagnóstico de maturidade de marketing · ${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</p></header>
    <section><h2>1. Resumo executivo</h2><div class="rp-score"><b>${ov.score!=null?dec(ov.score):'—'}</b><span>/ 4 · ${ov.level?`N${ov.level} ${LVL[ov.level]}`:''}</span></div><ul>${leit.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>${cur.campos['res.leitura']?`<p><b>Leitura do consultor.</b> ${esc(cur.campos['res.leitura'])}</p>`:''}</section>
    <section><h2>2. Causas raiz</h2>${B.map((b,i)=>`<div class="rp-bloco"><h3>${i+1}. ${esc(b.t)}</h3><p>${esc(b.r)}</p><p class="muted">Indicador: ${esc(b.kpi)}</p><ul>${b.ins.map(x=>`<li><b>${esc(x.t)} (${SEV[x.sev]}).</b> ${esc(x.txt)}<br><small class="muted">Ações: ${x.rec.map(esc).join(' · ')}</small></li>`).join('')}</ul></div>`).join('')||'<p>Sem incongruências.</p>'}</section>
    <section><h2>3. Plano no tempo</h2>${planoHtml(INS)}</section>
@@ -1766,7 +1845,7 @@ function renderAuth(){
   const lead={entrar:'Use o e-mail e a senha cadastrados.',primeiro:'Use o e-mail em que você recebeu o convite e crie sua senha.',esqueci:'Enviaremos um link para você criar uma nova senha.','nova-senha':'Digite a nova senha.'}[m];
   $('#auth').innerHTML=`<section class="auth"><div class="auth-box">
    <span class="logo"><i></i>LORSO DIGITAL</span>
-   <span class="eyebrow">// Central de <b>Diagnóstico</b></span>
+   <span class="eyebrow">Central de <b>Diagnóstico</b></span>
    <h1>${title}</h1><p>${lead}</p>
    ${authMsg?`<div class="msg ${authMsg.ok?'ok':'err'}" role="status">${esc(authMsg.t)}</div>`:''}
    <form id="f-auth" data-mode="${m}">
