@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<script>try{var t=localStorage.getItem('cd.theme')||'dark',d=document.documentElement;if(t==='auto')t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';d.dataset.theme=t;d.dataset.side=localStorage.getItem('cd.side')||'right';d.dataset.fs=localStorage.getItem('cd.fs')||'md';}catch(e){document.documentElement.dataset.theme='dark';document.documentElement.dataset.side='right';}</script>
+<script>try{var t=localStorage.getItem('cd.theme')||'dark',d=document.documentElement;if(t==='auto')t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';d.dataset.theme=t;if(localStorage.getItem('cd.sidev')!=='2'){localStorage.removeItem('cd.side');localStorage.setItem('cd.sidev','2');}d.dataset.side=localStorage.getItem('cd.side')||'left';d.dataset.fs=localStorage.getItem('cd.fs')||'md';}catch(e){document.documentElement.dataset.theme='dark';document.documentElement.dataset.side='left';}</script>
 </head>
 <body>
 <div class="wrap" id="auth" hidden></div>

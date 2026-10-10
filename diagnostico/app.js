@@ -1193,7 +1193,7 @@ function renderVisao(INS){
   </section>`;
 }
 function renderPerfil(){
-  const adm=me&&me.papel==='admin', th=pref('theme','dark'), fs=pref('fs','md'), sd=pref('side','right');
+  const adm=me&&me.papel==='admin', th=pref('theme','dark'), fs=pref('fs','md'), sd=pref('side','left');
   const seg=(k,v,opts)=>`<div class="seg" role="group">${opts.map(([val,lab])=>`<button class="${v===val?'on':''}" data-act="pref" data-k="${k}" data-v="${val}" aria-pressed="${v===val}">${lab}</button>`).join('')}</div>`;
   const nConv=convites.filter(c=>!profiles.some(p=>p.email===c.email)).length;
   $('#main').innerHTML=`<section class="panel">
