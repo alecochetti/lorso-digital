@@ -616,7 +616,7 @@ function renderTarefas(INS){
 }
 function renderExecucao(INS){
   const st=STG.execucao; const sg=suggestions(INS);
-  const nNovos=syncPlano(INS); if(nNovos) touch(false);
+  const nNovos=cur.campos['pa.enviado']?0:syncPlano(INS); if(nNovos) touch(false);
   const P=cur.acoes.filter(isPlano), done=P.filter(t=>t.status==='Concluída').length, x=crossTasks(INS);
   const hzBar=k=>{ const L=P.filter(t=>planoHz(t)===k); if(!L.length)return ''; const d=L.filter(t=>t.status==='Concluída').length; return `<div class="hzrow"><span>${HZN[k]} prazo <small class="muted">${HZ.find(h=>h[0]===k)[2]}</small></span><span class="vb"><span style="width:${Math.round(d/L.length*100)}%"></span></span><span class="mono">${d}/${L.length}</span></div>`; };
   $('#main').innerHTML=`<section class="panel">${stageHead(st)}
@@ -1200,7 +1200,7 @@ function renderSide(INS){
      ${sideItem('entrevistas','Entrevistas','dstep','entrevistas',pc(stepProgress('entrevistas')))}
      ${sideItem('visao','Diagnóstico','view','visao',g.level?'N'+g.level:'')}
      <span class="sb-g">Fases 2 a 5</span>
-     ${STAGES.slice(1).map(st=>sideItem(st.id,st.nome,'stage',st.id,st.id==='execucao'&&cur.acoes.some(isPlano)?`${cur.acoes.filter(t=>isPlano(t)&&t.status==='Concluída').length}/${cur.acoes.filter(isPlano).length}`:st.q&&st.q.length?pc(stageProgress(st)):'',st.id==='execucao'&&hot)).join('')}
+     ${STAGES.slice(1).map(st=>(st.id==='execucao'&&typeof renderPlano==='function'?sideItem('plano','Plano de ação','view','plano',(()=>{const n=paItens().length;return n||'';})()):'')+sideItem(st.id,st.nome,'stage',st.id,st.id==='execucao'&&cur.acoes.some(isPlano)?`${cur.acoes.filter(t=>isPlano(t)&&t.status==='Concluída').length}/${cur.acoes.filter(isPlano).length}`:st.q&&st.q.length?pc(stageProgress(st)):'',st.id==='execucao'&&hot)).join('')}
 `:''}
      ${temMod('dre')||temMod('lancamento')?'<span class="sb-g">Módulos</span>':''}
      ${temMod('dre')?sideItem('dre','DRE e orçamento','view','dre',cur.mods&&cur.mods.dre&&cur.mods.dre.meses?cur.mods.dre.meses.filter(M=>M.lancado).length+'/12':''):''}
@@ -1546,6 +1546,7 @@ function renderInner(){
   else if(ui.view==='lancamento') renderLancamento();
   else if(ui.view==='internas'&&podeInternas()) renderInternas();
   else if(ui.view==='pdi'&&podeInternas()&&typeof renderPdi==='function') renderPdi(INS);
+  else if(ui.view==='plano'&&typeof renderPlano==='function') renderPlano(INS);
   else if(ui.view==='perfil') renderPerfil();
   else { ({diagnostico:renderDiagnostico,estrategia:renderEstrategia,execucao:renderExecucao,otimizacao:renderOtimizacao,resultados:renderResultados})[ui.stage](INS); }
   renderIV();
@@ -1924,6 +1925,7 @@ document.addEventListener('click',e=>{
   if(act.startsWith('md-')&&cur){ mdClick(act,d); return; }
   if(act.startsWith('eq-')&&eqClick(act,d)) return;
   if(act.startsWith('pdi-')&&typeof pdiClick==='function'&&pdiClick(act,d)) return;
+  if(act.startsWith('pa-')&&typeof paClick==='function'&&cur&&paClick(act,d)) return;
   if(act==='sb-open'){ ui.sbOpen=true; document.body.classList.add('sb-on'); const f=document.querySelector('#sb .sn.on')||document.querySelector('#sb .sn'); f&&f.focus(); return; }
   if(act==='sb-close'){ ui.sbOpen=false; document.body.classList.remove('sb-on'); return; }
   if(act==='tema'){ setPref('theme',temaAtual()==='light'?'dark':'light'); render(); return; }
@@ -2048,6 +2050,7 @@ document.addEventListener('input',e=>{
   const t=e.target, d=t.dataset;
   if(eqInput(t)) return;
   if(typeof pdiInput==='function'&&pdiInput(t)) return;
+  if(typeof paInput==='function'&&cur&&paInput(t)) return;
   if(t.id==='curso-txt'){ ui.cursoTxt=t.value; return; }
   if(t.id==='dre-txt'){ ui.dreTxt=t.value; return; }
   if(d.me!=null&&me){ me[d.me]=t.value; let p=profiles.find(x=>x.id===me.id); if(!p){ p={...me}; profiles.push(p); } p[d.me]=t.value; if(cur)cur.equipe=equipeList(); saveProfile(me.id); return; }
@@ -2068,6 +2071,7 @@ document.addEventListener('change',e=>{
   const t=e.target, d=t.dataset;
   if(eqChange(t)) return;
   if(typeof pdiChange==='function'&&pdiChange(t)) return;
+  if(typeof paChange==='function'&&cur&&paChange(t)) return;
   if(t.id==='fonte-file'&&t.files&&t.files.length){ importarArquivos([...t.files]); t.value=''; return; }
   if(d.md!=null&&cur&&cur.mods&&cur.mods.dre){ mdChange(t); return; }
   if(!cur) return;
