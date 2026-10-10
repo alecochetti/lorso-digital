@@ -1096,11 +1096,21 @@ const QUEM=[
  ['Acompanhamento (12 meses)','Ritos mensais, indicadores e nova avaliação de maturidade','Executa o plano com o apoio da LORSO']];
 const ENTREG=[['Apresentação executiva','Slides com gráficos, causas raiz e plano de curto, médio e longo prazo para a reitoria.'],['Relatório completo','Todas as áreas, notas por pilar, evidências, dores, sistemas, números e FOFA.'],['Plano no tempo','Diretrizes de 0 a 3, 3 a 6 e 6 a 12 meses, que ficam com a instituição.'],['Kanban de ações','Tarefas com responsável e prazo, ligadas às causas raiz.']];
 const PRAZOS=[['base','Base de conhecimento','1 semana'],['reitoria','Reitoria e direcionamentos','1 semana'],['entrevistas','Entrevistas por área e UN','2 a 3 semanas'],['analise','Análise, causas raiz e plano','1 semana'],['apresentacao','Apresentação à reitoria','1 reunião']];
+const METODO=[
+ ['visao','Diagnóstico','Base de conhecimento, reitoria e entrevistas 1 a 1 com cada área e unidade. Cada resposta vira uma nota de 1 a 4.','Entrega: maturidade por área e pilar, dores e gargalos mapeados'],
+ ['estrategia','Estratégia','Metas por UN, funil, verba e projeção de retorno, amarrados aos números da DRE.','Entrega: metas e funil-alvo por unidade'],
+ ['execucao','Execução','O plano vira ações com dono e prazo, organizadas por curto, médio e longo prazo.','Entrega: plano de ação acompanhado no quadro'],
+ ['otimizacao','Otimização','Rituais, dados e testes para melhorar todo mês o que já funciona.','Entrega: backlog de experimentos e indicadores'],
+ ['resultados','Resultados','Causas raiz, cruzamentos financeiros e a evolução da maturidade, prontos para a reitoria.','Entrega: apresentação, relatório e plano no tempo']];
 function comoHtml(){
   const pz=k=>cur?(cur.campos['met.prazo.'+k]||''):'';
   return `<section class="panel como">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">LORSO Digital · <b>Metodologia</b></span><h2 style="margin-top:8px">Como funciona o diagnóstico</h2><p class="lead">Um diagnóstico de maturidade do marketing educacional que olha processos, pessoas, ferramentas e cultura em cada área e unidade de negócio, cruza as respostas com os números da instituição e entrega causas raiz e um plano no tempo.</p></div>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">LORSO Digital · <b>Método</b></span><h2 style="margin-top:8px">Método LORSO</h2><p class="lead">Diagnosticar o fluxo, encontrar os gargalos, redesenhar o caminho e colocar para funcionar de ponta a ponta. Cinco fases, um único método, medido do início ao fim.</p></div>
     <div><button class="btn" data-act="print-como">Salvar em PDF</button></div></header>
+   <section class="metodo"><div class="mt-top">${LOGO_SVG}<div><b>Método LORSO</b><span>de maturidade de marketing</span></div></div>
+    <ol class="mt-fases">${METODO.map((f,i)=>`<li><span class="mt-n">${i+1}</span><div class="mt-ic">${ico(f[0],22)}</div><b>${esc(f[1])}</b><p>${esc(f[2])}</p><small>${esc(f[3])}</small></li>`).join('')}</ol></section>
+   <section class="block"><div class="block-h"><h3>Fase 1 em três passos</h3><p>O diagnóstico começa ouvindo a instituição, nesta ordem.</p></div>
+    <div class="mt-passos">${DSTEPS.map(([id,nm,ds],i)=>`<div><span class="mt-n">${i+1}</span>${ico(id,20)}<b>${esc(nm)}</b><p>${esc(ds)}</p></div>`).join('')}</div></section>
    <section class="block"><div class="block-h"><h3>A escala de maturidade</h3><p>Cada pergunta tem quatro respostas possíveis, uma por nível.</p></div>
     <div class="niveis">${[1,2,3,4].map(n=>`<div class="nivel n${n}"><span class="lv l${n}">N${n}</span><b>${LVL[n]}</b><p>${esc((t=>t.charAt(0).toUpperCase()+t.slice(1))(LVL_DESC[n].replace(/^N\d [^:]+: /,'')))}</p><small>Exemplo: ${esc(NIV_EX[n])}</small></div>`).join('')}</div>
     <div class="escala"><span style="background:var(--n1)"></span><span style="background:var(--n2)"></span><span style="background:var(--n3)"></span><span style="background:var(--n4)"></span></div>
@@ -1108,8 +1118,6 @@ function comoHtml(){
    <section class="block"><div class="block-h"><h3>Os quatro pilares</h3></div>
     <div class="pils">${Object.entries(PIL).map(([k,n])=>`<div class="pilc"><b>${n}</b><p>${PIL_DESC[k]}</p></div>`).join('')}</div>
     <ul class="regras"><li>Perguntas de impacto alto pesam mais na nota.</li><li>Uma área nunca fica mais de um nível acima do seu pilar mais fraco.</li><li>Algumas perguntas são eliminatórias: resposta N1 limita a área a N2.</li><li>Área com menos da metade das perguntas respondidas fica sem nota.</li></ul></section>
-   <section class="block"><div class="block-h"><h3>A jornada</h3><p>Cinco fases. O diagnóstico, na fase 1, acontece em três passos.</p></div>
-    <div class="jornada">${STAGES.map(st=>`<div class="jf ${st.n===1?'on':''}"><span class="nb">${String(st.n).padStart(2,'0')}</span><b>${st.nome}</b><small>${esc(st.ds)}</small>${st.n===1?`<ol>${DSTEPS.map(([,nm])=>`<li>${nm}</li>`).join('')}</ol>`:''}</div>`).join('')}</div></section>
    <section class="block"><div class="block-h"><h3>Quem faz o quê</h3><p>O que a LORSO preenche e o que a instituição entrega.</p></div>
     <div class="tblw"><table class="tbl"><thead><tr><th>Etapa</th><th>LORSO (consultores)</th><th>Instituição (reitoria, UNs e marketing)</th></tr></thead><tbody>${QUEM.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table></div>
     <p class="muted" style="font-size:13px">As respostas individuais são confidenciais. A matriz de priorização interna é compartilhada apenas com a reitoria.</p></section>
@@ -1151,6 +1159,7 @@ const ICO={
  lancamento:'M5 15c-1.5 1.5-2 5-2 5s3.5-.5 5-2M14 4c3-1 6-1 6-1s0 3-1 6l-7 7-5-5zM9.5 9.5 5 9l-2 2 4 1M14.5 14.5 15 19l-2 2-1-4',
  internas:'M9 4h6v3H9zM6 6H5v15h14V6h-1M9 12h6M9 16h4'
 };
+const LOGO_SVG=`<svg class="sb-mark" viewBox="70 92 372 326" aria-hidden="true"><path d="M95 100H167Q185 100 185 118V302H390Q435 302 435 350V410H77V118Q77 100 95 100Z" fill="#00FF87"/><path d="M262 100H398L292 256H208Z" fill="#00E5FF"/><circle cx="345" cy="165" r="36" fill="#FFFFFF"/></svg>`;
 /* outras ferramentas da LORSO no menu (abrem em outra aba; só equipe e administradores) */
 const FERRAMENTAS=[['dre','Financeiro da loja','/admin/financeiro-loja/'],['lancamento','Lançamento de curso','/admin/lancamento-curso/'],['lancamento','Lançamento perpétuo','/admin/lancamento-perpetuo/']];
 const ico=(k,sz)=>!ICO[k]?'':`<svg class="ic" viewBox="0 0 24 24" width="${sz||18}" height="${sz||18}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICO[k]}"/></svg>`;
@@ -1174,7 +1183,7 @@ const temMod=k=>modsAtivos().includes(k);
 async function setMods(lista){ if(!cur)return; const r=await sb.from('diagnosticos').update({modulos:lista}).eq('id',cur.id); if(r.error){ toast('Não foi possível mudar os módulos: '+r.error.message); return; } all[cur.id]=Object.assign(all[cur.id]||{},{modulos:lista}); render(); toast('Módulos do cliente atualizados'); }
 function renderSide(INS){
   const adm=me&&me.papel==='admin', pc=x=>Math.round(x*100)+'%';
-  let h=`<div class="sb-brand"><span class="sb-logo">L</span><span><b>LORSO Digital</b><small>Central de Diagnóstico</small></span></div>`;
+  let h=`<div class="sb-brand">${LOGO_SVG}<span class="sb-word"><b>LORSO</b><i>DIGITAL<em>.</em></i></span></div><div class="sb-prod">Central de Diagnóstico</div>`;
   if(podeInternas()){ const mn=minhasAbertas(), lt=internas.filter(t=>t.responsavel===me.id&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas','Tarefas da equipe','view','internas',mn||'',lt>0)}</nav>`; }
   if(cur){
     const x=crossTasks(INS), hot=x.late.length+x.semTarefa.length, g=overall();
@@ -1194,11 +1203,11 @@ function renderSide(INS){
      ${sideItem('dores','Dores e gargalos','view','dores',cur.dores.length||'')}
      ${sideItem('sistemas','Sistemas','view','sistemas',cur.sistemas.filter(y=>y.nome).length||'')}
      <span class="sb-g">Apoio</span>
-     ${sideItem('como','Como funciona','view','como')}`:'<span class="sb-g">Apoio</span>'}
+     ${sideItem('como','Método LORSO','view','como')}`:'<span class="sb-g">Apoio</span>'}
      ${sideItem('equipe','Equipe','view','equipe',cur.equipe.length||'')}
     </nav>`;
   } else {
-    h+=`<nav class="sb-nav" aria-label="Menu">${sideItem('fases','Diagnósticos','view','fases')}${sideItem('como','Como funciona','view','como')}${adm?sideItem('equipe','Equipe','view','equipe'):''}</nav>`;
+    h+=`<nav class="sb-nav" aria-label="Menu">${sideItem('fases','Diagnósticos','view','fases')}${sideItem('como','Método LORSO','view','como')}${adm?sideItem('equipe','Equipe','view','equipe'):''}</nav>`;
   }
   const nm=me?(me.nome||me.email):'';
   h+=`<div class="sb-foot">
@@ -1254,7 +1263,7 @@ function renderPerfil(){
     ${adm?`<section class="block"><div class="block-h"><h3>Administração</h3><p>Só administradores veem esta parte.</p></div>
      <div class="kpis k3"><div class="kpi"><b>${profiles.length}</b><span>${profiles.length===1?'pessoa com acesso':'pessoas com acesso'}</span></div><div class="kpi"><b>${nConv}</b><span>${nConv===1?'convite aguardando':'convites aguardando'}</span></div><div class="kpi"><b>${Object.keys(all).length}</b><span>${Object.keys(all).length===1?'diagnóstico':'diagnósticos'}</span></div></div>
      ${cur?`<div class="prow" style="border-top:0;padding-top:0"><span><b>Módulos de ${esc(cur.nome)}</b><small>O que este cliente vê. Quem entra como cliente só enxerga os módulos ligados.</small></span><div class="seg" role="group">${MODS_TODOS.map(([k,l])=>`<button class="${temMod(k)?'on':''}" data-act="mod-toggle" data-v="${k}" aria-pressed="${temMod(k)}">${l}</button>`).join('')}</div></div>`:''}
-     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="view" data-v="equipe">Equipe e convites</button><button class="btn" data-act="view" data-v="como">Como funciona (proposta)</button>${FERRAMENTAS.map(([k,l,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">${l} (versão avulsa) ↗</a>`).join('')}${me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo diagnóstico</button>`:''}</div></section>`:''}
+     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="view" data-v="equipe">Equipe e convites</button><button class="btn" data-act="view" data-v="como">Método LORSO (proposta)</button>${FERRAMENTAS.map(([k,l,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">${l} (versão avulsa) ↗</a>`).join('')}${me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo diagnóstico</button>`:''}</div></section>`:''}
    </div></section>`;
 }
 /* ================= TAREFAS INTERNAS DA EQUIPE LORSO (fora do cliente) ================= */
@@ -1896,7 +1905,7 @@ function renderAuth(){
   const title={entrar:'Entrar',primeiro:'Primeiro acesso',esqueci:'Recuperar senha','nova-senha':'Criar nova senha'}[m];
   const lead={entrar:'Use o e-mail e a senha cadastrados.',primeiro:'Use o e-mail em que você recebeu o convite e crie sua senha.',esqueci:'Enviaremos um link para você criar uma nova senha.','nova-senha':'Digite a nova senha.'}[m];
   $('#auth').innerHTML=`<section class="auth"><div class="auth-box">
-   <span class="logo"><i></i>LORSO DIGITAL</span>
+   <div class="auth-brand">${LOGO_SVG}<span class="sb-word"><b>LORSO</b><i>DIGITAL<em>.</em></i></span></div>
    <span class="eyebrow">Central de <b>Diagnóstico</b></span>
    <h1>${title}</h1><p>${lead}</p>
    ${authMsg?`<div class="msg ${authMsg.ok?'ok':'err'}" role="status">${esc(authMsg.t)}</div>`:''}

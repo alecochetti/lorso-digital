@@ -292,3 +292,96 @@ td.neg,b.neg{color:var(--n1i)} td.pos{color:var(--n4i)}
 @media (max-width:640px){ .stats.money .stat b{font-size:24px} }
 iframe.modframe{display:block;width:100%;height:calc(100dvh - 61px - 88px);min-height:560px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);box-shadow:var(--shadow)}
 @media (max-width:640px){ iframe.modframe{height:calc(100dvh - 57px - 40px);border-radius:12px} }
+
+/* =====================================================================
+   MARCA LORSO · verde #00FF87 e azul #00E5FF no menu e nas seleções
+   Menu sempre no azul-noite do logo; o conteúdo segue o tema.
+   ===================================================================== */
+:root{--brand:#00FF87;--brand-2:#00E5FF;--brand-ink:#0B0F14;--night:#0B0F14;--night-2:#141B24;--night-3:#1C2632}
+/* versão noturna amigável: azul-noite do logo em vez de preto, sem grade */
+:root:not([data-theme="light"]){
+  --bg:#0E141B; --surface:#151D27; --surface-2:#1B2531; --line:#243142; --line-2:#334459;
+  --fg:#EEF3F8; --muted:#AEBACA; --faint:#8090A3;
+  --accent:#00FF87; --accent-2:#00E5FF; --accent-ink:#0B0F14;
+  --grid:transparent; color-scheme:dark;
+}
+:root:not([data-theme="light"]) body{background-image:none}
+:root[data-theme="dark"] body{--shadow:0 1px 2px rgba(0,0,0,.35),0 10px 26px -14px rgba(0,0,0,.6);--shadow-h:0 2px 4px rgba(0,0,0,.4),0 16px 34px -14px rgba(0,0,0,.7)}
+:root[data-theme="dark"] .tag.area{background:color-mix(in srgb,var(--brand-2) 14%,transparent);color:#7BEFFF}
+:root[data-theme="dark"] .verdict.ok{color:var(--n4i)}
+/* menu lateral da marca */
+.sb{background:var(--night);border-color:#1A2330!important;color:#DCE4EC}
+.sb-brand{border-bottom:0;padding:6px 8px 2px;gap:12px}
+.sb-mark{width:40px;height:auto;flex:none}
+.sb-word{display:flex;flex-direction:column;line-height:1}
+.sb-word b{font-family:var(--display);font-size:19px;font-weight:800;letter-spacing:.06em;color:#fff}
+.sb-word i{font-style:normal;font-family:var(--display);font-size:10.5px;font-weight:700;letter-spacing:.42em;color:var(--brand);margin-top:5px}
+.sb-word em{font-style:normal;color:var(--brand-2);letter-spacing:0}
+.sb-prod{margin:0 8px 6px;padding:7px 10px;border-radius:10px;background:var(--night-2);border:1px solid var(--night-3);color:#9FB0C2;font-size:12px;font-weight:600}
+.sb-prod::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--brand-2);margin-right:8px;vertical-align:1px}
+.sb-g{color:#6E7F93}
+.sn{color:#D4DDE7}
+.sn .ic{color:#8DA0B5}
+.sn .mt{background:var(--night-2);border-color:var(--night-3);color:#9FB0C2}
+.sn:hover{background:var(--night-2);color:#fff}
+.sn:hover .ic{color:var(--brand-2)}
+.sn.on{background:var(--brand);color:var(--brand-ink);font-weight:700;box-shadow:0 8px 20px -10px rgba(0,255,135,.6)}
+.sn.on .ic{color:var(--brand-ink)}
+.sn.on .mt{background:rgba(11,15,20,.14);color:var(--brand-ink)}
+.sn .mt.hot{color:#FF8FA3}
+.sb-foot{background:var(--night-2);border-color:var(--night-3)}
+.sb-me b{color:#fff} .sb-me small{color:#8DA0B5}
+.sb-me:hover,.sb-me.on{background:var(--night-3);border-color:var(--night-3)}
+.sb-me .av{background:var(--brand-2);color:var(--brand-ink)}
+.sb-ic{background:var(--night-3);border-color:#2A3746;color:#C2CEDA}
+.sb-ic:hover{color:var(--brand);border-color:var(--brand)}
+/* seleções e ações com as cores da marca */
+.btn.primary,.subtabs button.on,.seg button.on,.pchip.on,.mdmes[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.btn.primary{box-shadow:0 8px 18px -10px rgba(0,200,110,.75)}
+.btn.primary:hover{filter:brightness(1.04);color:var(--brand-ink)}
+.mdmes[aria-pressed="true"] small{color:var(--brand-ink)}
+.pchip.on b{color:var(--brand-ink)}
+.eyebrow::before{background:var(--brand-2)}
+:root[data-theme="light"] .eyebrow b{color:#0B7A4E}
+.stat .sp i,.kpi .sp i,.vb span,.hzrow .vb span{background:linear-gradient(90deg,var(--brand),var(--brand-2))}
+.stat .si,.kpi .si{background:color-mix(in srgb,var(--brand-2) 16%,transparent);color:#0E7490}
+:root:not([data-theme="light"]) .stat .si{color:var(--brand-2)}
+input:focus,select:focus,textarea:focus{border-color:var(--brand-2)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--brand-2) 22%,transparent)}
+:focus-visible{outline-color:var(--brand-2)}
+.anav.on{background:color-mix(in srgb,var(--brand-2) 14%,transparent)}
+.fbtn.on{border-color:var(--brand-2);background:color-mix(in srgb,var(--brand-2) 8%,var(--surface))}
+.fbtn .ic{color:#0E7490} :root:not([data-theme="light"]) .fbtn .ic{color:var(--brand-2)}
+.topbar .status i{background:var(--brand)}
+/* login com a marca */
+.auth-brand{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.auth-brand .sb-mark{width:52px}
+.auth-brand .sb-word b{color:var(--fg);font-size:24px}
+:root[data-theme="light"] .auth-brand .sb-word i{color:#0B9A5C}
+.auth .logo{display:none}
+@media (max-width:960px){ .sb{box-shadow:0 0 50px rgba(0,0,0,.45)} }
+/* Método LORSO */
+.metodo{position:relative;overflow:hidden;background:var(--night);color:#E6EDF4;border-radius:22px;padding:26px 26px 24px;box-shadow:var(--shadow)}
+.metodo::after{content:"";position:absolute;right:-60px;top:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(0,229,255,.18),transparent 70%);pointer-events:none}
+.mt-top{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+.mt-top .sb-mark{width:46px}
+.mt-top b{display:block;font-family:var(--display);font-size:22px;color:#fff;letter-spacing:-.01em}
+.mt-top span{font-size:13px;color:#8DA0B5}
+.mt-fases{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;position:relative}
+.mt-fases::before{content:"";position:absolute;left:24px;right:24px;top:17px;height:2px;background:linear-gradient(90deg,var(--brand),var(--brand-2));opacity:.55}
+.mt-fases li{position:relative;background:var(--night-2);border:1px solid var(--night-3);border-radius:16px;padding:46px 14px 16px;display:flex;flex-direction:column;gap:6px}
+.mt-fases .mt-n{position:absolute;top:4px;left:14px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--brand);color:var(--brand-ink);font-weight:800;font-size:13px;box-shadow:0 0 0 4px var(--night)}
+.mt-fases .mt-ic{position:absolute;top:10px;right:12px;color:var(--brand-2)}
+.mt-fases b{font-family:var(--display);font-size:16.5px;color:#fff}
+.mt-fases p{font-size:13px;line-height:1.5;color:#B9C6D4}
+.mt-fases small{margin-top:auto;padding-top:8px;font-size:12px;font-weight:700;color:var(--brand)}
+.mt-passos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.mt-passos>div{position:relative;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:16px 16px 16px 56px}
+.mt-passos .mt-n{position:absolute;left:14px;top:14px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--brand);color:var(--brand-ink);font-weight:800}
+.mt-passos .ic{color:#0E7490;margin-bottom:4px} :root:not([data-theme="light"]) .mt-passos .ic{color:var(--brand-2)}
+.mt-passos b{display:block;font-size:15px}
+.mt-passos p{font-size:13px;color:var(--muted)}
+@media (max-width:1180px){ .mt-fases{grid-template-columns:repeat(3,minmax(0,1fr))} .mt-fases::before{display:none} }
+@media (max-width:760px){ .mt-fases,.mt-passos{grid-template-columns:minmax(0,1fr)} .metodo{padding:20px} }
+@media print{ .metodo{background:#fff;color:#000;border:1px solid #ccc} .mt-fases li{background:#fff;border-color:#ccc} .mt-fases b,.mt-top b{color:#000} .mt-fases p{color:#333} }
+.sn.on .mt.hot{color:var(--brand-ink)}
+.auth-box .eyebrow{align-self:flex-start}
