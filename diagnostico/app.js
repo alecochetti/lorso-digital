@@ -218,6 +218,21 @@ RULES.push(
   test:()=>le(R('rei5'),2)&&le(R('fin4'),2), txt:()=>'A reitoria mede o marketing por percepção e o retorno não é apresentado ao financeiro. Sem régua combinada, o trabalho vai ser julgado por opinião.',
   rec:['Pactuar 3 a 5 indicadores de sucesso com a reitoria no início do projeto','Relatório mensal com matrícula, receita e CAC por UN']}
 );
+
+RULES.push(
+ {id:'CRZ-44',sev:'alta',pad:'Expectativa sem estrutura',areas:()=>['reitoria',...UNS.filter(u=>/Crescer|Recuperar/.test(unxGet(u.id,'expect'))&&(le(L(u.id),2)||le(unSvc(u),2))).map(u=>u.id)],t:'Reitoria quer crescer onde a UN não está pronta',
+  test:()=>UNS.some(u=>/Crescer|Recuperar/.test(unxGet(u.id,'expect'))&&(le(L(u.id),2)||le(unSvc(u),2))),
+  txt:()=>UNS.filter(u=>/Crescer|Recuperar/.test(unxGet(u.id,'expect'))&&(le(L(u.id),2)||le(unSvc(u),2))).map(u=>`A reitoria espera ${unxGet(u.id,'expect').toLowerCase()} ${u.nome}${unxGet(u.id,'crescimento')?` (${unxGet(u.id,'crescimento')}% em matrículas)`:''}, mas a UN está no nível ${L(u.id)??'sem nota'} e avalia o atendimento do marketing em N${unSvc(u)??'—'}.`).join(' ')+' A meta vai depender de estrutura que ainda não existe.',
+  rec:['Plano de crescimento por UN com marcos de processo antes de aumentar a meta','Capacidade do marketing reservada para a UN prioritária']},
+ {id:'CRZ-45',sev:'alta',pad:'Gargalo de capacidade',areas:()=>['demandas',...UNS.filter(u=>unxGet(u.id,'foco').includes('Novos cursos e frentes')).map(u=>u.id)],t:'Novas frentes vão disputar a mesma fila do marketing',
+  test:()=>UNS.some(u=>unxGet(u.id,'foco').includes('Novos cursos e frentes'))&&(le(L('demandas'),2)||le(L('fluxo'),2)),
+  txt:()=>`A reitoria quer novos cursos e frentes em ${UNS.filter(u=>unxGet(u.id,'foco').includes('Novos cursos e frentes')).map(u=>u.nome).join(', ')}, mas a gestão de demandas e o fluxo do marketing ainda estão em nível baixo. Cada lançamento novo vai aumentar a fila que já atrasa.`,
+  rec:['Organizar a fila e o SLA antes dos lançamentos','Calendário de lançamentos com 6 meses de antecedência','Pacote padrão de lançamento (páginas, peças e régua) reutilizável']},
+ {id:'CRZ-46',sev:'media',pad:'Contradição declarada',areas:()=>['reitoria',...UNS.filter(u=>unxGet(u.id,'expect')==='Crescer'&&unxGet(u.id,'esforco')==='Reduzir').map(u=>u.id)],t:'Crescer reduzindo investimento',
+  test:()=>UNS.some(u=>unxGet(u.id,'expect')==='Crescer'&&unxGet(u.id,'esforco')==='Reduzir'),
+  txt:()=>`${UNS.filter(u=>unxGet(u.id,'expect')==='Crescer'&&unxGet(u.id,'esforco')==='Reduzir').map(u=>u.nome).join(', ')}: a reitoria espera crescimento com redução de investimento. Só fecha a conta com ganho de eficiência (CAC, conversão, retenção) comprovado.`,
+  rec:['Mostrar o CAC atual e a conversão por etapa da UN','Definir quanto do crescimento virá de eficiência e quanto de verba']}
+);
 function finRows(){
   const rows=UNS.map(u=>{const f=unFin(u.id);return {id:u.id,nome:u.nome,level:L(u.id),score:SC[u.id].score,...f};});
   const totO=rows.reduce((a,r)=>a+(r.orcamento||0),0), totR=rows.reduce((a,r)=>a+(r.receita||0),0);
@@ -364,12 +379,14 @@ function renderDiagnostico(INS){
     <aside class="side" aria-label="Áreas">${nav}</aside>
     <section class="panel">${sel}
      ${headHtml(`// ${a.g} · <b>${String(idx+1).padStart(2,'0')}/${AREAS.length}</b>`,a.nome,a.desc,s)}
+     ${a.un&&unExpResumo(a.id)?`<div class="banner"><span><b>Reitoria:</b> ${esc(unExpResumo(a.id))}</span><button class="chip" data-act="area" data-v="reitoria">Ver na Reitoria</button></div>`:''}
      <div class="collector"><span>Coleta desta área:</span><select data-dono-area="${a.id}" aria-label="Responsável pela coleta"><option value="">Sem responsável</option>${cur.equipe.map(m=>`<option value="${m.id}" ${dono===m.id?'selected':''}>${esc(m.nome||'Sem nome')}</option>`).join('')}</select>
       ${!cur.equipe.length?`<button class="chip" data-act="view" data-v="equipe">+ Cadastrar equipe</button>`:''}
       <span style="margin-left:auto">${areaTasks.length?`<button class="chip" data-act="tasks-area" data-v="${a.id}">${areaTasks.filter(t=>t.status!=='Concluída').length} tarefas abertas nesta área</button>`:`<button class="chip" data-act="task-new" data-area="${a.id}">+ Tarefa para esta área</button>`}</span></div>
      ${interviewsHtml(a.id)}
      ${a.roteiro?volBlock:''}
      ${a.id==='financeiro'?dreHtmlImport():''}
+     ${a.id==='reitoria'?unExpHtml():''}
      ${a.q.map(qHtml).join('')}
      <section class="block"><div class="block-h"><h3>Dores relatadas nesta área</h3><p>${cur.dores.filter(d=>d.area===a.id).length} registradas · alimentam o mapa de gargalos</p></div>
       ${cur.dores.some(d=>d.area===a.id)?`<div class="tblw"><table class="tbl"><thead><tr><th>Dor</th><th>Etapa</th><th>Tipo</th><th>Gravidade</th><th>Frequência</th><th>Relatado por</th><th></th></tr></thead><tbody>${cur.dores.filter(d=>d.area===a.id).map(d=>dorRow(d,true)).join('')}</tbody></table></div>`:''}
@@ -541,9 +558,9 @@ function renderResultados(INS){
      <span class="mono num" style="font-size:12px">${s.score!=null?dec(s.score)+' · N'+s.level:'sem nota'}</span></div>`).join('')}
      <div class="axis"><span></span><div class="ticks"><span>1</span><span>2</span><span>3</span><span>4</span></div><span></span></div></div>`;
   const heat=`<div class="tblw"><table class="tbl heat"><thead><tr><th>Área</th>${Object.values(PIL).map(p=>`<th style="text-align:center">${p}</th>`).join('')}<th style="text-align:center">Geral</th></tr></thead><tbody>${rows.map(({a,s})=>`<tr><td>${esc(a.nome)}</td>${Object.keys(PIL).map(k=>{const v=s.pil[k];return `<td class="h l${lvOf(v)}">${v==null?'—':dec(v)}</td>`;}).join('')}<td class="h l${s.level}">${s.score==null?'—':dec(s.score)}</td></tr>`).join('')}</tbody></table></div>`;
-  const finTbl=`<div class="tblw"><table class="tbl"><thead><tr><th>UN</th><th class="r">Nível</th><th class="r">Meta receita</th><th class="r">Receita</th><th class="r">Atingido</th><th class="r">Folha</th><th class="r">Folha / receita</th><th class="r">Orçamento mkt</th><th class="r">% do orçamento</th><th class="r">Orçamento / receita</th><th class="r">Orçamento por matrícula-meta</th></tr></thead><tbody>
-    ${fin.map(r=>`<tr><td><button class="chip" data-act="goto" data-v="${r.id}">${esc(r.nome)}</button></td><td class="r">${r.level?`<span class="lv l${r.level}">N${r.level}</span>`:'—'}</td><td class="r">${brl(r.meta_rec)}</td><td class="r">${brl(r.receita)}</td><td class="r" style="${r.ating!=null&&r.ating<0.85?'color:var(--n1);font-weight:600':''}">${pct(r.ating)}</td><td class="r">${brl(r.folha)}</td><td class="r">${pct(r.folhaRec)}</td><td class="r">${brl(r.orcamento)}</td><td class="r">${pct(r.share)}</td><td class="r">${pct(r.orcRec)}</td><td class="r">${brl(r.cpm)}</td></tr>`).join('')}
-    <tr><td><b>Total</b></td><td></td><td class="r"><b>${brl(tot('meta_rec'))}</b></td><td class="r"><b>${brl(tot('receita'))}</b></td><td class="r"><b>${pct(tot('meta_rec')&&tot('receita')!=null?tot('receita')/tot('meta_rec'):null)}</b></td><td class="r"><b>${brl(tot('folha'))}</b></td><td></td><td class="r"><b>${brl(tot('orcamento'))}</b></td><td></td><td></td><td></td></tr></tbody></table></div>`;
+  const finTbl=`<div class="tblw"><table class="tbl"><thead><tr><th>UN</th><th class="r">Nível</th><th class="r">Meta receita</th><th class="r">Receita</th><th class="r">Atingido</th><th class="r">Folha</th><th class="r">Folha / receita</th><th class="r">Orçamento mkt</th><th class="r">% do orçamento</th><th class="r">Orçamento / receita</th><th class="r">Orçamento por matrícula-meta</th><th>Expectativa da reitoria</th></tr></thead><tbody>
+    ${fin.map(r=>`<tr><td><button class="chip" data-act="goto" data-v="${r.id}">${esc(r.nome)}</button></td><td class="r">${r.level?`<span class="lv l${r.level}">N${r.level}</span>`:'—'}</td><td class="r">${brl(r.meta_rec)}</td><td class="r">${brl(r.receita)}</td><td class="r" style="${r.ating!=null&&r.ating<0.85?'color:var(--n1);font-weight:600':''}">${pct(r.ating)}</td><td class="r">${brl(r.folha)}</td><td class="r">${pct(r.folhaRec)}</td><td class="r">${brl(r.orcamento)}</td><td class="r">${pct(r.share)}</td><td class="r">${pct(r.orcRec)}</td><td class="r">${brl(r.cpm)}</td><td style="min-width:220px;font-size:13px">${esc(unExpResumo(r.id)||'—')}</td></tr>`).join('')}
+    <tr><td><b>Total</b></td><td></td><td class="r"><b>${brl(tot('meta_rec'))}</b></td><td class="r"><b>${brl(tot('receita'))}</b></td><td class="r"><b>${pct(tot('meta_rec')&&tot('receita')!=null?tot('receita')/tot('meta_rec'):null)}</b></td><td class="r"><b>${brl(tot('folha'))}</b></td><td></td><td class="r"><b>${brl(tot('orcamento'))}</b></td><td></td><td></td><td></td><td></td></tr></tbody></table></div>`;
   const kpiTbl=`${cur.kpis.length?`<div class="tblw"><table class="tbl"><thead><tr><th style="min-width:200px">Indicador</th><th>UN ou área</th><th class="r">Meta</th><th class="r">Realizado</th><th class="r">Atingido</th><th></th></tr></thead><tbody>${cur.kpis.map((k,i)=>{const m=num(k.meta),r=num(k.real);return `<tr><td><input data-kpi="${i}" data-f="nome" value="${esc(k.nome)}" aria-label="Indicador"></td><td><input data-kpi="${i}" data-f="un" value="${esc(k.un)}" aria-label="UN"></td><td><input data-kpi="${i}" data-f="meta" value="${esc(k.meta)}" inputmode="decimal" aria-label="Meta" style="text-align:right"></td><td><input data-kpi="${i}" data-f="real" value="${esc(k.real)}" inputmode="decimal" aria-label="Realizado" style="text-align:right"></td><td class="r mono">${m&&r!=null?pct(r/m):'—'}</td><td class="x"><button class="xbtn" data-act="kpi-del" data-i="${i}" aria-label="Remover">×</button></td></tr>`;}).join('')}</tbody></table></div>`:'<p class="empty">Nenhum indicador ainda.</p>'}
     <div style="display:flex;flex-wrap:wrap;gap:6px">${['Matrículas','CAC','CPL','Conversão lead → matrícula','NPS','Taxa de rematrícula','ROAS'].map(n=>`<button class="chip" data-act="kpi-add" data-n="${n}">+ ${n}</button>`).join('')}<button class="chip" data-act="kpi-add" data-n="">+ Outro</button></div>`;
   $('#main').innerHTML=`<section class="panel">
@@ -650,7 +667,10 @@ function dreParse(txt){
     const un=(UN_MATCH.find(([,re])=>re.test(c[3]||''))||(c[3]?null:UN_MATCH.find(([,re])=>re.test(label)))||[])[0]||null;
     const L=label.toLowerCase();
     let kind=null;
-    if(/folha|pessoal|sal[aá]rio/.test(L)) kind=/marketing|mkt|comunica/.test(L)||!un?'folha':'folha';
+    if(/bruta/.test(L)&&/receita|faturamento/.test(L)){ign.push(l);return;}
+    if(/bolsa|desconto/.test(L)) kind='descontos';
+    else if(/inadimpl/.test(L)) kind='inadimplencia';
+    else if(/folha|pessoal|sal[aá]rio/.test(L)) kind='folha';
     else if(/marketing|publicidade|propaganda|m[ií]dia|capta[cç][aã]o/.test(L)) kind='verba';
     else if(/ebitda|resultado|lucro/.test(L)) kind='ebitda';
     else if(/receita|faturamento/.test(L)) kind='receita';
@@ -664,22 +684,63 @@ function dreParse(txt){
       else { ign.push(l); return; }
     } else {
       const map={receita:['receita_orcada','receita_realizada'],custo:['custo_orcado','custo_realizado'],ebitda:['ebitda_orcado','ebitda_realizado'],verba:['verba_orcada','verba_realizada']};
-      if(kind==='folha'){ if(/marketing|mkt|comunica/.test(L)){ const v=r??o; sets.push(['financeiro.folha_mkt',v]); } else { ign.push(l); return; } }
+      const v1=r??o;
+      if(kind==='descontos'||kind==='inadimplencia'){ sets.push(['financeiro.'+kind,Math.abs(v1)]); }
+      else if(kind==='folha'){ if(/marketing|mkt|comunica/.test(L)) sets.push(['financeiro.folha_mkt',v1]); else if(/docen|professor/.test(L)) sets.push(['financeiro.folha_docente',v1]); else if(/adm/.test(L)) sets.push(['financeiro.folha_adm',v1]); else { ign.push(l); return; } }
       else { if(o!=null)sets.push(['financeiro.'+map[kind][0],o]); if(r!=null)sets.push(['financeiro.'+map[kind][1],r]); }
     }
     sets.forEach(([k,v])=>out.push({k,v,label,un}));
   });
   return {out,ign};
 }
+const DRE_MODELO=`Receita bruta de mensalidades;0;0
+(-) Bolsas e descontos;0;0
+(-) Inadimplência;0;0
+Receita líquida;0;0
+Folha docente;0;0
+Folha administrativa;0;0
+Despesas com marketing;0;0
+Folha marketing;0;0
+Custos e despesas totais;0;0
+EBITDA;0;0
+Receita;0;0;Colégio
+Receita;0;0;Graduação
+Receita;0;0;Pós-Graduação
+Receita;0;0;Mestrado
+Despesas com marketing;0;0;Colégio
+Despesas com marketing;0;0;Graduação
+Despesas com marketing;0;0;Pós-Graduação
+Despesas com marketing;0;0;Mestrado
+Folha;0;0;Colégio
+Folha;0;0;Graduação
+Folha;0;0;Pós-Graduação
+Folha;0;0;Mestrado`;
 const CAMPO_NOME=k=>{ const [a,f]=k.split('.'); const area=AREA[a]; const v=area&&area.vol.find(x=>x[0]===f); return `${area?area.nome:a} · ${v?v[1]:f}`; };
 function dreHtmlImport(){
   const pv=ui.drePreview;
   return `<section class="block" id="dre-import"><div class="block-h"><h3>Importar da DRE</h3><p>Cole as linhas exportadas da DRE: nome da linha, orçado, realizado e, se tiver, a UN.</p></div>
    <textarea id="dre-txt" rows="6" placeholder="Receita líquida;100.000.000;88.000.000&#10;Despesas com marketing;5.000.000;3.500.000&#10;Folha marketing;90.000;90.000&#10;Receita;30.000.000;27.500.000;Graduação" style="width:100%;font-family:var(--mono);font-size:13px">${esc(ui.dreTxt||'')}</textarea>
-   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="dre-ler">Ler DRE</button>${pv&&pv.out.length?`<button class="btn primary" data-act="dre-aplicar">Aplicar ${pv.out.length} valores</button>`:''}</div>
+   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="dre-ler">Ler DRE</button><button class="btn ghost" data-act="dre-modelo">Copiar modelo de DRE educacional</button>${pv&&pv.out.length?`<button class="btn primary" data-act="dre-aplicar">Aplicar ${pv.out.length} valores</button>`:''}</div>
    ${pv?`${pv.out.length?`<div class="tblw"><table class="tbl"><thead><tr><th>Linha da DRE</th><th>Vai preencher</th><th class="r">Valor</th><th class="r">Hoje</th></tr></thead><tbody>${pv.out.map(x=>`<tr><td>${esc(x.label)}${x.un?` <span class="chip">${esc(nameOf(x.un))}</span>`:''}</td><td>${esc(CAMPO_NOME(x.k))}</td><td class="r">${brl(x.v)}</td><td class="r muted">${cur.campos[x.k]?brl(num(cur.campos[x.k])):'vazio'}</td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Nenhuma linha reconhecida. Use o formato: nome da linha; orçado; realizado; UN.</p>'}
    ${pv.ign.length?`<p class="muted" style="font-size:13px">${pv.ign.length} linha(s) ignorada(s) por não serem usadas no diagnóstico: ${esc(pv.ign.slice(0,4).map(l=>l.split(/\t|;|\|/)[0]).join(', '))}${pv.ign.length>4?'…':''}</p>`:''}`:''}
   </section>`;
+}
+/* ---------- Expectativas da reitoria por UN ---------- */
+const unxKey=(un,k)=>`reitoria.${un}.${k}`;
+const unxGet=(un,k)=>cur.campos[unxKey(un,k)]||'';
+function unExpResumo(un){
+  const e=unxGet(un,'expect'), es=unxGet(un,'esforco'), f=unxGet(un,'foco'), c=unxGet(un,'crescimento');
+  const parts=[e&&`espera ${e.toLowerCase()}`, es&&`${es==='Manter'?'manter':es.toLowerCase()} investimento`, c&&`crescimento de ${c}% em matrículas`, f&&`prioridades: ${f.split('|').join(', ').toLowerCase()}`].filter(Boolean);
+  return parts.join(' · ');
+}
+function unExpHtml(){
+  return `<section class="block"><div class="block-h"><h3>Expectativas por UN</h3><p>Toque nas opções durante a conversa com a reitoria. Elas entram nos cruzamentos de cada UN.</p></div>
+   <div class="unx">${UNS.map(u=>`<div class="unx-card"><b>${esc(u.nome)}</b>
+    ${UN_EXP.map(g=>{const val=unxGet(u.id,g.k); const sel=g.multi?val.split('|').filter(Boolean):[val];
+      return `<div class="unx-g"><span class="lbl">${g.label}</span><div class="seg">${g.opts.map(o=>`<button class="segb ${sel.includes(o)?'on':''}" data-act="unx" data-un="${u.id}" data-k="${g.k}" data-v="${esc(o)}" ${g.multi?`data-multi="${g.multi}"`:''} aria-pressed="${sel.includes(o)}">${esc(o)}</button>`).join('')}</div></div>`;}).join('')}
+    <div class="unx-row">${fieldHtml(unxKey(u.id,'crescimento'),'Crescimento esperado em matrículas','%')}</div>
+    ${fieldHtml(unxKey(u.id,'obs'),'Observação da reitoria sobre esta UN','t')}
+   </div>`).join('')}</div></section>`;
 }
 function renderSubnav(INS){
   const x=crossTasks(INS); const hot=x.late.length+x.semTarefa.length;
@@ -740,6 +801,7 @@ function summary(){
   L2.push(`DIAGNÓSTICO DE MATURIDADE · ${cur.nome}`); L2.push(`Maturidade geral: ${ov.score!=null?dec(ov.score)+' / 4 (N'+ov.level+' '+LVL[ov.level]+')':'sem nota'}`); L2.push('');
   L2.push('MATURIDADE POR ÁREA'); AREAS.forEach(a=>{const s=SC[a.id]; L2.push(`- ${a.nome}: ${s.score!=null?dec(s.score)+' (N'+s.level+' '+LVL[s.level]+')':'sem nota'}`);}); L2.push('');
   L2.push('INCONGRUÊNCIAS'); if(!INS.length)L2.push('- Nenhuma'); INS.forEach(i=>{L2.push(`- [${SEV[i.sev]}] ${i.t}: ${i.txt}`); i.rec.forEach(r=>L2.push(`    • ${r}`));}); L2.push('');
+  { const ex=UNS.map(u=>[u.nome,unExpResumo(u.id)]).filter(x=>x[1]); if(ex.length){ L2.push('EXPECTATIVAS DA REITORIA POR UN'); ex.forEach(([n,t])=>L2.push(`- ${n}: ${t}`)); L2.push(''); } }
   if(cur.campos['ctx.problema'])L2.push('PROBLEMA CENTRAL RELATADO: '+cur.campos['ctx.problema']);
   if(cur.campos['ctx.hipotese'])L2.push('HIPÓTESE DO CONSULTOR: '+cur.campos['ctx.hipotese']);
   if(cur.dores.length){ L2.push(''); L2.push('GARGALOS POR ETAPA'); gargalos().filter(g=>g.n).sort((a,b)=>b.score-a.score).forEach(g=>L2.push(`- ${g.etapa}: ${g.n} dores (${g.graves} graves)`)); L2.push(''); L2.push('DORES MAIS PESADAS'); [...cur.dores].sort((a,b)=>dorScore(b)-dorScore(a)).slice(0,10).forEach(d=>L2.push(`- ${d.txt} [${nameOf(d.area)||'Geral'} · ${d.etapa} · ${SEVN[d.sev]} · ${d.freq}${d.quem?' · '+d.quem:''}]`)); L2.push(''); }
@@ -969,7 +1031,9 @@ document.addEventListener('click',e=>{
   else if(act==='note'){ ui.notesOpen[d.q]=true; render(); const t=document.querySelector(`[data-nota="${d.q}"]`); t&&t.focus(); }
   else if(act==='ent-add'){ cur.entrevistas.push({id:uid(),area:d.area,nome:'',cargo:'',depto:nameOf(d.area),data:today()}); touch(true); const els=document.querySelectorAll('[data-ent][data-f="nome"]'); els.length&&els[els.length-1].focus(); }
   else if(act==='ent-del'){ cur.entrevistas.splice(+d.i,1); touch(true); }
+  else if(act==='unx'){ const key=unxKey(d.un,d.k); if(d.multi){ let L=(cur.campos[key]||'').split('|').filter(Boolean); if(L.includes(d.v)) L=L.filter(x=>x!==d.v); else { if(L.length>=+d.multi){ toast(`Escolha até ${d.multi} prioridades`); return; } L.push(d.v); } if(L.length)cur.campos[key]=L.join('|'); else delete cur.campos[key]; } else { if(cur.campos[key]===d.v) delete cur.campos[key]; else cur.campos[key]=d.v; } touch(true); }
   else if(act==='dre-go'){ ui.view='fases'; ui.stage='diagnostico'; ui.area='financeiro'; saveUi(); render(); const el=document.getElementById('dre-import'); el&&el.scrollIntoView({block:'start'}); const t=$('#dre-txt'); t&&t.focus({preventScroll:true}); }
+  else if(act==='dre-modelo'){ copyText(DRE_MODELO.replace(/;/g,'\t'),'Modelo copiado: cole numa planilha, preencha e cole de volta aqui'); }
   else if(act==='dre-ler'){ ui.dreTxt=($('#dre-txt')||{}).value||''; ui.drePreview=dreParse(ui.dreTxt); render(); }
   else if(act==='dre-aplicar'){ const pv=ui.drePreview; if(pv){ pv.out.forEach(x=>{ cur.campos[x.k]=String(x.v); }); const n=pv.out.length; ui.drePreview=null; ui.dreTxt=''; touch(true); toast(`${n} valores da DRE aplicados`); } }
   else if(act==='fofa-sug'){ const k=d.key+'.'+d.k; ui.fofaSug[k]=!ui.fofaSug[k]; render(); }

@@ -44,6 +44,8 @@ const AREAS = [
    ['custo_orcado','Custos e despesas orçados (ano)','R$'],['custo_realizado','Custos e despesas realizados ou projetados (ano)','R$'],
    ['ebitda_orcado','Resultado (EBITDA) orçado','R$'],['ebitda_realizado','Resultado (EBITDA) realizado ou projetado','R$'],
    ['verba_orcada','Verba de marketing orçada (ano)','R$'],['verba_realizada','Verba de marketing realizada ou projetada (ano)','R$'],
+   ['descontos','Bolsas e descontos concedidos (ano)','R$'],['inadimplencia','Inadimplência (ano)','R$'],
+   ['folha_docente','Folha docente (ano)','R$'],['folha_adm','Folha administrativa (ano)','R$'],
    ['folha_mkt','Folha mensal do marketing (com encargos)','R$'],['headcount','Pessoas no time de marketing','n'],
    ['terceiros','Agências e fornecedores do marketing (mensal)','R$'],
    ['obs','Cortes previstos, pressões de caixa e observações do financeiro','t']],
@@ -387,3 +389,10 @@ const FOFA_LIB = {
   o:['Redesenhar o fluxo de demandas com SLA e cota por UN','Unificar ferramentas e automatizar tarefas repetitivas','Planejamento conjunto com as UNs por semestre','Painel único de resultados por UN'],
   a:['Perda de matrículas por lentidão de resposta ao mercado','Desgaste interno levando UNs a agir por conta própria','Concorrentes mais rápidos e digitais','Saída de pessoas-chave do marketing']}
 };
+
+/* ================= EXPECTATIVAS DA REITORIA POR UN ================= */
+const UN_EXP=[
+ {k:'expect',label:'O que a reitoria espera desta UN',opts:['Manter','Crescer','Recuperar','Reposicionar']},
+ {k:'esforco',label:'Investimento no próximo ano',opts:['Reduzir','Manter','Aumentar']},
+ {k:'foco',label:'Prioridades (até 3)',multi:3,opts:['Aumentar captação','Melhorar retenção','Novos cursos e frentes','Aumentar ticket médio','Reduzir custo de aquisição','Fortalecer a marca','Convênios e B2B','Expandir EAD ou híbrido','Experiência do aluno']}
+];
