@@ -12,6 +12,58 @@ const UNFIN = [['meta_mat','Meta de matrículas','n'],['meta_rec','Meta de recei
 
 // pergunta: [id, título curto, pilar, impacto, eliminatória, enunciado, [N1, N2, N3, N4]]
 const AREAS = [
+ {id:'reitoria',g:'Liderança e governança',volTitle:'Roteiro da entrevista e números',roteiro:1,nome:'Reitoria',desc:'Visão da reitoria sobre o papel do marketing, metas da instituição, dores e o que significa sucesso para este trabalho.',
+  vol:[['meta_matriculas','Meta total de matrículas no ano','n'],['meta_receita','Meta de receita no ano','R$'],
+   ['dores','Quais são as 3 maiores dores da reitoria hoje com o marketing?','t'],
+   ['sucesso','O que precisa acontecer em 6 e em 12 meses para este trabalho ser considerado um sucesso?','t'],
+   ['objetivos','Objetivos estratégicos da instituição para os próximos 2 anos','t'],
+   ['prioridade_un','Qual UN é prioridade hoje e por quê?','t'],
+   ['tentativas','O que já foi tentado no marketing e não funcionou? Por quê?','t'],
+   ['decisores','Quem decide o quê sobre marketing hoje (verba, equipe, campanhas, sistemas)?','t'],
+   ['sensiveis','Restrições e temas sensíveis (mantenedora, política interna, sindicato, contratos)','t']],
+  q:[
+  ['rei1','Papel do marketing','C',3,0,'Como a reitoria enxerga o papel do marketing?',['Área de apoio que faz peças','Área de comunicação institucional','Parceira da captação, com metas compartilhadas','Área estratégica de receita, presente nas decisões do negócio']],
+  ['rei2','Metas institucionais','P',3,0,'As metas da instituição estão claras e desdobradas?',['Não há metas formais comunicadas','Metas gerais de matrícula, sem desdobramento','Metas por UN conhecidas pelas áreas','Metas por UN, curso e trimestre, acompanhadas todo mês pela reitoria']],
+  ['rei3','Patrocínio da mudança','C',3,1,'Qual o nível de patrocínio da reitoria para mudanças no marketing?',['Quer resultado sem mudar nada','Apoia no discurso, decide caso a caso','Apoia com prazo e recursos definidos','Patrocina ativamente, remove barreiras e cobra resultado']],
+  ['rei4','Velocidade de decisão','P',2,0,'Quanto tempo leva para uma decisão relevante de marketing ser aprovada?',['Meses, ou nunca sai','Semanas, passando por várias instâncias','Dias, com instância definida','Decisão delegada ao marketing dentro de regras claras']],
+  ['rei5','Régua de sucesso','C',2,0,'Como a reitoria mede o sucesso do marketing?',['Não sabe dizer','Por percepção: peças, eventos, visibilidade','Por matrículas e captação','Por matrícula, receita, CAC e retenção por UN']]]},
+ {id:'proreitoria',g:'Liderança e governança',volTitle:'Roteiro da entrevista e números',roteiro:1,nome:'Pró-reitorias',desc:'Pró-reitorias acadêmica e administrativa: como os fluxos chegam ao marketing, o que travam e o que esperam.',
+  vol:[['pontos_focais','Pró-reitorias e pontos focais (nome e responsabilidade)','t'],
+   ['dores','Principais dores das pró-reitorias com o marketing','t'],
+   ['fluxos','Fluxos que passam pelas pró-reitorias e travam o marketing','t'],
+   ['lancamentos','Lançamentos, editais e novos cursos previstos para os próximos 2 semestres','t'],
+   ['expectativa','O que a pró-reitoria espera do marketing e hoje não recebe?','t']],
+  q:[
+  ['pro1','Fluxo com o marketing','P',3,0,'Como as pró-reitorias acionam o marketing?',['Cada coordenador pede direto, sem passar pela pró-reitoria','Pedidos via pró-reitoria, sem padrão','Fluxo definido, com ponto focal por pró-reitoria','Planejamento conjunto periódico, com fila priorizada']],
+  ['pro2','Calendário acadêmico','P',3,0,'O calendário acadêmico (ofertas, editais, abertura de turmas) chega ao marketing com antecedência?',['Chega em cima da hora','Chega com poucas semanas','Chega no início do semestre','É construído junto com o marketing, com 6 meses de antecedência']],
+  ['pro3','Oferta e preço','P',2,0,'O marketing participa das decisões de oferta de cursos e preços?',['Não participa','É informado depois da decisão','É consultado','Participa com dados de demanda e concorrência']],
+  ['pro4','Alinhamento entre pró-reitorias','C',2,0,'As pró-reitorias têm prioridades alinhadas para o marketing?',['Prioridades conflitantes; cada uma puxa para um lado','Alinhamento informal','Prioridades discutidas em comitê','Prioridade única definida pela reitoria e respeitada']],
+  ['pro5','Aprovações acadêmicas','P',2,0,'Quanto as aprovações acadêmicas (conteúdo de curso, editais) atrasam o marketing?',['Atrasam quase sempre','Atrasam com frequência','Atrasos pontuais','Prazos de aprovação definidos e cumpridos']]]},
+ {id:'financeiro',g:'Liderança e governança',volTitle:'Roteiro da entrevista e números',roteiro:1,nome:'Orçamento e DRE',desc:'Números da instituição e do marketing: DRE orçado x realizado, folha e verba. Base para mostrar retorno e priorizar.',
+  vol:[['receita_orcada','Receita orçada (ano)','R$'],['receita_realizada','Receita realizada ou projetada (ano)','R$'],
+   ['custo_orcado','Custos e despesas orçados (ano)','R$'],['custo_realizado','Custos e despesas realizados ou projetados (ano)','R$'],
+   ['ebitda_orcado','Resultado (EBITDA) orçado','R$'],['ebitda_realizado','Resultado (EBITDA) realizado ou projetado','R$'],
+   ['verba_orcada','Verba de marketing orçada (ano)','R$'],['verba_realizada','Verba de marketing realizada ou projetada (ano)','R$'],
+   ['folha_mkt','Folha mensal do marketing (com encargos)','R$'],['headcount','Pessoas no time de marketing','n'],
+   ['terceiros','Agências e fornecedores do marketing (mensal)','R$'],
+   ['obs','Cortes previstos, pressões de caixa e observações do financeiro','t']],
+  q:[
+  ['fin1','Acesso aos números','F',3,0,'O marketing tem acesso aos números financeiros?',['Não tem acesso','Recebe números soltos quando pede','Recebe DRE e metas da área periodicamente','Acompanha a DRE por UN todo mês com o financeiro']],
+  ['fin2','Construção do orçamento','P',3,0,'Como é definido o orçamento do marketing?',['Repete o valor do ano anterior','Definido pela diretoria, sem participação do marketing','Construído com o marketing, por meta e UN','Base zero por meta, CAC e retorno, revisado por trimestre']],
+  ['fin3','Execução do orçamento','P',2,0,'O orçamento é executado conforme o planejado?',['Não é acompanhado','Cortes frequentes no meio do ano','Desvios pequenos e justificados','Orçado x realizado mensal, com realocação por resultado']],
+  ['fin4','Retorno do investimento','F',3,0,'O retorno do marketing é apresentado ao financeiro?',['Nunca','Só volume de leads e ações','Matrículas e CAC por UN','Receita, LTV e margem atribuídos ao marketing']],
+  ['fin5','Custo da equipe','P',2,0,'A folha do marketing é conhecida e comparada ao que é entregue?',['Não se sabe','Só o valor total','Total por função','Custo por função comparado ao volume e ao valor entregue']]]},
+ {id:'mandato',g:'Liderança e governança',volTitle:'Roteiro da entrevista e números',roteiro:1,nome:'Mandato e autonomia',desc:'O que você terá liberdade para mudar: equipe, contratações, fornecedores, sistemas e processos com as UNs.',
+  vol:[['pessoas_chave','Pessoas-chave do time de marketing (nome, função, ponto forte, ponto de atenção)','t'],
+   ['aprovadores','Quem precisa aprovar mudanças de equipe, fornecedor e sistema?','t'],
+   ['prazo','Prazo e marcos esperados para a transformação','t'],
+   ['intocaveis','O que não pode ser mexido (contratos, cargos, sistemas, pessoas)','t']],
+  q:[
+  ['man1','Troca de equipe','E',3,1,'Há liberdade para trocar ou realocar pessoas do time de marketing?',['Nenhuma; a equipe é intocável','Só com longa negociação com RH e reitoria','Possível com justificativa e prazo','Autonomia para redesenhar a equipe dentro do orçamento']],
+  ['man2','Contratações','E',2,0,'É possível contratar pessoas ou especialistas?',['Contratações congeladas','Só para repor saídas','Novas vagas com aprovação','Orçamento previsto para reforço e especialistas']],
+  ['man3','Fornecedores e agências','P',2,0,'Há liberdade para trocar fornecedores e agências?',['Contratos fixos e intocáveis','Troca só no fim do contrato','Troca possível com justificativa','Autonomia para escolher por desempenho']],
+  ['man4','Sistemas','F',2,0,'Há liberdade para mudar ferramentas e sistemas?',['Decisão exclusiva da TI','Muda só com longo processo de compras','Mudança possível com aprovação da TI','O marketing escolhe suas ferramentas dentro de regras de segurança']],
+  ['man5','Regras com coordenadores e UNs','P',3,0,'Há liberdade para mudar processos que envolvem coordenadores e UNs (prazos, pedidos, aprovações)?',['Não; o marketing se adapta a todos','Só com aval caso a caso','Possível com comunicação da reitoria','Novas regras valem para todos, com patrocínio formal']]]},
  {id:'demandas',g:'Operação do marketing',nome:'Gestão de demandas',desc:'Como coordenadores e UNs pedem ao marketing, como o marketing prioriza e em quanto tempo entrega.',
   vol:[['recebidas','Demandas recebidas no mês','n'],['abertas','Demandas em aberto','n'],['prazo_medio','Prazo médio de entrega','d'],['no_prazo','Entregues no prazo','%'],['urgentes','Pedidos marcados como urgentes','%'],['solicitantes','Solicitantes ativos (coordenadores e gestores)','n'],['canais','Por onde os pedidos chegam hoje','t']],
   q:[
@@ -209,6 +261,26 @@ const nameOf = id => (AREA[id]||STG[id]||{nome:id}).nome;
    f = Forças (interno, positivo) · w = Fraquezas (interno, negativo)
    o = Oportunidades (externo ou de evolução) · a = Ameaças (externo ou risco) */
 const FOFA_LIB = {
+ reitoria:{
+  f:['Reitoria reconhece que o marketing precisa mudar e abriu espaço para o diagnóstico','Metas de matrícula e receita conhecidas pela liderança','Acesso direto da consultoria à reitoria','Marca institucional sólida construída ao longo dos anos'],
+  w:['Marketing visto como área de apoio, fora das decisões do negócio','Metas sem desdobramento por UN e trimestre','Decisões lentas, passando por muitas instâncias','Sucesso do marketing medido por percepção, não por número'],
+  o:['Comitê mensal de resultados com a reitoria e as UNs','Régua de sucesso pactuada: matrícula, receita e CAC por UN','Delegação de decisões ao marketing com regras claras','Patrocínio formal da reitoria às novas regras de pedidos e prioridade'],
+  a:['Troca de liderança interrompendo a transformação','Pressão por resultado rápido sem dar tempo ao novo processo','Mantenedora cortando verba por falta de retorno comprovado','Expectativas diferentes entre reitoria e pró-reitorias']},
+ proreitoria:{
+  f:['Pró-reitorias com pontos focais conhecidos','Calendário acadêmico estável de um ano para o outro','Coordenadores engajados com a captação dos seus cursos','Abertura para planejamento conjunto'],
+  w:['Calendário e editais chegam em cima da hora','Prioridades conflitantes entre pró-reitorias','Marketing fora das decisões de oferta e preço','Aprovações acadêmicas atrasam campanhas'],
+  o:['Calendário de lançamentos com 6 meses de antecedência','Ponto focal único por pró-reitoria para pedidos','Marketing com dados de demanda na decisão de oferta','Prazo fixo para aprovações acadêmicas'],
+  a:['Abertura de cursos sem demanda comprovada','Editais publicados sem tempo de divulgação','Conflitos entre pró-reitorias escalando para a reitoria','Mudanças regulatórias exigindo ajuste rápido de oferta']},
+ financeiro:{
+  f:['Orçamento de marketing garantido no ano','Financeiro disposto a compartilhar números','DRE fechada mensalmente','Histórico de investimento para comparar'],
+  w:['Marketing sem acesso à DRE e às metas financeiras','Orçamento repetido do ano anterior, sem base em meta','Retorno do marketing não comprovado em receita','Folha do marketing sem relação com o volume entregue'],
+  o:['Orçado x realizado mensal com realocação por resultado','Modelo de CAC e LTV por UN aceito pelo financeiro','Revisão do mix entre equipe interna e fornecedores','Business case para investimentos em sistemas e automação'],
+  a:['Cortes de verba no meio do ano','Receita abaixo do orçado pressionando o caixa','Inadimplência crescente reduzindo a margem','Marketing visto como custo, primeiro a ser cortado']},
+ mandato:{
+  f:['Liberdade para redesenhar processos com patrocínio da reitoria','Abertura para trocar fornecedores com baixo desempenho','Orçamento previsto para especialistas','Equipe aberta à mudança'],
+  w:['Equipe intocável, sem liberdade para realocar pessoas','Contratações congeladas','Sistemas decididos só pela TI','Contratos longos com fornecedores sem desempenho'],
+  o:['Redesenho de papéis do time com base no diagnóstico','Reforço pontual com especialistas por projeto','Troca de ferramentas com regras de segurança acordadas com a TI','Novas regras de pedidos valendo para todas as UNs'],
+  a:['Resistência interna travando mudanças de equipe','Mandato informal que pode ser revogado','Dependência de aprovações que demoram meses','Promessa de autonomia que não se confirma na prática']},
  demandas:{
   f:['Coordenadores reconhecem o marketing como parceiro e procuram o time','Time conhece bem o calendário acadêmico e os picos de cada UN','Existe um canal oficial de pedidos, mesmo que pouco usado','Gestor do marketing tem acesso direto à diretoria para priorizar'],
   w:['Pedidos chegam por WhatsApp individual e se perdem','Não há critério público de prioridade: vence quem pressiona mais','Coordenadores não sabem o status do que pediram','Urgências constantes impedem trabalho planejado','Ninguém mede prazo de entrega nem volume por UN'],

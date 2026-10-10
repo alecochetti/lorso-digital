@@ -25,7 +25,7 @@ function norm(d){
 }
 let cur = null;          // diagnóstico aberto
 let all = {};            // lista de diagnósticos: id -> {id, nome, updated_at}
-let ui = {view:'fases', stage:'diagnostico', area:'demandas', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}, fofaSug:{}};
+let ui = {view:'fases', stage:'diagnostico', area:'reitoria', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}, fofaSug:{}};
 try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','tarefas','equipe'].includes(u.view))ui.view=u.view;}catch(e){}
 const saveUi=()=>lsSet('cd.ui',JSON.stringify({stage:ui.stage,area:ui.area,view:ui.view}));
 const member=id=>cur.equipe.find(m=>m.id===id);
@@ -189,6 +189,30 @@ RULES.push(
   test:()=>cur.sistemas.filter(x=>x.nome&&x.integra==='Não').length>=3, txt:()=>`${cur.sistemas.filter(x=>x.nome&&x.integra==='Não').length} sistemas não integram com nenhum outro (${cur.sistemas.filter(x=>x.nome&&x.integra==='Não').map(x=>x.nome).join(', ')}). Cada um vira digitação manual.`,
   rec:['Mapear qual informação passa de um para outro','Priorizar a integração que mais economiza horas']}
 );
+
+RULES.push(
+ {id:'CRZ-37',sev:'crit',pad:'Mandato insuficiente',areas:['reitoria','mandato'],t:'Sem patrocínio da reitoria, o plano não sai do papel',
+  test:()=>le(R('rei3'),1)||(le(R('rei3'),2)&&le(R('man5'),1)), txt:()=>R('rei3')===1?'A reitoria quer resultado sem mudar nada. Qualquer nova regra com coordenadores e UNs vai ser contestada caso a caso.':'O apoio da reitoria é só no discurso e o marketing não pode mudar regras com coordenadores e UNs. As mudanças de fluxo vão travar na primeira resistência.',
+  rec:['Pactuar com a reitoria um mandato por escrito: escopo, prazo e o que muda','Comunicação oficial da reitoria às UNs sobre as novas regras','Comitê mensal com a reitoria para remover barreiras']},
+ {id:'CRZ-38',sev:'alta',pad:'Mandato insuficiente',areas:['mandato','fluxo'],t:'Equipe intocável com gargalo de capacidade',
+  test:()=>R('man1')===1&&(le(R('flu4'),2)||le(L('fluxo'),2)), txt:()=>'Não há liberdade para mexer na equipe, e o fluxo de trabalho já mostra falta de capacidade. O ganho vai ter que vir de processo, priorização e ferramentas, não de pessoas.',
+  rec:['Priorizar mudanças de processo e de regra de pedidos','Automatizar tarefas repetitivas antes de pedir pessoas','Levar à reitoria o custo da capacidade atual com números']},
+ {id:'CRZ-39',sev:'alta',pad:'Gargalo de capacidade',areas:['financeiro','demandas'],t:'Demandas por pessoa acima do que o time absorve',
+  test:()=>{const d=V('demandas','recebidas'),h=V('financeiro','headcount');return d!=null&&h>0&&d/h>=25;}, txt:()=>`São ${dec(V('demandas','recebidas')/V('financeiro','headcount'),0)} demandas por pessoa no mês (${V('demandas','recebidas')} para ${V('financeiro','headcount')} pessoas). Referência inicial de alerta: 25 por pessoa, a calibrar pelo tipo de peça.`,
+  rec:['Classificar demandas por esforço (P, M, G)','Cota por UN proporcional à capacidade real','Kit de autosserviço para pedidos simples']},
+ {id:'CRZ-40',sev:'alta',pad:'Desalinhamento financeiro',areas:['financeiro'],t:'Receita abaixo do orçado',
+  test:()=>{const o=V('financeiro','receita_orcada'),r=V('financeiro','receita_realizada');return o>0&&r!=null&&r/o<0.95;}, txt:()=>`A receita realizada ou projetada (${brl(V('financeiro','receita_realizada'))}) está em ${pct(V('financeiro','receita_realizada')/V('financeiro','receita_orcada'))} do orçado (${brl(V('financeiro','receita_orcada'))}).`+(V('financeiro','verba_orcada')&&V('financeiro','verba_realizada')!=null&&V('financeiro','verba_realizada')<V('financeiro','verba_orcada')?` A verba de marketing também está abaixo do orçado (${pct(V('financeiro','verba_realizada')/V('financeiro','verba_orcada'))}).`:''),
+  rec:['Mostrar quais UNs explicam o desvio','Proteger a verba das UNs com melhor retorno','Plano de recuperação com metas semanais']},
+ {id:'CRZ-41',sev:'media',pad:'Desalinhamento financeiro',areas:['financeiro'],t:'Verba de marketing cortada no meio do ano',
+  test:()=>{const o=V('financeiro','verba_orcada'),r=V('financeiro','verba_realizada');return o>0&&r!=null&&r/o<0.8;}, txt:()=>`A verba de marketing realizada está em ${pct(V('financeiro','verba_realizada')/V('financeiro','verba_orcada'))} do orçado. Sem prova de retorno, o marketing é o primeiro a ser cortado.`,
+  rec:['Apresentar CAC e retorno por UN ao financeiro','Acordar verba mínima protegida para captação']},
+ {id:'CRZ-42',sev:'alta',pad:'Gargalo de fluxo',areas:['proreitoria','demandas'],t:'Calendário chega tarde e tudo vira urgência',
+  test:()=>le(R('pro2'),1)&&(le(R('dem5'),2)||ge(V('demandas','urgentes'),30)), txt:()=>'O calendário acadêmico chega em cima da hora e as UNs não planejam com antecedência. As urgências que travam o marketing nascem antes dele, nas pró-reitorias.',
+  rec:['Calendário de lançamentos com 6 meses de antecedência, aprovado pela reitoria','Prazo mínimo de divulgação por edital ou curso novo']},
+ {id:'CRZ-43',sev:'media',pad:'Régua de sucesso',areas:['reitoria','financeiro'],t:'Sucesso do marketing sem régua objetiva',
+  test:()=>le(R('rei5'),2)&&le(R('fin4'),2), txt:()=>'A reitoria mede o marketing por percepção e o retorno não é apresentado ao financeiro. Sem régua combinada, o trabalho vai ser julgado por opinião.',
+  rec:['Pactuar 3 a 5 indicadores de sucesso com a reitoria no início do projeto','Relatório mensal com matrícula, receita e CAC por UN']}
+);
 function finRows(){
   const rows=UNS.map(u=>{const f=unFin(u.id);return {id:u.id,nome:u.nome,level:L(u.id),score:SC[u.id].score,...f};});
   const totO=rows.reduce((a,r)=>a+(r.orcamento||0),0), totR=rows.reduce((a,r)=>a+(r.receita||0),0);
@@ -321,8 +345,9 @@ function renderDiagnostico(INS){
   const idx=AREAS.indexOf(a), prev=AREAS[idx-1], next=AREAS[idx+1];
   const avaliadas=AREAS.filter(x=>SC[x.id].score!=null).length, crit=INS.filter(i=>i.sev==='crit').length;
   const myIns=INS.filter(i=>i.areas.includes(a.id));
-  const volTitle=a.un?'Números da UN':'Volume operacional e KPIs';
-  const volNote=a.un?'Meta, receita, folha e orçamento entram no cruzamento financeiro entre UNs.':'Números do período. Entram nos cruzamentos do motor.';
+  const volTitle=a.volTitle||(a.un?'Números da UN':'Volume operacional e KPIs');
+  const volNote=a.roteiro?'Perguntas abertas para conduzir a conversa. Os números entram nos cruzamentos do motor.':a.un?'Meta, receita, folha e orçamento entram no cruzamento financeiro entre UNs.':'Números do período. Entram nos cruzamentos do motor.';
+  const volBlock=`<section class="block"><div class="block-h"><h3>${volTitle}</h3><p>${volNote}</p></div><div class="fields">${a.vol.map(v=>fieldHtml(a.id+'.'+v[0],v[1],v[2])).join('')}${fieldHtml(a.id+'.contexto','Contexto da entrevista: dores, citações, o que chamou atenção','t')}</div></section>`;
   const pend=AREAS.find(x=>SC[x.id].ans<x.q.length);
   const areaTasks=cur.acoes.filter(t=>t.area===a.id);
   const dono=cur.dono_area[a.id];
@@ -337,11 +362,12 @@ function renderDiagnostico(INS){
       ${!cur.equipe.length?`<button class="chip" data-act="view" data-v="equipe">+ Cadastrar equipe</button>`:''}
       <span style="margin-left:auto">${areaTasks.length?`<button class="chip" data-act="tasks-area" data-v="${a.id}">${areaTasks.filter(t=>t.status!=='Concluída').length} tarefas abertas nesta área</button>`:`<button class="chip" data-act="task-new" data-area="${a.id}">+ Tarefa para esta área</button>`}</span></div>
      ${interviewsHtml(a.id)}
+     ${a.roteiro?volBlock:''}
      ${a.q.map(qHtml).join('')}
      <section class="block"><div class="block-h"><h3>Dores relatadas nesta área</h3><p>${cur.dores.filter(d=>d.area===a.id).length} registradas · alimentam o mapa de gargalos</p></div>
       ${cur.dores.some(d=>d.area===a.id)?`<div class="tblw"><table class="tbl"><thead><tr><th>Dor</th><th>Etapa</th><th>Tipo</th><th>Gravidade</th><th>Frequência</th><th>Relatado por</th><th></th></tr></thead><tbody>${cur.dores.filter(d=>d.area===a.id).map(d=>dorRow(d,true)).join('')}</tbody></table></div>`:''}
       ${dorFormHtml(a.id)}</section>
-     <section class="block"><div class="block-h"><h3>${volTitle}</h3><p>${volNote}</p></div><div class="fields">${a.vol.map(v=>fieldHtml(a.id+'.'+v[0],v[1],v[2])).join('')}${fieldHtml(a.id+'.contexto','Contexto da entrevista: dores, citações, o que chamou atenção','t')}</div></section>
+     ${a.roteiro?'':volBlock}
      ${myIns.length?`<section class="block"><div class="block-h"><h3>Incongruências desta área</h3></div><div class="ins">${myIns.map(i=>insightHtml(i,false)).join('')}</div></section>`:''}
      ${fofaHtml(a.id, autoFofa(a.id,INS))}
      <div class="pager">${prev?`<button class="btn" data-act="area" data-v="${prev.id}">← ${prev.nome}</button>`:'<span></span>'}${next?`<button class="btn primary" data-act="area" data-v="${next.id}">${next.nome} →</button>`:`<button class="btn primary" data-act="stage" data-v="estrategia">Ir para Estratégia →</button>`}</div>
@@ -482,6 +508,16 @@ function renderOtimizacao(INS){
    <div><button class="btn sm" data-act="teste-new">+ Novo experimento</button></div></section>
    ${fofaHtml('otimizacao',autoFofa('otimizacao',INS),'FOFA da otimização')}${nextBtn(st)}</section>`;
 }
+function dreHtml(){
+  const L2=[['Receita','receita_orcada','receita_realizada',1],['Custos e despesas','custo_orcado','custo_realizado',-1],['Resultado (EBITDA)','ebitda_orcado','ebitda_realizado',1],['Verba de marketing','verba_orcada','verba_realizada',0]];
+  const rows=L2.map(([n,o,r,dir])=>({n,o:V('financeiro',o),r:V('financeiro',r),dir})).filter(x=>x.o!=null||x.r!=null);
+  const folha=V('financeiro','folha_mkt'), terc=V('financeiro','terceiros'), hc=V('financeiro','headcount');
+  if(!rows.length&&folha==null&&terc==null) return '';
+  return `<section class="block"><div class="block-h"><h3>DRE orçado x realizado</h3><button class="chip" data-act="area" data-v="financeiro">Editar em Orçamento e DRE</button></div>
+   ${rows.length?`<div class="tblw"><table class="tbl"><thead><tr><th>Linha</th><th class="r">Orçado</th><th class="r">Realizado ou projetado</th><th class="r">Desvio</th></tr></thead><tbody>${rows.map(x=>{const dv=x.o&&x.r!=null?(x.r-x.o)/Math.abs(x.o):null; const bad=dv!=null&&(x.dir===1?dv<-0.05:x.dir===-1?dv>0.05:false);return `<tr><td>${x.n}</td><td class="r">${brl(x.o)}</td><td class="r">${brl(x.r)}</td><td class="r" style="${bad?'color:var(--n1);font-weight:600':''}">${dv==null?'—':(dv>0?'+':'')+pct(dv)}</td></tr>`;}).join('')}</tbody></table></div>`:''}
+   ${folha!=null||terc!=null?`<div class="stats"><div class="stat"><b>${brl(folha)}</b><span>folha mensal do marketing</span></div><div class="stat"><b>${brl(terc)}</b><span>agências e fornecedores por mês</span></div><div class="stat"><b>${hc!=null?hc:'—'}</b><span>pessoas no time</span></div><div class="stat"><b>${folha!=null&&terc!=null?brl((folha+terc)*12):'—'}</b><span>custo anual da operação (equipe + terceiros)</span></div></div>`:''}
+  </section>`;
+}
 function renderResultados(INS){
   const st=STG.resultados, ov=overall();
   const rows=AREAS.map(a=>({a,s:SC[a.id]}));
@@ -515,6 +551,7 @@ function renderResultados(INS){
     <section class="block"><div class="block-h"><h3>Mapa por pilar</h3><p>Nota de 1 a 4</p></div>${heat}</section>
    </div>
    ${cur.dores.length?`<section class="block"><div class="block-h"><h3>Gargalos relatados</h3><button class="chip" data-act="view" data-v="dores">Abrir mapa de dores</button></div>${gargaloChart(false)}</section>`:''}
+   ${dreHtml()}
    <section class="block"><div class="block-h"><h3>Cruzamento financeiro das UNs</h3><p>${anyFin?'Preenchido na fase 1, em cada UN.':'Preencha meta, receita, folha e orçamento em cada UN na fase 1.'}</p></div>${finTbl}</section>
    <section class="block"><div class="block-h"><h3>Incongruências</h3><p>${INS.length} encontradas, da mais grave para a menos grave.</p></div>${INS.length?`<div class="ins">${INS.map(i=>insightHtml(i,true)).join('')}</div>`:'<p class="empty">Nenhuma incongruência ainda. Elas aparecem quando áreas ligadas têm níveis muito diferentes.</p>'}</section>
    ${fofaHtml('geral',cons,'FOFA consolidada','Os 8 itens de maior impacto de cada quadrante, de todas as áreas. Inclua a leitura estratégica abaixo.')}
@@ -781,7 +818,7 @@ async function openDiag(id){
 async function createDiag(nome){
   const r=await sb.from('diagnosticos').insert({nome,cliente:nome}).select('id,nome,updated_at').single();
   if(r.error){ toast('Não foi possível criar: '+r.error.message); return; }
-  all[r.data.id]=r.data; ui.novo=false; ui.view='fases'; ui.stage='diagnostico'; ui.area='demandas'; saveUi(); await openDiag(r.data.id);
+  all[r.data.id]=r.data; ui.novo=false; ui.view='fases'; ui.stage='diagnostico'; ui.area='reitoria'; saveUi(); await openDiag(r.data.id);
 }
 const profT={};
 function saveProfile(id){ clearTimeout(profT[id]); profT[id]=setTimeout(async()=>{ const p=profiles.find(x=>x.id===id); if(!p)return; const r=await sb.from('profiles').update({nome:p.nome,funcao:p.funcao,contato:p.contato}).eq('id',id); if(r.error)toast('Não foi possível salvar o perfil'); },700); }
