@@ -634,3 +634,17 @@ body.rp-mode .subnav,body.rp-mode .rail{display:none}
 .tsum b.warn{color:var(--n2)} .tsum b.bad{color:var(--n1)}
 .tsum span{color:var(--muted);font-size:14px}
 @media (max-width:560px){ .hzrow{grid-template-columns:minmax(0,1fr) 48px} .hzrow .vb{grid-column:1/-1;grid-row:2} }
+/* escolha por prioridade com "Outra" */
+.pri label small{display:block;font-size:12px;color:var(--faint);font-weight:400;margin-top:2px}
+.prisel{list-style:none;margin:6px 0 8px;padding:0;display:flex;flex-direction:column;gap:6px}
+.prisel li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:10px;background:color-mix(in srgb,var(--accent) 8%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));border-radius:9px;padding:6px 8px}
+.prisel .pn{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:13px}
+.prisel .pt{font-size:14px}
+.prisel .pb{display:flex;gap:4px}
+.prisel .pb button{width:28px;height:28px;border:1px solid var(--line-2);background:var(--surface-2);border-radius:6px;color:var(--muted);font-size:14px;line-height:1}
+.prisel .pb button:hover:not(:disabled){color:var(--fg);border-color:var(--muted)}
+.prisel .pb button:disabled{opacity:.35;cursor:default}
+.prichips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+.prioutra{display:flex;gap:6px;margin-bottom:8px}
+.prioutra input{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line-2);border-radius:8px;padding:7px 10px}
+.pri textarea{width:100%}

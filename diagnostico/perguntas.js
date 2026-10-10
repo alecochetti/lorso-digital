@@ -15,13 +15,13 @@ const UNFIN = [['meta_mat','Meta de matrículas','n'],['meta_rec','Meta de recei
 const AREAS = [
  {id:'reitoria',g:'Liderança e governança',volTitle:'Roteiro da entrevista e números',roteiro:1,nome:'Reitoria',desc:'Visão da reitoria sobre o papel do marketing, metas da instituição, dores e o que significa sucesso para este trabalho.',
   vol:[['meta_matriculas','Meta total de matrículas no ano','n'],['meta_receita','Meta de receita no ano','R$'],
-   ['dores','Quais são as 3 maiores dores da reitoria hoje com o marketing?','t'],
-   ['sucesso','O que precisa acontecer em 6 e em 12 meses para este trabalho ser considerado um sucesso?','t'],
-   ['objetivos','Objetivos estratégicos da instituição para os próximos 2 anos','t'],
-   ['prioridade_un','Qual UN é prioridade hoje e por quê?','t'],
-   ['tentativas','O que já foi tentado no marketing e não funcionou? Por quê?','t'],
-   ['decisores','Quem decide o quê sobre marketing hoje (verba, equipe, campanhas, sistemas)?','t'],
-   ['sensiveis','Restrições e temas sensíveis (mantenedora, política interna, sindicato, contratos)','t']],
+   ['dores','Maiores dores da reitoria hoje com o marketing','p'],
+   ['sucesso','O que precisa acontecer em 6 e em 12 meses para este trabalho ser considerado um sucesso?','p'],
+   ['objetivos','Objetivos estratégicos da instituição para os próximos 2 anos','p'],
+   ['prioridade_un','Quais UNs são prioridade hoje?','p'],
+   ['tentativas','O que já foi tentado no marketing e não funcionou? Por quê?','p'],
+   ['decisores','Quem decide o quê sobre marketing hoje (verba, equipe, campanhas, sistemas)?','p'],
+   ['sensiveis','Restrições e temas sensíveis (mantenedora, política interna, sindicato, contratos)','p']],
   q:[
   ['rei1','Papel do marketing','C',3,0,'Como a reitoria enxerga o papel do marketing?',['Área de apoio que faz peças','Área de comunicação institucional','Parceira da captação, com metas compartilhadas','Área estratégica de receita, presente nas decisões do negócio']],
   ['rei2','Metas institucionais','P',3,0,'As metas da instituição estão claras e desdobradas?',['Não há metas formais comunicadas','Metas gerais de matrícula, sem desdobramento','Metas por UN conhecidas pelas áreas','Metas por UN, curso e trimestre, acompanhadas todo mês pela reitoria']],
@@ -30,10 +30,10 @@ const AREAS = [
   ['rei5','Régua de sucesso','C',2,0,'Como a reitoria mede o sucesso do marketing?',['Não sabe dizer','Por percepção: peças, eventos, visibilidade','Por matrículas e captação','Por matrícula, receita, CAC e retenção por UN']]]},
  {id:'proreitoria',g:'Liderança e governança',volTitle:'Roteiro da entrevista e números',roteiro:1,nome:'Pró-reitorias',desc:'Pró-reitorias acadêmica e administrativa: como os fluxos chegam ao marketing, o que travam e o que esperam.',
   vol:[['pontos_focais','Pró-reitorias e pontos focais (nome e responsabilidade)','t'],
-   ['dores','Principais dores das pró-reitorias com o marketing','t'],
-   ['fluxos','Fluxos que passam pelas pró-reitorias e travam o marketing','t'],
+   ['dores','Principais dores das pró-reitorias com o marketing','p'],
+   ['fluxos','Fluxos que passam pelas pró-reitorias e travam o marketing','p'],
    ['lancamentos','Lançamentos, editais e novos cursos previstos para os próximos 2 semestres','t'],
-   ['expectativa','O que a pró-reitoria espera do marketing e hoje não recebe?','t']],
+   ['expectativa','O que a pró-reitoria espera do marketing e hoje não recebe?','p']],
   q:[
   ['pro1','Fluxo com o marketing','P',3,0,'Como as pró-reitorias acionam o marketing?',['Cada coordenador pede direto, sem passar pela pró-reitoria','Pedidos via pró-reitoria, sem padrão','Fluxo definido, com ponto focal por pró-reitoria','Planejamento conjunto periódico, com fila priorizada']],
   ['pro2','Calendário acadêmico','P',3,0,'O calendário acadêmico (ofertas, editais, abertura de turmas) chega ao marketing com antecedência?',['Chega em cima da hora','Chega com poucas semanas','Chega no início do semestre','É construído junto com o marketing, com 6 meses de antecedência']],
@@ -58,9 +58,9 @@ const AREAS = [
   ['fin5','Custo da equipe','P',2,0,'A folha do marketing é conhecida e comparada ao que é entregue?',['Não se sabe','Só o valor total','Total por função','Custo por função comparado ao volume e ao valor entregue']]]},
  {id:'mandato',g:'Liderança e governança',volTitle:'Roteiro da entrevista e números',roteiro:1,nome:'Mandato e autonomia',desc:'O que você terá liberdade para mudar: equipe, contratações, fornecedores, sistemas e processos com as UNs.',
   vol:[['pessoas_chave','Pessoas-chave do time de marketing (nome, função, ponto forte, ponto de atenção)','t'],
-   ['aprovadores','Quem precisa aprovar mudanças de equipe, fornecedor e sistema?','t'],
-   ['prazo','Prazo e marcos esperados para a transformação','t'],
-   ['intocaveis','O que não pode ser mexido (contratos, cargos, sistemas, pessoas)','t']],
+   ['aprovadores','Quem precisa aprovar mudanças de equipe, fornecedor e sistema?','p'],
+   ['prazo','Prazo e marcos esperados para a transformação','p'],
+   ['intocaveis','O que não pode ser mexido (contratos, cargos, sistemas, pessoas)','p']],
   q:[
   ['man1','Troca de equipe','E',3,1,'Há liberdade para trocar ou realocar pessoas do time de marketing?',['Nenhuma; a equipe é intocável','Só com longa negociação com RH e reitoria','Possível com justificativa e prazo','Autonomia para redesenhar a equipe dentro do orçamento']],
   ['man2','Contratações','E',2,0,'É possível contratar pessoas ou especialistas?',['Contratações congeladas','Só para repor saídas','Novas vagas com aprovação','Orçamento previsto para reforço e especialistas']],
@@ -397,3 +397,20 @@ const UN_EXP=[
  {k:'esforco',label:'Investimento no próximo ano',opts:['Reduzir','Manter','Aumentar']},
  {k:'foco',label:'Prioridades (até 3)',multi:3,opts:['Aumentar captação','Melhorar retenção','Novos cursos e frentes','Aumentar ticket médio','Reduzir custo de aquisição','Fortalecer a marca','Convênios e B2B','Expandir EAD ou híbrido','Experiência do aluno']}
 ];
+
+/* Opções prontas das perguntas de roteiro com escolha por prioridade (tipo 'p'). Sempre há "Outra". */
+const OPC={
+ 'reitoria.dores':['Demora nas entregas do marketing','Falta de prioridade: tudo vira urgência','Captação abaixo da meta','Pouca visibilidade de resultados e números','Atendimento fraco a coordenadores e UNs','Retrabalho e muitas rodadas de aprovação','Lançamentos de cursos atrasados','Equipe sobrecarregada','Verba sem relação com retorno','Sistemas e dados que não conversam','Dependência de agência ou fornecedores','Marca pouco diferenciada'],
+ 'reitoria.sucesso':['Bater a meta de matrículas','Entregas no prazo combinado','Fluxo único de pedidos funcionando','Coordenadores satisfeitos com o atendimento','Indicadores de marketing acompanhados todo mês','Lançamentos no calendário','Redução do custo por matrícula','Equipe com papéis claros','Marca mais forte na região'],
+ 'reitoria.objetivos':['Crescer matrículas','Aumentar receita e margem','Abrir novos cursos','Expandir EAD e híbrido','Reduzir evasão','Fortalecer a marca','Abrir nova unidade ou polo','Crescer convênios e B2B','Melhorar indicadores do MEC','Digitalizar processos'],
+ 'reitoria.prioridade_un':['Colégio','Graduação presencial','Graduação EAD','Pós-Graduação','Mestrado e doutorado','Extensão e cursos livres'],
+ 'reitoria.tentativas':['Troca de agência','Aumento de verba em mídia','Novo CRM ou ferramenta','Contratação de pessoas','Reestruturação da equipe','Campanha de marca','Feirões e eventos','Bolsas e descontos agressivos','Influenciadores','Novo site'],
+ 'reitoria.decisores':['Reitor(a)','Pró-reitoria administrativa','Pró-reitoria acadêmica','Diretoria financeira','Mantenedora','Gestor(a) de marketing','Comitê','Cada UN decide sozinha'],
+ 'reitoria.sensiveis':['Mantenedora','Política interna','Sindicato e acordos coletivos','Contratos com fornecedores','Pessoas-chave intocáveis','Corte de orçamento','Regulação do MEC','Reputação e imprensa'],
+ 'proreitoria.dores':['Pedidos sem prazo e em cima da hora','Falta de alinhamento de calendário','Peças com erro de informação acadêmica','Muitas rodadas de aprovação','Não sabem o status dos pedidos','Marketing não conhece os cursos','Divulgação fraca de eventos e editais','Demora nas respostas'],
+ 'proreitoria.fluxos':['Aprovação de peças e textos','Editais e processos seletivos','Calendário acadêmico','Abertura de novos cursos','Bolsas e descontos','Eventos institucionais','Comunicação com alunos','Contratação de fornecedores'],
+ 'proreitoria.expectativa':['Prazo combinado e cumprido','Status visível dos pedidos','Calendário de campanhas antecipado','Mais leads qualificados','Material de apoio para coordenadores','Relatórios de resultado','Um ponto focal no marketing','Autonomia para pedidos simples'],
+ 'mandato.aprovadores':['Reitor(a)','Pró-reitoria administrativa','Diretoria financeira','Mantenedora','RH','Jurídico','Comitê'],
+ 'mandato.prazo':['Resultados rápidos em 90 dias','Plano de 6 meses','Transformação em 12 meses','Sem prazo definido'],
+ 'mandato.intocaveis':['Pessoas-chave da equipe','Contratos de agência','Sistemas atuais','Estrutura de cargos','Verba já comprometida','Processos da mantenedora','Nada é intocável']
+};

@@ -339,7 +339,18 @@ function renderBar(){
 }
 function renderStatus(){const s=$('#status'); if(s)s.innerHTML=statusHtml();}
 
+const priList=k=>String(cur.campos[k]||'').split('|').map(x=>x.trim()).filter(Boolean);
+const priTxt=k=>priList(k).map((x,i)=>`${i+1}. ${x}`).join(' · ');
+function priHtml(key,label){
+  const sel=priList(key), opts=(typeof OPC!=='undefined'&&OPC[key])||[];
+  return `<div class="field wide pri"><label>${esc(label)}<small>Clique na ordem de prioridade: a primeira é a mais importante. Pode marcar mais de uma.</small></label>
+   ${sel.length?`<ol class="prisel">${sel.map((x,i)=>`<li><span class="pn">${i+1}</span><span class="pt">${esc(x)}</span><span class="pb"><button data-act="pri-mv" data-k="${esc(key)}" data-i="${i}" data-d="-1" aria-label="Subir prioridade" ${i===0?'disabled':''}>↑</button><button data-act="pri-mv" data-k="${esc(key)}" data-i="${i}" data-d="1" aria-label="Descer prioridade" ${i===sel.length-1?'disabled':''}>↓</button><button data-act="pri-rm" data-k="${esc(key)}" data-i="${i}" aria-label="Remover">×</button></span></li>`).join('')}</ol>`:''}
+   ${opts.filter(o=>!sel.includes(o)).length?`<div class="prichips">${opts.filter(o=>!sel.includes(o)).map(o=>`<button class="chip" data-act="pri-add" data-k="${esc(key)}" data-v="${esc(o)}">+ ${esc(o)}</button>`).join('')}</div>`:''}
+   <div class="prioutra"><input data-pri-outra="${esc(key)}" placeholder="Outra: escreva e tecle Enter" aria-label="Outra opção"><button class="btn sm" data-act="pri-outra" data-k="${esc(key)}">+ Incluir</button></div>
+   <textarea data-campo="${esc(key)}.obs" rows="1" placeholder="Comentário (opcional): por quê, contexto, quem falou" aria-label="Comentário">${esc(cur.campos[key+'.obs']||'')}</textarea></div>`;
+}
 function fieldHtml(key,label,type){
+  if(type==='p') return priHtml(key,label);
   const v=cur.campos[key]??'';
   if(type==='t') return `<div class="field ${label.length>34?'wide':''}"><label for="c-${esc(key)}">${esc(label)}</label><textarea id="c-${esc(key)}" data-campo="${esc(key)}" rows="2">${esc(v)}</textarea></div>`;
   const u={'R$':'R$','%':'%','min':'min','d':'dias','n':''}[type]||''; const pre=type==='R$';
@@ -1025,8 +1036,8 @@ function ivHtml(){
   const ans=qs.filter(q=>cur.resp[q[0]]).length, s=SC[a.id];
   const ORD=ivOrder(), nextA=ORD[ORD.indexOf(a)+1];
   const ents=cur.entrevistas.filter(e=>e.area===a.id&&e.nome);
-  const rot=(a.vol||[]).filter(v=>v[2]==='t');
-  const nums=(a.vol||[]).filter(v=>v[2]!=='t');
+  const rot=(a.vol||[]).filter(v=>v[2]==='t'||v[2]==='p');
+  const nums=(a.vol||[]).filter(v=>v[2]!=='t'&&v[2]!=='p');
   const main = done ? `<div class="iv-done"><span class="eyebrow">// Área concluída</span><h2>${esc(a.nome)}</h2>
       <div class="iv-score">${lvChip(s.score!=null?s.level:0)}<b>${s.score!=null?dec(s.score):'—'}</b><small>/ 4 · ${ans} de ${qs.length} respondidas</small></div>
       ${nums.length?`<div class="fields">${nums.map(v=>fieldHtml(a.id+'.'+v[0],v[1],v[2])).join('')}</div>`:''}
@@ -1489,7 +1500,7 @@ function renderRelatorio(INS){
     <p class="muted">${esc(a.desc)}</p>
     <div class="rp-pil">${Object.entries(PIL).map(([k,n])=>`<span>${n}: <b>${s.pil[k]!=null?dec(s.pil[k]):'—'}</b></span>`).join('')}</div>
     <table class="tbl"><tbody>${a.q.map(x=>`<tr><td style="width:34%"><b>${esc(x[1])}</b><br><small class="muted">${esc(x[5])}</small></td><td>${esc(respostaTxt(x))}${cur.evid[x[0]]?' <span class="tag">comprovado</span>':''}${cur.notas[x[0]]?`<br><small class="muted">${esc(cur.notas[x[0]])}</small>`:''}</td></tr>`).join('')}</tbody></table>
-    ${(a.vol||[]).filter(v=>cur.campos[a.id+'.'+v[0]]).length?`<div class="rp-kv">${a.vol.filter(v=>cur.campos[a.id+'.'+v[0]]).map(v=>`<div><small class="muted">${esc(v[1])}</small><div>${esc(v[2]==='R$'?brl(num(cur.campos[a.id+'.'+v[0]])):cur.campos[a.id+'.'+v[0]]+(v[2]==='%'?'%':''))}</div></div>`).join('')}</div>`:''}
+    ${(a.vol||[]).filter(v=>cur.campos[a.id+'.'+v[0]]).length?`<div class="rp-kv">${a.vol.filter(v=>cur.campos[a.id+'.'+v[0]]).map(v=>`<div><small class="muted">${esc(v[1])}</small><div>${esc(v[2]==='p'?priTxt(a.id+'.'+v[0])+(cur.campos[a.id+'.'+v[0]+'.obs']?' — '+cur.campos[a.id+'.'+v[0]+'.obs']:''):v[2]==='R$'?brl(num(cur.campos[a.id+'.'+v[0]])):cur.campos[a.id+'.'+v[0]]+(v[2]==='%'?'%':''))}</div></div>`).join('')}</div>`:''}
     ${cur.campos[a.id+'.contexto']?`<p><small class="muted">Contexto da entrevista</small><br>${esc(cur.campos[a.id+'.contexto'])}</p>`:''}
    </section>`; };
   $('#main').innerHTML=`<article class="report">
@@ -1745,6 +1756,14 @@ document.addEventListener('click',e=>{
   if(act==='it-del'){ itDel(d.id); ui.openIt=null; render(); return; }
   if(act==='itf'){ ui.itf=ui.itf||{resp:'',cli:''}; ui.itf[d.k]=d.v; render(); return; }
   if(act==='itf-clear'){ ui.itf={resp:'',cli:''}; render(); return; }
+  if(act==='pri-add'||act==='pri-rm'||act==='pri-mv'||act==='pri-outra'){ if(!cur)return; const k=d.k; let L=priList(k);
+    if(act==='pri-add'){ if(!L.includes(d.v))L.push(d.v); }
+    else if(act==='pri-rm'){ L.splice(+d.i,1); }
+    else if(act==='pri-mv'){ const i=+d.i,j=i+(+d.d); if(j>=0&&j<L.length){ [L[i],L[j]]=[L[j],L[i]]; } }
+    else { const inp=document.querySelector(`[data-pri-outra="${CSS.escape(k)}"]`); const v=(inp&&inp.value||'').replace(/\|/g,'/').trim(); if(!v){ inp&&inp.focus(); return; } if(!L.includes(v))L.push(v); }
+    if(L.length)cur.campos[k]=L.join('|'); else delete cur.campos[k]; touch(true);
+    if(act==='pri-outra'){ const n=document.querySelector(`[data-pri-outra="${CSS.escape(k)}"]`); n&&n.focus(); }
+    return; }
   if(act==='view'){ go(d.v); return; }
   if(act==='print-rel'){ setTimeout(()=>window.print(),50); return; }
   if(act==='print-como'){ document.body.classList.add('printing'); setTimeout(()=>{ window.print(); document.body.classList.remove('printing'); },50); return; }
@@ -1820,7 +1839,7 @@ document.addEventListener('click',e=>{
 });
 function syncColetaDono(areaId){ const t=cur.acoes.find(x=>x.origem==='coleta:'+areaId&&x.status!=='Concluída'); if(t){ t.dono=cur.dono_area[areaId]||''; } const it=internas.find(x=>x.diagnostico_id===cur.id&&x.origem==='coleta:'+areaId&&x.status!=='Concluída'); if(it){ it.responsavel=cur.dono_area[areaId]||''; itSave(it); } }
 
-document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&document.body.classList.contains('sb-on')){ ui.sbOpen=false; document.body.classList.remove('sb-on'); $('.sb-open')&&$('.sb-open').focus(); } });
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.priOutra!=null){ e.preventDefault(); const b=e.target.parentNode.querySelector('[data-act="pri-outra"]'); b&&b.click(); return; } if(e.key==='Escape'&&document.body.classList.contains('sb-on')){ ui.sbOpen=false; document.body.classList.remove('sb-on'); $('.sb-open')&&$('.sb-open').focus(); } });
 document.addEventListener('submit',e=>{
   e.preventDefault(); const f=e.target;
   if(f.id==='f-auth'){ submitAuth(f); return; }
