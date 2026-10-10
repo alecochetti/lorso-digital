@@ -1155,7 +1155,7 @@ const ICO={
 const FERRAMENTAS=[['dre','Financeiro da loja','/admin/financeiro-loja/'],['lancamento','Lançamento de curso','/admin/lancamento-curso/'],['lancamento','Lançamento perpétuo','/admin/lancamento-perpetuo/']];
 const ico=(k,sz)=>!ICO[k]?'':`<svg class="ic" viewBox="0 0 24 24" width="${sz||18}" height="${sz||18}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICO[k]}"/></svg>`;
 const temaAtual=()=>document.documentElement.dataset.theme==='light'?'light':'dark';
-function setPref(k,v){ lsSet('cd.'+k,v); const d=document.documentElement;
+function setPref(k,v){ lsSet('cd.'+k,v); const d=document.documentElement; if(k==='theme') setTimeout(()=>modAvisar('tema',d.dataset.theme),0);
   if(k==='theme'){ d.dataset.theme=v==='auto'?(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):v; }
   else d.dataset[k]=v; }
 const pref=(k,def)=>lsGet('cd.'+k)||def;
@@ -1504,6 +1504,42 @@ let vtipEl=null;
 document.addEventListener('mousemove',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]'); if(!vtipEl){ vtipEl=document.createElement('div'); vtipEl.className='vtip'; vtipEl.setAttribute('aria-hidden','true'); document.body.appendChild(vtipEl); }
   if(t){ vtipEl.textContent=t.getAttribute('data-tip'); vtipEl.classList.add('on'); const x=Math.min(e.clientX+14,innerWidth-vtipEl.offsetWidth-10); vtipEl.style.left=x+'px'; vtipEl.style.top=(e.clientY-40)+'px'; } else vtipEl.classList.remove('on'); });
 
+/* ================= MÓDULOS EMBUTIDOS (lançamento de curso) ================= */
+const modT={}; let modPend=false; const modOuv={};
+function modSave(mod){ modPend=true; clearTimeout(modT[mod]); modT[mod]=setTimeout(async()=>{ if(!cur||!cur.mods||!cur.mods[mod]){ modPend=false; return; }
+  const r=await sb.from('modulos').upsert({diagnostico_id:cur.id,modulo:mod,dados:cur.mods[mod],updated_at:new Date().toISOString()}); modPend=false;
+  if(r.error) toast('Não foi possível salvar o módulo: '+r.error.message); else renderStatus(); },600); }
+function modAvisar(nome,valor){ (modOuv[nome]||[]).forEach(f=>{ try{ f(valor); }catch(e){} }); }
+window.LORSO_BRIDGE={
+  cliente:()=>cur?{id:cur.id,nome:cur.nome}:{id:'',nome:''},
+  me:()=>me?(me.nome||me.email):'',
+  load:mod=>cur&&cur.mods&&cur.mods[mod]?JSON.parse(JSON.stringify(cur.mods[mod])):null,
+  save:(mod,dados)=>{ if(!cur)return; cur.mods=cur.mods||{}; cur.mods[mod]=JSON.parse(JSON.stringify(dados)); modSave(mod); },
+  listen:(nome,f)=>{ (modOuv[nome]=modOuv[nome]||[]).push(f); }
+};
+let modHtml={};
+async function modCarregar(nome){
+  if(modHtml[nome]) return modHtml[nome];
+  const [arq,ch]=await Promise.all([fetch(`modulos/${nome}.enc?v=${encodeURIComponent((document.querySelector('script[src^="app.js"]')?.getAttribute('src')||'').split('v=')[1]||'1')}`).then(r=>{ if(!r.ok)throw new Error('arquivo do módulo não encontrado'); return r.json(); }),
+    sb.from('app_recursos').select('conteudo').eq('nome','chave_modulos').single()]);
+  if(ch.error||!ch.data) throw new Error('sem acesso à chave do módulo');
+  const b64=x=>Uint8Array.from(atob(x),c=>c.charCodeAt(0));
+  const key=await crypto.subtle.importKey('raw',b64(ch.data.conteudo),'AES-GCM',false,['decrypt']);
+  const gz=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(arq.iv)},key,b64(arq.data));
+  const txt=await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  return (modHtml[nome]=txt);
+}
+function renderLancamento(){
+  const fr=document.querySelector('#main iframe.modframe');
+  if(fr&&fr.dataset.c===cur.id) return;
+  if(document.querySelector('#main .modload[data-c="'+cur.id+'"]')) return;
+  Object.keys(modOuv).forEach(k=>{ modOuv[k]=[]; });
+  const id=cur.id;
+  $('#main').innerHTML=`<div class="modload" data-c="${id}"><p class="loading">Abrindo o lançamento de curso…</p></div>`;
+  modCarregar('lancamento').then(html=>{ if(!cur||cur.id!==id||ui.view!=='lancamento')return; const f=document.createElement('iframe'); f.className='modframe'; f.dataset.c=id; f.title='Lançamento de curso'; f.srcdoc=html; $('#main').innerHTML=''; $('#main').appendChild(f); })
+   .catch(e=>{ console.error(e); if(ui.view==='lancamento') $('#main').innerHTML=`<section class="block"><p class="empty">Não foi possível abrir o módulo: ${esc(e.message||String(e))}. Recarregue a página.</p></section>`; });
+}
+
 function focusKey(el){
   if(!el||el===document.body||!el.tagName||!/INPUT|TEXTAREA|SELECT/.test(el.tagName))return null;
   if(el.id)return '#'+CSS.escape(el.id);
@@ -1543,6 +1579,7 @@ function renderInner(){
   else if(ui.view==='equipe') renderEquipe();
   else if(ui.view==='visao') renderVisao(INS);
   else if(ui.view==='dre') renderDRE();
+  else if(ui.view==='lancamento') renderLancamento();
   else if(ui.view==='internas'&&podeInternas()) renderInternas();
   else if(ui.view==='perfil') renderPerfil();
   else { ({diagnostico:renderDiagnostico,estrategia:renderEstrategia,execucao:renderExecucao,otimizacao:renderOtimizacao,resultados:renderResultados})[ui.stage](INS); }
@@ -1809,7 +1846,7 @@ function isTyping(){const a=document.activeElement;return a&&/INPUT|TEXTAREA|SEL
 /* tempo real: quando outra pessoa salva, recarrega e aplica assim que você para de digitar */
 let remoteT=null;
 function remoteSoon(){ clearTimeout(remoteT); remoteT=setTimeout(async()=>{
-  if(!cur)return; if(ver!==savedVer||saving||(typeof mdPend!=='undefined'&&mdPend)){ pendingRemote=true; return; }
+  if(!cur)return; if(ver!==savedVer||saving||(typeof mdPend!=='undefined'&&mdPend)||modPend){ pendingRemote=true; return; }
   try{ const o=await loadDiag(cur.id); if(ver!==savedVer||!cur||o.id!==cur.id){ pendingRemote=true; return; } pendingData=o; adoptRemote(); }catch(e){}
  },700); }
 function adoptRemote(){
@@ -1817,7 +1854,9 @@ function adoptRemote(){
   if(isTyping()){ pendingRemote=true; return; }
   const o=pendingData; pendingData=null; pendingRemote=false;
   const a=JSON.stringify({...o,atualizadoEm:0}), b=JSON.stringify({...cur,atualizadoEm:0});
-  snap=clone(o); if(a!==b){ cur=o; render(); }
+  const antes=cur&&cur.mods?JSON.stringify(cur.mods.lancamento||null):'null';
+  snap=clone(o); if(a!==b){ cur=o; render(); const depois=JSON.stringify((o.mods||{}).lancamento||null); const fr=document.querySelector('iframe.modframe');
+    if(depois!==antes&&!(fr&&document.activeElement===fr)) modAvisar('lancamento',(o.mods||{}).lancamento||null); }
 }
 function subscribe(id){
   if(channel){ sb.removeChannel(channel); channel=null; }

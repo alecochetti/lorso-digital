@@ -290,3 +290,5 @@ td.neg,b.neg{color:var(--n1i)} td.pos{color:var(--n4i)}
 .stats.money .stat b{font-size:clamp(22px,2.1vw,29px);white-space:nowrap}
 .mdauto .tag{white-space:normal;text-align:left}
 @media (max-width:640px){ .stats.money .stat b{font-size:24px} }
+iframe.modframe{display:block;width:100%;height:calc(100dvh - 61px - 88px);min-height:560px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);box-shadow:var(--shadow)}
+@media (max-width:640px){ iframe.modframe{height:calc(100dvh - 57px - 40px);border-radius:12px} }
