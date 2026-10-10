@@ -17,6 +17,7 @@ resto do site: sobe junto com o GitHub Pages a cada push na `main`.
 | `supabase/0002_base_e_priorizacao.sql` | Cursos da base de conhecimento e matriz de priorização interna |
 | `supabase/0003_tarefas_internas.sql` | Kanban interno da equipe LORSO, fora do contexto do cliente |
 | `supabase/0007_projetos_e_tarefas_ricas.sql` | Projetos da equipe e tarefas com vários responsáveis, subtarefas e comentários |
+| `supabase/0008_pdi_marketing.sql` | Marca MKT no entrevistado e tabela de avaliações visível só à equipe LORSO |
 | `supabase/0004_fontes_conhecimento.sql` | Fontes da base de conhecimento (NotebookLM, arquivos, site) |
 | `supabase/0005_modulos.sql` | Módulos por cliente (DRE, lançamento) e quais cada cliente usa |
 | `supabase/0006_recursos_privados.sql` | Chave do módulo de lançamento (só usuários logados leem) |
@@ -24,6 +25,7 @@ resto do site: sobe junto com o GitHub Pages a cada push na `main`.
 | `dre.js` | Módulo DRE e orçamento, ligado ao financeiro e às UNs do diagnóstico |
 | `equipe.js` | Tarefas e projetos da equipe LORSO: lista, quadro, tabela, por área e métricas |
 | `operacao.js` | SLA por tipo de demanda, passagem de bastão por etapa, campanhas por grupo (CPL, CPA, CAC) e as regras de atendimento às unidades |
+| `pdi.js` | PDI Marketing: avaliação individual do time de marketing do cliente (só equipe LORSO) |
 | `tema.css` | Visual da Central (claro e escuro), gráficos de resultados e módulos |
 | `modulos/lancamento.enc` | App de lançamento de curso **criptografado**. A versão aberta fica no Project do Claude (modulos/lancamento-curso-integrado.html); para atualizar, criptografe de novo com a chave de `app_recursos` |
 

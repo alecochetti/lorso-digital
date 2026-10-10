@@ -377,11 +377,12 @@ function headHtml(eyebrow,title,lead,s){
 function interviewsHtml(areaId){
   const rows=cur.entrevistas.map((e,i)=>({e,i})).filter(r=>r.e.area===areaId);
   return `<section class="block"><div class="block-h"><h3>Entrevistados</h3><p>Quem você ouviu nesta área, 1 a 1.</p></div>
-   ${rows.length?`<div class="tblw"><table class="tbl"><thead><tr><th>Nome</th><th>Cargo</th><th>Departamento</th><th>Data</th><th></th></tr></thead><tbody>${rows.map(({e,i})=>`<tr>
+   ${rows.length?`<div class="tblw"><table class="tbl"><thead><tr><th>Nome</th><th>Cargo</th><th>Departamento</th><th>Data</th><th title="Entra na avaliação individual (PDI Marketing)">Marketing</th><th></th></tr></thead><tbody>${rows.map(({e,i})=>`<tr>
      <td><input data-ent="${i}" data-f="nome" value="${esc(e.nome)}" placeholder="Nome" aria-label="Nome"></td>
      <td><input data-ent="${i}" data-f="cargo" value="${esc(e.cargo)}" placeholder="Cargo" aria-label="Cargo"></td>
      <td><input data-ent="${i}" data-f="depto" value="${esc(e.depto)}" placeholder="Departamento" aria-label="Departamento"></td>
      <td><input type="date" data-ent="${i}" data-f="data" value="${esc(e.data)}" aria-label="Data"></td>
+     <td><label class="mktag ${e.mkt?'on':''}"><input type="checkbox" data-ent="${i}" data-f="mkt" ${e.mkt?'checked':''}> MKT</label></td>
      <td class="x"><button class="xbtn" data-act="ent-del" data-i="${i}" aria-label="Remover entrevistado">×</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Nenhum entrevistado registrado nesta área.</p>'}
    <div><button class="btn sm" data-act="ent-add" data-area="${areaId}">+ Adicionar entrevistado</button></div></section>`;
 }
@@ -1065,7 +1066,7 @@ function ivHtml(){
    <div class="iv-grid"><main class="iv-main">${main}</main>
     <aside class="iv-side">
      <section><h3>Entrevistado</h3>${ents.length?`<p>${ents.map(e=>`<b>${esc(e.nome)}</b>${e.cargo?` · ${esc(e.cargo)}`:''}`).join('<br>')}</p>`:''}
-      <form id="f-iv-ent" class="iv-ent"><input name="nome" placeholder="Nome" aria-label="Nome do entrevistado" required><input name="cargo" placeholder="Cargo" aria-label="Cargo"><button class="btn sm" type="submit">${ents.length?'+ Outro':'Registrar'}</button></form></section>
+      <form id="f-iv-ent" class="iv-ent"><input name="nome" placeholder="Nome" aria-label="Nome do entrevistado" required><input name="cargo" placeholder="Cargo" aria-label="Cargo"><label class="mktag"><input type="checkbox" name="mkt"> MKT</label><button class="btn sm" type="submit">${ents.length?'+ Outro':'Registrar'}</button></form></section>
      ${rot.length?`<section><h3>Roteiro</h3><div class="fields one">${rot.map(v=>fieldHtml(a.id+'.'+v[0],v[1],v[2])).join('')}</div></section>`:''}
      <section><h3>Dor relatada agora</h3><form class="dorform mini" data-dorform="1" data-area="${a.id}"><input name="txt" class="dtxt" placeholder="Descreva a dor" aria-label="Dor relatada" required>
       <select name="etapa" aria-label="Onde trava">${FLUXO.map(o=>`<option ${ui.dorDef.etapa===o?'selected':''}>${o}</option>`).join('')}</select>
@@ -1205,6 +1206,7 @@ function renderSide(INS){
      ${temMod('diagnostico')?`<span class="sb-g">Operação</span>
      ${sideItem('dores','Dores e gargalos','view','dores',cur.dores.length||'')}
      ${sideItem('sistemas','Sistemas','view','sistemas',cur.sistemas.filter(y=>y.nome).length||'')}
+     ${podeInternas()&&typeof pdiPessoas==='function'?sideItem('pdi','PDI Marketing','view','pdi',pdiPessoas().length||''):''}
      <span class="sb-g">Apoio</span>
      ${sideItem('como','Método LORSO','view','como')}`:'<span class="sb-g">Apoio</span>'}
      ${sideItem('equipe','Equipe','view','equipe',cur.equipe.length||'')}
@@ -1539,6 +1541,7 @@ function renderInner(){
   else if(ui.view==='dre') renderDRE();
   else if(ui.view==='lancamento') renderLancamento();
   else if(ui.view==='internas'&&podeInternas()) renderInternas();
+  else if(ui.view==='pdi'&&podeInternas()&&typeof renderPdi==='function') renderPdi(INS);
   else if(ui.view==='perfil') renderPerfil();
   else { ({diagnostico:renderDiagnostico,estrategia:renderEstrategia,execucao:renderExecucao,otimizacao:renderOtimizacao,resultados:renderResultados})[ui.stage](INS); }
   renderIV();
@@ -1717,7 +1720,7 @@ function mark(){}   // o sincronizador compara o estado inteiro com o último sa
 const nz=v=>v===''||v==null?null:v;
 const toInt=v=>{const n=parseInt(v,10);return isNaN(n)?null:n;};
 const ARR_DB={
- entrevistas:{t:'entrevistas',to:x=>({id:x.id,area:nz(x.area),nome:nz(x.nome),cargo:nz(x.cargo),departamento:nz(x.depto),data:nz(x.data)}),from:r=>({id:r.id,area:r.area||'',nome:r.nome||'',cargo:r.cargo||'',depto:r.departamento||'',data:r.data||''})},
+ entrevistas:{t:'entrevistas',to:x=>({id:x.id,area:nz(x.area),nome:nz(x.nome),cargo:nz(x.cargo),departamento:nz(x.depto),data:nz(x.data),marketing:!!x.mkt}),from:r=>({id:r.id,area:r.area||'',nome:r.nome||'',cargo:r.cargo||'',depto:r.departamento||'',data:r.data||'',mkt:!!r.marketing})},
  acoes:{t:'tarefas',to:x=>({id:x.id,titulo:nz(x.txt),area:nz(x.area),responsavel:nz(x.dono),prazo:nz(x.prazo),status:x.status,origem:nz(x.origem)}),from:r=>({id:r.id,txt:r.titulo||'',area:r.area||'',dono:r.responsavel||'',prazo:r.prazo||'',status:r.status,origem:r.origem||''})},
  testes:{t:'experimentos',to:x=>({id:x.id,hipotese:nz(x.hip),area:nz(x.area),impacto:toInt(x.i),confianca:toInt(x.c),facilidade:toInt(x.f)}),from:r=>({id:r.id,hip:r.hipotese||'',area:r.area||'',i:r.impacto??'',c:r.confianca??'',f:r.facilidade??''})},
  kpis:{t:'indicadores',to:x=>({id:x.id,nome:nz(x.nome),un:nz(x.un),meta:nz(x.meta),realizado:nz(x.real)}),from:r=>({id:r.id,nome:r.nome||'',un:r.un||'',meta:r.meta||'',real:r.realizado||''})},
@@ -1916,6 +1919,7 @@ document.addEventListener('click',e=>{
   if(b.closest('#sb')&&act!=='tema') ui.sbOpen=false;
   if(act.startsWith('md-')&&cur){ mdClick(act,d); return; }
   if(act.startsWith('eq-')&&eqClick(act,d)) return;
+  if(act.startsWith('pdi-')&&typeof pdiClick==='function'&&pdiClick(act,d)) return;
   if(act==='sb-open'){ ui.sbOpen=true; document.body.classList.add('sb-on'); const f=document.querySelector('#sb .sn.on')||document.querySelector('#sb .sn'); f&&f.focus(); return; }
   if(act==='sb-close'){ ui.sbOpen=false; document.body.classList.remove('sb-on'); return; }
   if(act==='tema'){ setPref('theme',temaAtual()==='light'?'dark':'light'); render(); return; }
@@ -2019,13 +2023,14 @@ document.addEventListener('submit',e=>{
   e.preventDefault(); const f=e.target;
   if(f.id==='f-auth'){ submitAuth(f); return; }
   if(eqSubmit(f)) return;
+  if(typeof pdiSubmit==='function'&&pdiSubmit(f)) return;
   if(f.id==='f-fonte-nb'&&cur){ const t=f.titulo.value.trim(), c=f.conteudo.value.trim(); if(!c)return; addFonte({tipo:'notebooklm',titulo:t||'NotebookLM',conteudo:c}); ui.fonteAba=''; render(); toast('Fonte guardada'); return; }
   if(f.id==='f-fonte-site'&&cur){ lerSite(f.url.value.trim(),f.paginas.value); return; }
   if(f.id==='f-senha'){ const a=f.s1.value, b2=f.s2.value; if(a!==b2){ toast('As duas senhas não são iguais'); return; } if(a.length<8){ toast('Use pelo menos 8 caracteres'); return; }
     sb.auth.updateUser({password:a}).then(r=>{ if(r.error) toast('Não foi possível trocar a senha: '+r.error.message); else { f.reset(); toast('Senha alterada'); } }); return; }
   if(f.id==='f-novo'){ const nm=$('#novo-nome').value.trim(); if(nm) createDiag(nm); return; }
   if(f.id==='f-novo2'){ const nm=$('#novo-nome2').value.trim(); if(nm) createDiag(nm); return; }
-  if(f.id==='f-iv-ent'&&cur&&ui.iv){ const fd=new FormData(f); const nome=String(fd.get('nome')||'').trim(); if(!nome)return; cur.entrevistas.push({id:uid(),area:ui.iv.area,nome,cargo:String(fd.get('cargo')||'').trim(),depto:nameOf(ui.iv.area),data:today()}); f.reset(); touch(true); toast('Entrevistado registrado'); return; }
+  if(f.id==='f-iv-ent'&&cur&&ui.iv){ const fd=new FormData(f); const nome=String(fd.get('nome')||'').trim(); if(!nome)return; cur.entrevistas.push({id:uid(),area:ui.iv.area,nome,cargo:String(fd.get('cargo')||'').trim(),depto:nameOf(ui.iv.area),data:today(),mkt:!!fd.get('mkt')}); f.reset(); touch(true); toast('Entrevistado registrado'); return; }
   if(f.id==='f-convite'){ const fd=new FormData(f); const c={email:String(fd.get('email')||'').trim().toLowerCase(),nome:String(fd.get('nome')||'').trim(),funcao:String(fd.get('funcao')||'').trim()||null,papel:fd.get('papel'),convidado_por:me.id};
     (async()=>{ const r=await sb.from('convites').upsert(c); if(r.error){ toast('Não foi possível convidar: '+r.error.message); return; } f.reset(); await loadTeam(); render(); copyText(conviteTexto(c),'Convite registrado e texto copiado'); })(); return; }
   if(!cur) return;
@@ -2038,6 +2043,7 @@ document.addEventListener('submit',e=>{
 document.addEventListener('input',e=>{
   const t=e.target, d=t.dataset;
   if(eqInput(t)) return;
+  if(typeof pdiInput==='function'&&pdiInput(t)) return;
   if(t.id==='curso-txt'){ ui.cursoTxt=t.value; return; }
   if(t.id==='dre-txt'){ ui.dreTxt=t.value; return; }
   if(d.me!=null&&me){ me[d.me]=t.value; let p=profiles.find(x=>x.id===me.id); if(!p){ p={...me}; profiles.push(p); } p[d.me]=t.value; if(cur)cur.equipe=equipeList(); saveProfile(me.id); return; }
@@ -2046,7 +2052,7 @@ document.addEventListener('input',e=>{
   if(d.nota!=null){ if(t.value)cur.notas[d.nota]=t.value; else delete cur.notas[d.nota]; autoGrow(t); touch(false); }
   else if(d.campo!=null){ mdSoltarCampo(d.campo); if(t.value)cur.campos[d.campo]=t.value; else delete cur.campos[d.campo]; if(t.tagName==='TEXTAREA')autoGrow(t); touch(false); }
   else if(t.id==='nome-diag'){ cur.nome=t.value||'Sem nome'; touch(false); }
-  else if(d.ent!=null&&t.type!=='date'){ cur.entrevistas[+d.ent][d.f]=t.value; touch(false); }
+  else if(d.ent!=null&&t.type!=='date'&&t.type!=='checkbox'){ cur.entrevistas[+d.ent][d.f]=t.value; touch(false); }
   else if(d.taskF==='txt'){ const x=cur.acoes.find(a=>a.id===d.id); if(x){ x.txt=t.value; autoGrow(t); touch(false); } }
   else if(d.teste!=null&&(d.f==='hip'||d.f==='area')){ cur.testes[+d.teste][d.f]=t.value; touch(false); }
   else if(d.kpi!=null&&(d.f==='nome'||d.f==='un')){ cur.kpis[+d.kpi][d.f]=t.value; touch(false); }
@@ -2057,6 +2063,7 @@ document.addEventListener('input',e=>{
 document.addEventListener('change',e=>{
   const t=e.target, d=t.dataset;
   if(eqChange(t)) return;
+  if(typeof pdiChange==='function'&&pdiChange(t)) return;
   if(t.id==='fonte-file'&&t.files&&t.files.length){ importarArquivos([...t.files]); t.value=''; return; }
   if(d.md!=null&&cur&&cur.mods&&cur.mods.dre){ mdChange(t); return; }
   if(!cur) return;
@@ -2066,6 +2073,7 @@ document.addEventListener('change',e=>{
   else if(t.id==='kf-area'){ ui.kf.area=t.value; render(); }
   else if(d.evid!=null){ if(t.checked)cur.evid[d.evid]=true; else delete cur.evid[d.evid]; touch(false); }
   else if(d.campo!=null){ touch(false); soon(); }
+  else if(d.ent!=null&&t.type==='checkbox'){ cur.entrevistas[+d.ent].mkt=t.checked; touch(true); }
   else if(d.ent!=null&&t.type==='date'){ cur.entrevistas[+d.ent].data=t.value; touch(false); }
   else if(d.taskF&&d.taskF!=='txt'){ const x=cur.acoes.find(a=>a.id===d.id); if(x){ x[d.taskF]=t.value; touch(false); } }
   else if(d.donoArea!=null){ if(t.value)cur.dono_area[d.donoArea]=t.value; else delete cur.dono_area[d.donoArea]; syncColetaDono(d.donoArea); touch(true); }
