@@ -32,7 +32,7 @@ function norm(d){
 let cur = null;          // diagnóstico aberto
 let all = {};            // lista de diagnósticos: id -> {id, nome, updated_at}
 let ui = {view:'fases', stage:'diagnostico', area:'reitoria', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}, fofaSug:{}, drePreview:null, dreTxt:'', dstep:'base', cursoPreview:null, open:{}};
-try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(['base','reitoria','entrevistas'].includes(u.dstep))ui.dstep=u.dstep; if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','tarefas','equipe','como'].includes(u.view))ui.view=u.view;}catch(e){}
+try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(['base','reitoria','entrevistas'].includes(u.dstep))ui.dstep=u.dstep; if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','tarefas','equipe','como','visao','perfil'].includes(u.view))ui.view=u.view;}catch(e){}
 const saveUi=()=>lsSet('cd.ui',JSON.stringify({stage:ui.stage,area:ui.area,view:ui.view,dstep:ui.dstep}));
 const member=id=>cur.equipe.find(m=>m.id===id);
 const initials=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(p=>p[0]||'').join('').toUpperCase()||'?';
@@ -314,7 +314,7 @@ function statusHtml(){
 }
 function renderBar(){
   const list=Object.values(all).sort((a,b)=>(b.updated_at||'').localeCompare(a.updated_at||''));
-  const who=me?`<span class="who"><span class="av" title="${esc(me.email)}">${esc(initials(me.nome||me.email))}</span><span>${esc((me.nome||me.email).split(' ')[0])}</span><button data-act="sair">Sair</button></span>`:'';
+  const who='';
   $('#diagbar').innerHTML = ui.novo ? `
     <form id="f-novo" class="diag"><label class="lbl" for="novo-nome">Cliente</label><input id="novo-nome" placeholder="Nome do grupo ou instituição" required style="width:min(260px,100%)">
     <button class="btn primary" type="submit">Criar diagnóstico</button><button class="btn ghost" type="button" data-act="novo-cancel">Cancelar</button></form>${who}` : `
@@ -447,7 +447,7 @@ function renderDiagnostico(INS){
   if(ui.dstep==='base') inner=baseHtml(INS);
   else if(ui.dstep==='reitoria'&&ui.area==='direcionamentos') inner=renderAreaPanel(INS,LID,direcHtml());
   else inner=renderAreaPanel(INS, ui.dstep==='reitoria'?LID:ENT);
-  $('#main').innerHTML=stepperHtml()+inner;
+  $('#main').innerHTML=inner;
 }
 function cap$(k,f,unit){ const key=`base.cap.${k}.${f}`; return `<div class="inu ${unit==='R$'?'pre':''}"><input data-campo="${key}" id="c-${key}" inputmode="decimal" value="${esc(cur.campos[key]||'')}" placeholder="0" aria-label="${f}">${unit?`<span class="u">${unit}</span>`:''}</div>`; }
 function baseHtml(INS){
@@ -1075,13 +1075,122 @@ function comoHtml(){
     <div class="tblw"><table class="tbl"><tbody>${PRAZOS.map(([k,n,d])=>`<tr><td>${n}</td><td style="width:220px">${cur?`<input data-campo="met.prazo.${k}" value="${esc(pz(k))}" placeholder="${d}" aria-label="Prazo de ${n}">`:d}</td></tr>`).join('')}</tbody></table></div></section>
   </section>`;
 }
-function renderSubnav(INS){
-  const x=crossTasks(INS); const hot=x.late.length+x.semTarefa.length;
-  $('#subnav').innerHTML=`<button class="tab ${ui.view==='como'?'on':''}" data-act="view" data-v="como">Como funciona</button><button class="tab ${ui.view==='fases'?'on':''}" data-act="view" data-v="fases">Diagnóstico</button>
-   <button class="tab ${ui.view==='dores'?'on':''}" data-act="view" data-v="dores">Dores e gargalos <span class="ct">${cur.dores.length}</span></button>
-   <button class="tab ${ui.view==='sistemas'?'on':''}" data-act="view" data-v="sistemas">Sistemas <span class="ct">${cur.sistemas.filter(x=>x.nome).length}</span></button>
-   <button class="tab ${ui.view==='tarefas'?'on':''}" data-act="view" data-v="tarefas">Tarefas <span class="ct ${hot?'hot':''}">${x.open.length}</span></button>
-   <button class="tab ${ui.view==='equipe'?'on':''}" data-act="view" data-v="equipe">Equipe <span class="ct">${cur.equipe.length}</span></button>`;
+/* ================= MENU LATERAL, VISÃO GERAL E PERFIL ================= */
+const ICO={
+ base:'M4 19.5V5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2zm0 0A2 2 0 0 0 6 21h13',
+ reitoria:'M3 10h18M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 21h18M12 3l9 5H3z',
+ entrevistas:'M21 12a8 8 0 0 1-11.7 7.1L4 20.5l1.4-5A8 8 0 1 1 21 12z',
+ visao:'M3 12h4l3-8 4 16 3-8h4',
+ estrategia:'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zm0 4a5 5 0 1 0 0 10 5 5 0 1 0 0-10zm0 4a1 1 0 1 0 0 2 1 1 0 1 0 0-2z',
+ execucao:'M4 4h16v16H4zM8.5 12.5l2.5 2.5 4.5-5.5',
+ otimizacao:'M13 2 4 14h7l-1 8 9-12h-7z',
+ resultados:'M4 20V11M10 20V5M16 20v-6M3 20h18',
+ dores:'M12 3.5 22 20H2zM12 10v4.5M12 17.2v.3',
+ sistemas:'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+ tarefas:'M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v13h-4z',
+ como:'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM12 11v6M12 7.6v.3',
+ equipe:'M15 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M8.5 10.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM22 19v-1a4 4 0 0 0-3-3.9M15.5 4.3a3.2 3.2 0 0 1 0 6',
+ sol:'M12 8a4 4 0 1 0 0 8 4 4 0 1 0 0-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
+ lua:'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z',
+ sair:'M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10',
+ lista:'M4 6h16M4 12h16M4 18h10',
+ fases:'M4 5h16v4H4zM4 11h16v4H4zM4 17h10v3H4z',
+ interno:'M9 4h6v3H9zM6 6H5v15h14V6h-1M9 12h6M9 16h4'
+};
+const ico=(k,sz)=>!ICO[k]?'':`<svg class="ic" viewBox="0 0 24 24" width="${sz||18}" height="${sz||18}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICO[k]}"/></svg>`;
+const temaAtual=()=>document.documentElement.dataset.theme==='light'?'light':'dark';
+function setPref(k,v){ lsSet('cd.'+k,v); const d=document.documentElement;
+  if(k==='theme'){ d.dataset.theme=v==='auto'?(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):v; }
+  else d.dataset[k]=v; }
+const pref=(k,def)=>lsGet('cd.'+k)||def;
+function navOn(k){
+  if(['base','reitoria','entrevistas'].includes(k)) return ui.view==='fases'&&ui.stage==='diagnostico'&&ui.dstep===k;
+  if(STG[k]) return ui.view==='fases'&&ui.stage===k;
+  return ui.view===k;
+}
+function sideItem(k,label,act,v,meta,hot){
+  const on=navOn(k);
+  return `<button class="sn ${on?'on':''}" data-act="${act}" data-v="${v}" ${on?'aria-current="page"':''}>${ico(k)}<span class="lb">${label}</span>${meta!=null&&meta!==''?`<span class="mt ${hot?'hot':''}">${meta}</span>`:''}</button>`;
+}
+function renderSide(INS){
+  const adm=me&&me.papel==='admin', pc=x=>Math.round(x*100)+'%';
+  let h=`<div class="sb-brand"><span class="sb-logo">L</span><span><b>LORSO Digital</b><small>Central de Diagnóstico</small></span></div>`;
+  if(cur){
+    const x=crossTasks(INS), hot=x.late.length+x.semTarefa.length, g=overall();
+    h+=`<nav class="sb-nav" aria-label="Etapas">
+     <span class="sb-g">Fase 1 · Diagnóstico</span>
+     ${sideItem('base','Base de conhecimento','dstep','base',pc(stepProgress('base')))}
+     ${sideItem('reitoria','Reitoria','dstep','reitoria',pc(stepProgress('reitoria')))}
+     ${sideItem('entrevistas','Entrevistas','dstep','entrevistas',pc(stepProgress('entrevistas')))}
+     ${sideItem('visao','Diagnóstico','view','visao',g.level?'N'+g.level:'')}
+     <span class="sb-g">Fases 2 a 5</span>
+     ${STAGES.slice(1).map(st=>sideItem(st.id,st.nome,'stage',st.id,st.q&&st.q.length?pc(stageProgress(st)):'')).join('')}
+     <span class="sb-g">Operação</span>
+     ${sideItem('dores','Dores e gargalos','view','dores',cur.dores.length||'')}
+     ${sideItem('sistemas','Sistemas','view','sistemas',cur.sistemas.filter(y=>y.nome).length||'')}
+     ${sideItem('tarefas','Tarefas','view','tarefas',x.open.length||'',hot)}
+     <span class="sb-g">Apoio</span>
+     ${sideItem('como','Como funciona','view','como')}
+     ${sideItem('equipe','Equipe','view','equipe',cur.equipe.length||'')}
+    </nav>`;
+  } else {
+    h+=`<nav class="sb-nav" aria-label="Menu">${sideItem('fases','Diagnósticos','view','fases')}${sideItem('como','Como funciona','view','como')}${adm?sideItem('equipe','Equipe','view','equipe'):''}</nav>`;
+  }
+  const nm=me?(me.nome||me.email):'';
+  h+=`<div class="sb-foot">
+    <button class="sb-me ${ui.view==='perfil'?'on':''}" data-act="view" data-v="perfil" title="Meu perfil"><span class="av">${esc(initials(nm))}</span><span class="lb"><b>${esc(String(nm).split(' ').slice(0,2).join(' '))}</b><small>${esc(me?PAPEIS[me.papel]||'':'')} · perfil</small></span></button>
+    <div class="sb-tools">
+      <button class="sb-ic" data-act="tema" title="${temaAtual()==='light'?'Mudar para a versão escura':'Mudar para a versão clara'}" aria-label="${temaAtual()==='light'?'Versão escura':'Versão clara'}">${ico(temaAtual()==='light'?'lua':'sol')}</button>
+      <button class="sb-ic" data-act="sair" title="Sair" aria-label="Sair">${ico('sair')}</button>
+    </div></div>`;
+  $('#sb').innerHTML=h;
+  document.body.classList.toggle('sb-on',!!ui.sbOpen);
+}
+function renderVisao(INS){
+  const g=overall(), B=blocosDe(INS);
+  const cnt=L=>{let t=0,a=0;L.forEach(x=>{t+=x.q.length;a+=x.q.filter(q=>cur.resp[q[0]]).length;});return [a,t];};
+  const [aa,tt]=cnt(AREAS);
+  const grupos=[...new Set(AREAS.map(a=>a.g))];
+  const row=a=>{ const s=SC[a.id]||{}; const n=a.q.filter(q=>cur.resp[q[0]]).length; const dono=member(cur.dono_area[a.id]);
+    return `<button class="vrow" data-act="area" data-v="${a.id}"><span class="vn">${esc(a.nome)}</span><span class="vb" aria-hidden="true"><span style="width:${Math.round(n/a.q.length*100)}%"></span></span><span class="vc mono">${n}/${a.q.length}</span>${lvChip(s.score!=null?s.level:0)}<span class="vd muted">${dono?esc(dono.nome||''):''}</span></button>`; };
+  $('#main').innerHTML=`<section class="panel">
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">// Fase 1 · <b>Visão geral</b></span><h2 style="margin-top:8px">Diagnóstico</h2><p class="lead">Onde a coleta está, o nível de cada área e o que já aparece de incongruência. Clique numa área para abrir as perguntas.</p></div></header>
+   <div class="kpis">
+    <div class="kpi"><b>${g.level?'N'+g.level:'—'}</b><span>${g.level?esc(LVL[g.level]):'nível geral ainda sem nota'}${g.score!=null?' · '+dec(g.score,2):''}</span></div>
+    <div class="kpi"><b>${tt?Math.round(aa/tt*100):0}%</b><span>das perguntas respondidas (${aa} de ${tt})</span></div>
+    <div class="kpi"><b>${INS.length}</b><span>${INS.length===1?'incongruência encontrada':'incongruências encontradas'}</span></div>
+    <div class="kpi"><b>${cur.entrevistas.length}</b><span>${cur.entrevistas.length===1?'pessoa entrevistada':'pessoas entrevistadas'}</span></div>
+   </div>
+   <section class="block"><div class="block-h"><h3>Passos da coleta</h3></div>
+    <div class="vsteps">${DSTEPS.map(([id,nm,ds],i)=>`<button class="vstep" data-act="dstep" data-v="${id}">${ico(id,22)}<span><b>${i+1}. ${nm}</b><small>${ds}</small></span><span class="vb" aria-hidden="true"><span style="width:${Math.round(stepProgress(id)*100)}%"></span></span><span class="mono vc">${Math.round(stepProgress(id)*100)}%</span></button>`).join('')}</div></section>
+   ${B.length?`<section class="block"><div class="block-h"><h3>Causas raiz até agora</h3><p>A leitura completa fica em Resultados.</p></div><div class="xlist">${B.slice(0,3).map(b=>`<div class="xitem ${b.ins.some(i=>i.sev==='crit')?'crit':b.ins.some(i=>i.sev==='alta')?'alta':'media'}"><span class="t">${esc(b.t)}<small>${pl(b.ins.length,'evidência','evidências')}</small></span></div>`).join('')}</div><div style="margin-top:12px"><button class="btn" data-act="stage" data-v="resultados">Ver resultados →</button></div></section>`:''}
+   ${grupos.map(gn=>`<section class="block"><div class="block-h"><h3>${esc(gn)}</h3></div><div class="vlist">${AREAS.filter(a=>a.g===gn).map(row).join('')}</div></section>`).join('')}
+  </section>`;
+}
+function renderPerfil(){
+  const adm=me&&me.papel==='admin', th=pref('theme','dark'), fs=pref('fs','md'), sd=pref('side','right');
+  const seg=(k,v,opts)=>`<div class="seg" role="group">${opts.map(([val,lab])=>`<button class="${v===val?'on':''}" data-act="pref" data-k="${k}" data-v="${val}" aria-pressed="${v===val}">${lab}</button>`).join('')}</div>`;
+  const nConv=convites.filter(c=>!profiles.some(p=>p.email===c.email)).length;
+  $('#main').innerHTML=`<section class="panel">
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">// <b>${adm?'Perfil · Administrador':'Meu perfil'}</b></span><h2 style="margin-top:8px">${esc(me?(me.nome||me.email):'')}</h2><p class="lead">${esc(me?me.email:'')}</p></div></header>
+   <div class="pgrid">
+    <section class="block"><div class="block-h"><h3>Aparência</h3><p>Vale para este navegador. Cada pessoa escolhe a sua.</p></div>
+     <div class="prow"><span><b>Versão</b><small>A clara é mais confortável para leitura longa e em salas com luz.</small></span>${seg('theme',th,[['light','Clara'],['dark','Escura'],['auto','Automática']])}</div>
+     <div class="prow"><span><b>Tamanho do texto</b><small>Aumenta tudo na tela, inclusive botões.</small></span>${seg('fs',fs,[['md','Normal'],['lg','Grande'],['xl','Maior']])}</div>
+     <div class="prow"><span><b>Menu</b><small>Lado da tela onde fica o menu.</small></span>${seg('side',sd,[['left','Esquerda'],['right','Direita']])}</div>
+    </section>
+    <section class="block"><div class="block-h"><h3>Seus dados</h3><p>Aparecem para a equipe e nas tarefas.</p></div>
+     <div class="fields">
+      <label class="field"><span>Nome</span><input data-me="nome" value="${esc(me&&me.nome||'')}" autocomplete="name"></label>
+      <label class="field"><span>Função</span><input data-me="funcao" value="${esc(me&&me.funcao||'')}" placeholder="Ex.: consultor"></label>
+      <label class="field"><span>Contato</span><input data-me="contato" value="${esc(me&&me.contato||'')}" placeholder="WhatsApp ou telefone"></label>
+     </div></section>
+    <section class="block"><div class="block-h"><h3>Trocar senha</h3></div>
+     <form id="f-senha" class="fields"><label class="field"><span>Nova senha</span><input name="s1" type="password" minlength="8" autocomplete="new-password" required></label><label class="field"><span>Repita a nova senha</span><input name="s2" type="password" minlength="8" autocomplete="new-password" required></label><div><button class="btn primary" type="submit">Salvar nova senha</button></div></form></section>
+    ${adm?`<section class="block"><div class="block-h"><h3>Administração</h3><p>Só administradores veem esta parte.</p></div>
+     <div class="kpis k3"><div class="kpi"><b>${profiles.length}</b><span>${profiles.length===1?'pessoa com acesso':'pessoas com acesso'}</span></div><div class="kpi"><b>${nConv}</b><span>${nConv===1?'convite aguardando':'convites aguardando'}</span></div><div class="kpi"><b>${Object.keys(all).length}</b><span>${Object.keys(all).length===1?'diagnóstico':'diagnósticos'}</span></div></div>
+     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="view" data-v="equipe">Equipe e convites</button><button class="btn" data-act="view" data-v="como">Como funciona (proposta)</button>${me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo diagnóstico</button>`:''}</div></section>`:''}
+   </div></section>`;
 }
 function focusKey(el){
   if(!el||el===document.body||!el.tagName||!/INPUT|TEXTAREA|SELECT/.test(el.tagName))return null;
@@ -1103,15 +1212,14 @@ function render(){
   if(fk){ const el=document.querySelector(fk); if(el&&el!==document.activeElement){ el.focus({preventScroll:true}); try{ if(selS!=null) el.setSelectionRange(selS,selE);}catch(e){} } }
 }
 function renderInner(){
-  if(!cur){ renderBar(); $('#rail').hidden=true;
-    $('#subnav').innerHTML=me&&me.papel==='admin'?`<button class="tab ${ui.view==='como'?'on':''}" data-act="view" data-v="como">Como funciona</button><button class="tab ${ui.view!=='equipe'&&ui.view!=='como'?'on':''}" data-act="view" data-v="fases">Diagnósticos</button><button class="tab ${ui.view==='equipe'?'on':''}" data-act="view" data-v="equipe">Equipe</button>`:'';
+  if(!cur){ renderBar(); renderSide([]);
+    if(ui.view==='perfil'){ renderPerfil(); return; }
     if(ui.view==='equipe'&&me&&me.papel==='admin'){ SC={}; renderEquipe(); return; }
     if(ui.view==='como'){ $('#main').innerHTML=comoHtml(); return; }
     $('#main').innerHTML=`<section class="auth" style="min-height:auto"><div class="auth-box"><h2>Nenhum diagnóstico ainda</h2><p>${me&&me.papel!=='cliente'?'Crie o primeiro com o nome do cliente. Depois convide a equipe e distribua as áreas.':'Nenhum diagnóstico foi liberado para você ainda. Fale com a LORSO Digital.'}</p>${me&&me.papel!=='cliente'?`<form id="f-novo2"><label>Cliente<input id="novo-nome2" required placeholder="Nome da instituição"></label><button class="btn primary" type="submit">Criar diagnóstico</button></form>`:''}</div></section>`;
     return; }
   computeAll(); const INS=runEngine();
-  renderBar(); renderSubnav(INS);
-  $('#rail').hidden = ui.view!=='fases';
+  renderBar(); renderSide(INS);
   document.body.classList.toggle('rp-mode', ui.view==='relatorio');
   if(ui.view==='tarefas') renderTarefas(INS);
   else if(ui.view==='dores') renderDores(INS);
@@ -1119,7 +1227,9 @@ function renderInner(){
   else if(ui.view==='relatorio') renderRelatorio(INS);
   else if(ui.view==='sistemas') renderSistemas();
   else if(ui.view==='equipe') renderEquipe();
-  else { renderRail(); ({diagnostico:renderDiagnostico,estrategia:renderEstrategia,execucao:renderExecucao,otimizacao:renderOtimizacao,resultados:renderResultados})[ui.stage](INS); }
+  else if(ui.view==='visao') renderVisao(INS);
+  else if(ui.view==='perfil') renderPerfil();
+  else { ({diagnostico:renderDiagnostico,estrategia:renderEstrategia,execucao:renderExecucao,otimizacao:renderOtimizacao,resultados:renderResultados})[ui.stage](INS); }
   renderIV();
   document.querySelectorAll('textarea[data-nota],.field textarea,.kedit textarea').forEach(autoGrow);
 }
@@ -1482,6 +1592,11 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]'); if(!b)return; const act=b.dataset.act, d=b.dataset;
   if(act==='auth-mode'){ authMode=d.v; authMsg=null; renderAuth(); return; }
   if(act==='sair'){ flush(); sb.auth.signOut(); return; }
+  if(b.closest('#sb')&&act!=='tema') ui.sbOpen=false;
+  if(act==='sb-open'){ ui.sbOpen=true; document.body.classList.add('sb-on'); const f=document.querySelector('#sb .sn.on')||document.querySelector('#sb .sn'); f&&f.focus(); return; }
+  if(act==='sb-close'){ ui.sbOpen=false; document.body.classList.remove('sb-on'); return; }
+  if(act==='tema'){ setPref('theme',temaAtual()==='light'?'dark':'light'); render(); return; }
+  if(act==='pref'){ setPref(d.k,d.v); render(); return; }
   if(act==='view'){ go(d.v); return; }
   if(act==='print-rel'){ setTimeout(()=>window.print(),50); return; }
   if(act==='print-como'){ document.body.classList.add('printing'); setTimeout(()=>{ window.print(); document.body.classList.remove('printing'); },50); return; }
@@ -1557,9 +1672,12 @@ document.addEventListener('click',e=>{
 });
 function syncColetaDono(areaId){ const t=cur.acoes.find(x=>x.origem==='coleta:'+areaId&&x.status!=='Concluída'); if(t){ t.dono=cur.dono_area[areaId]||''; } }
 
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&document.body.classList.contains('sb-on')){ ui.sbOpen=false; document.body.classList.remove('sb-on'); $('.sb-open')&&$('.sb-open').focus(); } });
 document.addEventListener('submit',e=>{
   e.preventDefault(); const f=e.target;
   if(f.id==='f-auth'){ submitAuth(f); return; }
+  if(f.id==='f-senha'){ const a=f.s1.value, b2=f.s2.value; if(a!==b2){ toast('As duas senhas não são iguais'); return; } if(a.length<8){ toast('Use pelo menos 8 caracteres'); return; }
+    sb.auth.updateUser({password:a}).then(r=>{ if(r.error) toast('Não foi possível trocar a senha: '+r.error.message); else { f.reset(); toast('Senha alterada'); } }); return; }
   if(f.id==='f-novo'){ const nm=$('#novo-nome').value.trim(); if(nm) createDiag(nm); return; }
   if(f.id==='f-novo2'){ const nm=$('#novo-nome2').value.trim(); if(nm) createDiag(nm); return; }
   if(f.id==='f-iv-ent'&&cur&&ui.iv){ const fd=new FormData(f); const nome=String(fd.get('nome')||'').trim(); if(!nome)return; cur.entrevistas.push({id:uid(),area:ui.iv.area,nome,cargo:String(fd.get('cargo')||'').trim(),depto:nameOf(ui.iv.area),data:today()}); f.reset(); touch(true); toast('Entrevistado registrado'); return; }
@@ -1576,6 +1694,7 @@ document.addEventListener('input',e=>{
   const t=e.target, d=t.dataset;
   if(t.id==='curso-txt'){ ui.cursoTxt=t.value; return; }
   if(t.id==='dre-txt'){ ui.dreTxt=t.value; return; }
+  if(d.me!=null&&me){ me[d.me]=t.value; let p=profiles.find(x=>x.id===me.id); if(!p){ p={...me}; profiles.push(p); } p[d.me]=t.value; if(cur)cur.equipe=equipeList(); saveProfile(me.id); return; }
   if(d.mem!=null){ const p=profiles.find(x=>x.id===d.mem); if(p){ const f={nome:'nome',papel:'funcao',contato:'contato'}[d.f]; p[f]=t.value; if(cur)cur.equipe=equipeList(); saveProfile(p.id); } return; }
   if(!cur) return;
   if(d.nota!=null){ if(t.value)cur.notas[d.nota]=t.value; else delete cur.notas[d.nota]; autoGrow(t); touch(false); }

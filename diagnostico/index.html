@@ -9,20 +9,20 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script>try{var t=localStorage.getItem('cd.theme')||'dark',d=document.documentElement;if(t==='auto')t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';d.dataset.theme=t;d.dataset.side=localStorage.getItem('cd.side')||'right';d.dataset.fs=localStorage.getItem('cd.fs')||'md';}catch(e){document.documentElement.dataset.theme='dark';document.documentElement.dataset.side='right';}</script>
 </head>
 <body>
 <div class="wrap" id="auth" hidden></div>
-<div class="wrap" id="app" hidden>
-  <header class="top">
-    <div class="brand">
-      <span class="eyebrow">// LORSO Digital · <b>Central de Diagnóstico</b></span>
-      <h1>Maturidade de Marketing</h1>
-    </div>
-    <div class="diag" id="diagbar"></div>
-  </header>
-  <nav class="subnav" id="subnav" aria-label="Seções"></nav>
-  <nav class="rail" id="rail" aria-label="Fases da metodologia"></nav>
-  <main id="main"></main>
+<div class="app" id="app" hidden>
+  <aside class="sb" id="sb" aria-label="Menu principal"></aside>
+  <div class="sb-scrim" data-act="sb-close" aria-hidden="true"></div>
+  <div class="app-main">
+    <header class="topbar">
+      <button class="sb-open" data-act="sb-open" aria-label="Abrir menu"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <div class="diag" id="diagbar"></div>
+    </header>
+    <main id="main" class="wrap"></main>
+  </div>
 </div>
 <div class="toast" id="toast" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
