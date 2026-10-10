@@ -27,6 +27,7 @@ resto do site: sobe junto com o GitHub Pages a cada push na `main`.
 | `equipe.js` | Tarefas e projetos da equipe LORSO: lista, quadro, tabela, por área e métricas |
 | `operacao.js` | SLA por tipo de demanda, passagem de bastão por etapa, campanhas por grupo (CPL, CPA, CAC) e as regras de atendimento às unidades |
 | `pdi.js` | PDI Marketing: avaliação individual do time de marketing do cliente (só equipe LORSO) |
+| `plano.js` | Plano de ação: biblioteca de jogadas, sugestões do diagnóstico, checagem das premissas, aprovação e envio para a Execução |
 | `tema.css` | Visual da Central (claro e escuro), gráficos de resultados e módulos |
 | `modulos/lancamento.enc` | App de lançamento de curso **criptografado**. A versão aberta fica no Project do Claude (modulos/lancamento-curso-integrado.html); para atualizar, criptografe de novo com a chave de `app_recursos` |
 
