@@ -14,17 +14,18 @@ function slaStats(){
     .filter(r=>r.vol!=null||r.sla!=null||r.real!=null);
   if(!rows.length)return null;
   rows.forEach(r=>{ r.ratio=r.sla>0&&r.real!=null?r.real/r.sla:null; r.ok=r.ratio!=null?r.ratio<=1:null; });
-  const med=rows.filter(r=>r.ratio!=null), volMed=med.reduce((a,r)=>a+(r.vol||0),0), volOk=med.filter(r=>r.ok).reduce((a,r)=>a+(r.vol||0),0);
+  const med=rows.filter(r=>r.ratio!=null), comVol=med.length>0&&med.every(r=>r.vol>0), volMed=med.reduce((a,r)=>a+(r.vol||0),0), volOk=med.filter(r=>r.ok).reduce((a,r)=>a+(r.vol||0),0);
+  const pOk=!med.length?null:comVol?(volMed>0?volOk/volMed:null):med.filter(r=>r.ok).length/med.length;
   const totVol=rows.reduce((a,r)=>a+(r.vol||0),0);
   const piores=med.filter(r=>r.ratio>1.25).sort((a,b)=>b.ratio-a.ratio);
   const porte={}; PORTES.forEach(p=>porte[p]=rows.filter(r=>r.porte===p).reduce((a,r)=>a+(r.vol||0),0));
-  const grandes=med.filter(r=>(r.porte==='Grande'||r.porte==='Projeto'));
-  return {rows,med,totVol,pOk:volMed>0?volOk/volMed:null,piores,porte,grandesAtrasam:grandes.length>0&&grandes.every(r=>r.ratio>1.25)&&med.some(r=>r.ok&&r.porte!=='Grande'&&r.porte!=='Projeto')};
+  const gr=r=>r.porte==='Grande'||r.porte==='Projeto', grandes=med.filter(gr), menores=med.filter(r=>r.porte&&!gr(r));
+  return {rows,med,totVol,pOk,pOkVol:comVol,piores,porte,grandesAtrasam:grandes.length>0&&grandes.every(r=>r.ratio>1.25)&&menores.length>0&&menores.every(r=>r.ratio<=1)};
 }
 function slaView(s){
   const M=Math.max(1,...s.med.map(r=>Math.max(r.real,r.sla)))*1.08;
   const pz=s.totVol?PORTES.filter(p=>s.porte[p]):[];
-  return `<div class="opk">${s.pOk!=null?`<div class="${s.pOk<0.6?'bad':s.pOk<0.85?'warn':'ok'}"><b>${pct(s.pOk).replace(',0%','%')}</b><span>do volume sai dentro do prazo combinado</span></div>`:''}
+  return `<div class="opk">${s.pOk!=null?`<div class="${s.pOk<0.6?'bad':s.pOk<0.85?'warn':'ok'}"><b>${pct(s.pOk).replace(',0%','%')}</b><span>${s.pOkVol?'do volume sai dentro do prazo combinado':'dos tipos de demanda saem dentro do prazo (preencha o volume para ponderar)'}</span></div>`:''}
     ${s.piores.length?`<div class="bad"><b>${esc(s.piores[0].nome)}</b><span>é o tipo que mais estoura: ${dec(s.piores[0].real,0)} dias para um prazo de ${dec(s.piores[0].sla,0)}</span></div>`:''}
     ${s.totVol?`<div><b>${dec(s.totVol,0)}</b><span>demandas por mês nos tipos informados</span></div>`:''}</div>
    ${s.med.length?`<div class="slab" role="img" aria-label="Prazo real contra o prazo combinado por tipo de demanda">${s.med.sort((a,b)=>b.ratio-a.ratio).map(r=>`<div class="slr"><span class="n">${esc(r.nome)}${r.porte?`<small>${esc(r.porte)}</small>`:''}</span>
@@ -47,16 +48,16 @@ function slaHtml(){
 /* ---------- Passagem de bastão: tempo em cada etapa (área Fluxo e metodologia) ---------- */
 const ETAPAS=[['atendimento','Atendimento','Do pedido ao briefing fechado','mkt'],['criacao','Criação','Produção da peça','mkt'],['aprovacao','Aprovação do solicitante','Esperando quem pediu aprovar','cli'],['ajustes','Ajustes','Rodadas de correção','mkt'],['publicacao','Publicação ou entrega','Da aprovação até ir ao ar','mkt']];
 function etapaStats(){
-  const v={}; let tot=0; ETAPAS.forEach(([k])=>{ v[k]=num(cur.campos['fluxo.etapa_'+k])||0; tot+=v[k]; }); if(!tot)return null;
+  const v={}; let tot=0, n=0; ETAPAS.forEach(([k])=>{ const x=num(cur.campos['fluxo.etapa_'+k]); if(x!=null)n++; v[k]=x||0; tot+=v[k]; }); if(!tot)return null;
   const max=ETAPAS.reduce((a,e)=>v[e[0]]>v[a[0]]?e:a,ETAPAS[0]);
   const cli=ETAPAS.filter(e=>e[3]==='cli').reduce((a,e)=>a+v[e[0]],0);
-  return {v,tot,max,pMax:v[max[0]]/tot,pCli:cli/tot};
+  return {v,tot,max,pMax:v[max[0]]/tot,pCli:cli/tot,n,completo:n>=3};
 }
 function etapaView(s){
   const mx=Math.max(...ETAPAS.map(([k])=>s.v[k]));
   return `<div class="etp" role="img" aria-label="Dias em cada etapa da demanda">${ETAPAS.map(([k,l,,quem],i)=>{ const hot=s.max[0]===k&&s.pMax>=0.3; return `<div class="er ${hot?'hot':''}"><span class="ei">${i+1}</span><span class="n">${esc(l)}<small>${quem==='cli'?'com o solicitante':'com o marketing'}</small></span>
     <span class="t"><i class="${quem}" style="width:${s.v[k]?Math.max(2,s.v[k]/mx*100).toFixed(1):0}%" data-tip="${esc(l)}: ${dec(s.v[k],1)} dias"></i></span><b>${s.v[k]?dec(s.v[k],s.v[k]%1?1:0)+' d':'—'}<small>${s.v[k]?pct(s.v[k]/s.tot).replace(',0%','%'):''}</small></b></div>`; }).join('')}</div>
-   <p class="etsum"><span class="${s.pMax>=0.4?'bad':s.pMax>=0.3?'warn':''}">${dec(s.tot,s.tot%1?1:0)} dias</span> do pedido à entrega. ${pct(s.pMax).replace(',0%','%')} desse tempo fica em ${esc(s.max[1].toLowerCase())}${s.pCli>=0.25&&s.max[3]!=='cli'?`, e ${pct(s.pCli).replace(',0%','%')} parado com o solicitante`:''}.</p>`;
+   ${s.n<5?`<p class="muted" style="font-size:12.5px;margin:8px 0 0">${s.n} de 5 etapas informadas. ${s.completo?'':'Com menos de 3 etapas o sistema não aponta gargalo.'}</p>`:''}<p class="etsum"><span class="${s.pMax>=0.4?'bad':s.pMax>=0.3?'warn':''}">${dec(s.tot,s.tot%1?1:0)} dias</span> do pedido à entrega. ${pct(s.pMax).replace(',0%','%')} desse tempo fica em ${esc(s.max[1].toLowerCase())}${s.pCli>=0.25&&s.max[3]!=='cli'?`, e ${pct(s.pCli).replace(',0%','%')} parado com o solicitante`:''}.</p>`;
 }
 function etapaHtml(){
   const s=etapaStats();
@@ -74,17 +75,19 @@ function grpStats(){
     rows.push({i,nome:nome||'Grupo '+(i+1),inv,leads,insc,mat,cpl:inv&&leads?inv/leads:null,cpa:inv&&insc?inv/insc:null,cac:inv&&mat?inv/mat:null}); }
   if(!rows.length)return null;
   const tInv=rows.reduce((a,r)=>a+(r.inv||0),0), tMat=rows.reduce((a,r)=>a+(r.mat||0),0), tLeads=rows.reduce((a,r)=>a+(r.leads||0),0), tInsc=rows.reduce((a,r)=>a+(r.insc||0),0);
-  rows.forEach(r=>{ r.sInv=tInv>0&&r.inv!=null?r.inv/tInv:null; r.sMat=tMat>0&&r.mat!=null?r.mat/tMat:null; });
-  const cacM=tInv&&tMat?tInv/tMat:null;
+  const par=(campo)=>{ const R=rows.filter(r=>r.inv>0&&r[campo]>0); const i=R.reduce((a,r)=>a+r.inv,0), q=R.reduce((a,r)=>a+r[campo],0); return q>0?i/q:null; };
+  const comp=rows.filter(r=>r.inv>0&&r.mat!=null), cInv=comp.reduce((a,r)=>a+r.inv,0), cMat=comp.reduce((a,r)=>a+r.mat,0);
+  rows.forEach(r=>{ const ok=r.inv>0&&r.mat!=null; r.sInv=ok&&cInv>0?r.inv/cInv:null; r.sMat=ok&&cMat>0?r.mat/cMat:null; });
+  const cacM=par('mat'), incompletos=rows.filter(r=>!(r.inv>0&&r.mat!=null)).length;
   const caros=rows.filter(r=>r.sInv!=null&&r.sMat!=null&&r.sInv>=0.15&&r.sInv>=1.5*r.sMat).sort((a,b)=>(b.sInv-b.sMat)-(a.sInv-a.sMat));
-  return {rows,tInv,tMat,tLeads,tInsc,cacM,cplM:tInv&&tLeads?tInv/tLeads:null,cpaM:tInv&&tInsc?tInv/tInsc:null,caros};
+  return {rows,tInv,tMat,tLeads,tInsc,cacM,cplM:par('leads'),cpaM:par('insc'),caros,incompletos};
 }
 function grpView(s){
   return `<div class="opk"><div><b>${brl(s.tInv)}</b><span>investidos nos grupos no período</span></div>${s.cacM!=null?`<div><b>${brl(s.cacM)}</b><span>CAC médio de mídia por matrícula</span></div>`:''}${s.caros.length?`<div class="bad"><b>${esc(s.caros[0].nome)}</b><span>consome ${pct(s.caros[0].sInv)} da verba e traz ${pct(s.caros[0].sMat)} das matrículas</span></div>`:''}</div>
    ${s.tMat?`<div class="grpb" role="img" aria-label="Participação na verba contra participação nas matrículas por grupo">${s.rows.filter(r=>r.sInv!=null).sort((a,b)=>b.sInv-a.sInv).map(r=>`<div class="gr"><span class="n">${esc(r.nome)}</span>
      <span class="bs"><span class="b inv"><i style="width:${(r.sInv*100).toFixed(1)}%" data-tip="Verba: ${pct(r.sInv)}"></i></span><span class="b mat"><i style="width:${((r.sMat||0)*100).toFixed(1)}%" data-tip="Matrículas: ${pct(r.sMat)}"></i></span></span>
      <b class="${r.cac!=null&&s.cacM&&r.cac>1.5*s.cacM?'late':''}">${r.cac!=null?brl(r.cac):'—'}<small>CAC</small></b></div>`).join('')}</div>
-    <div class="legend"><span class="lg"><i style="background:var(--n3)"></i>% da verba</span><span class="lg"><i style="background:var(--n4)"></i>% das matrículas</span><span class="lg">CAC em vermelho: mais de 1,5 vez a média</span></div>`:''}`;
+    <div class="legend"><span class="lg"><i style="background:var(--n3)"></i>% da verba</span><span class="lg"><i style="background:var(--n4)"></i>% das matrículas</span><span class="lg">CAC em vermelho: mais de 1,5 vez a média</span></div>${s.incompletos?`<p class="muted" style="font-size:12.5px;margin-top:8px">${pl(s.incompletos,'grupo ficou','grupos ficaram')} fora da comparação por falta de investimento ou matrículas.</p>`:''}`:''}`;
 }
 function grpHtml(){
   const s=grpStats(); const v=(i,c)=>esc(cur.campos[grpK(i,c)]||'');
@@ -113,19 +116,19 @@ function operacaoRes(){
 /* ---------- Cruzamentos ---------- */
 RULES.push(
  {id:'CRZ-57',sev:'crit',pad:'Gargalo de fluxo',areas:['fluxo','demandas'],t:'O gargalo está na entrada: briefing fraco gera retrabalho',
-  test:()=>le(R('flu3'),2)&&(ge(V('fluxo','retrabalho'),30)||le(R('flu5'),2)), txt:()=>`As demandas chegam sem as informações necessárias${V('fluxo','retrabalho')!=null?` e ${dec(V('fluxo','retrabalho'),0)}% das peças voltam para retrabalho`:' e o retrabalho é frequente'}. O problema não está na criação: nasce no pedido, antes de o marketing começar.`,
+  test:()=>le(R('flu3'),2)&&(ge(V('fluxo','retrabalho'),30)||le(R('flu5'),2)), txt:()=>`As demandas chegam sem as informações necessárias${ge(V('fluxo','retrabalho'),30)?` e ${dec(V('fluxo','retrabalho'),0)}% das peças voltam para retrabalho`:' e o retrabalho por mudança de pedido é frequente'}. O problema não está na criação: nasce no pedido, antes de o marketing começar.`,
   rec:['Briefing padrão obrigatório por tipo de peça','Demanda incompleta volta ao solicitante antes de entrar na fila','Conversa de 15 minutos de alinhamento para peças de porte grande']},
  {id:'CRZ-58',sev:'alta',pad:'Ruptura de passagem',areas:['relacionamento','demandas'],t:'A queixa de atendimento tem causa no processo',
   test:()=>le(L('relacionamento'),2)&&(le(R('dem3'),2)||(V('relacionamento','satisf')!=null&&V('relacionamento','satisf')<7)), txt:()=>`O atendimento às unidades está no nível ${L('relacionamento')}${V('relacionamento','satisf')!=null?`, com satisfação ${dec(V('relacionamento','satisf'),1)} de 10`:''}${le(R('dem3'),2)?', e não existe prazo padrão por tipo de pedido':''}. Sem prazo combinado e sem alguém que acompanhe o pedido, o coordenador percebe abandono mesmo quando o time está trabalhando.`,
   rec:['Ponto focal do marketing para cada unidade','SLA por tipo de peça publicado aos coordenadores','Aviso ao solicitante a cada mudança de etapa']},
  {id:'CRZ-59',sev:'alta',pad:'Gargalo de capacidade',areas:['relacionamento','demandas'],t:'O marketing aceita tudo e depois atrasa',
-  test:()=>le(R('rel2'),2)&&le(R('dem2'),2), txt:()=>'O marketing não negocia escopo, prazo nem prioridade com quem pede, e a fila é decidida por quem pressiona mais. O "sim" para tudo vira atraso para todos e desgasta a relação com as unidades.',
+  test:()=>le(R('rel2'),2)&&le(R('dem2'),2), txt:()=>'O marketing não negocia escopo, prazo nem prioridade com quem pede, e a fila '+(R('dem2')===1?'é decidida por quem pressiona mais':'é decidida caso a caso, sem critério escrito')+'. O "sim" para tudo vira atraso para todos e desgasta a relação com as unidades.',
   rec:['Roteiro de briefing com objetivo, prazo e formato negociados','Regra pública de priorização aprovada pela reitoria','Treinar o time a dizer "não" oferecendo alternativa']},
  {id:'CRZ-60',sev:'alta',pad:'Gargalo de fluxo',areas:()=>{const s=etapaStats();return s&&s.max[3]==='cli'?['fluxo','relacionamento']:['fluxo'];},t:'Uma etapa concentra o tempo da demanda',
-  test:()=>{const s=etapaStats();return !!s&&s.pMax>=0.35;}, txt:()=>{const s=etapaStats();return `Uma demanda leva ${dec(s.tot,0)} dias do pedido à entrega, e ${pct(s.pMax)} desse tempo fica em ${s.max[1].toLowerCase()} (${dec(s.v[s.max[0]],0)} dias). `+(s.max[3]==='cli'?'O gargalo está com o solicitante: a peça fica pronta e espera aprovação.':'É nessa passagem de bastão que o fluxo trava.');},
+  test:()=>{const s=etapaStats();return !!s&&s.completo&&s.pMax>=0.35;}, txt:()=>{const s=etapaStats();return `Uma demanda leva ${dec(s.tot,0)} dias do pedido à entrega, e ${pct(s.pMax)} desse tempo fica em ${s.max[1].toLowerCase()} (${dec(s.v[s.max[0]],0)} dias). `+(s.max[3]==='cli'?'O gargalo está com o solicitante: a peça fica pronta e espera aprovação.':'É nessa passagem de bastão que o fluxo trava.');},
   rec:['Dono e prazo para cada etapa do fluxo','Prazo de aprovação com aprovação tácita no vencimento','Medir o tempo por etapa no quadro e revisar todo mês']},
  {id:'CRZ-61',sev:'alta',pad:'Gargalo de capacidade',areas:['demandas'],t:'Tipos de demanda estouram o prazo combinado',
-  test:()=>{const s=slaStats();return !!s&&s.piores.length>0;}, txt:()=>{const s=slaStats();return s.piores.slice(0,3).map(r=>`${r.nome}: ${dec(r.real,0)} dias para um prazo de ${dec(r.sla,0)}`).join('; ')+'.'+(s.pOk!=null?` No total, ${pct(s.pOk)} do volume sai dentro do prazo.`:'')+(s.grandesAtrasam?' Só os tipos de porte grande atrasam: falta capacidade reservada para projetos.':'');},
+  test:()=>{const s=slaStats();return !!s&&s.piores.length>0;}, txt:()=>{const s=slaStats();return s.piores.slice(0,3).map(r=>`${r.nome}: ${dec(r.real,0)} dias para um prazo de ${dec(r.sla,0)}`).join('; ')+'.'+(s.pOk!=null?` No total, ${pct(s.pOk)} ${s.pOkVol?'do volume':'dos tipos de demanda'} sai dentro do prazo.`:'')+(s.grandesAtrasam?' Só os tipos de porte grande atrasam: falta capacidade reservada para projetos.':'');},
   rec:['Rever o prazo combinado dos tipos que estouram, com base no tempo real','Reservar capacidade fixa para projetos grandes','Publicar o SLA por tipo e medir todo mês']},
  {id:'CRZ-62',sev:'alta',pad:'Desalinhamento financeiro',areas:['growth'],t:'Grupo de campanha consome verba sem trazer matrícula',
   test:()=>{const s=grpStats();return !!s&&s.caros.length>0;}, txt:()=>{const s=grpStats();return s.caros.slice(0,2).map(r=>`${r.nome} consome ${pct(r.sInv)} da verba e traz ${pct(r.sMat)} das matrículas${r.cac!=null?` (CAC de ${brl(r.cac)}${s.cacM?` contra ${brl(s.cacM)} de média`:''})`:''}`).join('; ')+'.';},

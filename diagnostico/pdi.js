@@ -27,7 +27,7 @@ function pdiSave(k,now){ clearTimeout(pdiT[k]); const id=cur.id, dados=pdiD(k); 
 
 /* ---------- cálculo ---------- */
 function pdiScore(d){ const v=PDI_COMP.map(([k])=>d.comp&&d.comp[k]).filter(Boolean); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null; }
-const pdiFaixa=s=>s==null?null:s<2?0:s<3?1:2;
+const pdiFaixa=s=>s==null?null:s<2.5?0:s<3.5?1:2; // baixo: abaixo de 2,5 · médio: 2,5 a 3,4 (atende) · alto: 3,5 ou mais (supera)
 function pdiEvid(p){
   const areas=p.areas.map(a=>({id:a,nome:nameOf(a),lv:L(a),pe:P(a,'E')}));
   const nm=p.nome.toLowerCase(); const dores=cur.dores.filter(d=>(d.quem||'').trim().toLowerCase()===nm);
@@ -82,7 +82,7 @@ function renderPdi(){
     <div class="stat"><span class="si">${ico('alvo',20)}</span><b>${T.media!=null?dec(T.media):'—'}</b><span>desempenho médio</span><small>de 1 a 4</small></div>
     <div class="stat"><span class="si">${ico('dre',20)}</span><b>${T.custo?brl(T.custo):'—'}</b><span>custo mensal do time</span>${T.custo&&T.sai?`<small>${brl(T.custoDep)} depois das decisões</small>`:''}</div>
     <div class="stat ${T.disp.length?'bad':''}"><span class="si">${ico('alerta',20)}</span><b>${T.disp.length}</b><span>marcadas como dispensáveis</span>${T.custoDisp?`<small>${brl(T.custoDisp)} por mês</small>`:''}</div></div>
-   ${T.sai||T.disp.length?`<section class="block pconc"><p>${T.sai?`Com as decisões de hoje, o time passa de <b>${T.P.length}</b> para <b>${T.P.length-T.sai}</b> ${T.P.length-T.sai===1?'pessoa':'pessoas'}${T.custo?` e o custo mensal de <b>${brl(T.custo)}</b> para <b>${brl(T.custoDep)}</b>`:''}.`:''} ${T.disp.length?`${pl(T.disp.length,'pessoa está marcada','pessoas estão marcadas')} como dispensável${T.disp.length>1?'is':''}${T.custoDisp&&T.custo?`, somando ${pct(T.custoDisp/T.custo)} do custo do time`:''}.`:''}</p></section>`:''}
+   ${T.sai||T.disp.length?`<section class="block pconc"><p>${T.sai?`Com as decisões de hoje, o time passa de <b>${T.P.length}</b> para <b>${T.P.length-T.sai}</b> ${T.P.length-T.sai===1?'pessoa':'pessoas'}${T.custo?` e o custo mensal de <b>${brl(T.custo)}</b> para <b>${brl(T.custoDep)}</b>`:''}.`:''} ${T.disp.length?`${pl(T.disp.length,'pessoa está marcada','pessoas estão marcadas')} como ${T.disp.length>1?'dispensáveis':'dispensável'}${T.custoDisp&&T.custo?`, somando ${pct(T.custoDisp/T.custo)} do custo do time`:''}.`:''}</p></section>`:''}
    <div class="rx-two"><section class="block"><div class="block-h"><h3>Desempenho x potencial</h3><p>Quem está em cada quadrante</p></div>${pdiNineBox(T)}</section>
     <section class="block"><div class="block-h"><h3>Decisões</h3><p>Quantas pessoas e quanto custam por mês</p></div><div class="pdecs">${decs.map(x=>`<div class="pdr"><span class="pdec" style="--c:${x.c}">${esc(x.n)}</span><span class="b"><i style="width:${T.P.length?x.q/T.P.length*100:0}%;background:${x.c}"></i></span><b>${x.q}</b><small class="mono">${x.custo?brl(x.custo):''}</small></div>`).join('')}<div class="pdr"><span class="pdec vazio">Sem decisão</span><span class="b"><i style="width:${T.P.length?T.P.filter(x=>!x.d.decisao).length/T.P.length*100:0}%;background:var(--line-2)"></i></span><b>${T.P.filter(x=>!x.d.decisao).length}</b><small></small></div></div></section></div>
    <section class="block"><div class="block-h"><h3>Pessoas</h3><p>Clique para avaliar</p></div><div class="pcards">${T.P.map(pdiCard).join('')}</div></section>`}

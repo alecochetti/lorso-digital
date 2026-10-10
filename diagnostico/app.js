@@ -13,7 +13,8 @@ const pct = n=>n==null||!isFinite(n)?'—':(n*100).toFixed(1).replace('.',',')+'
 const lvOf = s=>s==null?0:s<1.75?1:s<2.5?2:s<3.25?3:4;
 const uid = ()=>(crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);}));
 const pl=(n,a,b)=>`${n} ${n===1?a:b}`;
-const today = ()=>new Date().toISOString().slice(0,10);
+const isoLocal = d=>{ const x=new Date(d); return new Date(x.getTime()-x.getTimezoneOffset()*60000).toISOString().slice(0,10); };
+const today = ()=>isoLocal(new Date());
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 
@@ -44,9 +45,10 @@ function scoreOf(qs){
   qs.forEach(x=>{const n=cur.resp[x[0]]; if(!n)return; ans++; const p=x[2]; pil[p]=pil[p]||{s:0,w:0}; pil[p].s+=n*x[3]; pil[p].w+=x[3]; if(x[4]&&n===1)elim=true;});
   const ps={}; Object.keys(pil).forEach(p=>ps[p]=pil[p].s/pil[p].w);
   const vals=Object.values(ps); let s=null;
-  if(ans>=Math.ceil(qs.length/2) && vals.length){ const mean=vals.reduce((a,b)=>a+b,0)/vals.length; s=Math.min(mean,Math.min(...vals)+1); if(elim)s=Math.min(s,2.49); }
+  if(ans>=Math.min(3,Math.ceil(qs.length/2)) && vals.length){ const mean=vals.reduce((a,b)=>a+b,0)/vals.length; s=Math.min(mean,Math.min(...vals)+1); if(elim)s=Math.min(s,2.49); }
   return {score:s,level:lvOf(s),pil:ps,ans,total:qs.length,elim};
 }
+function mediaSem(areaId,qid){ const a=AREA[areaId]; if(!a)return null; let s=0,w=0; a.q.forEach(x=>{ if(x[0]===qid)return; const n=cur.resp[x[0]]; if(n){ s+=n*x[3]; w+=x[3]; } }); return w?s/w:null; }
 let SC={};
 function computeAll(){ SC={}; AREAS.forEach(a=>SC[a.id]=scoreOf(a.q)); STAGES.forEach(s=>{if(s.q)SC[s.id]=scoreOf(s.q)}); }
 function unFin(id){ const g=k=>num(cur.campos[id+'.'+k]); return {meta_mat:g('meta_mat'),meta_rec:g('meta_rec'),receita:g('receita'),folha:g('folha'),orcamento:g('orcamento'),alunos:g('alunos')}; }
@@ -54,10 +56,10 @@ function overall(){
   // áreas centrais e operação com peso igual; UNs ponderadas pela receita realizada quando informada
   const core=AREAS.filter(a=>!a.un&&SC[a.id].score!=null).map(a=>SC[a.id].score);
   const uns=UNS.filter(a=>SC[a.id].score!=null);
-  const recs=uns.map(a=>unFin(a.id).receita||0); const totR=recs.reduce((a,b)=>a+b,0);
+  const recs=uns.map(a=>unFin(a.id).receita); const todas=uns.length>0&&recs.every(r=>r!=null&&r>0); const totR=todas?recs.reduce((a,b)=>a+b,0):0;
   let unScore=null;
   if(uns.length){ unScore = totR>0 ? uns.reduce((acc,a,i)=>acc+SC[a.id].score*(recs[i]/totR),0) : uns.reduce((acc,a)=>acc+SC[a.id].score,0)/uns.length; }
-  const parts=[...core]; if(unScore!=null) parts.push(...Array(Math.max(1,Math.round(UNS.length))).fill(unScore));
+  const parts=[...core]; if(unScore!=null) parts.push(...Array(uns.length).fill(unScore));
   if(!parts.length)return {score:null,level:0,ponderado:totR>0};
   const s=parts.reduce((a,b)=>a+b,0)/parts.length; return {score:s,level:lvOf(s),ponderado:totR>0};
 }
@@ -74,7 +76,7 @@ const RULES=[
   test:()=>ge(L('crm'),3)&&R('col1')===1, txt:()=>`O CRM está no nível ${L('crm')}, mas as visitas do Colégio acontecem sem agendamento nem roteiro. A tecnologia existe e não enxerga a etapa que mais converte matrícula.`,
   rec:['Agendamento de visita por formulário integrado ao CRM','Roteiro padrão de visita com registro do interesse da família','Follow-up automático em até 48h após a visita']},
  {id:'CRZ-02',sev:'crit',pad:'Ruptura de passagem',areas:['captacao'],t:'Leads esfriam antes do primeiro contato',
-  test:()=>ge(L('captacao'),3)&&R('cap3')===1, txt:()=>`A captação está no nível ${L('captacao')}, mas o primeiro contato com o lead leva mais de 24h. O investimento em mídia esfria antes do atendimento.`+(V('captacao','midia')?` Hoje são ${brl(V('captacao','midia'))} por mês em mídia nesse cenário.`:''),
+  test:()=>R('cap3')===1&&ge(mediaSem('captacao','cap3'),3), txt:()=>`As demais práticas de captação estão maduras (média ${dec(mediaSem('captacao','cap3'))} de 4), mas o primeiro contato com o lead leva mais de 24h. O investimento em mídia esfria antes do atendimento.`+(V('captacao','midia')?` Hoje são ${brl(V('captacao','midia'))} por mês em mídia nesse cenário.`:''),
   rec:['Distribuição automática de leads no CRM','SLA de primeiro contato em até 1h, com alerta','Mensagem automática de boas-vindas no WhatsApp']},
  {id:'CRZ-03',sev:'crit',pad:'Gargalo de fluxo',areas:['captacao','callcenter'],t:'A captação gera mais do que o call center absorve',
   test:()=>ge(L('captacao'),3)&&L('callcenter')===1, txt:()=>`Captação no nível ${L('captacao')} e call center no nível 1. A mídia gera volume que vira fila e abandono.`+(V('callcenter','abandono')!=null?` Abandono informado: ${dec(V('callcenter','abandono'))}%.`:''),
@@ -127,7 +129,7 @@ const RULES=[
   rec:['Condicionar aumento de verba a evolução de processo','Testar realocação parcial para a UN mais madura']},
  {id:'CRZ-19',sev:'alta',pad:'Desalinhamento financeiro',areas:[],dyn:true,t:'UN abaixo da meta de receita',
   test:()=>finRows().some(r=>r.ating!=null&&r.ating<0.85),
-  txt:()=>finRows().filter(r=>r.ating!=null&&r.ating<0.85).map(r=>{const w=weakest(r.id); return `${r.nome} atingiu ${pct(r.ating)} da meta de receita${w?`; o ponto mais fraco é "${w}"`:''}.`;}).join(' '),
+  txt:()=>finRows().filter(r=>r.ating!=null&&r.ating<0.85).map(r=>{const w=weakest(r.id); return `${r.nome} está em ${pct(r.ating)} da meta de receita (realizado nos meses fechados mais o projetado até o fim do ano)${w?`; o ponto mais fraco é "${w}"`:''}.`;}).join(' '),
   rec:['Plano de recuperação por UN com meta semanal','Atacar primeiro a pergunta de pior nível da UN']},
  {id:'CRZ-20',sev:'media',pad:'Desalinhamento financeiro',areas:[],dyn:true,t:'Investimento alto para o nível de maturidade',
   test:()=>finRows().some(r=>r.orcRec!=null&&r.orcRec>0.15&&le(r.level,2)),
@@ -260,16 +262,16 @@ RULES.push(
   test:()=>{const t=trelloStats();return t&&t.semanas!=null&&t.semanas>=6;}, txt:()=>{const t=trelloStats();return `No ritmo atual (${t.concl} projetos concluídos por mês), a fila de ${t.abertos} projetos abertos leva cerca de ${dec(t.semanas,0)} semanas para zerar, sem contar o que ainda vai chegar.`;},
   rec:['Limitar o que entra por semana à capacidade real','Cortar ou adiar o backlog sem dono','Medir a vazão semanal e mostrar à reitoria']},
  {id:'CRZ-53',sev:'alta',pad:'Gargalo de capacidade',areas:['demandas'],t:'O administrativo come a capacidade do marketing',
-  test:()=>{const s=tempoStats();return s&&s.pAdm>=0.3&&s.pAdm<0.45;}, txt:()=>{const s=tempoStats();return `${pct(s.pAdm)} das horas do marketing vão para tarefas administrativas e internas (${dec(s.v.adm,0)} de ${dec(s.tot,0)} h por semana). É tempo que não chega às unidades de negócio.`;},
+  test:()=>{const s=tempoStats();return !!s&&s.completo&&s.pAdm>=0.3&&s.pAdm<0.45;}, txt:()=>{const s=tempoStats();return `${pct(s.pAdm)} das horas do marketing vão para tarefas administrativas e internas (${dec(s.v.adm,0)} de ${dec(s.tot,0)} h por semana). É tempo que não chega às unidades de negócio.`;},
   rec:['Listar as tarefas administrativas recorrentes e quem pediu cada uma','Devolver ao dono o que não é marketing (compras, prestação de contas, pedidos de outras áreas)','Bloco fixo semanal para o administrativo, fora do horário de produção']},
  {id:'CRZ-54',sev:'crit',pad:'Gargalo de capacidade',areas:['demandas'],t:'Quase metade do marketing trabalha no administrativo',
-  test:()=>{const s=tempoStats();return s&&s.pAdm>=0.45;}, txt:()=>{const s=tempoStats();return `${pct(s.pAdm)} das horas do marketing vão para tarefas administrativas e internas (${dec(s.v.adm,0)} de ${dec(s.tot,0)} h por semana). Com essa divisão, a fila das unidades nunca anda no ritmo que a reitoria espera.`;},
+  test:()=>{const s=tempoStats();return !!s&&s.completo&&s.pAdm>=0.45;}, txt:()=>{const s=tempoStats();return `${pct(s.pAdm)} das horas do marketing vão para tarefas administrativas e internas (${dec(s.v.adm,0)} de ${dec(s.tot,0)} h por semana). Com essa divisão, a fila das unidades nunca anda no ritmo que a reitoria espera.`;},
   rec:['Auditoria de 2 semanas com apontamento de horas por tipo de tarefa','Retirar do marketing o que é de outras áreas, com aval da reitoria','Meta: administrativo abaixo de 25% do tempo em 90 dias']},
  {id:'CRZ-55',sev:'alta',pad:'Desalinhamento estratégico',areas:u=>{const s=tempoStats();return s?s.uns.filter(x=>unxGet(x.id,'expect')==='Crescer'&&x.pt<0.15).map(x=>x.id):[];},t:'UN que deve crescer recebe pouco tempo do marketing',
-  test:()=>{const s=tempoStats();return !!s&&s.uns.some(x=>unxGet(x.id,'expect')==='Crescer'&&x.pt<0.15);}, txt:()=>{const s=tempoStats();const L=s.uns.filter(x=>unxGet(x.id,'expect')==='Crescer'&&x.pt<0.15);return `A reitoria espera crescer ${L.map(x=>x.nome).join(' e ')}, mas ${L.length>1?'essas UNs recebem':'essa UN recebe'} só ${L.map(x=>pct(x.pt)).join(' e ')} do tempo do marketing.`;},
+  test:()=>{const s=tempoStats();return !!s&&s.completo&&s.totUn>0&&s.uns.some(x=>unxGet(x.id,'expect')==='Crescer'&&x.pt<0.15);}, txt:()=>{const s=tempoStats();const L=s.uns.filter(x=>unxGet(x.id,'expect')==='Crescer'&&x.pt<0.15);return `A reitoria espera crescer ${L.map(x=>x.nome).join(' e ')}, mas ${L.length>1?'essas UNs recebem':'essa UN recebe'} só ${L.map(x=>pct(x.pt)).join(' e ')} do tempo que o marketing dedica às unidades.`;},
   rec:['Reservar capacidade fixa do marketing para a UN prioritária','Rever com a reitoria o que sai da fila para abrir espaço']},
  {id:'CRZ-56',sev:'media',pad:'Desalinhamento estratégico',areas:u=>{const s=tempoStats();return s?s.uns.filter(x=>x.pr!=null&&x.pr>=0.25&&x.pt<x.pr/2).map(x=>x.id):[];},t:'Tempo do marketing não acompanha o peso da receita',
-  test:()=>{const s=tempoStats();return !!s&&s.uns.some(x=>x.pr!=null&&x.pr>=0.25&&x.pt<x.pr/2);}, txt:()=>{const s=tempoStats();const L=s.uns.filter(x=>x.pr!=null&&x.pr>=0.25&&x.pt<x.pr/2);return L.map(x=>`${x.nome} traz ${pct(x.pr)} da receita e recebe ${pct(x.pt)} do tempo do marketing`).join('; ')+'.';},
+  test:()=>{const s=tempoStats();return !!s&&s.completo&&s.totUn>0&&s.uns.some(x=>x.pr!=null&&x.pr>=0.25&&x.pt<x.pr/2);}, txt:()=>{const s=tempoStats();const L=s.uns.filter(x=>x.pr!=null&&x.pr>=0.25&&x.pt<x.pr/2);return L.map(x=>`${x.nome} traz ${pct(x.pr)} da receita e recebe ${pct(x.pt)} do tempo que o marketing dedica às unidades`).join('; ')+'.';},
   rec:['Distribuir a capacidade do marketing pelo peso de receita e pela meta de cada UN']}
 );
 function finRows(){
@@ -280,7 +282,7 @@ function finRows(){
 }
 function weakest(id){const a=AREA[id]; let w=null; a.q.forEach(x=>{const n=cur.resp[x[0]]; if(n&&(!w||n<w.n||(n===w.n&&x[3]>w.i)))w={n,i:x[3],t:x[1]};}); return w&&w.n<=2?w.t:null;}
 function eloFraco(){
-  const out=[]; AREAS.concat(STAGES.filter(s=>s.q)).forEach(a=>{const s=SC[a.id]; if(s&&ge(s.score,3)&&le(s.pil.E,1.5))out.push({id:'CRZ-22',sev:'media',pad:'Elo fraco de pilar',areas:[a.id],t:`${a.nome}: resultado depende de poucas pessoas`,txt:`${a.nome} está no nível ${s.level}, mas o pilar Pessoas está em ${dec(s.pil.E)}. Se alguém sair, a maturidade cai junto.`,rec:['Documentar a operação em playbook','Treinar um segundo responsável'],gap:2});});
+  const out=[]; AREAS.concat(STAGES.filter(s=>s.q)).forEach(a=>{const s=SC[a.id]; const outros=s?Object.entries(s.pil).filter(([p])=>p!=='E').map(([,v])=>v):[]; const mo=outros.length?outros.reduce((x,y)=>x+y,0)/outros.length:null; if(s&&s.score!=null&&ge(mo,3)&&le(s.pil.E,1.5))out.push({id:'CRZ-22',sev:'media',pad:'Elo fraco de pilar',areas:[a.id],t:`${a.nome}: resultado depende de poucas pessoas`,txt:`${a.nome} tem processos, ferramentas e cultura em ${dec(mo)} de 4, mas o pilar Pessoas está em ${dec(s.pil.E)}. Se alguém sair, a maturidade cai junto.`,rec:['Documentar a operação em playbook','Treinar um segundo responsável'],gap:2});});
   return out;
 }
 function runEngine(){
@@ -736,7 +738,7 @@ function leituraAuto(INS){
   return L;
 }
 function blocosHtml(INS){
-  const B=blocosDe(INS).slice(0,5);
+  const B=blocosDe(INS);
   if(!B.length) return '<p class="empty">Os blocos aparecem quando o motor encontra incongruências.</p>';
   return `<div class="blocos">${B.map((b,k)=>`<article class="bloco"><div class="bh"><span class="bn">${k+1}</span><div><h4>${esc(b.t)}</h4><p>${esc(b.r)}</p></div></div>
     <div class="bm"><span class="chip">${pl(b.ins.length,'incongruência','incongruências')}</span>${b.crit?`<span class="chip" style="color:var(--n1);border-color:color-mix(in srgb,var(--n1) 45%,transparent)">${pl(b.crit,'crítica','críticas')}</span>`:''}<span class="muted" style="font-size:12.5px">Indicador: ${esc(b.kpi)}</span></div>
@@ -744,7 +746,7 @@ function blocosHtml(INS){
     <details data-keep="ev-${b.id}" ${ui.open['ev-'+b.id]?'open':''}><summary>Ver as evidências</summary><ul>${b.ins.map(i=>`<li><b>${esc(i.t)}.</b> ${esc(i.txt)}</li>`).join('')}</ul></details></article>`).join('')}</div>`;
 }
 function planoHtml(INS){
-  const B=blocosDe(INS).slice(0,5);
+  const B=blocosDe(INS);
   if(!B.length) return '';
   return `<div class="plano">${HZ.map(([k,nm,pr])=>`<div class="hz"><div class="hzh"><b>${nm}</b><span>${pr}</span></div><ul>${B.flatMap((b,i)=>(b.h[k]||[]).map(a=>`<li><span class="bnum">${i+1}</span>${esc(a)}</li>`)).join('')}</ul></div>`).join('')}</div>
    <p class="muted" style="font-size:12.5px">O número indica o bloco de causa raiz. As ações específicas de cada incongruência estão nas evidências e viram tarefas no kanban.</p>`;
@@ -756,7 +758,7 @@ function unScoreHtml(){
   return `<div class="tblw"><table class="tbl"><thead><tr><th>UN</th><th>A reitoria espera</th><th style="min-width:180px">Maturidade</th><th class="r">Ocupação de vagas</th><th class="r">Captação x meta</th><th class="r">Receita x meta</th><th class="r">Atendimento do marketing</th></tr></thead><tbody>
    ${rows.map(r=>`<tr><td>${esc(r.u.nome)}</td><td>${r.exp?`<span class="chip">${esc(r.exp)}</span>`:'<span class="muted">—</span>'}</td>
     <td><div class="minibar"><span style="width:${r.s.score!=null?((r.s.score-1)/3*100).toFixed(0):0}%;background:var(--n${r.s.level||1})"></span></div><span class="mono" style="font-size:12px">${r.s.score!=null?dec(r.s.score)+' · N'+r.s.level:'sem nota'}</span></td>
-    ${cell(r.ocup,0.7)}${cell(r.ating,0.8)}${cell(r.rec,0.9)}<td class="r">${r.svc?`<span class="lv l${r.svc}" title="${LVL[r.svc]}">N${r.svc}</span>`:'—'}</td></tr>`).join('')}</tbody></table></div>`;
+    ${cell(r.ocup,0.7)}${cell(r.ating,0.8)}${cell(r.rec,0.85)}<td class="r">${r.svc?`<span class="lv l${r.svc}" title="${LVL[r.svc]}">N${r.svc}</span>`:'—'}</td></tr>`).join('')}</tbody></table></div>`;
 }
 /* ---------- Matriz de priorização interna (só LORSO e reitoria) ---------- */
 const RECS=['Fazer agora','Próximo','Não agora'];
@@ -1274,18 +1276,18 @@ function renderPerfil(){
 /* coleta: conclui sozinha quando a área fica completa */
 function autoColeta(){
   if(!cur)return; internas.forEach(t=>{ if(t.diagnostico_id!==cur.id||!t.origem||!t.origem.startsWith('coleta:'))return; const a=AREA[t.origem.slice(7)]; if(!a)return; const ans=a.q.filter(x=>cur.resp[x[0]]).length;
-    if(ans===a.q.length&&t.status!=='Concluída'){t.status='Concluída';itSave(t);}
+    if(ans===a.q.length&&t.status!=='Concluída'){itStatus(t,'Concluída');}
     else if(ans>0&&ans<a.q.length&&t.status==='A fazer'){t.status='Em andamento';itSave(t);} });
 }
 
 /* ================= PLANO DE AÇÃO (EXECUÇÃO): preenchido pelo diagnóstico ================= */
 const HZD={c:90,m:180,l:365}, HZN={c:'Curto',m:'Médio',l:'Longo'};
-const addDias=n=>{const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
+const addDias=n=>{const d=new Date();d.setDate(d.getDate()+n);return isoLocal(d);};
 const planoKey=(k,b,t)=>`plano:${k}:${b}:${t}`;
 const planoHz=t=>t.origem&&t.origem.startsWith('plano:')?t.origem.split(':')[1]:'';
 function ignorados(){ try{return JSON.parse(cur.campos['plano.ignorados']||'[]')}catch(e){return []} }
 function syncPlano(INS){
-  const B=blocosDe(INS).slice(0,5); if(!B.length)return 0;
+  const B=blocosDe(INS); if(!B.length)return 0;
   const ign=new Set(ignorados()), tem=new Set(cur.acoes.map(t=>t.origem)); let n=0;
   B.forEach(b=>HZ.forEach(([k])=>(b.h[k]||[]).forEach(txt=>{ const key=planoKey(k,b.id,txt); if(tem.has(key)||ign.has(key))return;
     newTask({txt,area:b.areas[0]||'',origem:key,status:'A fazer',prazo:addDias(HZD[k])}); n++; })));
@@ -1299,13 +1301,15 @@ function tempoStats(){
   const v={}; let tot=0; TEMPO.forEach(([k])=>{ v[k]=num(cur.campos['demandas.tempo_'+k])||0; tot+=v[k]; }); if(!tot)return null;
   const p={}; TEMPO.forEach(([k])=>p[k]=v[k]/tot);
   const recT=UNS.reduce((a,u)=>a+(unFin(u.id).receita||0),0);
-  const uns=UNS.map(u=>{ const r=unFin(u.id).receita; return {id:u.id,nome:u.nome,pt:p[u.id]||0,pr:recT>0&&r!=null?r/recT:null}; });
-  return {v,tot,p,pAdm:p.adm,uns};
+  const totUn=UNS.reduce((a,u)=>a+(v[u.id]||0),0);
+  const uns=UNS.map(u=>{ const r=unFin(u.id).receita; return {id:u.id,nome:u.nome,pt:totUn>0?(v[u.id]||0)/totUn:0,pr:recT>0&&r!=null?r/recT:null}; });
+  const preench=TEMPO.filter(([k])=>cur.campos['demandas.tempo_'+k]!=null&&cur.campos['demandas.tempo_'+k]!=='').length;
+  return {v,tot,p,pAdm:p.adm,uns,totUn,completo:preench>=2};
 }
 function tempoView(s){
   return `<div class="stack" role="img" aria-label="Divisão do tempo do marketing">${TEMPO.filter(([k])=>s.v[k]).map(([k,l,,c])=>`<span style="flex:${s.v[k]};background:${c}" title="${l}: ${pct(s.p[k])}"></span>`).join('')}</div>
    <div class="legend">${TEMPO.filter(([k])=>s.v[k]).map(([k,l,,c])=>`<span class="lg"><i style="background:${c}"></i>${l} <b>${pct(s.p[k])}</b></span>`).join('')}</div>
-   ${s.uns.some(u=>u.pr!=null)?`<div class="tblw" style="margin-top:12px"><table class="tbl"><thead><tr><th>UN</th><th class="r">% do tempo</th><th class="r">% da receita</th><th class="r">Diferença</th></tr></thead><tbody>${s.uns.filter(u=>u.pr!=null||u.pt).map(u=>{const d=u.pr!=null?u.pt-u.pr:null;return `<tr><td>${esc(u.nome)}</td><td class="r num">${pct(u.pt)}</td><td class="r num">${pct(u.pr)}</td><td class="r num" style="color:${d!=null&&Math.abs(d)>=0.15?'var(--n1)':'inherit'}">${d==null?'—':(d>0?'+':'')+(d*100).toFixed(0)+' p.p.'}</td></tr>`;}).join('')}</tbody></table></div>`:''}`;
+   ${s.uns.some(u=>u.pr!=null)?`<div class="tblw" style="margin-top:12px"><table class="tbl"><thead><tr><th>UN</th><th class="r">% do tempo dedicado às UNs</th><th class="r">% da receita das UNs</th><th class="r">Diferença</th></tr></thead><tbody>${s.uns.filter(u=>u.pr!=null||u.pt).map(u=>{const d=u.pr!=null?u.pt-u.pr:null;return `<tr><td>${esc(u.nome)}</td><td class="r num">${pct(u.pt)}</td><td class="r num">${pct(u.pr)}</td><td class="r num" style="color:${d!=null&&Math.abs(d)>=0.15?'var(--n1)':'inherit'}">${d==null?'—':(d>0?'+':'')+(d*100).toFixed(0)+' p.p.'}</td></tr>`;}).join('')}</tbody></table></div>`:''}`;
 }
 function tempoHtml(){
   const s=tempoStats();
@@ -1444,7 +1448,7 @@ function bubbleSvg(INS){
   </svg></div><p class="muted" style="font-size:12.5px">Cada bola é uma área. Mais à esquerda, menos madura; mais alta, mais dores e incongruências; maior, mais evidências. O canto vermelho é por onde começar.</p>`;
 }
 function causasDonut(INS){ const B=blocosDe(INS); if(!B.length) return '<p class="empty">As causas raiz aparecem quando houver incongruências.</p>';
-  const cols=['var(--s1)','var(--s2)','var(--s3)','var(--s4)','var(--s5)','var(--s6)'];
+  const cols=['var(--s1)','var(--s2)','var(--s3)','var(--s4)','var(--s5)','var(--s6)','var(--brand-2)'];
   const segs=B.map(b=>({l:b.t,v:b.peso,c:cols[BLOCOS.findIndex(x=>x.id===b.id)%cols.length]})); const tot=segs.reduce((a,s)=>a+s.v,0);
   return `<div class="donutw"><div class="donut">${donutSvg(segs)}<div class="dv"><b>${B.length}</b><small>${B.length===1?'causa raiz':'causas raiz'}</small></div></div>
    <div class="dleg">${segs.map(s=>`<div><i style="background:${s.c}"></i><span>${esc(s.l)}</span><b>${pct(s.v/tot).replace(',0%','%')}</b></div>`).join('')}</div></div>
@@ -1565,7 +1569,7 @@ const lvColor=l=>[C.mut,C.n1,C.n2,C.n3,C.n4][l]||C.mut;
 async function exportPptx(){
   toast('Montando a apresentação…');
   await loadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js');
-  computeAll(); const INS=runEngine(), ov=overall(), B=blocosDe(INS).slice(0,5), t=trelloStats(), leit=leituraAuto(INS);
+  computeAll(); const INS=runEngine(), ov=overall(), B=blocosDe(INS), t=trelloStats(), leit=leituraAuto(INS);
   const pptx=new PptxGenJS(); pptx.layout='LAYOUT_WIDE'; pptx.author='LORSO Digital'; pptx.title='Diagnóstico de Maturidade · '+cur.nome;
   const F='Arial';
   const base=(title,eyebrow)=>{ const sl=pptx.addSlide(); sl.background={color:C.bg};
@@ -1630,7 +1634,7 @@ async function exportPptx(){
     const L=TEMPO.filter(([k])=>ts.v[k]);
     sl.addChart(pptx.ChartType.doughnut,[{name:'Horas',labels:L.map(([,l])=>l),values:L.map(([k])=>ts.v[k])}],{x:0.5,y:1.5,w:5.6,h:4.6,holeSize:58,chartColors:L.map(([k])=>({adm:'6B716E',institucional:'00E5FF',colegio:C.n3,graduacao:C.acc,pos:C.n2,mestrado:'9B7BD4'})[k]),showLegend:true,legendPos:'b',legendColor:C.fg,legendFontSize:10,showPercent:true,dataLabelColor:'0A0A0A',dataLabelFontSize:10});
     sl.addText([{text:pct(ts.pAdm),options:{fontSize:44,bold:true,color:ts.pAdm>=0.45?C.n1:ts.pAdm>=0.3?C.n2:C.fg,breakLine:true}},{text:'do tempo do marketing vai para tarefas administrativas e internas',options:{fontSize:14,color:C.mut,breakLine:true}},{text:`${dec(ts.tot,0)} h por semana no total`,options:{fontSize:12,color:C.mut,breakLine:true}},
-      ...ts.uns.filter(u=>u.pr!=null).map(u=>({text:`${u.nome}: ${pct(u.pt)} do tempo · ${pct(u.pr)} da receita`,options:{fontSize:12,color:Math.abs(u.pt-u.pr)>=0.15?C.n1:C.fg,breakLine:true}}))],{x:6.6,y:1.7,w:6.2,h:4.4,fontFace:F,valign:'top'}); }
+      ...ts.uns.filter(u=>u.pr!=null).map(u=>({text:`${u.nome}: ${pct(u.pt)} do tempo das UNs · ${pct(u.pr)} da receita das UNs`,options:{fontSize:12,color:Math.abs(u.pt-u.pr)>=0.15?C.n1:C.fg,breakLine:true}}))],{x:6.6,y:1.7,w:6.2,h:4.4,fontFace:F,valign:'top'}); }
   if(t||cur.dores.length){ sl=base('Capacidade do marketing e onde o trabalho trava','Operação');
     if(t){ const lab=TRELLO.filter(([k])=>t.v[k]).map(([,l])=>l), val=TRELLO.filter(([k])=>t.v[k]).map(([k])=>t.v[k]);
       sl.addChart(pptx.ChartType.bar,[{name:'Projetos',labels:lab,values:val}],{x:0.5,y:1.6,w:6.2,h:3.6,barDir:'col',chartColors:[C.acc],catAxisLabelColor:C.fg,valAxisLabelColor:C.mut,catAxisLabelFontSize:9,valAxisLabelFontSize:9,valGridLine:{color:C.line,size:0.5},showValue:true,dataLabelColor:C.fg,dataLabelFontSize:10,plotArea:{fill:{color:C.bg}}});
@@ -1956,7 +1960,7 @@ document.addEventListener('click',e=>{
   else if(act==='iv-go'){ if(ui.iv){ ui.iv.i=Math.max(0,+d.v); render(); } }
   else if(act==='iv-area'){ const a=AREA[d.v]; const first=a.q.findIndex(q=>!cur.resp[q[0]]); ui.iv={area:d.v,i:first<0?0:first}; ui.area=d.v; ui.dstep=stepOf(d.v); saveUi(); render(); }
   else if(act==='iv-pick'){ const q=d.q,n=+d.n; const was=cur.resp[q]; if(was===n)delete cur.resp[q]; else cur.resp[q]=n; autoTasks(); touch(true); if(was!==n&&ui.iv){ const a=AREA[ui.iv.area]; clearTimeout(ui.ivT); ui.ivT=setTimeout(()=>{ if(!ui.iv)return; ui.iv.i=Math.min(a.q.length,ui.iv.i+1); render(); },reduced()?0:280); } }
-  else if(act==='ini-gerar'){ computeAll(); const B=blocosDe(runEngine()).slice(0,5); const have=new Set(cur.iniciativas.map(x=>x.titulo)); let n=0;
+  else if(act==='ini-gerar'){ computeAll(); const B=blocosDe(runEngine()); const have=new Set(cur.iniciativas.map(x=>x.titulo)); let n=0;
     B.forEach((b,bi)=>HZ.forEach(([k])=>(b.h[k]||[]).forEach(t=>{ if(have.has(t))return; const hz={c:'Curto',m:'Médio',l:'Longo'}[k]; cur.iniciativas.push({id:uid(),titulo:t,bloco:b.id,area:b.areas[0]||'',horizonte:hz,impacto:String(Math.max(2,5-Math.floor(bi/2))),esforco:String({c:2,m:3,l:4}[k]),risco:'2',dependencias:'',alinhamento:b.t,recomendacao:k==='c'?'Fazer agora':'Próximo',motivo:'',indicador:b.kpi,ordem:0}); n++; })));
     touch(true); toast(n?`${n} iniciativas criadas`:'As iniciativas das causas raiz já estão na matriz'); }
   else if(act==='ini-add'){ cur.iniciativas.push({id:uid(),titulo:'',bloco:'',area:'',horizonte:'Curto',impacto:'',esforco:'',risco:'',dependencias:'',alinhamento:'',recomendacao:'Próximo',motivo:'',indicador:'',ordem:0}); touch(true); }

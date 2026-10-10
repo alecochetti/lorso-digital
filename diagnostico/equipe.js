@@ -27,7 +27,7 @@ function itSave(t,now){ clearTimeout(itT[t.id]); const go=async()=>{ const r=awa
 async function itDel(id){ internas=internas.filter(t=>t.id!==id); const r=await sb.from('tarefas_internas').delete().eq('id',id); if(r.error) toast('Não foi possível excluir a tarefa'); }
 function itNew(o){ const x={...o}; if(x.responsavel!==undefined){ x.responsaveis=x.responsavel?[x.responsavel]:[]; delete x.responsavel; }
   const t={id:uid(),titulo:'',descricao:'',responsaveis:[],diagnostico_id:'',area:'',area_eq:'',projeto_id:'',prazo:'',inicio:'',prioridade:'Média',status:'A fazer',origem:'',subtarefas:[],comentarios:[],concluida_em:null,created_at:new Date().toISOString(),...x};
-  if(!t.area_eq&&t.diagnostico_id) t.area_eq='Consultoria'; internas.push(t); itSave(t,true); return t; }
+  if(!t.area_eq&&t.diagnostico_id) t.area_eq='Consultoria'; if(t.status==='Concluída'&&!t.concluida_em) t.concluida_em=new Date().toISOString(); internas.push(t); itSave(t,true); return t; }
 function pjSave(p,now){ clearTimeout(pjT[p.id]); const go=async()=>{ const r=await sb.from('projetos').upsert(pjTo(p)); if(r.error) toast('Não foi possível salvar o projeto: '+r.error.message); }; if(now) go(); else pjT[p.id]=setTimeout(go,600); }
 const itLate=t=>t.prazo&&t.status!=='Concluída'&&t.prazo<today();
 const pessoa=id=>profiles.find(p=>p.id===id);
@@ -39,12 +39,12 @@ function itStatus(t,s){ if(t.status===s)return; t.status=s; t.concluida_em=s==='
 
 /* ---------- filtros e agrupamentos ---------- */
 function eqUi(){ return ui.eq||(ui.eq={aba:'tarefas',visao:'lista',grupo:'prazo',escopo:'time',pessoa:'',area:'',projeto:'',prazo:'',busca:'',ordem:'prazo',dir:1,aberta:null,pj:null}); }
-function eqFiltradas(){ const f=eqUi(), hoje=today(), sem=new Date(); sem.setDate(sem.getDate()+7); const s7=sem.toISOString().slice(0,10);
+function eqFiltradas(){ const f=eqUi(), hoje=today(), sem=new Date(); sem.setDate(sem.getDate()+7); const s7=isoLocal(sem);
   return internas.filter(t=>(f.escopo!=='minhas'||itDono(t,me.id))&&(!f.pessoa||(f.pessoa==='-'?!t.responsaveis.length:itDono(t,f.pessoa)))&&(!f.area||t.area_eq===f.area)
     &&(!f.projeto||(f.projeto==='-'?!t.projeto_id&&!t.diagnostico_id:f.projeto.startsWith('c:')?t.diagnostico_id===f.projeto.slice(2):t.projeto_id===f.projeto))
     &&(!f.prazo||(f.prazo==='atrasadas'?itLate(t):f.prazo==='semana'?(t.prazo&&t.prazo>=hoje&&t.prazo<=s7):f.prazo==='sem'?!t.prazo:true))
     &&(!f.busca||(t.titulo+' '+t.descricao).toLowerCase().includes(f.busca.toLowerCase()))); }
-function eqGrupos(L){ const g=eqUi().grupo, hoje=today(), d7=new Date(); d7.setDate(d7.getDate()+7); const s7=d7.toISOString().slice(0,10);
+function eqGrupos(L){ const g=eqUi().grupo, hoje=today(), d7=new Date(); d7.setDate(d7.getDate()+7); const s7=isoLocal(d7);
   const ab=L.filter(t=>t.status!=='Concluída'), feitas=L.filter(t=>t.status==='Concluída');
   if(g==='prazo') return [['Atrasadas',ab.filter(itLate),'bad'],['Próximos 7 dias',ab.filter(t=>t.prazo&&t.prazo>=hoje&&t.prazo<=s7)],['Depois',ab.filter(t=>t.prazo&&t.prazo>s7)],['Sem data final',ab.filter(t=>!t.prazo)],['Realizadas',feitas,'ok']];
   if(g==='etapa') return EQ_ST.map(([s,n])=>[n,L.filter(t=>t.status===s)]);
@@ -98,10 +98,10 @@ function eqPorArea(L){ return `<div class="eqareas">${[...EQ_AREAS,['Sem área',
 function eqMetricas(L){ const ab=L.filter(t=>t.status!=='Concluída'), lt=ab.filter(itLate), lim=new Date(); lim.setDate(lim.getDate()-30);
   const feitas=L.filter(t=>t.status==='Concluída'), f30=feitas.filter(t=>t.concluida_em&&new Date(t.concluida_em)>=lim);
   const dur=feitas.filter(t=>t.concluida_em&&t.created_at).map(t=>(new Date(t.concluida_em)-new Date(t.created_at))/864e5); const med=dur.length?dur.reduce((a,b)=>a+b,0)/dur.length:null;
-  const noPrazo=feitas.filter(t=>t.prazo&&t.concluida_em), ok=noPrazo.filter(t=>t.concluida_em.slice(0,10)<=t.prazo).length;
+  const noPrazo=feitas.filter(t=>t.prazo&&t.concluida_em), ok=noPrazo.filter(t=>isoLocal(t.concluida_em)<=t.prazo).length;
   const ppl=profiles.filter(p=>p.ativo&&p.papel!=='cliente').map(p=>({p,v:EQ_ST.slice(0,3).map(([s])=>L.filter(t=>itDono(t,p.id)&&t.status===s).length)})).filter(x=>x.v.some(Boolean)).sort((a,b)=>b.v.reduce((x,y)=>x+y,0)-a.v.reduce((x,y)=>x+y,0));
   const mx=Math.max(1,...ppl.map(x=>x.v.reduce((a,b)=>a+b,0)));
-  const sem=Array.from({length:8},(_,i)=>{ const fim=new Date(); fim.setDate(fim.getDate()-7*(7-i)); const ini=new Date(fim); ini.setDate(ini.getDate()-7); return {l:eqData(fim.toISOString().slice(0,10)),n:feitas.filter(t=>t.concluida_em&&new Date(t.concluida_em)>ini&&new Date(t.concluida_em)<=fim).length}; });
+  const sem=Array.from({length:8},(_,i)=>{ const fim=new Date(); fim.setDate(fim.getDate()-7*(7-i)); const ini=new Date(fim); ini.setDate(ini.getDate()-7); return {l:eqData(isoLocal(fim)),n:feitas.filter(t=>t.concluida_em&&new Date(t.concluida_em)>ini&&new Date(t.concluida_em)<=fim).length}; });
   const ms=Math.max(1,...sem.map(x=>x.n)); const cores=['var(--faint)','var(--s1)','var(--s4)'];
   const areaSeg=EQ_AREAS.map(([a,c])=>({l:a,v:ab.filter(t=>t.area_eq===a).length,c}));
   return `<div class="stats"><div class="stat"><span class="si">${ico('internas',20)}</span><b>${ab.length}</b><span>tarefas abertas</span></div>
@@ -175,7 +175,7 @@ function eqClick(act,d){ const f=eqUi();
   if(act==='eq-fechar'){ const t=internas.find(x=>x.id===f.aberta); if(t)itSave(t,true); const p=projetos.find(x=>x.id===f.pj); if(p)pjSave(p,true); f.aberta=null; f.pj=null; render(); return true; }
   if(act==='eq-nova'){ const o={status:d.st||'A fazer',responsaveis:f.escopo==='minhas'||!f.pessoa?[me.id]:(f.pessoa==='-'?[]:[f.pessoa]),area_eq:f.area||''};
     if(f.projeto&&f.projeto!=='-'){ if(f.projeto.startsWith('c:'))o.diagnostico_id=f.projeto.slice(2); else o.projeto_id=f.projeto; }
-    if(d.grupo==='Próximos 7 dias'){ const x=new Date(); x.setDate(x.getDate()+3); o.prazo=x.toISOString().slice(0,10); }
+    if(d.grupo==='Próximos 7 dias'){ const x=new Date(); x.setDate(x.getDate()+3); o.prazo=isoLocal(x); }
     const t=itNew(o); f.aberta=t.id; ui.eqFoco=true; render(); return true; }
   if(act==='eq-del'){ itDel(d.v); f.aberta=null; render(); return true; }
   if(act==='eq-resp'){ const t=internas.find(x=>x.id===d.id); if(t){ t.responsaveis=itDono(t,d.v)?t.responsaveis.filter(x=>x!==d.v):[...t.responsaveis,d.v]; itSave(t); render(); } return true; }

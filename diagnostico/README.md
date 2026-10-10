@@ -18,6 +18,7 @@ resto do site: sobe junto com o GitHub Pages a cada push na `main`.
 | `supabase/0003_tarefas_internas.sql` | Kanban interno da equipe LORSO, fora do contexto do cliente |
 | `supabase/0007_projetos_e_tarefas_ricas.sql` | Projetos da equipe e tarefas com vários responsáveis, subtarefas e comentários |
 | `supabase/0008_pdi_marketing.sql` | Marca MKT no entrevistado e tabela de avaliações visível só à equipe LORSO |
+| `supabase/0009_indices_fk.sql` | Índices nas chaves estrangeiras (desempenho) |
 | `supabase/0004_fontes_conhecimento.sql` | Fontes da base de conhecimento (NotebookLM, arquivos, site) |
 | `supabase/0005_modulos.sql` | Módulos por cliente (DRE, lançamento) e quais cada cliente usa |
 | `supabase/0006_recursos_privados.sql` | Chave do módulo de lançamento (só usuários logados leem) |

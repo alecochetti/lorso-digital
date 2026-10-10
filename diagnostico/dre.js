@@ -79,13 +79,14 @@ function mdMapa(S){
   if(!S.unidades.some(u=>S.metas[u.id]&&S.metas[u.id].some(v=>typeof v==='number')) && !C.lanc.length) return out;
   const g=k=>x=>x.grupos[k]||0;
   out['financeiro.receita_orcada']=mdTot(O,x=>x.rb); out['financeiro.receita_realizada']=mdTot(P,x=>x.rb);
-  out['financeiro.custo_orcado']=mdTot(O,x=>x.rb-x.ebitda); out['financeiro.custo_realizado']=mdTot(P,x=>x.rb-x.ebitda);
+  out['financeiro.custo_orcado']=mdTot(O,x=>x.rl-x.ebitda); out['financeiro.custo_realizado']=mdTot(P,x=>x.rl-x.ebitda);
   out['financeiro.ebitda_orcado']=mdTot(O,x=>x.ebitda); out['financeiro.ebitda_realizado']=mdTot(P,x=>x.ebitda);
   out['financeiro.verba_orcada']=mdTot(O,g('marketing')); out['financeiro.verba_realizada']=mdTot(P,g('marketing'));
   out['financeiro.descontos']=mdTot(P,x=>x.ded); out['financeiro.inadimplencia']=mdTot(P,x=>x.inad);
   if(S.segmento==='educacao') out['financeiro.folha_docente']=mdTot(P,x=>x.cus);
   out['financeiro.folha_adm']=mdTot(P,g('pessoal')); out['financeiro.folha_mkt']=mdTot(P,g('mkt_time'))/12;
-  S.unidades.forEach(u=>{ if(!u.un)return; out[u.un+'.meta_rec']=mdTot(O,x=>x.u[u.id]?x.u[u.id].rb:0); out[u.un+'.receita']=mdTot(P,x=>x.u[u.id]?x.u[u.id].rb:0); if(S.segmento==='educacao')out[u.un+'.folha']=mdTot(P,x=>x.u[u.id]?x.u[u.id].cus:0); });
+  const soma=(k,v)=>{ out[k]=(out[k]||0)+v; };
+  S.unidades.forEach(u=>{ if(!u.un)return; soma(u.un+'.meta_rec',mdTot(O,x=>x.u[u.id]?x.u[u.id].rb:0)); soma(u.un+'.receita',mdTot(P,x=>x.u[u.id]?x.u[u.id].rb:0)); if(S.segmento==='educacao')soma(u.un+'.folha',mdTot(P,x=>x.u[u.id]?x.u[u.id].cus:0)); });
   return out;
 }
 function mdAuto(){ try{ return new Set(JSON.parse((cur&&cur.campos['dre.auto'])||'[]')); }catch(e){ return new Set(); } }
@@ -94,7 +95,7 @@ function mdSync(){
   const mapa=mdMapa(mdMigra(cur.mods.dre)), auto=mdAuto(); let mudou=false;
   Object.entries(mapa).forEach(([k,v])=>{ const r=Math.round(v); const vazio=cur.campos[k]==null||cur.campos[k]==='';
     if(!(vazio||auto.has(k)))return;
-    if(r>0){ if(cur.campos[k]!==String(r)){ cur.campos[k]=String(r); mudou=true; } if(!auto.has(k)){ auto.add(k); mudou=true; } }
+    if(r!==0){ if(cur.campos[k]!==String(r)){ cur.campos[k]=String(r); mudou=true; } if(!auto.has(k)){ auto.add(k); mudou=true; } }
     else if(auto.has(k)){ delete cur.campos[k]; auto.delete(k); mudou=true; } });
   [...auto].forEach(k=>{ if(!(k in mapa)){ auto.delete(k); delete cur.campos[k]; mudou=true; } });
   if(mudou){ if(auto.size)cur.campos['dre.auto']=JSON.stringify([...auto]); else delete cur.campos['dre.auto']; }
