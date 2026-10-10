@@ -5,6 +5,7 @@
 /* ================= BANCO DE PERGUNTAS ================= */
 const PIL = {P:'Processos', E:'Pessoas', F:'Ferramentas', C:'Cultura'};
 const LVL = ['—','Iniciante','Estruturado','Otimizado','Escalável'];
+const LVL_DESC = ['','N1 Iniciante: depende de pessoas e improviso; sem processo nem medição.','N2 Estruturado: existe processo básico, mas ele não é seguido por todos nem medido.','N3 Otimizado: processo padronizado, medido e ligado a metas.','N4 Escalável: automatizado, integrado e melhorado continuamente com dados.'];
 const IMP = {3:'Impacto alto',2:'Impacto médio',1:'Impacto baixo'};
 
 // campo: [chave, rótulo, tipo]  tipo: n número | R$ moeda | % percentual | min minutos | d dias | t texto

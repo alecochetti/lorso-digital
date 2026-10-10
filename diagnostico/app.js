@@ -296,7 +296,7 @@ function autoFofa(id, INS){
 }
 
 /* ================= RENDER ================= */
-function lvChip(l){return `<span class="lv l${l}">${l?'N'+l+' · '+LVL[l]:'Sem nota'}</span>`;}
+function lvChip(l){return `<span class="lv l${l}" title="${l?LVL_DESC[l]:''}">${l?'N'+l+' · '+LVL[l]:'Sem nota'}</span>`;}
 function stageProgress(s){
   if(s.id==='diagnostico'){let t=0,a=0;AREAS.forEach(x=>{t+=x.q.length;a+=x.q.filter(q=>cur.resp[q[0]]).length;});return (a/t)*0.9+baseProgress()*0.1;}
   const q=s.q||[]; return q.length?q.filter(x=>cur.resp[x[0]]).length/q.length:0;
@@ -658,6 +658,66 @@ function dreHtml(){
    ${folha!=null||terc!=null?`<div class="stats"><div class="stat"><b>${brl(folha)}</b><span>folha mensal do marketing</span></div><div class="stat"><b>${brl(terc)}</b><span>agências e fornecedores por mês</span></div><div class="stat"><b>${hc!=null?hc:'—'}</b><span>pessoas no time</span></div><div class="stat"><b>${folha!=null&&terc!=null?brl((folha+terc)*12):'—'}</b><span>custo anual da operação (equipe + terceiros)</span></div></div>`:''}
   </section>`;
 }
+/* ---------- Blocos de causa raiz e plano por horizonte ---------- */
+const BLOCOS=[
+ {id:'prioridade',t:'Sem regra de prioridade, tudo vira urgência',r:'O marketing atende quem pressiona mais. Pedidos chegam por vários canais, sem prazo nem critério, e o calendário acadêmico chega tarde.',
+  rules:['CRZ-23','CRZ-26','CRZ-29','CRZ-42','CRZ-48','CRZ-50','CRZ-51','CRZ-11'],kpi:'% de pedidos urgentes · prazo médio de entrega',
+  h:{c:['Formulário único de pedidos com prazo mínimo por tipo de peça','Critério escrito de urgência e de quem pode declarar','Comunicado da reitoria com as novas regras'],m:['Cota de capacidade por UN e reunião quinzenal de fila','Calendário de lançamentos com 6 meses de antecedência'],l:['Planejamento trimestral conjunto com as UNs','SLA por tipo de demanda medido e publicado']}},
+ {id:'capacidade',t:'A capacidade do marketing não acompanha a demanda',r:'A fila cresce mais rápido do que sai, as aprovações travam o fluxo e o time trabalha sem limite de tarefas.',
+  rules:['CRZ-24','CRZ-25','CRZ-27','CRZ-34','CRZ-38','CRZ-39','CRZ-45','CRZ-52','CRZ-15','CRZ-16','CRZ-22','CRZ-03','CRZ-12'],kpi:'projetos abertos · semanas para zerar a fila · entregas no prazo',
+  h:{c:['Triagem do backlog: cancelar, adiar ou fazer','Aprovador único e no máximo 2 rodadas','Limite de tarefas em andamento por pessoa'],m:['Templates e autosserviço para pedidos recorrentes','Kanban único com vazão semanal medida','Redesenho de papéis do time'],l:['Capacidade planejada por período, com reserva por UN','Squads por UN ou objetivo']}},
+ {id:'sistemas',t:'Sistemas e dados que não conversam',r:'O trabalho passa por WhatsApp, planilhas e ferramentas soltas. Ninguém vê a fila inteira e os dados de resultado não fecham.',
+  rules:['CRZ-28','CRZ-35','CRZ-36','CRZ-05','CRZ-06','CRZ-10','CRZ-13','CRZ-33'],kpi:'horas de trabalho manual por semana · sistemas integrados',
+  h:{c:['Uma ferramenta de gestão de tarefas para todo o time','Inventário de sistemas: manter, treinar ou trocar'],m:['Pedidos integrados à ferramenta de tarefas','Rastreamento e atribuição até a matrícula','Painel único de indicadores por UN'],l:['Base unificada de marketing, CRM e acadêmico','Réguas automatizadas por UN']}},
+ {id:'receita',t:'Receita, vagas e investimento desalinhados',r:'Há UNs abaixo da meta, vagas ociosas e verba distribuída sem relação com o retorno, enquanto a reitoria espera crescer.',
+  rules:['CRZ-40','CRZ-41','CRZ-18','CRZ-19','CRZ-20','CRZ-47','CRZ-49','CRZ-44','CRZ-46','CRZ-21','CRZ-07','CRZ-09','CRZ-30'],kpi:'ocupação de vagas · receita x meta · CAC por UN',
+  h:{c:['Mapa de ocupação de vagas por curso','Meta e verba por UN revisadas com o financeiro'],m:['Plano de ocupação dos cursos com vagas ociosas','Modelo de CAC e retorno por UN','Régua de ex-alunos da graduação para a pós'],l:['Orçamento base zero por meta e retorno','Portfólio de cursos orientado por demanda']}},
+ {id:'mandato',t:'Mandato e régua de sucesso indefinidos',r:'Sem patrocínio formal e sem indicadores combinados, as mudanças dependem de aval caso a caso e o trabalho é julgado por percepção.',
+  rules:['CRZ-37','CRZ-43'],kpi:'indicadores pactuados acompanhados em comitê',
+  h:{c:['Mandato por escrito: escopo, prazo e o que muda','3 a 5 indicadores de sucesso pactuados com a reitoria'],m:['Comitê mensal de resultados com a reitoria'],l:['Novo diagnóstico de maturidade a cada 12 meses']}},
+ {id:'funil',t:'Funil comercial e relacionamento com o aluno',r:'Leads, visitas e eventos viram menos matrícula do que poderiam por falta de qualificação, velocidade e acompanhamento.',
+  rules:['CRZ-01','CRZ-02','CRZ-04','CRZ-08','CRZ-14','CRZ-17','CRZ-31','CRZ-32'],kpi:'tempo até o primeiro contato · conversão inscrito → matrícula',
+  h:{c:['Primeiro contato automático em até 2 minutos','Definição de lead qualificado entre marketing e comercial'],m:['Réguas por curso e etapa','Pós-evento com leads quentes ao comercial em 24h'],l:['Lead scoring baseado em matrículas reais','Programa de indicação e retenção']}}
+];
+const HZ=[['c','Curto prazo','0 a 3 meses'],['m','Médio prazo','3 a 6 meses'],['l','Longo prazo','6 a 12 meses']];
+function blocosDe(INS){
+  return BLOCOS.map(b=>{ const ins=INS.filter(i=>b.rules.includes(i.id)); const peso=ins.reduce((a,i)=>a+({crit:5,alta:2,media:1}[i.sev]||1),0); const areas=[...new Set(ins.flatMap(i=>i.areas))];
+    return {...b,ins,peso,areas,crit:ins.filter(i=>i.sev==='crit').length}; }).filter(b=>b.ins.length).sort((a,b)=>b.peso-a.peso);
+}
+function leituraAuto(INS){
+  const ov=overall(), B=blocosDe(INS), t=trelloStats();
+  const fracos=AREAS.filter(a=>SC[a.id].score!=null).sort((a,b)=>SC[a.id].score-SC[b.id].score).slice(0,3).map(a=>a.nome);
+  const fortes=AREAS.filter(a=>SC[a.id].score!=null&&SC[a.id].level>=3).sort((a,b)=>SC[b.id].score-SC[a.id].score).slice(0,2).map(a=>a.nome);
+  const L=[];
+  if(ov.score!=null) L.push(`A maturidade geral de marketing está em ${dec(ov.score)} de 4 (N${ov.level} · ${LVL[ov.level]}).`);
+  if(B.length) L.push(`Principal causa raiz: ${B[0].t.charAt(0).toLowerCase()+B[0].t.slice(1)}.${B[1]?` Em seguida: ${B[1].t.charAt(0).toLowerCase()+B[1].t.slice(1)}.`:''}`);
+  if(fortes.length&&fracos.length) L.push(`Os pontos mais fortes são ${fortes.join(' e ')}; os mais frágeis, ${fracos.join(', ')}.`);
+  if(t) L.push(`Hoje há ${t.abertos} projetos abertos no Trello${t.semanas!=null?`, o que leva cerca de ${dec(t.semanas,0)} semanas para zerar no ritmo atual`:''}.`);
+  return L;
+}
+function blocosHtml(INS){
+  const B=blocosDe(INS).slice(0,5);
+  if(!B.length) return '<p class="empty">Os blocos aparecem quando o motor encontra incongruências.</p>';
+  return `<div class="blocos">${B.map((b,k)=>`<article class="bloco"><div class="bh"><span class="bn">${k+1}</span><div><h4>${esc(b.t)}</h4><p>${esc(b.r)}</p></div></div>
+    <div class="bm"><span class="chip">${pl(b.ins.length,'incongruência','incongruências')}</span>${b.crit?`<span class="chip" style="color:var(--n1);border-color:color-mix(in srgb,var(--n1) 45%,transparent)">${pl(b.crit,'crítica','críticas')}</span>`:''}<span class="muted" style="font-size:12.5px">Indicador: ${esc(b.kpi)}</span></div>
+    <div class="bareas">${b.areas.slice(0,8).map(a=>`<button class="chip" data-act="goto" data-v="${a}">${esc(nameOf(a))}</button>`).join('')}</div>
+    <details><summary>Ver as evidências</summary><ul>${b.ins.map(i=>`<li><b>${esc(i.t)}.</b> ${esc(i.txt)}</li>`).join('')}</ul></details></article>`).join('')}</div>`;
+}
+function planoHtml(INS){
+  const B=blocosDe(INS).slice(0,5);
+  if(!B.length) return '';
+  return `<div class="plano">${HZ.map(([k,nm,pr])=>`<div class="hz"><div class="hzh"><b>${nm}</b><span>${pr}</span></div><ul>${B.flatMap((b,i)=>(b.h[k]||[]).map(a=>`<li><span class="bnum">${i+1}</span>${esc(a)}</li>`)).join('')}</ul></div>`).join('')}</div>
+   <p class="muted" style="font-size:12.5px">O número indica o bloco de causa raiz. As ações específicas de cada incongruência estão nas evidências e viram tarefas no kanban.</p>`;
+}
+function unScoreHtml(){
+  const rows=UNS.map(u=>{ const caps=capRows().filter(r=>r.un===u.id); const sum=k=>{const v=caps.map(r=>r[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0):null;}; const vg=sum('vagas'),cp=sum('captados'),mt=sum('meta'); const f=unFin(u.id);
+    return {u,exp:unxGet(u.id,'expect'),s:SC[u.id],ocup:vg&&cp!=null?cp/vg:null,ating:mt&&cp!=null?cp/mt:null,rec:f.meta_rec&&f.receita!=null?f.receita/f.meta_rec:null,svc:unSvc(u)}; });
+  const cell=(x,w)=>x==null?'<td class="r muted">—</td>':`<td class="r" style="${x<w?'color:var(--n1);font-weight:600':''}">${pct(x)}</td>`;
+  return `<div class="tblw"><table class="tbl"><thead><tr><th>UN</th><th>A reitoria espera</th><th style="min-width:180px">Maturidade</th><th class="r">Ocupação de vagas</th><th class="r">Captação x meta</th><th class="r">Receita x meta</th><th class="r">Atendimento do marketing</th></tr></thead><tbody>
+   ${rows.map(r=>`<tr><td>${esc(r.u.nome)}</td><td>${r.exp?`<span class="chip">${esc(r.exp)}</span>`:'<span class="muted">—</span>'}</td>
+    <td><div class="minibar"><span style="width:${r.s.score!=null?((r.s.score-1)/3*100).toFixed(0):0}%;background:var(--n${r.s.level||1})"></span></div><span class="mono" style="font-size:12px">${r.s.score!=null?dec(r.s.score)+' · N'+r.s.level:'sem nota'}</span></td>
+    ${cell(r.ocup,0.7)}${cell(r.ating,0.8)}${cell(r.rec,0.9)}<td class="r">${r.svc?`<span class="lv l${r.svc}" title="${LVL[r.svc]}">N${r.svc}</span>`:'—'}</td></tr>`).join('')}</tbody></table></div>`;
+}
 function renderResultados(INS){
   const st=STG.resultados, ov=overall();
   const rows=AREAS.map(a=>({a,s:SC[a.id]}));
@@ -679,27 +739,35 @@ function renderResultados(INS){
     <tr><td><b>Total</b></td><td></td><td class="r"><b>${brl(tot('meta_rec'))}</b></td><td class="r"><b>${brl(tot('receita'))}</b></td><td class="r"><b>${pct(tot('meta_rec')&&tot('receita')!=null?tot('receita')/tot('meta_rec'):null)}</b></td><td class="r"><b>${brl(tot('folha'))}</b></td><td></td><td class="r"><b>${brl(tot('orcamento'))}</b></td><td></td><td></td><td></td><td></td></tr></tbody></table></div>`;
   const kpiTbl=`${cur.kpis.length?`<div class="tblw"><table class="tbl"><thead><tr><th style="min-width:200px">Indicador</th><th>UN ou área</th><th class="r">Meta</th><th class="r">Realizado</th><th class="r">Atingido</th><th></th></tr></thead><tbody>${cur.kpis.map((k,i)=>{const m=num(k.meta),r=num(k.real);return `<tr><td><input data-kpi="${i}" data-f="nome" value="${esc(k.nome)}" aria-label="Indicador"></td><td><input data-kpi="${i}" data-f="un" value="${esc(k.un)}" aria-label="UN"></td><td><input data-kpi="${i}" data-f="meta" value="${esc(k.meta)}" inputmode="decimal" aria-label="Meta" style="text-align:right"></td><td><input data-kpi="${i}" data-f="real" value="${esc(k.real)}" inputmode="decimal" aria-label="Realizado" style="text-align:right"></td><td class="r mono">${m&&r!=null?pct(r/m):'—'}</td><td class="x"><button class="xbtn" data-act="kpi-del" data-i="${i}" aria-label="Remover">×</button></td></tr>`;}).join('')}</tbody></table></div>`:'<p class="empty">Nenhum indicador ainda.</p>'}
     <div style="display:flex;flex-wrap:wrap;gap:6px">${['Matrículas','CAC','CPL','Conversão lead → matrícula','NPS','Taxa de rematrícula','ROAS'].map(n=>`<button class="chip" data-act="kpi-add" data-n="${n}">+ ${n}</button>`).join('')}<button class="chip" data-act="kpi-add" data-n="">+ Outro</button></div>`;
+  const leit=leituraAuto(INS), t=trelloStats(), nB=blocosDe(INS).length;
   $('#main').innerHTML=`<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">// 05 · <b>Fase 5</b></span><h2 style="margin-top:8px">Resultados</h2><p class="lead">${esc(st.intro)}</p></div>
-   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="copy">Copiar resumo</button></div></header>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">// 05 · <b>Fase 5</b></span><h2 style="margin-top:8px">Resultados</h2><p class="lead">Do resumo para a reitoria aos detalhes: diagnóstico, causas raiz, plano no tempo e as evidências.</p></div>
+   <div class="res-actions">${OUT_BTNS()}<button class="btn" data-act="copy">Copiar resumo</button></div></header>
    ${ui.copy!=null?`<section class="block"><div class="block-h"><h3>Resumo para colar</h3><button class="btn sm" data-act="copy-close">Fechar</button></div><textarea class="copyout" id="copyout" readonly>${esc(ui.copy)}</textarea></section>`:''}
    <section class="hero"><div><span class="eyebrow">Maturidade geral</span><div class="big" style="margin-top:6px">${ov.score!=null?dec(ov.score):'—'}<small> / 4</small></div><div style="margin-top:8px">${lvChip(ov.level)}</div></div>
-    <div class="kpis"><div class="kpi"><b>${avaliadas}/${AREAS.length}</b><span>áreas com nota</span></div><div class="kpi"><b>${cur.entrevistas.length}</b><span>pessoas entrevistadas</span></div><div class="kpi"><b style="color:var(--n1)">${INS.filter(i=>i.sev==='crit').length}</b><span>incongruências críticas</span></div><div class="kpi"><b>${INS.length}</b><span>incongruências no total</span></div><div class="kpi"><b>${cur.acoes.length}</b><span>ações no plano</span></div>
-    <p class="muted" style="grid-column:1/-1;font-size:12.5px">${ov.ponderado?'UNs ponderadas pela receita realizada.':'UNs com peso igual; informe a receita de cada UN para ponderar.'} Áreas abaixo de metade das perguntas respondidas ficam sem nota.</p></div></section>
+    <div class="exec"><span class="eyebrow">Resumo executivo</span>${leit.length?`<ul class="leit">${leit.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`:'<p class="muted">O resumo aparece quando houver respostas suficientes.</p>'}
+     <div class="kpis"><div class="kpi"><b>${avaliadas}/${AREAS.length}</b><span>áreas com nota</span></div><div class="kpi"><b>${cur.entrevistas.length}</b><span>pessoas entrevistadas</span></div><div class="kpi"><b>${nB}</b><span>causas raiz</span></div><div class="kpi"><b style="color:var(--n1)">${INS.filter(i=>i.sev==='crit').length}</b><span>incongruências críticas</span></div></div></div></section>
+   ${fieldHtml('res.leitura','Leitura do consultor (entra na apresentação e no relatório)','t')}
+   <section class="block"><div class="block-h"><h3>Causas raiz</h3><p>${INS.length} incongruências agrupadas em ${pl(nB,'bloco','blocos')}, do mais pesado para o mais leve.</p></div>${blocosHtml(INS)}</section>
+   ${nB?`<section class="block"><div class="block-h"><h3>Plano no tempo</h3><p>Diretrizes por horizonte para as causas raiz acima.</p></div>${planoHtml(INS)}</section>`:''}
+   ${priorizacaoHtml(INS)}
+   <section class="block"><div class="block-h"><h3>Expectativa da reitoria x realidade das UNs</h3><p>O que a reitoria quer de cada UN frente à maturidade, às vagas e aos números.</p></div>${unScoreHtml()}</section>
+   ${t||cur.dores.length?`<div class="two">${t?`<section class="block"><div class="block-h"><h3>Capacidade do marketing</h3><button class="chip" data-act="goto" data-v="demandas">Retrato do Trello</button></div>${trelloView(t)}</section>`:''}${cur.dores.length?`<section class="block"><div class="block-h"><h3>Onde o trabalho trava</h3><button class="chip" data-act="view" data-v="dores">Mapa de dores</button></div>${gargaloChart(false)}</section>`:''}</div>`:''}
    <div class="two">
-    <section class="block"><div class="block-h"><h3>Maturidade por área</h3><div class="legend">${[1,2,3,4].map(l=>`<span class="lv l${l}">N${l}</span>`).join('')}</div></div>${chart}</section>
+    <section class="block"><div class="block-h"><h3>Maturidade por área</h3><div class="legend">${[1,2,3,4].map(l=>`<span class="lv l${l}" title="${LVL[l]}">N${l} ${LVL[l]}</span>`).join('')}</div></div>${chart}</section>
     <section class="block"><div class="block-h"><h3>Mapa por pilar</h3><p>Nota de 1 a 4</p></div>${heat}</section>
    </div>
-   ${cur.dores.length?`<section class="block"><div class="block-h"><h3>Gargalos relatados</h3><button class="chip" data-act="view" data-v="dores">Abrir mapa de dores</button></div>${gargaloChart(false)}</section>`:''}
    ${dreHtml()}
-   <section class="block"><div class="block-h"><h3>Cruzamento financeiro das UNs</h3><p>${anyFin?'Preenchido na fase 1, em cada UN.':'Preencha meta, receita, folha e orçamento em cada UN na fase 1.'}</p></div>${finTbl}</section>
-   <section class="block"><div class="block-h"><h3>Incongruências</h3><p>${INS.length} encontradas, da mais grave para a menos grave.</p></div>${INS.length?`<div class="ins">${INS.map(i=>insightHtml(i,true)).join('')}</div>`:'<p class="empty">Nenhuma incongruência ainda. Elas aparecem quando áreas ligadas têm níveis muito diferentes.</p>'}</section>
+   <section class="block"><div class="block-h"><h3>Cruzamento financeiro das UNs</h3><p>${anyFin?'Preenchido na Reitoria (Orçamento e DRE) e em cada UN.':'Preencha meta, receita, folha e orçamento em cada UN.'}</p></div>${finTbl}</section>
    ${fofaHtml('geral',cons,'FOFA consolidada','Os 8 itens de maior impacto de cada quadrante, de todas as áreas. Inclua a leitura estratégica abaixo.')}
    <section class="block"><div class="block-h"><h3>Indicadores: meta x realizado</h3><p>Digite os números do período.</p></div>${kpiTbl}</section>
+   <section class="block"><details class="allins"><summary><h3 style="display:inline">Todas as incongruências (${INS.length})</h3></summary>${INS.length?`<div class="ins" style="margin-top:12px">${INS.map(i=>insightHtml(i,true)).join('')}</div>`:'<p class="empty">Nenhuma incongruência ainda.</p>'}</details></section>
    ${stageQs(st)}
    <div class="pager"><button class="btn" data-act="stage" data-v="otimizacao">← Otimização</button><span></span></div>
   </section>`;
 }
+const OUT_BTNS=()=>'';
+function priorizacaoHtml(){ return ''; }
 /* ---------- Dores e gargalos ---------- */
 function quemList(){ return [...new Set([...cur.entrevistas.map(e=>e.nome),...cur.dores.map(d=>d.quem)].filter(Boolean))]; }
 function dorFormHtml(preset){
@@ -873,14 +941,16 @@ function trelloHtml(){
   const inp=(k,l)=>`<div class="field"><label for="c-demandas.trello_${k}">${l}</label><div class="inu"><input id="c-demandas.trello_${k}" data-campo="demandas.trello_${k}" inputmode="decimal" value="${esc(cur.campos['demandas.trello_'+k]||'')}" placeholder="0"></div></div>`;
   return `<section class="block"><div class="block-h"><h3>Retrato do Trello</h3><p>Quantos projetos estão em cada lista hoje. É a medida real da capacidade.</p></div>
    <div class="fields">${TRELLO.map(([k,l])=>inp(k,l)).join('')}${inp('concluidos','Concluídos no último mês')}${inp('dias_parado','Tempo médio parado (dias)')}</div>
-   ${t?`<div class="stack" role="img" aria-label="Distribuição dos projetos abertos">${TRELLO.filter(([k])=>t.v[k]).map(([k,l,c])=>`<span style="flex:${t.v[k]};background:${c}" title="${l}: ${t.v[k]}"></span>`).join('')}</div>
+   ${t?trelloView(t):''}
+  </section>`;
+}
+function trelloView(t){ return `<div class="stack" role="img" aria-label="Distribuição dos projetos abertos">${TRELLO.filter(([k])=>t.v[k]).map(([k,l,c])=>`<span style="flex:${t.v[k]};background:${c}" title="${l}: ${t.v[k]}"></span>`).join('')}</div>
     <div class="legend">${TRELLO.filter(([k])=>t.v[k]).map(([k,l,c])=>`<span class="lg"><i style="background:${c}"></i>${l} <b class="num">${t.v[k]}</b></span>`).join('')}</div>
     <div class="stats"><div class="stat"><b>${t.abertos}</b><span>projetos abertos</span></div>
      <div class="stat ${t.pFuram>=0.3?'bad':t.pFuram>=0.15?'warn':''}"><b>${pct(t.pFuram)}</b><span>furam o fluxo (urgência + gohorse)</span></div>
      <div class="stat ${t.pParados>=0.2?'warn':''}"><b>${pct(t.pParados)}</b><span>parados</span></div>
      <div class="stat ${t.semanas>=6?'bad':''}"><b>${t.semanas!=null?dec(t.semanas,1).replace(',0','')+' sem.':'—'}</b><span>para zerar a fila no ritmo atual</span></div>
-     <div class="stat"><b>${t.porPessoa!=null?dec(t.porPessoa,1):'—'}</b><span>${t.hc?'projetos abertos por pessoa':'por pessoa (informe o time em Orçamento e DRE)'}</span></div></div>`:''}
-  </section>`;
+     <div class="stat"><b>${t.porPessoa!=null?dec(t.porPessoa,1):'—'}</b><span>${t.hc?'projetos abertos por pessoa':'por pessoa (informe o time em Orçamento e DRE)'}</span></div></div>`;
 }
 /* ---------- Modo entrevista ---------- */
 // Uma pergunta por tela, botões grandes, teclas 1 a 4 e roteiro aberto ao lado.
