@@ -525,7 +525,7 @@ body.rp-mode .subnav,body.rp-mode .rail{display:none}
 .sb-nav{display:flex;flex-direction:column;gap:2px;flex:1}
 .sb-g{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:14px 10px 6px}
 .sb-g:first-child{padding-top:4px}
-.sn{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;border-radius:8px;padding:8px 10px;text-align:left;font-size:14px;color:var(--muted);position:relative}
+.sn{text-decoration:none;display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;border-radius:8px;padding:8px 10px;text-align:left;font-size:14px;color:var(--muted);position:relative}
 .sn .ic{flex:none;opacity:.85}
 .sn .lb{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sn .mt{font-family:var(--mono);font-size:11px;color:var(--faint)}

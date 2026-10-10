@@ -1120,8 +1120,12 @@ const ICO={
  sair:'M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10',
  lista:'M4 6h16M4 12h16M4 18h10',
  fases:'M4 5h16v4H4zM4 11h16v4H4zM4 17h10v3H4z',
+ dre:'M12 3v18M16.5 7.5c0-1.9-2-3-4.5-3s-4.5 1.2-4.5 3.2c0 4.5 9 2.3 9 6.8 0 2-2 3.3-4.5 3.3s-4.5-1.2-4.5-3.1',
+ lancamento:'M5 15c-1.5 1.5-2 5-2 5s3.5-.5 5-2M14 4c3-1 6-1 6-1s0 3-1 6l-7 7-5-5zM9.5 9.5 5 9l-2 2 4 1M14.5 14.5 15 19l-2 2-1-4',
  internas:'M9 4h6v3H9zM6 6H5v15h14V6h-1M9 12h6M9 16h4'
 };
+/* outras ferramentas da LORSO no menu (abrem em outra aba; só equipe e administradores) */
+const FERRAMENTAS=[['dre','DRE completo','/admin/financeiro-loja/'],['lancamento','Lançamento de curso','/admin/lancamento-curso/'],['lancamento','Lançamento perpétuo','/admin/lancamento-perpetuo/']];
 const ico=(k,sz)=>!ICO[k]?'':`<svg class="ic" viewBox="0 0 24 24" width="${sz||18}" height="${sz||18}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICO[k]}"/></svg>`;
 const temaAtual=()=>document.documentElement.dataset.theme==='light'?'light':'dark';
 function setPref(k,v){ lsSet('cd.'+k,v); const d=document.documentElement;
@@ -1140,7 +1144,7 @@ function sideItem(k,label,act,v,meta,hot){
 function renderSide(INS){
   const adm=me&&me.papel==='admin', pc=x=>Math.round(x*100)+'%';
   let h=`<div class="sb-brand"><span class="sb-logo">L</span><span><b>LORSO Digital</b><small>Central de Diagnóstico</small></span></div>`;
-  if(podeInternas()){ const mn=minhasAbertas(), lt=internas.filter(t=>t.responsavel===me.id&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas','Tarefas da equipe','view','internas',mn||'',lt>0)}</nav>`; }
+  if(podeInternas()){ const mn=minhasAbertas(), lt=internas.filter(t=>t.responsavel===me.id&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · ferramentas</span>${sideItem('internas','Tarefas da equipe','view','internas',mn||'',lt>0)}${FERRAMENTAS.map(([k,l,u])=>`<a class="sn" href="${u}" target="_blank" rel="noopener" title="Abre em outra aba">${ico(k)}<span class="lb">${l}</span><span class="mt" aria-hidden="true">↗</span></a>`).join('')}</nav>`; }
   if(cur){
     const x=crossTasks(INS), hot=x.late.length+x.semTarefa.length, g=overall();
     h+=`<nav class="sb-nav" aria-label="Etapas">
