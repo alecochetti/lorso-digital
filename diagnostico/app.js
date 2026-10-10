@@ -1,0 +1,954 @@
+/* ================= UTILITÁRIOS ================= */
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dec = (x,d=1)=>x==null||isNaN(x)?'—':x.toFixed(d).replace('.',',');
+const num = v=>{ if(v==null||v==='')return null; const s=String(v).trim().replace(/\s/g,'').replace(/R\$/i,'').replace(/%/,''); const n=Number(s.includes(',')?s.replace(/\./g,'').replace(',','.'):s); return isNaN(n)?null:n; };
+const brl = n=>n==null?'—':n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+const pct = n=>n==null||!isFinite(n)?'—':(n*100).toFixed(1).replace('.',',')+'%';
+const lvOf = s=>s==null?0:s<1.75?1:s<2.5?2:s<3.25?3:4;
+const uid = ()=>(crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);}));
+const today = ()=>new Date().toISOString().slice(0,10);
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+
+/* ================= ESTADO ================= */
+const MAPS=['resp','evid','notas','campos','fofa','dono_area'], ARRS=['entrevistas','acoes','testes','kpis','equipe','dores','sistemas'];
+const COLS=['A fazer','Em andamento','Em revisão','Concluída'];
+function blank(nome){return {id:uid(),nome:nome||'Novo diagnóstico',exemplo:false,resp:{},evid:{},notas:{},campos:{},fofa:{},dono_area:{},entrevistas:[],acoes:[],testes:[],kpis:[],equipe:[],dores:[],sistemas:[],criadoEm:new Date().toISOString(),atualizadoEm:null};}
+function norm(d){
+  const b=blank(); const o=Object.assign(b,JSON.parse(JSON.stringify(d||{})));
+  MAPS.forEach(k=>{ if(!o[k]||typeof o[k]!=='object'||Array.isArray(o[k]))o[k]={}; Object.keys(o[k]).forEach(x=>{if(o[k][x]==null)delete o[k][x];}); });
+  ARRS.forEach(k=>{if(!Array.isArray(o[k]))o[k]=[]});
+  o.acoes.forEach(a=>{ if(!a.id)a.id=uid(); if(a.status==='Concluida')a.status='Concluída'; if(!COLS.includes(a.status))a.status='A fazer'; });
+  o.equipe.forEach(m=>{ if(!m.id)m.id=uid(); }); o.dores.forEach(m=>{ if(!m.id)m.id=uid(); }); o.sistemas.forEach(m=>{ if(!m.id)m.id=uid(); });
+  return o;
+}
+let cur = null;          // diagnóstico aberto
+let all = {};            // lista de diagnósticos: id -> {id, nome, updated_at}
+let ui = {view:'fases', stage:'diagnostico', area:'demandas', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}};
+try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','tarefas','equipe'].includes(u.view))ui.view=u.view;}catch(e){}
+const saveUi=()=>lsSet('cd.ui',JSON.stringify({stage:ui.stage,area:ui.area,view:ui.view}));
+const member=id=>cur.equipe.find(m=>m.id===id);
+const initials=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(p=>p[0]||'').join('').toUpperCase()||'?';
+const isLate=t=>t.prazo&&t.status!=='Concluída'&&t.prazo<today();
+
+/* ================= CÁLCULO DE MATURIDADE ================= */
+function scoreOf(qs){
+  const pil={}; let ans=0, elim=false;
+  qs.forEach(x=>{const n=cur.resp[x[0]]; if(!n)return; ans++; const p=x[2]; pil[p]=pil[p]||{s:0,w:0}; pil[p].s+=n*x[3]; pil[p].w+=x[3]; if(x[4]&&n===1)elim=true;});
+  const ps={}; Object.keys(pil).forEach(p=>ps[p]=pil[p].s/pil[p].w);
+  const vals=Object.values(ps); let s=null;
+  if(ans>=Math.ceil(qs.length/2) && vals.length){ const mean=vals.reduce((a,b)=>a+b,0)/vals.length; s=Math.min(mean,Math.min(...vals)+1); if(elim)s=Math.min(s,2.49); }
+  return {score:s,level:lvOf(s),pil:ps,ans,total:qs.length,elim};
+}
+let SC={};
+function computeAll(){ SC={}; AREAS.forEach(a=>SC[a.id]=scoreOf(a.q)); STAGES.forEach(s=>{if(s.q)SC[s.id]=scoreOf(s.q)}); }
+function unFin(id){ const g=k=>num(cur.campos[id+'.'+k]); return {meta_mat:g('meta_mat'),meta_rec:g('meta_rec'),receita:g('receita'),folha:g('folha'),orcamento:g('orcamento'),alunos:g('alunos')}; }
+function overall(){
+  // áreas centrais e operação com peso igual; UNs ponderadas pela receita realizada quando informada
+  const core=AREAS.filter(a=>!a.un&&SC[a.id].score!=null).map(a=>SC[a.id].score);
+  const uns=UNS.filter(a=>SC[a.id].score!=null);
+  const recs=uns.map(a=>unFin(a.id).receita||0); const totR=recs.reduce((a,b)=>a+b,0);
+  let unScore=null;
+  if(uns.length){ unScore = totR>0 ? uns.reduce((acc,a,i)=>acc+SC[a.id].score*(recs[i]/totR),0) : uns.reduce((acc,a)=>acc+SC[a.id].score,0)/uns.length; }
+  const parts=[...core]; if(unScore!=null) parts.push(...Array(Math.max(1,Math.round(UNS.length))).fill(unScore));
+  if(!parts.length)return {score:null,level:0,ponderado:totR>0};
+  const s=parts.reduce((a,b)=>a+b,0)/parts.length; return {score:s,level:lvOf(s),ponderado:totR>0};
+}
+
+/* ================= MOTOR DE CRUZAMENTO ================= */
+const L=id=>SC[id]&&SC[id].score!=null?SC[id].level:null;
+const R=q=>cur.resp[q];
+const P=(id,p)=>SC[id]&&SC[id].pil[p]!=null?SC[id].pil[p]:null;
+const V=(id,k)=>num(cur.campos[id+'.'+k]);
+const ge=(x,v)=>x!=null&&x>=v, le=(x,v)=>x!=null&&x<=v;
+const SEV={crit:'Crítica',alta:'Alta',media:'Média'}, SEVW={crit:3,alta:2,media:1};
+const RULES=[
+ {id:'CRZ-01',sev:'crit',pad:'Desperdício de capacidade',areas:['crm','colegio'],t:'CRM maduro, visitas do Colégio sem registro',
+  test:()=>ge(L('crm'),3)&&R('col1')===1, txt:()=>`O CRM está no nível ${L('crm')}, mas as visitas do Colégio acontecem sem agendamento nem roteiro. A tecnologia existe e não enxerga a etapa que mais converte matrícula.`,
+  rec:['Agendamento de visita por formulário integrado ao CRM','Roteiro padrão de visita com registro do interesse da família','Follow-up automático em até 48h após a visita']},
+ {id:'CRZ-02',sev:'crit',pad:'Ruptura de passagem',areas:['captacao'],t:'Leads esfriam antes do primeiro contato',
+  test:()=>ge(L('captacao'),3)&&R('cap3')===1, txt:()=>`A captação está no nível ${L('captacao')}, mas o primeiro contato com o lead leva mais de 24h. O investimento em mídia esfria antes do atendimento.`+(V('captacao','midia')?` Hoje são ${brl(V('captacao','midia'))} por mês em mídia nesse cenário.`:''),
+  rec:['Distribuição automática de leads no CRM','SLA de primeiro contato em até 1h, com alerta','Mensagem automática de boas-vindas no WhatsApp']},
+ {id:'CRZ-03',sev:'crit',pad:'Gargalo de fluxo',areas:['captacao','callcenter'],t:'A captação gera mais do que o call center absorve',
+  test:()=>ge(L('captacao'),3)&&L('callcenter')===1, txt:()=>`Captação no nível ${L('captacao')} e call center no nível 1. A mídia gera volume que vira fila e abandono.`+(V('callcenter','abandono')!=null?` Abandono informado: ${dec(V('callcenter','abandono'))}%.`:''),
+  rec:['Dimensionar o call center pelo calendário de captação','Bot e WhatsApp para dúvidas simples','Fila separada por UN nos picos']},
+ {id:'CRZ-04',sev:'crit',pad:'Desperdício de capacidade',areas:['b2b','captacao'],t:'Comercial estruturado recebendo leads sem critério',
+  test:()=>ge(L('b2b'),3)&&L('captacao')===1, txt:()=>`O comercial B2B está no nível ${L('b2b')}, mas a captação está no nível 1. O time perde tempo produtivo com leads fora do perfil.`,
+  rec:['Travar a passagem de bastão com critérios de qualificação','Revisar o ICP junto com o comercial','Medir a taxa de leads descartados todo mês']},
+ {id:'CRZ-05',sev:'alta',pad:'Gargalo de fluxo',areas:['growth','plataforma'],t:'Growth decide com rastreamento falho',
+  test:()=>ge(L('growth'),3)&&R('plat1')===1, txt:()=>`Growth está no nível ${L('growth')}, mas o rastreamento de conversões não é confiável. Testes e otimizações se apoiam em dados incompletos.`,
+  rec:['Plano de tagueamento via GTM','Eventos-chave padronizados por UN','Auditoria mensal de tags']},
+ {id:'CRZ-06',sev:'alta',pad:'Teto de ferramenta',areas:['graduacao','crm'],t:'Graduação madura presa em CRM manual',
+  test:()=>ge(L('graduacao'),3)&&le(P('crm','F'),1.5), txt:()=>`A Graduação está no nível ${L('graduacao')}, mas o CRM não automatiza réguas nem pontua leads. O vestibular depende de trabalho manual e não escala no pico.`,
+  rec:['Réguas automáticas por etapa do processo seletivo','Lead scoring por curso','Recuperação automática de inscrição abandonada']},
+ {id:'CRZ-07',sev:'alta',pad:'Assimetria entre UNs',areas:['pos','crm'],t:'Base de formados não vira aluno de Pós',
+  test:()=>ge(L('crm'),3)&&R('pos2')===1, txt:()=>`O CRM está no nível ${L('crm')}, mas a base de ex-alunos da Graduação não é cruzada com a Pós. É LTV perdido com custo de aquisição quase zero.`,
+  rec:['Cruzar a base de formandos com o funil da Pós','Régua de antecipação 6 meses antes da formatura','Condição exclusiva para ex-alunos']},
+ {id:'CRZ-08',sev:'alta',pad:'Ruptura de passagem',areas:['eventos'],t:'Eventos engajam, mas leads não chegam ao comercial',
+  test:()=>ge(R('eve3'),3)&&R('eve1')===1, txt:()=>`As inscrições dos eventos estão estruturadas, mas não há contato depois do evento.`+(V('eventos','na_mesa')?` Há ${brl(V('eventos','na_mesa'))} em oportunidades na mesa sem acompanhamento.`:''),
+  rec:['Leads quentes para o comercial em até 24h','Régua pós-evento por nível de engajamento','Registrar presença e interesse no CRM']},
+ {id:'CRZ-09',sev:'alta',pad:'Assimetria',areas:['captacao','colegio'],t:'Mídia otimizada num segmento que decide por indicação',
+  test:()=>ge(R('cap5'),3)&&R('col4')===1, txt:()=>'O orçamento de mídia é gerido por CAC, mas o Colégio não tem programa de indicação. O CAC fica alto num público que decide pela recomendação de outros pais.',
+  rec:['Programa de indicação de pais com benefício claro','Open house com convite de famílias atuais','Medir a % de matrículas por indicação']},
+ {id:'CRZ-10',sev:'alta',pad:'Teto de ferramenta',areas:['plataforma'],t:'Plataforma limita UNs maduras',
+  test:()=>L('plataforma')===1&&UNS.some(u=>ge(L(u.id),3)), txt:()=>`${UNS.filter(u=>ge(L(u.id),3)).map(u=>u.nome).join(', ')} já opera em nível 3 ou mais, mas a plataforma está no nível 1 e limita o crescimento.`,
+  rec:['Priorizar rastreamento e integrações das UNs maduras','Construtor de LP com templates por UN','Roadmap técnico trimestral com o marketing']},
+ {id:'CRZ-11',sev:'alta',pad:'Gargalo de fluxo',areas:['estrategia','growth'],t:'Metas definidas sem acompanhamento',
+  test:()=>ge(R('est1'),3)&&R('gro3')===1, txt:()=>'Existem metas trimestrais por UN, mas os resultados são acompanhados em relatórios manuais esporádicos. Ninguém vê o desvio a tempo de corrigir.',
+  rec:['Dashboard por UN com meta e realizado','Weekly de performance olhando o mesmo painel','Alertas de desvio de meta']},
+ {id:'CRZ-12',sev:'media',pad:'Desperdício de capacidade',areas:['criacao','redes'],t:'Produção alta sem linha editorial',
+  test:()=>ge(L('criacao'),3)&&R('red1')===1, txt:()=>`A criação está no nível ${L('criacao')}, mas as redes postam no improviso. É esforço de produção sem direção.`,
+  rec:['Linha editorial por UN','Calendário mensal ligado ao ciclo de captação']},
+ {id:'CRZ-13',sev:'media',pad:'Desperdício de capacidade',areas:['crm','mestrado'],t:'Funil do Mestrado cego na seleção',
+  test:()=>ge(L('crm'),3)&&R('mes2')===1, txt:()=>'O CRM é maduro, mas a banca do Mestrado avalia em planilha ou papel. O funil fica cego da inscrição à aprovação.',
+  rec:['Etapas da seleção como etapas do CRM','Comunicação automática a cada etapa da banca']},
+ {id:'CRZ-14',sev:'media',pad:'Ruptura de passagem',areas:['b2b','atendimento'],t:'Atendimento recebe cliente B2B sem contexto',
+  test:()=>ge(L('b2b'),2)&&R('b2b2')===1&&ge(L('atendimento'),2), txt:()=>'Comercial e atendimento estão estruturados, mas a passagem entre eles não existe. O atendimento não sabe o que foi prometido.',
+  rec:['Reunião de handover obrigatória','Matriz de expectativas no CRM']},
+ {id:'CRZ-15',sev:'media',pad:'Gargalo de fluxo',areas:['criacao'],t:'Fila de demandas maior que a capacidade de entrega',
+  test:()=>{const f=V('criacao','fila'),e=V('criacao','entregas');return f!=null&&e!=null&&e>0&&f>e;}, txt:()=>`A criação tem ${V('criacao','fila')} demandas em fila para ${V('criacao','entregas')} entregas por mês. A fila cresce mais rápido do que sai.`,
+  rec:['Priorizar demandas por impacto em matrícula','Templates para peças recorrentes','Capacidade extra nos picos de captação']},
+ {id:'CRZ-16',sev:'media',pad:'Gargalo de fluxo',areas:['callcenter'],t:'Chamados em aberto acumulando',
+  test:()=>{const a=V('callcenter','abertos'),t=V('callcenter','atend');return a!=null&&t!=null&&t>0&&a/t>=0.2;}, txt:()=>`São ${V('callcenter','abertos')} chamados em aberto para ${V('callcenter','atend')} atendimentos no mês (${pct(V('callcenter','abertos')/V('callcenter','atend'))}).`,
+  rec:['Mutirão de fechamento de chamados','Tabulação de motivos para atacar a causa']},
+ {id:'CRZ-17',sev:'alta',pad:'Contradição declarada',areas:['b2b'],t:'Pipeline relevante sem previsão',
+  test:()=>{const p=V('b2b','pipeline');return p!=null&&p>0&&le(R('b2b4'),1);}, txt:()=>`Há ${brl(V('b2b','pipeline'))} em pipeline B2B${V('b2b','propostas')?` e ${V('b2b','propostas')} propostas ativas`:''}, mas não existe forecast. A receita corporativa não é previsível.`,
+  rec:['Pipeline ponderado por etapa no CRM','Revisão semanal de forecast']},
+ {id:'CRZ-18',sev:'alta',pad:'Desalinhamento financeiro',areas:[],dyn:true,t:'Verba concentrada onde a maturidade é baixa',
+  test:()=>finRows().some(r=>r.share!=null&&r.share>=0.35&&le(r.level,2)) && finRows().some(r=>ge(r.level,3)),
+  txt:()=>{const r=finRows().filter(r=>r.share!=null&&r.share>=0.35&&le(r.level,2)); const m=finRows().filter(x=>ge(x.level,3)).map(x=>x.nome); return `${r.map(x=>`${x.nome} recebe ${pct(x.share)} do orçamento de marketing`).join('; ')} e está no nível ${r.map(x=>x.level).join('/')}. Enquanto isso, ${m.join(', ')} opera em nível 3 ou mais. A verba compensa falta de processo em vez de acelerar quem já converte.`;},
+  rec:['Condicionar aumento de verba a evolução de processo','Testar realocação parcial para a UN mais madura']},
+ {id:'CRZ-19',sev:'alta',pad:'Desalinhamento financeiro',areas:[],dyn:true,t:'UN abaixo da meta de receita',
+  test:()=>finRows().some(r=>r.ating!=null&&r.ating<0.85),
+  txt:()=>finRows().filter(r=>r.ating!=null&&r.ating<0.85).map(r=>{const w=weakest(r.id); return `${r.nome} atingiu ${pct(r.ating)} da meta de receita${w?`; o ponto mais fraco é "${w}"`:''}.`;}).join(' '),
+  rec:['Plano de recuperação por UN com meta semanal','Atacar primeiro a pergunta de pior nível da UN']},
+ {id:'CRZ-20',sev:'media',pad:'Desalinhamento financeiro',areas:[],dyn:true,t:'Investimento alto para o nível de maturidade',
+  test:()=>finRows().some(r=>r.orcRec!=null&&r.orcRec>0.15&&le(r.level,2)),
+  txt:()=>finRows().filter(r=>r.orcRec!=null&&r.orcRec>0.15&&le(r.level,2)).map(r=>`${r.nome} investe ${pct(r.orcRec)} da receita em marketing e está no nível ${r.level}.`).join(' ')+' Limite de 15% a calibrar com o cliente.',
+  rec:['Rever CAC e conversão por etapa antes de manter a verba']},
+ {id:'CRZ-21',sev:'media',pad:'Assimetria entre UNs',areas:[],dyn:true,t:'Maturidade muito desigual entre UNs',
+  test:()=>{const l=UNS.map(u=>L(u.id)).filter(x=>x!=null);return l.length>=2&&Math.max(...l)-Math.min(...l)>=2;},
+  txt:()=>{const l=UNS.filter(u=>L(u.id)!=null).sort((a,b)=>L(b.id)-L(a.id));return `${l[0].nome} está no nível ${L(l[0].id)} e ${l[l.length-1].nome} no nível ${L(l[l.length-1].id)}. As práticas da UN mais madura podem ser replicadas.`;},
+  rec:['Replicar o playbook da UN mais madura','Responsável de marketing compartilhado entre UNs']},
+];
+/* ---------- dores, gargalos e sistemas ---------- */
+const FLUXO=['Solicitação','Briefing','Priorização','Produção','Aprovação','Publicação','Mensuração'];
+const TIPOS=['Processo','Sistema','Pessoas','Comunicação','Prioridade','Capacidade'];
+const FREQS=['Diária','Semanal','Mensal','Pontual'];
+const FREQW={'Diária':3,'Semanal':2,'Mensal':1.5,'Pontual':1};
+const SEVN={'1':'Baixa','2':'Média','3':'Alta'};
+const dorScore=d=>(+d.sev||1)*(FREQW[d.freq]||1);
+function gargalos(){
+  const rows=FLUXO.map(e=>{const ds=cur.dores.filter(d=>d.etapa===e); return {etapa:e,n:ds.length,graves:ds.filter(d=>+d.sev===3).length,score:ds.reduce((a,d)=>a+dorScore(d),0),quem:[...new Set(ds.map(d=>d.quem).filter(Boolean))],areas:[...new Set(ds.map(d=>d.area).filter(Boolean))]};});
+  return rows;
+}
+const sysDores=nome=>cur.dores.filter(d=>d.sistema&&nome&&d.sistema.toLowerCase()===String(nome).toLowerCase()).length;
+const unSvc=u=>R(u.q[u.q.length-1][0]);
+RULES.push(
+ {id:'CRZ-23',sev:'crit',pad:'Disputa pelo marketing',areas:()=>['demandas',...UNS.filter(u=>le(unSvc(u),2)).map(u=>u.id)],t:'UNs disputam o marketing sem regra de prioridade',
+  test:()=>R('dem2')===1&&UNS.some(u=>le(unSvc(u),2)), txt:()=>`Não há critério de priorização, e ${UNS.filter(u=>le(unSvc(u),2)).map(u=>u.nome).join(', ')} relatam atraso ou falta de retorno. Quem pressiona mais é atendido primeiro e o calendário de captação perde para urgências.`,
+  rec:['Regra pública de priorização por impacto e calendário','Cota de capacidade reservada por UN','Formulário único de pedido com prazo mínimo por tipo de peça']},
+ {id:'CRZ-24',sev:'alta',pad:'Gargalo de operação',areas:['captacao','demandas','fluxo'],t:'O gargalo é a operação interna, não a captação',
+  test:()=>ge(L('captacao'),3)&&(le(L('demandas'),2)||le(L('fluxo'),2)), txt:()=>`A captação está no nível ${L('captacao')}, mas gestão de demandas e fluxo estão em ${[L('demandas'),L('fluxo')].filter(x=>x!=null).map(x=>'N'+x).join(' e ')}. A demanda existe; o que trava é a capacidade do marketing de atender coordenadores e UNs.`,
+  rec:['Mapear o fluxo do pedido à publicação e medir o tempo de cada etapa','Atacar primeiro a etapa com mais dores graves','Tirar pedidos recorrentes do fluxo com templates e autosserviço']},
+ {id:'CRZ-25',sev:'alta',pad:'Gargalo de fluxo',areas:['demandas'],t:'Backlog de demandas acumulando',
+  test:()=>{const a=V('demandas','abertas'),r=V('demandas','recebidas');return a!=null&&r>0&&a/r>=0.5;}, txt:()=>`São ${V('demandas','abertas')} demandas em aberto para ${V('demandas','recebidas')} recebidas no mês. O backlog equivale a ${pct(V('demandas','abertas')/V('demandas','recebidas'))} de um mês inteiro de entrada.`,
+  rec:['Triagem do backlog: cancelar, adiar ou fazer','Limite de trabalho em andamento por pessoa','Prazo mínimo por tipo de peça']},
+ {id:'CRZ-26',sev:'crit',pad:'Gargalo de fluxo',areas:['demandas','fluxo'],t:'Urgência crônica sem gestão de capacidade',
+  test:()=>le(R('flu4'),1)&&ge(V('demandas','urgentes'),30), txt:()=>`${dec(V('demandas','urgentes'),0)}% dos pedidos chegam como urgentes e o marketing não mede a própria capacidade. Quando tudo é urgente, nada é priorizado.`,
+  rec:['Definir o que é urgência e quem pode declarar','Medir volume por pessoa e por semana','Reservar uma parte da capacidade para urgências reais']},
+ {id:'CRZ-27',sev:'alta',pad:'Gargalo de fluxo',areas:['fluxo'],t:'Aprovações travam o fluxo',
+  test:()=>le(R('flu2'),1)&&(ge(V('fluxo','rodadas'),3)||cur.dores.filter(d=>d.etapa==='Aprovação').length>=2), txt:()=>`Não há ordem nem limite de rodadas na aprovação${V('fluxo','rodadas')?` (média de ${dec(V('fluxo','rodadas'))} rodadas)`:''}${cur.dores.filter(d=>d.etapa==='Aprovação').length?`, e ${cur.dores.filter(d=>d.etapa==='Aprovação').length} dores foram relatadas nessa etapa`:''}.`,
+  rec:['Um aprovador por demanda','Máximo de 2 rodadas','Aprovação tácita após o prazo de resposta']},
+ {id:'CRZ-28',sev:'alta',pad:'Desperdício de capacidade',areas:['sistemas','crm'],t:'Tecnologia para fora, WhatsApp para dentro',
+  test:()=>(ge(L('crm'),3)||ge(L('plataforma'),3))&&R('sis1')===1, txt:()=>'O marketing usa tecnologia madura com o público, mas controla o próprio trabalho por WhatsApp e e-mail. Pedidos se perdem e ninguém vê a fila.',
+  rec:['Uma ferramenta de gestão de tarefas para todo o time','Solicitantes abrindo pedidos dentro dela','Fim de pedidos por WhatsApp individual']},
+ {id:'CRZ-29',sev:'alta',pad:'Ruptura de passagem',areas:['demandas','fluxo'],t:'Pedidos chegam sem informação e por canais soltos',
+  test:()=>R('dem1')===1&&le(R('flu3'),1), txt:()=>'Os pedidos chegam por vários canais e sem briefing. O marketing gasta tempo correndo atrás de informação antes de produzir.',
+  rec:['Formulário de pedido com campos obrigatórios','Devolver pedido incompleto antes de entrar na fila']},
+ {id:'CRZ-30',sev:'media',pad:'Assimetria entre UNs',areas:()=>UNS.filter(u=>{const a=V(u.id,'dem_atraso'),m=V(u.id,'dem_mkt');return a!=null&&m>0&&a/m>=0.3;}).map(u=>u.id),t:'UNs com muitas demandas atrasadas',
+  test:()=>UNS.some(u=>{const a=V(u.id,'dem_atraso'),m=V(u.id,'dem_mkt');return a!=null&&m>0&&a/m>=0.3;}), txt:()=>UNS.filter(u=>{const a=V(u.id,'dem_atraso'),m=V(u.id,'dem_mkt');return a!=null&&m>0&&a/m>=0.3;}).map(u=>`${u.nome}: ${V(u.id,'dem_atraso')} de ${V(u.id,'dem_mkt')} demandas atrasadas (${pct(V(u.id,'dem_atraso')/V(u.id,'dem_mkt'))}).`).join(' '),
+  rec:['Reunião quinzenal de fila com a coordenação','Calendário de demandas previsíveis da UN']},
+ {id:'CRZ-31',sev:'crit',pad:'Ralo de mídia',areas:['smarketing','captacao'],t:'Volume de leads sem qualidade (ralo de mídia)',
+  test:()=>{const c=V('smarketing','conv_insc')??V('graduacao','conv_insc');return le(R('sma1'),2)&&le(R('sma2'),2)&&c!=null&&c<10;}, txt:()=>`Sem definição de lead qualificado nem feedback do comercial, e a conversão inscrito → matrícula está em ${dec(V('smarketing','conv_insc')??V('graduacao','conv_insc'))}%. O marketing otimiza volume, o comercial se afoga em contatos sem perfil e o CAC sobe.`,
+  rec:['Matriz de SLA com 3 critérios obrigatórios para o lead ir ao comercial','Travar a passagem automática de leads fora do padrão','Comitê semanal de motivos de perda']},
+ {id:'CRZ-32',sev:'crit',pad:'Ruptura de passagem',areas:['smarketing'],t:'Leads esfriam na fila (lead cadáver)',
+  test:()=>{const sp=V('smarketing','speed')??V('captacao','speed');return le(R('sma4'),2)&&ge(sp,240);}, txt:()=>`A distribuição é manual ou livre e o primeiro contato leva ${dec((V('smarketing','speed')??V('captacao','speed'))/60)}h. No mercado educacional, o interesse esfria em minutos.`,
+  rec:['Primeiro contato automático por WhatsApp em até 2 minutos','Distribuição automática por especialidade','Alerta para leads quentes']},
+ {id:'CRZ-33',sev:'alta',pad:'Desperdício de capacidade',areas:['smarketing'],t:'Tecnologia sem processo',
+  test:()=>R('sma3')===4&&R('sma2')===1, txt:()=>'A integração entre marketing e vendas é completa e em tempo real, mas não há feedback do comercial. As campanhas continuam aprendendo com dados incompletos.',
+  rec:['Reunião semanal de 30 minutos entre marketing e comercial','Top 20 motivos de recusa da semana alimentando públicos e palavras negativas']},
+ {id:'CRZ-34',sev:'alta',pad:'Gargalo relatado',areas:()=>{const g=gargalos().sort((a,b)=>b.score-a.score)[0];return g?g.areas:[];},t:'Etapa do fluxo com mais dores relatadas',
+  test:()=>{const g=gargalos().sort((a,b)=>b.score-a.score)[0];return g&&g.score>=8;}, txt:()=>{const g=gargalos().sort((a,b)=>b.score-a.score)[0];return `${g.etapa} concentra ${g.n} dores relatadas (${g.graves} graves)${g.quem.length?`, citadas por ${g.quem.slice(0,4).join(', ')}`:''}. É o principal ponto onde o trabalho trava.`;},
+  rec:['Medir o tempo parado nesta etapa','Definir dono e regra para a etapa','Revisar em 30 dias se as dores diminuíram']},
+ {id:'CRZ-35',sev:'alta',pad:'Teto de ferramenta',areas:['sistemas'],t:'Sistemas mal avaliados pelo time',
+  test:()=>cur.sistemas.some(x=>x.nome&&le(num(x.satisf),2)), txt:()=>cur.sistemas.filter(x=>x.nome&&le(num(x.satisf),2)).map(x=>`${x.nome}: nota ${x.satisf}/5${sysDores(x.nome)?`, citado em ${sysDores(x.nome)} dores`:''}.`).join(' '),
+  rec:['Decidir manter, treinar ou substituir cada sistema mal avaliado','Ouvir quem usa antes de trocar']},
+ {id:'CRZ-36',sev:'media',pad:'Ruptura de passagem',areas:['sistemas'],t:'Sistemas que não conversam entre si',
+  test:()=>cur.sistemas.filter(x=>x.nome&&x.integra==='Não').length>=3, txt:()=>`${cur.sistemas.filter(x=>x.nome&&x.integra==='Não').length} sistemas não integram com nenhum outro (${cur.sistemas.filter(x=>x.nome&&x.integra==='Não').map(x=>x.nome).join(', ')}). Cada um vira digitação manual.`,
+  rec:['Mapear qual informação passa de um para outro','Priorizar a integração que mais economiza horas']}
+);
+function finRows(){
+  const rows=UNS.map(u=>{const f=unFin(u.id);return {id:u.id,nome:u.nome,level:L(u.id),score:SC[u.id].score,...f};});
+  const totO=rows.reduce((a,r)=>a+(r.orcamento||0),0), totR=rows.reduce((a,r)=>a+(r.receita||0),0);
+  rows.forEach(r=>{r.share=totO>0&&r.orcamento!=null?r.orcamento/totO:null; r.recShare=totR>0&&r.receita!=null?r.receita/totR:null; r.ating=r.meta_rec&&r.receita!=null?r.receita/r.meta_rec:null; r.orcRec=r.receita&&r.orcamento!=null?r.orcamento/r.receita:null; r.folhaRec=r.receita&&r.folha!=null?r.folha/r.receita:null; r.cpm=r.meta_mat&&r.orcamento!=null?r.orcamento/r.meta_mat:null;});
+  return rows;
+}
+function weakest(id){const a=AREA[id]; let w=null; a.q.forEach(x=>{const n=cur.resp[x[0]]; if(n&&(!w||n<w.n||(n===w.n&&x[3]>w.i)))w={n,i:x[3],t:x[1]};}); return w&&w.n<=2?w.t:null;}
+function eloFraco(){
+  const out=[]; AREAS.concat(STAGES.filter(s=>s.q)).forEach(a=>{const s=SC[a.id]; if(s&&ge(s.score,3)&&le(s.pil.E,1.5))out.push({id:'CRZ-22',sev:'media',pad:'Elo fraco de pilar',areas:[a.id],t:`${a.nome}: resultado depende de poucas pessoas`,txt:`${a.nome} está no nível ${s.level}, mas o pilar Pessoas está em ${dec(s.pil.E)}. Se alguém sair, a maturidade cai junto.`,rec:['Documentar a operação em playbook','Treinar um segundo responsável'],gap:2});});
+  return out;
+}
+function runEngine(){
+  const out=[];
+  RULES.forEach(r=>{let ok=false; try{ok=r.test();}catch(e){} if(ok){ let txt=''; try{txt=r.txt();}catch(e){} const areas=typeof r.areas==='function'?r.areas():(r.dyn?finAreas(r.id):r.areas); out.push({id:r.id,sev:r.sev,pad:r.pad,areas,t:r.t,txt,rec:r.rec,gap:gapOf(areas)});}});
+  out.push(...eloFraco());
+  out.sort((a,b)=>SEVW[b.sev]-SEVW[a.sev]||b.gap-a.gap);
+  return out;
+}
+function finAreas(rid){ if(rid==='CRZ-21')return UNS.filter(u=>L(u.id)!=null).map(u=>u.id); return UNS.filter(u=>unFin(u.id).receita!=null||unFin(u.id).orcamento!=null).map(u=>u.id); }
+function gapOf(ids){const l=ids.map(L).filter(x=>x!=null); return l.length>=2?Math.max(...l)-Math.min(...l):1;}
+
+/* ================= FOFA ================= */
+const FQ=[['f','Forças'],['w','Fraquezas'],['o','Oportunidades'],['a','Ameaças']];
+function autoFofa(id, INS){
+  const box=STG[id]&&!AREA[id]?STG[id]:AREA[id]; const r={f:[],w:[],o:[],a:[]};
+  (box.q||[]).forEach(x=>{const n=cur.resp[x[0]]; if(!n)return;
+    if(n>=3) r.f.push({t:`${x[1]}: ${x[6][n-1]}`,i:x[3]});
+    else if(n===1) r.w.push({t:`${x[1]}: ${x[6][0]}`,i:x[3]});
+    else r.o.push({t:`Evoluir ${x[1].toLowerCase()}: ${x[6][2]}`,i:x[3]});
+    if(n===1&&x[4]) r.a.push({t:`${x[1]} em nível 1 trava a área no máximo em Estruturado`,i:3});
+  });
+  INS.filter(s=>s.areas.includes(id)).forEach(s=>r.a.push({t:s.t,i:SEVW[s.sev]}));
+  return r;
+}
+
+/* ================= RENDER ================= */
+function lvChip(l){return `<span class="lv l${l}">${l?'N'+l+' · '+LVL[l]:'Sem nota'}</span>`;}
+function stageProgress(s){
+  if(s.id==='diagnostico'){let t=0,a=0;AREAS.forEach(x=>{t+=x.q.length;a+=x.q.filter(q=>cur.resp[q[0]]).length;});return a/t;}
+  const q=s.q||[]; return q.length?q.filter(x=>cur.resp[x[0]]).length/q.length:0;
+}
+function renderRail(){
+  $('#rail').innerHTML=STAGES.map(s=>{const p=Math.round(stageProgress(s)*100);return `<button class="phase ${ui.stage===s.id?'on':''}" data-act="stage" data-v="${s.id}" aria-current="${ui.stage===s.id?'step':'false'}">
+   <div class="ph-top"><span class="nb">${String(s.n).padStart(2,'0')}</span><span class="fase">FASE ${s.n}</span></div>
+   <span class="tt">${s.nome}</span><span class="ds">${s.ds}</span>
+   <span class="pg" aria-hidden="true"><span style="width:${p}%"></span></span><span class="pct">${p}% respondido</span></button>`;}).join('');
+}
+function statusHtml(){
+  if(saveErr) return `<span class="status err"><i></i>${esc(saveErr)}</span>`;
+  if(ver!==savedVer) return `<span class="status busy"><i></i>Salvando…</span>`;
+  return `<span class="status"><i></i>Salvo</span>`;
+}
+function renderBar(){
+  const list=Object.values(all).sort((a,b)=>(b.updated_at||'').localeCompare(a.updated_at||''));
+  const who=me?`<span class="who"><span class="av" title="${esc(me.email)}">${esc(initials(me.nome||me.email))}</span><span>${esc((me.nome||me.email).split(' ')[0])}</span><button data-act="sair">Sair</button></span>`:'';
+  $('#diagbar').innerHTML = ui.novo ? `
+    <form id="f-novo" class="diag"><label class="lbl" for="novo-nome">Cliente</label><input id="novo-nome" placeholder="Nome do grupo ou instituição" required style="width:min(260px,100%)">
+    <button class="btn primary" type="submit">Criar diagnóstico</button><button class="btn ghost" type="button" data-act="novo-cancel">Cancelar</button></form>${who}` : `
+    ${cur?`<label class="lbl" for="sel-diag">Diagnóstico</label>
+    <select id="sel-diag">${list.map(d=>`<option value="${esc(d.id)}" ${d.id===cur.id?'selected':''}>${esc(d.id===cur.id?cur.nome:d.nome)}</option>`).join('')}</select>
+    <input id="nome-diag" value="${esc(cur.nome)}" aria-label="Nome do cliente">`:''}
+    ${me&&me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo</button>`:''}
+    ${cur?`<span id="status">${statusHtml()}</span>`:''}${who}`;
+}
+function renderStatus(){const s=$('#status'); if(s)s.innerHTML=statusHtml();}
+
+function fieldHtml(key,label,type){
+  const v=cur.campos[key]??'';
+  if(type==='t') return `<div class="field ${label.length>34?'wide':''}"><label for="c-${esc(key)}">${esc(label)}</label><textarea id="c-${esc(key)}" data-campo="${esc(key)}" rows="2">${esc(v)}</textarea></div>`;
+  const u={'R$':'R$','%':'%','min':'min','d':'dias','n':''}[type]||''; const pre=type==='R$';
+  return `<div class="field"><label for="c-${esc(key)}">${esc(label)}</label><div class="inu ${pre?'pre':''}"><input id="c-${esc(key)}" data-campo="${esc(key)}" inputmode="decimal" value="${esc(v)}" placeholder="0">${u?`<span class="u">${u}</span>`:''}</div></div>`;
+}
+function qHtml(x){
+  const n=cur.resp[x[0]];
+  return `<article class="q" id="q-${x[0]}">
+   <div class="qmeta"><span class="tag">${PIL[x[2]]}</span><span class="tag">${IMP[x[3]]}</span>${x[4]?'<span class="tag warn">Eliminatória</span>':''}<span class="code">${x.code}</span></div>
+   <h4>${esc(x[5])}</h4>
+   <div class="opts" role="radiogroup" aria-label="${esc(x[1])}">${x[6].map((o,i)=>`<button class="opt ${n===i+1?'on n'+(i+1):''}" role="radio" aria-checked="${n===i+1}" data-act="opt" data-q="${x[0]}" data-n="${i+1}"><span class="on-n"><span>N${i+1}</span><span>${LVL[i+1]}</span></span><span>${esc(o)}</span></button>`).join('')}</div>
+   <div class="qfoot">${cur.notas[x[0]]||ui.notesOpen[x[0]]?`<textarea data-nota="${x[0]}" rows="1" placeholder="Evidências e observações da entrevista" aria-label="Observações sobre ${esc(x[1])}">${esc(cur.notas[x[0]]||'')}</textarea>`:`<button class="addnote" data-act="note" data-q="${x[0]}">+ Adicionar observação</button>`}
+   <label class="evid"><input type="checkbox" data-evid="${x[0]}" ${cur.evid[x[0]]?'checked':''}>Comprovado com evidência</label></div>
+  </article>`;
+}
+function pillarsHtml(s){
+  return `<div class="pillars">${Object.entries(PIL).map(([k,nm])=>{const v=s.pil[k]; const l=lvOf(v); return `<div class="pill"><div class="pl"><span>${nm}</span><span class="num">${v==null?'—':dec(v)}</span></div><div class="bar4"><span style="width:${v==null?0:((v-1)/3*100).toFixed(1)}%;background:var(--n${l||1})"></span></div></div>`;}).join('')}</div>`;
+}
+function headHtml(eyebrow,title,lead,s){
+  const sc = s&&s.score!=null;
+  return `<header class="ph"><div><span class="eyebrow">${eyebrow}</span><h2 style="margin-top:8px">${esc(title)}</h2>${lead?`<p class="lead">${esc(lead)}</p>`:''}</div>
+   <div class="scorebox">${lvChip(sc?s.level:0)}<div class="big">${sc?dec(s.score):'—'}<small> / 4</small></div><span class="muted mono" style="font-size:12px">${s?`${s.ans} de ${s.total} respondidas`:''}${s&&s.elim?' · travado por eliminatória':''}</span></div>
+   ${s?pillarsHtml(s):''}</header>`;
+}
+function interviewsHtml(areaId){
+  const rows=cur.entrevistas.map((e,i)=>({e,i})).filter(r=>r.e.area===areaId);
+  return `<section class="block"><div class="block-h"><h3>Entrevistados</h3><p>Quem você ouviu nesta área, 1 a 1.</p></div>
+   ${rows.length?`<div class="tblw"><table class="tbl"><thead><tr><th>Nome</th><th>Cargo</th><th>Departamento</th><th>Data</th><th></th></tr></thead><tbody>${rows.map(({e,i})=>`<tr>
+     <td><input data-ent="${i}" data-f="nome" value="${esc(e.nome)}" placeholder="Nome" aria-label="Nome"></td>
+     <td><input data-ent="${i}" data-f="cargo" value="${esc(e.cargo)}" placeholder="Cargo" aria-label="Cargo"></td>
+     <td><input data-ent="${i}" data-f="depto" value="${esc(e.depto)}" placeholder="Departamento" aria-label="Departamento"></td>
+     <td><input type="date" data-ent="${i}" data-f="data" value="${esc(e.data)}" aria-label="Data"></td>
+     <td class="x"><button class="xbtn" data-act="ent-del" data-i="${i}" aria-label="Remover entrevistado">×</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Nenhum entrevistado registrado nesta área.</p>'}
+   <div><button class="btn sm" data-act="ent-add" data-area="${areaId}">+ Adicionar entrevistado</button></div></section>`;
+}
+function fofaHtml(key, auto, title, note){
+  const man=cur.fofa[key]||{};
+  return `<section class="block"><div class="block-h"><h3>${title||'Matriz FOFA'}</h3><p>${note||'Itens automáticos vêm das respostas e do motor de cruzamento. Inclua os seus abaixo de cada quadrante.'}</p></div>
+  <div class="fofa">${FQ.map(([k,nm])=>{const a=(auto[k]||[]); const m=man[k]||[]; return `<div class="fq ${k}"><h4>${nm}<small>${a.length+m.length} itens</small></h4>
+   <ul>${a.map(it=>`<li><span class="src">${it.src?esc(it.src):'auto'}</span><span class="t">${esc(it.t)}</span></li>`).join('')}
+   ${m.map((t,i)=>`<li><span class="src man">seu</span><span class="t">${esc(t)}</span><button class="xbtn" data-act="fofa-del" data-key="${esc(key)}" data-k="${k}" data-i="${i}" aria-label="Remover">×</button></li>`).join('')}
+   ${!a.length&&!m.length?'<li class="muted" style="font-size:13px">Nada ainda.</li>':''}</ul>
+   <form data-fofa="${esc(key)}" data-k="${k}"><input placeholder="Adicionar em ${nm.toLowerCase()}" aria-label="Adicionar em ${nm}"><button class="btn sm" type="submit">Incluir</button></form></div>`;}).join('')}</div></section>`;
+}
+function insightHtml(s, withPlan){
+  return `<article class="insight ${s.sev}"><span class="stripe"></span><div>
+   <div class="ih"><span class="sev">${SEV[s.sev]}</span><span class="ttl">${esc(s.t)}</span><span class="cd">${s.id} · ${esc(s.pad)}</span></div>
+   <p>${esc(s.txt)}</p>
+   <ul>${s.rec.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
+   <div class="ia">${s.areas.map(a=>`<button class="chip" data-act="goto" data-v="${a}">${esc(nameOf(a))}</button>`).join('')}
+   ${withPlan?`<button class="btn sm" data-act="plan-ins" data-id="${s.id}" data-t="${esc(s.t)}" style="margin-left:auto">Levar ao plano de ação</button>`:''}</div></div></article>`;
+}
+
+function renderDiagnostico(INS){
+  const a=AREA[ui.area], s=SC[a.id];
+  const groups=[...new Set(AREAS.map(x=>x.g))];
+  const nav=groups.map(g=>`<div class="grp"><span class="eyebrow">${g}</span>${AREAS.filter(x=>x.g===g).map(x=>{const sx=SC[x.id];return `<button class="anav ${x.id===a.id?'on':''}" data-act="area" data-v="${x.id}"><span>${x.nome}</span>${sx.score!=null?`<span class="lv l${sx.level}">N${sx.level}</span>`:`<span class="cnt">${sx.ans}/${sx.total}</span>`}</button>`;}).join('')}</div>`).join('');
+  const sel=`<select class="anav-sel" id="area-sel" aria-label="Área">${groups.map(g=>`<optgroup label="${g}">${AREAS.filter(x=>x.g===g).map(x=>`<option value="${x.id}" ${x.id===a.id?'selected':''}>${x.nome} (${SC[x.id].ans}/${SC[x.id].total})</option>`).join('')}</optgroup>`).join('')}</select>`;
+  const idx=AREAS.indexOf(a), prev=AREAS[idx-1], next=AREAS[idx+1];
+  const avaliadas=AREAS.filter(x=>SC[x.id].score!=null).length, crit=INS.filter(i=>i.sev==='crit').length;
+  const myIns=INS.filter(i=>i.areas.includes(a.id));
+  const volTitle=a.un?'Números da UN':'Volume operacional e KPIs';
+  const volNote=a.un?'Meta, receita, folha e orçamento entram no cruzamento financeiro entre UNs.':'Números do período. Entram nos cruzamentos do motor.';
+  const pend=AREAS.find(x=>SC[x.id].ans<x.q.length);
+  const areaTasks=cur.acoes.filter(t=>t.area===a.id);
+  const dono=cur.dono_area[a.id];
+  $('#main').innerHTML=`
+   <div class="banner"><span><b>${avaliadas}</b> de ${AREAS.length} áreas com nota · <b>${INS.length}</b> incongruências${crit?` · <b style="color:var(--n1)">${crit} críticas</b>`:''}</span>
+    <span style="display:flex;gap:8px;flex-wrap:wrap">${pend&&pend.id!==a.id?`<button class="btn sm" data-act="area" data-v="${pend.id}">Continuar de onde parei</button>`:''}<button class="btn sm" data-act="stage" data-v="resultados">Ver resultados →</button></span></div>
+   <div class="work" style="margin-top:16px">
+    <aside class="side" aria-label="Áreas">${nav}</aside>
+    <section class="panel">${sel}
+     ${headHtml(`// ${a.g} · <b>${String(idx+1).padStart(2,'0')}/${AREAS.length}</b>`,a.nome,a.desc,s)}
+     <div class="collector"><span>Coleta desta área:</span><select data-dono-area="${a.id}" aria-label="Responsável pela coleta"><option value="">Sem responsável</option>${cur.equipe.map(m=>`<option value="${m.id}" ${dono===m.id?'selected':''}>${esc(m.nome||'Sem nome')}</option>`).join('')}</select>
+      ${!cur.equipe.length?`<button class="chip" data-act="view" data-v="equipe">+ Cadastrar equipe</button>`:''}
+      <span style="margin-left:auto">${areaTasks.length?`<button class="chip" data-act="tasks-area" data-v="${a.id}">${areaTasks.filter(t=>t.status!=='Concluída').length} tarefas abertas nesta área</button>`:`<button class="chip" data-act="task-new" data-area="${a.id}">+ Tarefa para esta área</button>`}</span></div>
+     ${interviewsHtml(a.id)}
+     ${a.q.map(qHtml).join('')}
+     <section class="block"><div class="block-h"><h3>Dores relatadas nesta área</h3><p>${cur.dores.filter(d=>d.area===a.id).length} registradas · alimentam o mapa de gargalos</p></div>
+      ${cur.dores.some(d=>d.area===a.id)?`<div class="tblw"><table class="tbl"><thead><tr><th>Dor</th><th>Etapa</th><th>Tipo</th><th>Gravidade</th><th>Frequência</th><th>Relatado por</th><th></th></tr></thead><tbody>${cur.dores.filter(d=>d.area===a.id).map(d=>dorRow(d,true)).join('')}</tbody></table></div>`:''}
+      ${dorFormHtml(a.id)}</section>
+     <section class="block"><div class="block-h"><h3>${volTitle}</h3><p>${volNote}</p></div><div class="fields">${a.vol.map(v=>fieldHtml(a.id+'.'+v[0],v[1],v[2])).join('')}${fieldHtml(a.id+'.contexto','Contexto da entrevista: dores, citações, o que chamou atenção','t')}</div></section>
+     ${myIns.length?`<section class="block"><div class="block-h"><h3>Incongruências desta área</h3></div><div class="ins">${myIns.map(i=>insightHtml(i,false)).join('')}</div></section>`:''}
+     ${fofaHtml(a.id, autoFofa(a.id,INS))}
+     <div class="pager">${prev?`<button class="btn" data-act="area" data-v="${prev.id}">← ${prev.nome}</button>`:'<span></span>'}${next?`<button class="btn primary" data-act="area" data-v="${next.id}">${next.nome} →</button>`:`<button class="btn primary" data-act="stage" data-v="estrategia">Ir para Estratégia →</button>`}</div>
+    </section></div>`;
+}
+
+function stageHead(st){return headHtml(`// ${String(st.n).padStart(2,'0')} · <b>Fase ${st.n}</b>`,st.nome,st.intro,SC[st.id]);}
+function stageQs(st){return `${st.q.map(qHtml).join('')}${st.vol&&st.vol.length?`<section class="block"><div class="block-h"><h3>Campos abertos</h3><p>Anotações e números desta fase.</p></div><div class="fields">${st.vol.map(v=>fieldHtml(st.id+'.'+v[0],v[1],v[2])).join('')}</div></section>`:''}`;}
+function nextBtn(st){const n=STAGES[st.n]; return n?`<div class="pager"><button class="btn" data-act="stage" data-v="${STAGES[st.n-2].id}">← ${STAGES[st.n-2].nome}</button><button class="btn primary" data-act="stage" data-v="${n.id}">${n.nome} →</button></div>`:'';}
+
+function renderEstrategia(INS){
+  const st=STG.estrategia;
+  $('#main').innerHTML=`<section class="panel">${stageHead(st)}${stageQs(st)}${fofaHtml('estrategia',autoFofa('estrategia',INS),'FOFA da estratégia')}${nextBtn(st)}</section>`;
+}
+function suggestions(INS){
+  const out=[]; const seen=new Set(cur.acoes.map(a=>a.txt));
+  INS.forEach(i=>i.rec.forEach(r=>out.push({txt:r,area:i.areas[0]||'',src:i.id})));
+  AREAS.forEach(a=>a.q.forEach(x=>{const n=cur.resp[x[0]]; if(n&&n<=2&&x[3]===3) out.push({txt:`${x[1]}: ${x[6][n]}`,area:a.id,src:x.code});}));
+  const uniq=[]; const u=new Set(); out.forEach(o=>{if(!u.has(o.txt)){u.add(o.txt);uniq.push({...o,in:seen.has(o.txt)});}});
+  return uniq.slice(0,16);
+}
+/* ---------- Tarefas (kanban) ---------- */
+const areaOptsAll=sel=>`<option value="">Geral</option>`+AREAS.concat(STAGES.slice(1,4)).map(x=>`<option value="${x.id}" ${sel===x.id?'selected':''}>${esc(x.nome)}</option>`).join('');
+const donoOpts=sel=>`<option value="">Sem responsável</option>`+cur.equipe.map(m=>`<option value="${m.id}" ${sel===m.id?'selected':''}>${esc(m.nome||'Sem nome')}</option>`).join('');
+function fmtDate(d){ if(!d)return ''; const [y,m,dd]=d.split('-'); return `${dd}/${m}`; }
+function cardHtml(t){
+  const m=member(t.dono);
+  if(ui.openTask===t.id) return `<article class="kcard open" data-task="${t.id}">
+    <div class="kedit">
+     <textarea data-task-f="txt" data-id="${t.id}" aria-label="Tarefa" placeholder="O que precisa ser feito">${esc(t.txt)}</textarea>
+     <select data-task-f="area" data-id="${t.id}" aria-label="Área">${areaOptsAll(t.area)}</select>
+     <select data-task-f="dono" data-id="${t.id}" aria-label="Responsável">${donoOpts(t.dono)}</select>
+     <input type="date" data-task-f="prazo" data-id="${t.id}" value="${esc(t.prazo)}" aria-label="Prazo">
+     <select data-task-f="status" data-id="${t.id}" aria-label="Coluna">${COLS.map(c=>`<option ${t.status===c?'selected':''}>${c}</option>`).join('')}</select>
+     <div class="row"><button class="btn sm ghost" data-act="task-del" data-id="${t.id}">Excluir</button><button class="btn sm primary" data-act="task-close">Pronto</button></div>
+    </div></article>`;
+  return `<button class="kcard" draggable="true" data-task="${t.id}" data-act="task-open" data-id="${t.id}">
+    <span class="kt">${esc(t.txt||'Sem título')}</span>
+    <span class="km">${t.area?`<span class="chip">${esc(nameOf(t.area))}</span>`:''}${t.origem&&t.origem.startsWith('CRZ')?`<span class="chip">${esc(t.origem)}</span>`:''}${t.prazo?`<span class="due ${isLate(t)?'late':''}">${isLate(t)?'Atrasada · ':''}${fmtDate(t.prazo)}</span>`:''}${m?`<span class="av" title="${esc(m.nome)}" style="margin-left:auto">${esc(initials(m.nome))}</span>`:''}</span></button>`;
+}
+function kanbanHtml(){
+  const f=ui.kf; const list=cur.acoes.filter(t=>(!f.dono||t.dono===f.dono||(f.dono==='-'&&!t.dono))&&(!f.area||t.area===f.area));
+  return `<div class="kfilters"><select id="kf-dono" aria-label="Filtrar por responsável"><option value="">Todos os responsáveis</option><option value="-" ${f.dono==='-'?'selected':''}>Sem responsável</option>${cur.equipe.map(m=>`<option value="${m.id}" ${f.dono===m.id?'selected':''}>${esc(m.nome||'Sem nome')}</option>`).join('')}</select>
+    <select id="kf-area" aria-label="Filtrar por área"><option value="">Todas as áreas</option>${AREAS.concat(STAGES.slice(1,4)).map(x=>`<option value="${x.id}" ${f.area===x.id?'selected':''}>${esc(x.nome)}</option>`).join('')}</select>
+    ${f.dono||f.area?`<button class="chip" data-act="kf-clear">Limpar filtros</button>`:''}
+    <span class="muted" style="font-size:13px;margin-left:auto">Arraste os cartões entre colunas</span></div>
+   <div class="kanban">${COLS.map(c=>{const items=list.filter(t=>t.status===c);return `<section class="kcol" data-col="${c}"><div class="kcol-h"><b>${c}</b><span class="ct">${items.length}</span></div>${items.map(cardHtml).join('')}<button class="kadd" data-act="task-new" data-col="${c}">+ Tarefa</button></section>`;}).join('')}</div>`;
+}
+function crossTasks(INS){
+  const open=cur.acoes.filter(t=>t.status!=='Concluída');
+  const late=open.filter(isLate);
+  const semTarefa=INS.filter(i=>i.sev!=='media'&&!cur.acoes.some(t=>t.origem===i.id||i.rec.includes(t.txt)));
+  const fracas=AREAS.filter(a=>SC[a.id].score!=null&&SC[a.id].level<=2&&!open.some(t=>t.area===a.id));
+  const semDono=AREAS.filter(a=>!cur.dono_area[a.id]&&SC[a.id].ans<a.q.length);
+  return {open,late,semTarefa,fracas,semDono};
+}
+function renderTarefas(INS){
+  const x=crossTasks(INS);
+  $('#main').innerHTML=`<section class="panel">
+   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">// <b>Tarefas</b></span><h2 style="margin-top:8px">Kanban do diagnóstico</h2><p class="lead">Tarefas de coleta e de ação, cruzadas com as áreas e as incongruências. Tarefas de coleta se concluem sozinhas quando a área fica completa.</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="gen-coleta">Gerar tarefas de coleta</button><button class="btn primary" data-act="gen-ins">Gerar tarefas das incongruências</button></div></header>
+   <div class="stats">
+    <div class="stat"><b>${x.open.length}</b><span>tarefas abertas</span></div>
+    <div class="stat ${x.late.length?'bad':''}"><b>${x.late.length}</b><span>atrasadas</span></div>
+    <div class="stat ${x.semTarefa.length?'bad':''}"><b>${x.semTarefa.length}</b><span>incongruências graves sem tarefa</span></div>
+    <div class="stat ${x.fracas.length?'warn':''}"><b>${x.fracas.length}</b><span>áreas N1–N2 sem tarefa aberta</span></div>
+   </div>
+   ${kanbanHtml()}
+   ${x.semTarefa.length||x.fracas.length||x.semDono.length?`<section class="block"><div class="block-h"><h3>Cruzamento de tarefas</h3><p>O que o diagnóstico aponta e ainda não tem tarefa.</p></div><div class="xlist">
+    ${x.semTarefa.map(i=>`<div class="xitem ${i.sev}"><span class="t">${esc(i.t)}<small>${i.id} · ${SEV[i.sev]} · ${i.areas.map(nameOf).join(', ')}</small></span><button class="chip" data-act="plan-ins" data-id="${i.id}" data-t="${esc(i.t)}">Criar tarefas</button></div>`).join('')}
+    ${x.fracas.map(a=>`<div class="xitem alta"><span class="t">${esc(a.nome)} está no nível ${SC[a.id].level} sem nenhuma tarefa aberta<small>${weakest(a.id)?'Ponto mais fraco: '+esc(weakest(a.id)):''}</small></span><button class="chip" data-act="task-new" data-area="${a.id}" data-txt="${esc(weakest(a.id)?'Evoluir '+weakest(a.id).toLowerCase()+' em '+a.nome:'Plano de evolução: '+a.nome)}">Criar tarefa</button></div>`).join('')}
+    ${x.semDono.length?`<div class="xitem media"><span class="t">${x.semDono.length} áreas sem responsável pela coleta<small>${x.semDono.map(a=>a.nome).join(', ')}</small></span><button class="chip" data-act="view" data-v="equipe">Distribuir na equipe</button></div>`:''}
+   </div></section>`:''}
+  </section>`;
+  bindDnD();
+}
+function renderExecucao(INS){
+  const st=STG.execucao; const sg=suggestions(INS);
+  $('#main').innerHTML=`<section class="panel">${stageHead(st)}
+   <section class="block"><div class="block-h"><h3>Plano de ação</h3><p>${cur.acoes.length} tarefas · ${cur.acoes.filter(a=>a.status==='Concluída').length} concluídas</p></div>${kanbanHtml()}</section>
+   <section class="block"><div class="block-h"><h3>Sugestões do diagnóstico</h3><p>Vindas das incongruências e das perguntas de alto impacto com nota baixa.</p></div>
+   ${sg.length?`<div class="sugs">${sg.map(s=>`<div class="sug"><span class="t">${esc(s.txt)}<small>${esc(s.src)} · ${esc(nameOf(s.area)||'Geral')}</small></span>${s.in?'<span class="chip">No kanban</span>':`<button class="chip" data-act="acao-add" data-txt="${esc(s.txt)}" data-area="${esc(s.area)}" data-src="${esc(s.src)}">+ Adicionar</button>`}</div>`).join('')}</div>`:'<p class="empty">Responda o diagnóstico para receber sugestões.</p>'}</section>
+   ${stageQs(st)}${nextBtn(st)}</section>`;
+  bindDnD();
+}
+function bindDnD(){
+  document.querySelectorAll('.kcard[draggable]').forEach(c=>{
+    c.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',c.dataset.task);e.dataTransfer.effectAllowed='move';c.classList.add('dragging');});
+    c.addEventListener('dragend',()=>c.classList.remove('dragging'));
+  });
+  document.querySelectorAll('.kcol').forEach(col=>{
+    col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('drop');});
+    col.addEventListener('dragleave',()=>col.classList.remove('drop'));
+    col.addEventListener('drop',e=>{e.preventDefault();col.classList.remove('drop');const id=e.dataTransfer.getData('text/plain');const t=cur.acoes.find(x=>x.id===id);if(t&&t.status!==col.dataset.col){t.status=col.dataset.col;mark('acoes');touch(true);}});
+  });
+}
+/* ---------- Equipe ---------- */
+const PAPEIS={admin:'Administrador',equipe:'Equipe LORSO',cliente:'Cliente'};
+function conviteTexto(c){ return `Olá${c.nome?', '+c.nome.split(' ')[0]:''}! Você foi convidado para a Central de Diagnóstico da LORSO Digital.\n\n1. Acesse ${location.origin}${location.pathname}\n2. Clique em "Primeiro acesso"\n3. Use o e-mail ${c.email} e crie sua senha.`; }
+function renderEquipe(){
+  const isAdm=me&&me.papel==='admin';
+  const mem=cur?cur.equipe:equipeList();
+  $('#main').innerHTML=`<section class="panel">
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">// <b>Equipe</b></span><h2 style="margin-top:8px">Quem coleta com você</h2><p class="lead">Cada pessoa entra com o próprio e-mail e senha. Só quem foi convidado consegue criar acesso. Distribua as áreas de coleta e as tarefas entre a equipe.</p></div></header>
+   ${isAdm?`<section class="block"><div class="block-h"><h3>Convidar pessoa</h3><p>Depois de convidar, envie o texto do convite para a pessoa.</p></div>
+    <form id="f-convite" class="invite">
+     <label>Nome<input name="nome" required placeholder="Nome completo"></label>
+     <label>E-mail<input name="email" type="email" required placeholder="pessoa@empresa.com"></label>
+     <label>Função<input name="funcao" placeholder="Ex.: analista de marketing"></label>
+     <label>Acesso<select name="papel"><option value="equipe">Equipe LORSO (vê todos os diagnósticos)</option><option value="admin">Administrador (também convida pessoas)</option><option value="cliente">Cliente (só diagnósticos liberados)</option></select></label>
+     <button class="btn primary" type="submit">Convidar</button>
+    </form></section>`:''}
+   ${convites.length?`<section class="block"><div class="block-h"><h3>Convites pendentes</h3><p>${convites.length} pessoa(s) ainda não criaram a senha</p></div><div class="xlist">${convites.map(c=>`<div class="xitem media"><span class="t">${esc(c.nome||c.email)}<small>${esc(c.email)} · ${PAPEIS[c.papel]||c.papel}${c.funcao?' · '+esc(c.funcao):''}</small></span><span style="display:flex;gap:6px;flex-wrap:wrap"><button class="chip" data-act="conv-copy" data-email="${esc(c.email)}">Copiar convite</button>${isAdm?`<button class="chip" data-act="conv-del" data-email="${esc(c.email)}">Cancelar</button>`:''}</span></div>`).join('')}</div></section>`:''}
+   ${mem.length?`<div class="team">${mem.map(m=>{
+     const self=me&&m.id===me.id, can=self||isAdm;
+     const mine=cur?AREAS.filter(a=>cur.dono_area[a.id]===m.id):[];
+     const tot=mine.reduce((s,a)=>s+a.q.length,0), ans=mine.reduce((s,a)=>s+SC[a.id].ans,0);
+     const tasks=cur?cur.acoes.filter(t=>t.dono===m.id&&t.status!=='Concluída'):[];
+     return `<article class="member"><div class="mh"><span class="av">${esc(initials(m.nome))}</span><input data-mem="${m.id}" data-f="nome" value="${esc(m.nome)}" placeholder="Nome" aria-label="Nome" ${can?'':'readonly'}>${isAdm&&!self?`<button class="xbtn" data-act="mem-off" data-id="${m.id}" title="Desativar acesso" aria-label="Desativar acesso">×</button>`:''}</div>
+      <div class="mf"><input data-mem="${m.id}" data-f="papel" value="${esc(m.papel)}" placeholder="Função" aria-label="Função" ${can?'':'readonly'}><input data-mem="${m.id}" data-f="contato" value="${esc(m.contato)}" placeholder="Telefone" aria-label="Contato" ${can?'':'readonly'}></div>
+      <div class="mstats"><span>${esc(m.email)}</span><span>${PAPEIS[m.role]||''}</span></div>
+      ${cur?`<div class="mstats"><span><b>${mine.length}</b> áreas</span><span><b>${tot?Math.round(ans/tot*100):0}%</b> coletado</span><span><b>${tasks.length}</b> tarefas abertas</span>${tasks.filter(isLate).length?`<span style="color:var(--n1)"><b style="color:inherit">${tasks.filter(isLate).length}</b> atrasadas</span>`:''}</div>
+      <div><span class="lbl">Áreas sob responsabilidade neste diagnóstico</span><div class="areachips" style="margin-top:6px">${AREAS.map(a=>{const owner=cur.dono_area[a.id];return `<button class="achip ${owner===m.id?'on':owner?'taken':''}" data-act="mem-area" data-id="${m.id}" data-v="${a.id}" title="${owner&&owner!==m.id?'Hoje com '+esc((member(owner)||{}).nome||''):''}">${esc(a.nome)}</button>`;}).join('')}</div></div>
+      ${tasks.length?`<button class="chip" data-act="tasks-mem" data-id="${m.id}" style="align-self:flex-start">Ver tarefas de ${esc((m.nome||'').split(' ')[0]||'')}</button>`:''}`:''}
+     </article>`;}).join('')}</div>`:'<p class="empty">Ninguém com acesso ainda.</p>'}
+  </section>`;
+}
+function renderOtimizacao(INS){
+  const st=STG.otimizacao;
+  const rows=cur.testes.map((t,i)=>({t,i,ice:((+t.i||0)+(+t.c||0)+(+t.f||0))/3})).sort((a,b)=>b.ice-a.ice);
+  $('#main').innerHTML=`<section class="panel">${stageHead(st)}${stageQs(st)}
+   <section class="block"><div class="block-h"><h3>Backlog de experimentos</h3><p>ICE: impacto, confiança e facilidade de 1 a 10. Ordenado pela média.</p></div>
+   ${rows.length?`<div class="tblw"><table class="tbl"><thead><tr><th style="min-width:260px">Hipótese</th><th>Área</th><th>Impacto</th><th>Confiança</th><th>Facilidade</th><th class="r">ICE</th><th></th></tr></thead><tbody>${rows.map(({t,i,ice})=>`<tr>
+    <td><input data-teste="${i}" data-f="hip" value="${esc(t.hip)}" placeholder="Se fizermos X, Y aumenta porque Z" aria-label="Hipótese"></td>
+    <td><input data-teste="${i}" data-f="area" value="${esc(t.area)}" placeholder="UN ou canal" aria-label="Área"></td>
+    ${['i','c','f'].map(k=>`<td style="width:96px"><input type="number" min="1" max="10" data-teste="${i}" data-f="${k}" value="${esc(t[k])}" aria-label="${k}"></td>`).join('')}
+    <td class="r mono">${dec(ice)}</td><td class="x"><button class="xbtn" data-act="teste-del" data-i="${i}" aria-label="Remover">×</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Nenhum experimento ainda.</p>'}
+   <div><button class="btn sm" data-act="teste-new">+ Novo experimento</button></div></section>
+   ${fofaHtml('otimizacao',autoFofa('otimizacao',INS),'FOFA da otimização')}${nextBtn(st)}</section>`;
+}
+function renderResultados(INS){
+  const st=STG.resultados, ov=overall();
+  const rows=AREAS.map(a=>({a,s:SC[a.id]}));
+  const avaliadas=rows.filter(r=>r.s.score!=null).length;
+  const fin=finRows(); const anyFin=fin.some(r=>r.receita!=null||r.orcamento!=null||r.meta_rec!=null||r.folha!=null);
+  const tot=k=>{const v=fin.map(r=>r[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0):null;};
+  // FOFA consolidada: itens de maior impacto de todas as áreas
+  const cons={f:[],w:[],o:[],a:[]};
+  AREAS.concat(STAGES.filter(s=>s.q)).forEach(a=>{const f=autoFofa(a.id,[]); FQ.forEach(([k])=>f[k].forEach(it=>cons[k].push({...it,src:a.nome})));});
+  INS.forEach(i=>cons.a.push({t:i.t,i:SEVW[i.sev]+1,src:i.id}));
+  FQ.forEach(([k])=>{cons[k].sort((x,y)=>y.i-x.i); cons[k]=cons[k].slice(0,8);});
+  const chart=`<div class="chart" role="img" aria-label="Maturidade por área de 1 a 4">${rows.map(({a,s})=>`<div class="crow"><button class="nm" data-act="goto" data-v="${a.id}" title="${esc(a.nome)}">${esc(a.nome)}</button>
+     <div class="track ${s.score==null?'na':''}">${s.score!=null?`<span style="width:${((s.score-1)/3*100).toFixed(1)}%;min-width:4px;background:var(--n${s.level})"></span>`:''}</div>
+     <span class="mono num" style="font-size:12px">${s.score!=null?dec(s.score)+' · N'+s.level:'sem nota'}</span></div>`).join('')}
+     <div class="axis"><span></span><div class="ticks"><span>1</span><span>2</span><span>3</span><span>4</span></div><span></span></div></div>`;
+  const heat=`<div class="tblw"><table class="tbl heat"><thead><tr><th>Área</th>${Object.values(PIL).map(p=>`<th style="text-align:center">${p}</th>`).join('')}<th style="text-align:center">Geral</th></tr></thead><tbody>${rows.map(({a,s})=>`<tr><td>${esc(a.nome)}</td>${Object.keys(PIL).map(k=>{const v=s.pil[k];return `<td class="h l${lvOf(v)}">${v==null?'—':dec(v)}</td>`;}).join('')}<td class="h l${s.level}">${s.score==null?'—':dec(s.score)}</td></tr>`).join('')}</tbody></table></div>`;
+  const finTbl=`<div class="tblw"><table class="tbl"><thead><tr><th>UN</th><th class="r">Nível</th><th class="r">Meta receita</th><th class="r">Receita</th><th class="r">Atingido</th><th class="r">Folha</th><th class="r">Folha / receita</th><th class="r">Orçamento mkt</th><th class="r">% do orçamento</th><th class="r">Orçamento / receita</th><th class="r">Orçamento por matrícula-meta</th></tr></thead><tbody>
+    ${fin.map(r=>`<tr><td><button class="chip" data-act="goto" data-v="${r.id}">${esc(r.nome)}</button></td><td class="r">${r.level?`<span class="lv l${r.level}">N${r.level}</span>`:'—'}</td><td class="r">${brl(r.meta_rec)}</td><td class="r">${brl(r.receita)}</td><td class="r" style="${r.ating!=null&&r.ating<0.85?'color:var(--n1);font-weight:600':''}">${pct(r.ating)}</td><td class="r">${brl(r.folha)}</td><td class="r">${pct(r.folhaRec)}</td><td class="r">${brl(r.orcamento)}</td><td class="r">${pct(r.share)}</td><td class="r">${pct(r.orcRec)}</td><td class="r">${brl(r.cpm)}</td></tr>`).join('')}
+    <tr><td><b>Total</b></td><td></td><td class="r"><b>${brl(tot('meta_rec'))}</b></td><td class="r"><b>${brl(tot('receita'))}</b></td><td class="r"><b>${pct(tot('meta_rec')&&tot('receita')!=null?tot('receita')/tot('meta_rec'):null)}</b></td><td class="r"><b>${brl(tot('folha'))}</b></td><td></td><td class="r"><b>${brl(tot('orcamento'))}</b></td><td></td><td></td><td></td></tr></tbody></table></div>`;
+  const kpiTbl=`${cur.kpis.length?`<div class="tblw"><table class="tbl"><thead><tr><th style="min-width:200px">Indicador</th><th>UN ou área</th><th class="r">Meta</th><th class="r">Realizado</th><th class="r">Atingido</th><th></th></tr></thead><tbody>${cur.kpis.map((k,i)=>{const m=num(k.meta),r=num(k.real);return `<tr><td><input data-kpi="${i}" data-f="nome" value="${esc(k.nome)}" aria-label="Indicador"></td><td><input data-kpi="${i}" data-f="un" value="${esc(k.un)}" aria-label="UN"></td><td><input data-kpi="${i}" data-f="meta" value="${esc(k.meta)}" inputmode="decimal" aria-label="Meta" style="text-align:right"></td><td><input data-kpi="${i}" data-f="real" value="${esc(k.real)}" inputmode="decimal" aria-label="Realizado" style="text-align:right"></td><td class="r mono">${m&&r!=null?pct(r/m):'—'}</td><td class="x"><button class="xbtn" data-act="kpi-del" data-i="${i}" aria-label="Remover">×</button></td></tr>`;}).join('')}</tbody></table></div>`:'<p class="empty">Nenhum indicador ainda.</p>'}
+    <div style="display:flex;flex-wrap:wrap;gap:6px">${['Matrículas','CAC','CPL','Conversão lead → matrícula','NPS','Taxa de rematrícula','ROAS'].map(n=>`<button class="chip" data-act="kpi-add" data-n="${n}">+ ${n}</button>`).join('')}<button class="chip" data-act="kpi-add" data-n="">+ Outro</button></div>`;
+  $('#main').innerHTML=`<section class="panel">
+   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">// 05 · <b>Fase 5</b></span><h2 style="margin-top:8px">Resultados</h2><p class="lead">${esc(st.intro)}</p></div>
+   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="copy">Copiar resumo</button></div></header>
+   ${ui.copy!=null?`<section class="block"><div class="block-h"><h3>Resumo para colar</h3><button class="btn sm" data-act="copy-close">Fechar</button></div><textarea class="copyout" id="copyout" readonly>${esc(ui.copy)}</textarea></section>`:''}
+   <section class="hero"><div><span class="eyebrow">Maturidade geral</span><div class="big" style="margin-top:6px">${ov.score!=null?dec(ov.score):'—'}<small> / 4</small></div><div style="margin-top:8px">${lvChip(ov.level)}</div></div>
+    <div class="kpis"><div class="kpi"><b>${avaliadas}/${AREAS.length}</b><span>áreas com nota</span></div><div class="kpi"><b>${cur.entrevistas.length}</b><span>pessoas entrevistadas</span></div><div class="kpi"><b style="color:var(--n1)">${INS.filter(i=>i.sev==='crit').length}</b><span>incongruências críticas</span></div><div class="kpi"><b>${INS.length}</b><span>incongruências no total</span></div><div class="kpi"><b>${cur.acoes.length}</b><span>ações no plano</span></div>
+    <p class="muted" style="grid-column:1/-1;font-size:12.5px">${ov.ponderado?'UNs ponderadas pela receita realizada.':'UNs com peso igual; informe a receita de cada UN para ponderar.'} Áreas abaixo de metade das perguntas respondidas ficam sem nota.</p></div></section>
+   <div class="two">
+    <section class="block"><div class="block-h"><h3>Maturidade por área</h3><div class="legend">${[1,2,3,4].map(l=>`<span class="lv l${l}">N${l}</span>`).join('')}</div></div>${chart}</section>
+    <section class="block"><div class="block-h"><h3>Mapa por pilar</h3><p>Nota de 1 a 4</p></div>${heat}</section>
+   </div>
+   ${cur.dores.length?`<section class="block"><div class="block-h"><h3>Gargalos relatados</h3><button class="chip" data-act="view" data-v="dores">Abrir mapa de dores</button></div>${gargaloChart(false)}</section>`:''}
+   <section class="block"><div class="block-h"><h3>Cruzamento financeiro das UNs</h3><p>${anyFin?'Preenchido na fase 1, em cada UN.':'Preencha meta, receita, folha e orçamento em cada UN na fase 1.'}</p></div>${finTbl}</section>
+   <section class="block"><div class="block-h"><h3>Incongruências</h3><p>${INS.length} encontradas, da mais grave para a menos grave.</p></div>${INS.length?`<div class="ins">${INS.map(i=>insightHtml(i,true)).join('')}</div>`:'<p class="empty">Nenhuma incongruência ainda. Elas aparecem quando áreas ligadas têm níveis muito diferentes.</p>'}</section>
+   ${fofaHtml('geral',cons,'FOFA consolidada','Os 8 itens de maior impacto de cada quadrante, de todas as áreas. Inclua a leitura estratégica abaixo.')}
+   <section class="block"><div class="block-h"><h3>Indicadores: meta x realizado</h3><p>Digite os números do período.</p></div>${kpiTbl}</section>
+   ${stageQs(st)}
+   <div class="pager"><button class="btn" data-act="stage" data-v="otimizacao">← Otimização</button><span></span></div>
+  </section>`;
+}
+/* ---------- Dores e gargalos ---------- */
+function quemList(){ return [...new Set([...cur.entrevistas.map(e=>e.nome),...cur.dores.map(d=>d.quem)].filter(Boolean))]; }
+function dorFormHtml(preset){
+  const D=ui.dorDef; const sel=(name,opts,v,label)=>`<select name="${name}" aria-label="${label}">${opts.map(o=>Array.isArray(o)?`<option value="${esc(o[0])}" ${String(v)===String(o[0])?'selected':''}>${esc(o[1])}</option>`:`<option ${v===o?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+  return `<form class="dorform" data-dorform="1" data-area="${esc(preset||'')}">
+   <input name="txt" class="dtxt" placeholder="Descreva a dor como a pessoa contou" aria-label="Dor relatada" required>
+   ${preset?'':sel('area',[['','Área ou UN'],...AREAS.map(a=>[a.id,a.nome])],D.area,'Área')}
+   <label class="dl"><span>Onde trava</span>${sel('etapa',FLUXO,D.etapa,'Etapa do fluxo')}</label>
+   <label class="dl"><span>Tipo</span>${sel('tipo',TIPOS,D.tipo,'Tipo')}</label>
+   <label class="dl"><span>Gravidade</span>${sel('sev',[['1','Baixa'],['2','Média'],['3','Alta']],D.sev,'Gravidade')}</label>
+   <label class="dl"><span>Frequência</span>${sel('freq',FREQS,D.freq,'Frequência')}</label>
+   <label class="dl"><span>Quem relatou</span><input name="quem" list="dl-quem" value="${esc(D.quem)}" placeholder="Nome"></label>
+   <label class="dl"><span>Sistema envolvido</span>${sel('sistema',[['','Nenhum'],...cur.sistemas.filter(x=>x.nome).map(x=>[x.nome,x.nome])],D.sistema,'Sistema')}</label>
+   <button class="btn primary" type="submit">Registrar dor</button>
+  </form><datalist id="dl-quem">${quemList().map(n=>`<option value="${esc(n)}">`).join('')}</datalist>`;
+}
+function dorRow(d,compact){
+  return `<tr><td style="min-width:240px">${esc(d.txt)}</td>${compact?'':`<td>${esc(nameOf(d.area)||'—')}</td>`}<td>${esc(d.etapa)}</td><td>${esc(d.tipo)}</td>
+   <td><span class="lv l${{1:3,2:2,3:1}[+d.sev]||0}">${SEVN[d.sev]||'—'}</span></td><td>${esc(d.freq)}</td><td>${esc(d.quem||'—')}</td>${compact?'':`<td>${esc(d.sistema||'—')}</td>`}
+   <td style="white-space:nowrap">${cur.acoes.some(t=>t.origem==='dor:'+d.id)?'<span class="chip">Tem tarefa</span>':`<button class="chip" data-act="dor-task" data-id="${d.id}">+ Tarefa</button>`}<button class="xbtn" data-act="dor-del" data-id="${d.id}" aria-label="Remover dor">×</button></td></tr>`;
+}
+function gargaloChart(click){
+  const g=gargalos(); const max=Math.max(1,...g.map(r=>r.score)); const top=g.reduce((a,b)=>b.score>a.score?b:a,g[0]);
+  return `<div class="chart" role="img" aria-label="Pontuação de dores por etapa do fluxo">${g.map(r=>`<div class="crow"><${click?'button':'span'} class="nm" ${click?`data-act="dor-filter" data-v="${r.etapa}"`:''}>${r.etapa}</${click?'button':'span'}>
+   <div class="track">${r.score?`<span style="width:${(r.score/max*100).toFixed(1)}%;min-width:4px;background:${r===top&&r.score?'var(--n1)':'var(--n2)'};opacity:${r===top?1:.75}"></span>`:''}</div>
+   <span class="mono num" style="font-size:12px">${r.n} dores${r.graves?` · ${r.graves} graves`:''}</span></div>`).join('')}</div>
+   <p class="muted" style="font-size:12.5px">Pontuação = gravidade × frequência (diária 3, semanal 2, mensal 1,5, pontual 1). A barra vermelha é o principal gargalo.</p>`;
+}
+function renderDores(INS){
+  const f=ui.dorF; const list=cur.dores.filter(d=>(!f.etapa||d.etapa===f.etapa)&&(!f.area||d.area===f.area)).sort((a,b)=>dorScore(b)-dorScore(a));
+  const heat=`<div class="tblw"><table class="tbl heat"><thead><tr><th>Etapa</th>${TIPOS.map(t=>`<th style="text-align:center">${t}</th>`).join('')}</tr></thead><tbody>${FLUXO.map(e=>`<tr><td>${e}</td>${TIPOS.map(t=>{const n=cur.dores.filter(d=>d.etapa===e&&d.tipo===t).length;return `<td class="h ${n>=3?'l1':n===2?'l2':n===1?'l3':'l0'}">${n||'·'}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div>`;
+  const byArea=AREAS.map(a=>{const ds=cur.dores.filter(d=>d.area===a.id);return {a,n:ds.length,s:ds.reduce((x,d)=>x+dorScore(d),0)};}).filter(r=>r.n).sort((x,y)=>y.s-x.s);
+  const maxA=Math.max(1,...byArea.map(r=>r.s));
+  $('#main').innerHTML=`<section class="panel">
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">// <b>Dores e gargalos</b></span><h2 style="margin-top:8px">Onde o trabalho trava</h2><p class="lead">Registre cada dor no momento da entrevista. O sistema soma gravidade e frequência por etapa do fluxo e mostra onde está o gargalo, quem sente e que sistema está envolvido.</p></div></header>
+   <section class="block"><div class="block-h"><h3>Contexto do cliente</h3></div><div class="fields">${fieldHtml('ctx.problema','Problema central relatado pelo cliente','t')}${fieldHtml('ctx.hipotese','Sua hipótese inicial','t')}</div></section>
+   <section class="block"><div class="block-h"><h3>Registrar dor</h3><p>As opções ficam lembradas para o próximo registro.</p></div>${dorFormHtml('')}</section>
+   ${cur.dores.length?`<div class="two">
+    <section class="block"><div class="block-h"><h3>Gargalos por etapa</h3>${f.etapa?`<button class="chip" data-act="dor-filter" data-v="">Limpar filtro: ${esc(f.etapa)}</button>`:'<p>Clique numa etapa para filtrar</p>'}</div>${gargaloChart(true)}</section>
+    <section class="block"><div class="block-h"><h3>Etapa × tipo de dor</h3><p>Quantidade de dores</p></div>${heat}</section></div>
+   <section class="block"><div class="block-h"><h3>Quem mais sente</h3><p>Áreas e UNs pela pontuação das dores</p></div><div class="chart">${byArea.map(r=>`<div class="crow"><button class="nm" data-act="dor-farea" data-v="${r.a.id}">${esc(r.a.nome)}</button><div class="track"><span style="width:${(r.s/maxA*100).toFixed(1)}%;min-width:4px;background:var(--n2)"></span></div><span class="mono num" style="font-size:12px">${r.n} dores</span></div>`).join('')}</div></section>
+   <section class="block"><div class="block-h"><h3>Dores relatadas</h3><p>${list.length} de ${cur.dores.length}${f.area?` · ${esc(nameOf(f.area))} <button class="chip" data-act="dor-farea" data-v="">limpar</button>`:''} · da mais pesada para a mais leve</p></div>
+    <div class="tblw"><table class="tbl"><thead><tr><th>Dor</th><th>Área</th><th>Etapa</th><th>Tipo</th><th>Gravidade</th><th>Frequência</th><th>Relatado por</th><th>Sistema</th><th></th></tr></thead><tbody>${list.map(d=>dorRow(d,false)).join('')}</tbody></table></div></section>`
+   :'<p class="empty">Nenhuma dor registrada ainda. Use o formulário acima durante as entrevistas; o mapa de gargalos aparece a partir do primeiro registro.</p>'}
+  </section>`;
+}
+/* ---------- Sistemas ---------- */
+const SYS_SUG=['WhatsApp','E-mail','Planilhas (Excel/Sheets)','Trello','Asana','Monday','ClickUp','Google Drive','Canva','Adobe Creative Cloud','RD Station','HubSpot','Salesforce','Sistema acadêmico','Meta Business','Google Ads','GA4','CMS do site'];
+function renderSistemas(){
+  const L1=cur.sistemas; const named=L1.filter(x=>x.nome);
+  const sats=named.map(x=>num(x.satisf)).filter(x=>x!=null); const avg=sats.length?sats.reduce((a,b)=>a+b,0)/sats.length:null;
+  const custo=named.reduce((a,x)=>a+(num(x.custo)||0),0);
+  const opt=(v,list)=>list.map(o=>Array.isArray(o)?`<option value="${o[0]}" ${String(v)===String(o[0])?'selected':''}>${o[1]}</option>`:`<option ${v===o?'selected':''}>${o}</option>`).join('');
+  $('#main').innerHTML=`<section class="panel">
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">// <b>Sistemas</b></span><h2 style="margin-top:8px">Sistemas em uso</h2><p class="lead">Inventário dos sistemas do marketing e de quem trabalha com ele. A coluna Dores conta quantas dores registradas citam cada sistema.</p></div></header>
+   <div class="stats"><div class="stat"><b>${named.length}</b><span>sistemas mapeados</span></div><div class="stat ${avg!=null&&avg<3?'warn':''}"><b>${avg!=null?dec(avg):'—'}</b><span>satisfação média (1 a 5)</span></div><div class="stat ${named.filter(x=>x.integra==='Não').length>=3?'warn':''}"><b>${named.filter(x=>x.integra==='Não').length}</b><span>sem integração</span></div><div class="stat"><b>${custo?brl(custo):'—'}</b><span>custo mensal informado</span></div></div>
+   <section class="block"><div class="block-h"><h3>Inventário</h3><p>Clique num sistema comum para incluir, ou adicione outro.</p></div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">${SYS_SUG.filter(n=>!L1.some(x=>x.nome===n)).map(n=>`<button class="chip" data-act="sys-add" data-n="${esc(n)}">+ ${esc(n)}</button>`).join('')}<button class="chip" data-act="sys-add" data-n="">+ Outro</button></div>
+    ${L1.length?`<div class="tblw"><table class="tbl"><thead><tr><th style="min-width:150px">Sistema</th><th style="min-width:180px">Para que serve</th><th style="min-width:150px">Quem usa</th><th>Satisfação</th><th>Integra?</th><th style="min-width:110px">Custo mensal</th><th style="min-width:200px">Problemas relatados</th><th class="r">Dores</th><th></th></tr></thead><tbody>${L1.map(x=>`<tr>
+      <td><input data-sys="${x.id}" data-f="nome" value="${esc(x.nome)}" aria-label="Sistema"></td>
+      <td><input data-sys="${x.id}" data-f="uso" value="${esc(x.uso)}" placeholder="Ex.: pedidos, aprovação" aria-label="Uso"></td>
+      <td><input data-sys="${x.id}" data-f="quem" value="${esc(x.quem)}" placeholder="Áreas ou pessoas" aria-label="Quem usa"></td>
+      <td><select data-sys="${x.id}" data-f="satisf" aria-label="Satisfação">${opt(x.satisf,[['','—'],['1','1'],['2','2'],['3','3'],['4','4'],['5','5']])}</select></td>
+      <td><select data-sys="${x.id}" data-f="integra" aria-label="Integração">${opt(x.integra,[['','—'],['Sim','Sim'],['Parcial','Parcial'],['Não','Não']])}</select></td>
+      <td><input data-sys="${x.id}" data-f="custo" value="${esc(x.custo)}" inputmode="decimal" placeholder="R$" aria-label="Custo mensal"></td>
+      <td><input data-sys="${x.id}" data-f="prob" value="${esc(x.prob)}" aria-label="Problemas"></td>
+      <td class="r mono">${sysDores(x.nome)||'·'}</td>
+      <td class="x"><button class="xbtn" data-act="sys-del" data-id="${x.id}" aria-label="Remover sistema">×</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Nenhum sistema mapeado ainda.</p>'}
+   </section></section>`;
+}
+function renderSubnav(INS){
+  const x=crossTasks(INS); const hot=x.late.length+x.semTarefa.length;
+  $('#subnav').innerHTML=`<button class="tab ${ui.view==='fases'?'on':''}" data-act="view" data-v="fases">Metodologia</button>
+   <button class="tab ${ui.view==='dores'?'on':''}" data-act="view" data-v="dores">Dores e gargalos <span class="ct">${cur.dores.length}</span></button>
+   <button class="tab ${ui.view==='sistemas'?'on':''}" data-act="view" data-v="sistemas">Sistemas <span class="ct">${cur.sistemas.filter(x=>x.nome).length}</span></button>
+   <button class="tab ${ui.view==='tarefas'?'on':''}" data-act="view" data-v="tarefas">Tarefas <span class="ct ${hot?'hot':''}">${x.open.length}</span></button>
+   <button class="tab ${ui.view==='equipe'?'on':''}" data-act="view" data-v="equipe">Equipe <span class="ct">${cur.equipe.length}</span></button>`;
+}
+function focusKey(el){
+  if(!el||el===document.body||!el.tagName||!/INPUT|TEXTAREA|SELECT/.test(el.tagName))return null;
+  if(el.id)return '#'+CSS.escape(el.id);
+  const dataSel=n=>[...n.attributes].filter(a=>a.name.startsWith('data-')).map(a=>`[${a.name}="${CSS.escape(a.value)}"]`).join('');
+  const attrs=dataSel(el);
+  if(attrs)return el.tagName.toLowerCase()+attrs;
+  if(el.name&&el.form){ const fs=el.form.id?'#'+CSS.escape(el.form.id):'form'+dataSel(el.form); return `${fs} [name="${CSS.escape(el.name)}"]`; }
+  return null;
+}
+let soonT=null; function soon(){ clearTimeout(soonT); soonT=setTimeout(render,0); }
+function render(){
+  const ae=document.activeElement, fk=focusKey(ae); let selS=null,selE=null; try{selS=ae.selectionStart;selE=ae.selectionEnd;}catch(e){}
+  const DRAFT='form[data-dorform] input, form[data-dorform] select, form[data-fofa] input, #f-convite input, #f-convite select, #novo-nome, #novo-nome2';
+  const drafts=[...document.querySelectorAll(DRAFT)].map(el=>[focusKey(el),el.value]).filter(x=>x[0]&&x[1]);
+  renderInner();
+  drafts.forEach(([k,v])=>{ const el=document.querySelector(k); if(el&&!el.value) el.value=v; });
+  if(fk){ const el=document.querySelector(fk); if(el&&el!==document.activeElement){ el.focus({preventScroll:true}); try{ if(selS!=null) el.setSelectionRange(selS,selE);}catch(e){} } }
+}
+function renderInner(){
+  if(!cur){ renderBar(); $('#rail').hidden=true;
+    $('#subnav').innerHTML=me&&me.papel==='admin'?`<button class="tab ${ui.view!=='equipe'?'on':''}" data-act="view" data-v="fases">Diagnósticos</button><button class="tab ${ui.view==='equipe'?'on':''}" data-act="view" data-v="equipe">Equipe</button>`:'';
+    if(ui.view==='equipe'&&me&&me.papel==='admin'){ SC={}; renderEquipe(); return; }
+    $('#main').innerHTML=`<section class="auth" style="min-height:auto"><div class="auth-box"><h2>Nenhum diagnóstico ainda</h2><p>${me&&me.papel!=='cliente'?'Crie o primeiro com o nome do cliente. Depois convide a equipe e distribua as áreas.':'Nenhum diagnóstico foi liberado para você ainda. Fale com a LORSO Digital.'}</p>${me&&me.papel!=='cliente'?`<form id="f-novo2"><label>Cliente<input id="novo-nome2" required placeholder="Nome da instituição"></label><button class="btn primary" type="submit">Criar diagnóstico</button></form>`:''}</div></section>`;
+    return; }
+  computeAll(); const INS=runEngine();
+  renderBar(); renderSubnav(INS);
+  $('#rail').hidden = ui.view!=='fases';
+  if(ui.view==='tarefas') renderTarefas(INS);
+  else if(ui.view==='dores') renderDores(INS);
+  else if(ui.view==='sistemas') renderSistemas();
+  else if(ui.view==='equipe') renderEquipe();
+  else { renderRail(); ({diagnostico:renderDiagnostico,estrategia:renderEstrategia,execucao:renderExecucao,otimizacao:renderOtimizacao,resultados:renderResultados})[ui.stage](INS); }
+  document.querySelectorAll('textarea[data-nota],.field textarea,.kedit textarea').forEach(autoGrow);
+}
+/* tarefas de coleta acompanham o preenchimento */
+function autoTasks(){
+  let ch=false;
+  cur.acoes.forEach(t=>{ if(!t.origem||!t.origem.startsWith('coleta:'))return; const a=AREA[t.origem.slice(7)]; if(!a)return; const ans=a.q.filter(x=>cur.resp[x[0]]).length;
+    if(ans===a.q.length&&t.status!=='Concluída'){t.status='Concluída';ch=true;}
+    else if(ans>0&&ans<a.q.length&&t.status==='A fazer'){t.status='Em andamento';ch=true;} });
+  if(ch)mark('acoes');
+}
+function newTask(o){ const t={id:uid(),txt:'',area:'',dono:'',prazo:'',status:'A fazer',origem:'',...o}; if(!t.dono&&t.area&&cur.dono_area[t.area])t.dono=cur.dono_area[t.area]; cur.acoes.push(t); mark('acoes'); return t; }
+function autoGrow(t){t.style.height='auto';t.style.height=Math.min(t.scrollHeight+2,420)+'px';}
+
+/* ================= RESUMO ================= */
+function summary(){
+  computeAll(); const INS=runEngine(), ov=overall(); const L2=[];
+  L2.push(`DIAGNÓSTICO DE MATURIDADE · ${cur.nome}`); L2.push(`Maturidade geral: ${ov.score!=null?dec(ov.score)+' / 4 (N'+ov.level+' '+LVL[ov.level]+')':'sem nota'}`); L2.push('');
+  L2.push('MATURIDADE POR ÁREA'); AREAS.forEach(a=>{const s=SC[a.id]; L2.push(`- ${a.nome}: ${s.score!=null?dec(s.score)+' (N'+s.level+' '+LVL[s.level]+')':'sem nota'}`);}); L2.push('');
+  L2.push('INCONGRUÊNCIAS'); if(!INS.length)L2.push('- Nenhuma'); INS.forEach(i=>{L2.push(`- [${SEV[i.sev]}] ${i.t}: ${i.txt}`); i.rec.forEach(r=>L2.push(`    • ${r}`));}); L2.push('');
+  if(cur.campos['ctx.problema'])L2.push('PROBLEMA CENTRAL RELATADO: '+cur.campos['ctx.problema']);
+  if(cur.campos['ctx.hipotese'])L2.push('HIPÓTESE DO CONSULTOR: '+cur.campos['ctx.hipotese']);
+  if(cur.dores.length){ L2.push(''); L2.push('GARGALOS POR ETAPA'); gargalos().filter(g=>g.n).sort((a,b)=>b.score-a.score).forEach(g=>L2.push(`- ${g.etapa}: ${g.n} dores (${g.graves} graves)`)); L2.push(''); L2.push('DORES MAIS PESADAS'); [...cur.dores].sort((a,b)=>dorScore(b)-dorScore(a)).slice(0,10).forEach(d=>L2.push(`- ${d.txt} [${nameOf(d.area)||'Geral'} · ${d.etapa} · ${SEVN[d.sev]} · ${d.freq}${d.quem?' · '+d.quem:''}]`)); L2.push(''); }
+  if(cur.sistemas.some(x=>x.nome)){ L2.push('SISTEMAS'); cur.sistemas.filter(x=>x.nome).forEach(x=>L2.push(`- ${x.nome}${x.uso?' ('+x.uso+')':''}: satisfação ${x.satisf||'—'}/5, integra: ${x.integra||'—'}${x.prob?', problemas: '+x.prob:''}`)); L2.push(''); }
+  const fin=finRows().filter(r=>r.receita!=null||r.orcamento!=null); if(fin.length){L2.push('UNIDADES DE NEGÓCIO'); fin.forEach(r=>L2.push(`- ${r.nome}: receita ${brl(r.receita)}, ${pct(r.ating)} da meta, orçamento ${brl(r.orcamento)} (${pct(r.orcRec)} da receita)`)); L2.push('');}
+  const man=cur.fofa.geral||{}; if(FQ.some(([k])=>(man[k]||[]).length)){L2.push('FOFA (leitura do consultor)'); FQ.forEach(([k,n])=>(man[k]||[]).forEach(t=>L2.push(`- ${n}: ${t}`))); L2.push('');}
+  if(cur.equipe.length){L2.push('EQUIPE DE COLETA'); cur.equipe.forEach(m=>L2.push(`- ${m.nome||'Sem nome'}${m.papel?' ('+m.papel+')':''}: ${AREAS.filter(a=>cur.dono_area[a.id]===m.id).map(a=>a.nome).join(', ')||'sem área'}`)); L2.push('');}
+  if(cur.acoes.length){L2.push('TAREFAS'); COLS.forEach(c=>cur.acoes.filter(a=>a.status===c).forEach(a=>L2.push(`- [${c}] ${a.txt||'Sem título'} | ${a.area?nameOf(a.area):'Geral'} | ${(member(a.dono)||{}).nome||'sem responsável'} | ${a.prazo?fmtDate(a.prazo):'sem prazo'}`)));}
+  return L2.join('\n');
+}
+
+/* ================= SUPABASE: DADOS ================= */
+const sb = window.supabase.createClient(window.CD_CONFIG.url, window.CD_CONFIG.key, {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+let me=null, profiles=[], convites=[], snap=null, channel=null, pendingData=null;
+let ver=0, savedVer=0, saving=false, timer=null, saveErr=null, pendingRemote=false;
+const clone=v=>v===undefined?null:JSON.parse(JSON.stringify(v));
+function mark(){}   // o sincronizador compara o estado inteiro com o último salvo
+const nz=v=>v===''||v==null?null:v;
+const toInt=v=>{const n=parseInt(v,10);return isNaN(n)?null:n;};
+const ARR_DB={
+ entrevistas:{t:'entrevistas',to:x=>({id:x.id,area:nz(x.area),nome:nz(x.nome),cargo:nz(x.cargo),departamento:nz(x.depto),data:nz(x.data)}),from:r=>({id:r.id,area:r.area||'',nome:r.nome||'',cargo:r.cargo||'',depto:r.departamento||'',data:r.data||''})},
+ acoes:{t:'tarefas',to:x=>({id:x.id,titulo:nz(x.txt),area:nz(x.area),responsavel:nz(x.dono),prazo:nz(x.prazo),status:x.status,origem:nz(x.origem)}),from:r=>({id:r.id,txt:r.titulo||'',area:r.area||'',dono:r.responsavel||'',prazo:r.prazo||'',status:r.status,origem:r.origem||''})},
+ testes:{t:'experimentos',to:x=>({id:x.id,hipotese:nz(x.hip),area:nz(x.area),impacto:toInt(x.i),confianca:toInt(x.c),facilidade:toInt(x.f)}),from:r=>({id:r.id,hip:r.hipotese||'',area:r.area||'',i:r.impacto??'',c:r.confianca??'',f:r.facilidade??''})},
+ kpis:{t:'indicadores',to:x=>({id:x.id,nome:nz(x.nome),un:nz(x.un),meta:nz(x.meta),realizado:nz(x.real)}),from:r=>({id:r.id,nome:r.nome||'',un:r.un||'',meta:r.meta||'',real:r.realizado||''})},
+ dores:{t:'dores',to:x=>({id:x.id,descricao:x.txt,area:nz(x.area),etapa:nz(x.etapa),tipo:nz(x.tipo),gravidade:toInt(x.sev),frequencia:nz(x.freq),relatado_por:nz(x.quem),sistema:nz(x.sistema),data:nz(x.data)}),from:r=>({id:r.id,txt:r.descricao,area:r.area||'',etapa:r.etapa||'',tipo:r.tipo||'',sev:String(r.gravidade||2),freq:r.frequencia||'',quem:r.relatado_por||'',sistema:r.sistema||'',data:r.data||''})},
+ sistemas:{t:'sistemas',to:x=>({id:x.id,nome:nz(x.nome),uso:nz(x.uso),usuarios:nz(x.quem),satisfacao:toInt(x.satisf),integra:nz(x.integra),custo_mensal:nz(x.custo),problemas:nz(x.prob)}),from:r=>({id:r.id,nome:r.nome||'',uso:r.uso||'',quem:r.usuarios||'',satisf:r.satisfacao!=null?String(r.satisfacao):'',integra:r.integra||'',custo:r.custo_mensal||'',prob:r.problemas||''})},
+};
+const DIAG_TABLES=['respostas','campos','responsaveis_area','fofa_itens',...Object.values(ARR_DB).map(m=>m.t)];
+const ok=r=>{ if(r&&r.error) throw r.error; return r?r.data:null; };
+function equipeList(){ return profiles.filter(p=>p.ativo).map(p=>({id:p.id,nome:p.nome||p.email,papel:p.funcao||'',contato:p.contato||'',email:p.email,role:p.papel})); }
+async function loadList(){ const d=ok(await sb.from('diagnosticos').select('id,nome,updated_at').order('updated_at',{ascending:false})); all=Object.fromEntries((d||[]).map(x=>[x.id,x])); }
+async function loadTeam(){
+  const p=ok(await sb.from('profiles').select('*').order('nome'));
+  profiles=p||[];
+  if(me&&me.papel!=='cliente'){ const c=ok(await sb.from('convites').select('*').order('created_at')); convites=(c||[]).filter(x=>!profiles.some(pp=>pp.email===x.email)); } else convites=[];
+  if(cur) cur.equipe=equipeList();
+}
+async function loadDiag(id){
+  const q=t=>sb.from(t).select('*').eq('diagnostico_id',id);
+  const res=await Promise.all([sb.from('diagnosticos').select('*').eq('id',id).single(),q('respostas'),q('campos'),q('responsaveis_area'),q('fofa_itens').order('ordem').order('created_at'),...Object.values(ARR_DB).map(m=>q(m.t).order('created_at'))]);
+  const [d,resp,campos,resA,fofa,...arrs]=res.map(ok);
+  const o=blank(d.nome); o.id=id; o.atualizadoEm=d.updated_at;
+  resp.forEach(r=>{ if(r.nivel)o.resp[r.pergunta_id]=r.nivel; if(r.nota)o.notas[r.pergunta_id]=r.nota; if(r.evidenciada)o.evid[r.pergunta_id]=true; });
+  campos.forEach(r=>{ if(r.valor!=null&&r.valor!=='')o.campos[r.chave]=r.valor; });
+  resA.forEach(r=>{ o.dono_area[r.area]=r.user_id; });
+  fofa.forEach(r=>{ o.fofa[r.chave]=o.fofa[r.chave]||{}; (o.fofa[r.chave][r.quadrante]=o.fofa[r.chave][r.quadrante]||[]).push(r.texto); });
+  Object.keys(ARR_DB).forEach((k,i)=>{ o[k]=arrs[i].map(ARR_DB[k].from); });
+  o.equipe=equipeList();
+  return o;
+}
+function diffMap(now,was){ const up=[],del=[]; new Set([...Object.keys(now),...Object.keys(was)]).forEach(k=>{ const a=now[k], b=was[k]; if(JSON.stringify(a??null)===JSON.stringify(b??null))return; if(a==null||a==='')del.push(k); else up.push(k); }); return {up,del}; }
+async function flush(){
+  if(!cur||!snap) return;
+  if(saving){ clearTimeout(timer); timer=setTimeout(flush,400); return; }
+  if(savedVer===ver) return;
+  saving=true; const v=ver, now=clone(cur), was=snap, D=now.id, ts=new Date().toISOString(); renderStatus();
+  try{
+    const ops=[];
+    // respostas: nível, observação e evidência por pergunta
+    const qids=new Set([...Object.keys(now.resp),...Object.keys(now.notas),...Object.keys(now.evid),...Object.keys(was.resp),...Object.keys(was.notas),...Object.keys(was.evid)]);
+    const rUp=[],rDel=[];
+    qids.forEach(q=>{ const a=[now.resp[q]||null,now.notas[q]||null,!!now.evid[q]], b=[was.resp[q]||null,was.notas[q]||null,!!was.evid[q]]; if(JSON.stringify(a)===JSON.stringify(b))return; if(!a[0]&&!a[1]&&!a[2])rDel.push(q); else rUp.push({diagnostico_id:D,pergunta_id:q,nivel:a[0],nota:a[1],evidenciada:a[2],updated_at:ts}); });
+    if(rUp.length) ops.push(sb.from('respostas').upsert(rUp));
+    if(rDel.length) ops.push(sb.from('respostas').delete().eq('diagnostico_id',D).in('pergunta_id',rDel));
+    // campos abertos
+    const c=diffMap(now.campos,was.campos);
+    if(c.up.length) ops.push(sb.from('campos').upsert(c.up.map(k=>({diagnostico_id:D,chave:k,valor:now.campos[k],updated_at:ts}))));
+    if(c.del.length) ops.push(sb.from('campos').delete().eq('diagnostico_id',D).in('chave',c.del));
+    // responsáveis por área
+    const ra=diffMap(now.dono_area,was.dono_area);
+    if(ra.up.length) ops.push(sb.from('responsaveis_area').upsert(ra.up.map(a=>({diagnostico_id:D,area:a,user_id:now.dono_area[a]}))));
+    if(ra.del.length) ops.push(sb.from('responsaveis_area').delete().eq('diagnostico_id',D).in('area',ra.del));
+    // FOFA manual: regrava a chave que mudou
+    new Set([...Object.keys(now.fofa),...Object.keys(was.fofa)]).forEach(k=>{
+      if(JSON.stringify(now.fofa[k]||{})===JSON.stringify(was.fofa[k]||{}))return;
+      const rows=[]; Object.entries(now.fofa[k]||{}).forEach(([qd,list])=>(list||[]).forEach((t,i)=>rows.push({diagnostico_id:D,chave:k,quadrante:qd,texto:t,ordem:i})));
+      ops.push((async()=>{ const r=await sb.from('fofa_itens').delete().eq('diagnostico_id',D).eq('chave',k); if(r.error)return r; return rows.length?await sb.from('fofa_itens').insert(rows):r; })());
+    });
+    // listas (entrevistas, tarefas, dores, sistemas, indicadores, experimentos)
+    Object.entries(ARR_DB).forEach(([k,m])=>{
+      const A=new Map(now[k].map(x=>[x.id,x])), B=new Map(was[k].map(x=>[x.id,x])); const up=[],del=[];
+      A.forEach((x,id)=>{ if(!B.has(id)||JSON.stringify(m.to(x))!==JSON.stringify(m.to(B.get(id)))) up.push({...m.to(x),diagnostico_id:D}); });
+      B.forEach((x,id)=>{ if(!A.has(id))del.push(id); });
+      if(up.length) ops.push(sb.from(m.t).upsert(up));
+      if(del.length) ops.push(sb.from(m.t).delete().in('id',del));
+    });
+    if(ops.length||now.nome!==was.nome) ops.push(sb.from('diagnosticos').update({nome:now.nome,updated_at:ts}).eq('id',D));
+    const res=await Promise.all(ops); res.forEach(ok);
+    snap=now; savedVer=v; if(all[D]){all[D].nome=now.nome; all[D].updated_at=ts;}
+    saveErr=null;
+  }catch(e){
+    saveErr=/JWT|session/i.test(e.message||'')?'Sessão expirada; entre de novo':'Não foi possível salvar; tentando de novo';
+    console.error(e); clearTimeout(timer); timer=setTimeout(flush,4000);
+  }
+  saving=false; renderStatus();
+  if(savedVer!==ver&&!saveErr){ clearTimeout(timer); timer=setTimeout(flush,500); }
+  if(savedVer===ver&&pendingRemote) remoteSoon();
+}
+function touch(full){ if(!cur)return; cur.atualizadoEm=new Date().toISOString(); ver++; if(full)render(); else renderStatus(); clearTimeout(timer); timer=setTimeout(flush,700); }
+function isTyping(){const a=document.activeElement;return a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)&&a.id!=='sel-diag';}
+/* tempo real: quando outra pessoa salva, recarrega e aplica assim que você para de digitar */
+let remoteT=null;
+function remoteSoon(){ clearTimeout(remoteT); remoteT=setTimeout(async()=>{
+  if(!cur)return; if(ver!==savedVer||saving){ pendingRemote=true; return; }
+  try{ const o=await loadDiag(cur.id); if(ver!==savedVer||!cur||o.id!==cur.id){ pendingRemote=true; return; } pendingData=o; adoptRemote(); }catch(e){}
+ },700); }
+function adoptRemote(){
+  if(!pendingData){ if(pendingRemote&&!isTyping()){ pendingRemote=false; remoteSoon(); } return; }
+  if(isTyping()){ pendingRemote=true; return; }
+  const o=pendingData; pendingData=null; pendingRemote=false;
+  const a=JSON.stringify({...o,atualizadoEm:0}), b=JSON.stringify({...cur,atualizadoEm:0});
+  snap=clone(o); if(a!==b){ cur=o; render(); }
+}
+function subscribe(id){
+  if(channel){ sb.removeChannel(channel); channel=null; }
+  channel=sb.channel('diag-'+id);
+  DIAG_TABLES.forEach(t=>channel.on('postgres_changes',{event:'*',schema:'public',table:t,filter:`diagnostico_id=eq.${id}`},remoteSoon));
+  channel.on('postgres_changes',{event:'UPDATE',schema:'public',table:'diagnosticos',filter:`id=eq.${id}`},remoteSoon);
+  channel.subscribe();
+}
+async function openDiag(id){
+  if(cur&&ver!==savedVer) await flush();
+  $('#main').innerHTML='<p class="loading">Carregando diagnóstico…</p>';
+  try{ const o=await loadDiag(id); cur=o; snap=clone(o); ver=savedVer=0; saveErr=null; ui.openTask=null; lsSet('cd.last',id); subscribe(id); render(); }
+  catch(e){ console.error(e); toast('Não foi possível abrir o diagnóstico'); }
+}
+async function createDiag(nome){
+  const r=await sb.from('diagnosticos').insert({nome,cliente:nome}).select('id,nome,updated_at').single();
+  if(r.error){ toast('Não foi possível criar: '+r.error.message); return; }
+  all[r.data.id]=r.data; ui.novo=false; ui.view='fases'; ui.stage='diagnostico'; ui.area='demandas'; saveUi(); await openDiag(r.data.id);
+}
+const profT={};
+function saveProfile(id){ clearTimeout(profT[id]); profT[id]=setTimeout(async()=>{ const p=profiles.find(x=>x.id===id); if(!p)return; const r=await sb.from('profiles').update({nome:p.nome,funcao:p.funcao,contato:p.contato}).eq('id',id); if(r.error)toast('Não foi possível salvar o perfil'); },700); }
+
+/* ================= ACESSO ================= */
+let authMode='entrar', authMsg=null, authEmail='';
+const BASE=()=>location.origin+location.pathname;
+function showAuth(){ $('#app').hidden=true; $('#auth').hidden=false; renderAuth(); }
+function renderAuth(){
+  const m=authMode;
+  const title={entrar:'Entrar',primeiro:'Primeiro acesso',esqueci:'Recuperar senha','nova-senha':'Criar nova senha'}[m];
+  const lead={entrar:'Use o e-mail e a senha cadastrados.',primeiro:'Use o e-mail em que você recebeu o convite e crie sua senha.',esqueci:'Enviaremos um link para você criar uma nova senha.','nova-senha':'Digite a nova senha.'}[m];
+  $('#auth').innerHTML=`<section class="auth"><div class="auth-box">
+   <span class="logo"><i></i>LORSO DIGITAL</span>
+   <span class="eyebrow">// Central de <b>Diagnóstico</b></span>
+   <h1>${title}</h1><p>${lead}</p>
+   ${authMsg?`<div class="msg ${authMsg.ok?'ok':'err'}" role="status">${esc(authMsg.t)}</div>`:''}
+   <form id="f-auth" data-mode="${m}">
+    ${m!=='nova-senha'?`<label>E-mail<input name="email" type="email" autocomplete="email" value="${esc(authEmail)}" required></label>`:''}
+    ${m!=='esqueci'?`<label>${m==='entrar'?'Senha':'Senha (mínimo 8 caracteres)'}<input name="senha" type="password" autocomplete="${m==='entrar'?'current-password':'new-password'}" minlength="${m==='entrar'?1:8}" required></label>`:''}
+    <button class="btn primary" type="submit">${{entrar:'Entrar',primeiro:'Criar minha senha',esqueci:'Enviar link','nova-senha':'Salvar senha'}[m]}</button>
+   </form>
+   <div class="auth-links">${m!=='entrar'?`<button data-act="auth-mode" data-v="entrar">Já tenho senha</button>`:''}${m!=='primeiro'&&m!=='nova-senha'?`<button data-act="auth-mode" data-v="primeiro">Primeiro acesso</button>`:''}${m==='entrar'?`<button data-act="auth-mode" data-v="esqueci">Esqueci a senha</button>`:''}</div>
+  </div></section>`;
+  const f=document.querySelector(authEmail?'#f-auth input[name=senha]':'#f-auth input')||document.querySelector('#f-auth input'); f&&f.focus();
+}
+function authErr(e){
+  const s=(e&&e.message)||'';
+  if(/Invalid login credentials/i.test(s))return 'E-mail ou senha incorretos.';
+  if(/Email not confirmed/i.test(s))return 'Confirme seu e-mail pelo link que enviamos antes de entrar.';
+  if(/convidado|Database error saving new user/i.test(s))return 'Este e-mail ainda não foi convidado. Peça o convite à LORSO Digital.';
+  if(/already registered|already been registered/i.test(s))return 'Este e-mail já tem senha. Use "Já tenho senha" ou "Esqueci a senha".';
+  if(/Password should be/i.test(s))return 'A senha precisa ter pelo menos 8 caracteres.';
+  if(/rate limit/i.test(s))return 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';
+  return 'Não foi possível concluir: '+s;
+}
+async function submitAuth(f){
+  const fd=new FormData(f), email=String(fd.get('email')||'').trim().toLowerCase(), senha=String(fd.get('senha')||''), m=f.dataset.mode;
+  const btn=f.querySelector('button'); btn.disabled=true; authMsg=null; if(email)authEmail=email;
+  try{
+    if(m==='entrar'){ const r=await sb.auth.signInWithPassword({email,password:senha}); if(r.error)throw r.error; }
+    else if(m==='primeiro'){ const r=await sb.auth.signUp({email,password:senha,options:{emailRedirectTo:BASE()}}); if(r.error)throw r.error;
+      if(!r.data.session){ authMode='entrar'; authMsg={ok:1,t:`Enviamos um e-mail de confirmação para ${email}. Clique no link e depois entre com sua senha.`}; renderAuth(); } }
+    else if(m==='esqueci'){ const r=await sb.auth.resetPasswordForEmail(email,{redirectTo:BASE()}); if(r.error)throw r.error; authMode='entrar'; authMsg={ok:1,t:'Se o e-mail tiver acesso, você vai receber o link em instantes.'}; renderAuth(); }
+    else if(m==='nova-senha'){ const r=await sb.auth.updateUser({password:senha}); if(r.error)throw r.error; authMode='entrar'; authMsg=null; const s=await sb.auth.getSession(); if(s.data.session) start(s.data.session); }
+  }catch(e){ authMsg={t:authErr(e)}; renderAuth(); }
+  btn.disabled=false;
+}
+let started=false;
+async function start(session){
+  if(started)return; started=true;
+  $('#auth').hidden=true; $('#app').hidden=false; $('#main').innerHTML='<p class="loading">Carregando…</p>';
+  try{
+    const p=ok(await sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle());
+    if(!p||!p.ativo){ started=false; await sb.auth.signOut(); authMode='entrar'; authMsg={t:'Seu acesso não está ativo. Fale com a LORSO Digital.'}; showAuth(); return; }
+    me=p; await Promise.all([loadList(),loadTeam()]);
+    let id=lsGet('cd.last'); if(!all[id]) id=Object.keys(all)[0];
+    if(id) await openDiag(id); else { cur=null; render(); }
+  }catch(e){ console.error(e); $('#main').innerHTML='<p class="loading">Não foi possível carregar. Recarregue a página.</p>'; started=false; }
+}
+async function boot(){
+  sb.auth.onAuthStateChange((ev,session)=>{
+    if(ev==='PASSWORD_RECOVERY'){ authMode='nova-senha'; authMsg=null; started=false; showAuth(); return; }
+    if(ev==='SIGNED_OUT'){ started=false; me=null; cur=null; snap=null; if(channel){sb.removeChannel(channel);channel=null;} showAuth(); return; }
+    if((ev==='SIGNED_IN'||ev==='INITIAL_SESSION')&&session&&authMode!=='nova-senha') setTimeout(()=>start(session),0);
+    if(ev==='INITIAL_SESSION'&&!session) showAuth();
+  });
+}
+
+/* ================= EVENTOS ================= */
+const reduced=()=>window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function toast(t){const el=$('#toast'); el.textContent=t; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true,2600);}
+function go(view){ ui.view=view; ui.copy=null; saveUi(); render(); window.scrollTo({top:0}); }
+function genFromInsight(i){ const have=new Set(cur.acoes.map(a=>a.txt)); let n=0; i.rec.forEach(t=>{ if(!have.has(t)){ newTask({txt:t,area:i.areas[0]||'',origem:i.id}); n++; } }); return n; }
+function copyText(txt,okMsg){ try{ navigator.clipboard.writeText(txt).then(()=>toast(okMsg),()=>{ui.copy=txt;render();}); }catch(e){ ui.copy=txt; render(); } }
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]'); if(!b)return; const act=b.dataset.act, d=b.dataset;
+  if(act==='auth-mode'){ authMode=d.v; authMsg=null; renderAuth(); return; }
+  if(act==='sair'){ flush(); sb.auth.signOut(); return; }
+  if(act==='view'){ go(d.v); return; }
+  if(act==='novo'){ ui.novo=true; renderBar(); setTimeout(()=>{const i=$('#novo-nome');i&&i.focus();},0); return; }
+  if(act==='novo-cancel'){ ui.novo=false; renderBar(); return; }
+  if(act==='conv-copy'){ const c=convites.find(x=>x.email===d.email); if(c) copyText(conviteTexto(c),'Convite copiado'); return; }
+  if(act==='conv-del'){ (async()=>{ const r=await sb.from('convites').delete().eq('email',d.email); if(r.error){toast('Não foi possível cancelar');return;} await loadTeam(); render(); toast('Convite cancelado'); })(); return; }
+  if(act==='mem-off'){ (async()=>{ const r=await sb.from('profiles').update({ativo:false}).eq('id',d.id); if(r.error){toast('Não foi possível desativar');return;} await loadTeam(); render(); toast('Acesso desativado'); })(); return; }
+  if(!cur) return;
+  if(act==='stage'){ ui.view='fases'; ui.stage=d.v; ui.copy=null; saveUi(); render(); window.scrollTo({top:0}); }
+  else if(act==='area'||act==='goto'){ ui.view='fases'; if(AREA[d.v]){ui.stage='diagnostico';ui.area=d.v;} else if(STG[d.v]) ui.stage=d.v; saveUi(); render(); window.scrollTo({top:0}); }
+  else if(act==='opt'){
+    const q=d.q, n=+d.n, wasEmpty=!cur.resp[q];
+    if(cur.resp[q]===n)delete cur.resp[q]; else cur.resp[q]=n;
+    autoTasks(); touch(true);
+    if(wasEmpty&&cur.resp[q]){ const box=STG[QAREA[q]]&&!AREA[QAREA[q]]?STG[QAREA[q]]:AREA[QAREA[q]]; const qs=box.q; const i=qs.findIndex(x=>x[0]===q);
+      const nx=qs.slice(i+1).find(x=>!cur.resp[x[0]]); if(nx){ const el=document.getElementById('q-'+nx[0]); if(el){ const r=el.getBoundingClientRect(); if(r.top>window.innerHeight*0.7||r.top<0) el.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'}); } } }
+  }
+  else if(act==='note'){ ui.notesOpen[d.q]=true; render(); const t=document.querySelector(`[data-nota="${d.q}"]`); t&&t.focus(); }
+  else if(act==='ent-add'){ cur.entrevistas.push({id:uid(),area:d.area,nome:'',cargo:'',depto:nameOf(d.area),data:today()}); touch(true); const els=document.querySelectorAll('[data-ent][data-f="nome"]'); els.length&&els[els.length-1].focus(); }
+  else if(act==='ent-del'){ cur.entrevistas.splice(+d.i,1); touch(true); }
+  else if(act==='fofa-del'){ const f=cur.fofa[d.key]; if(f&&f[d.k]){ f[d.k].splice(+d.i,1); touch(true);} }
+  else if(act==='acao-add'){ newTask({txt:d.txt,area:d.area,origem:d.src||''}); touch(true); toast('Tarefa adicionada ao kanban'); }
+  else if(act==='plan-ins'){ computeAll(); const r=runEngine().find(i=>i.id===d.id&&i.t===d.t); if(r){ const n=genFromInsight(r); touch(true); toast(n?`${n} tarefas criadas`:'Essas tarefas já estão no kanban'); } }
+  else if(act==='gen-ins'){ computeAll(); let n=0; runEngine().filter(i=>i.sev!=='media').forEach(i=>n+=genFromInsight(i)); touch(true); toast(n?`${n} tarefas criadas a partir das incongruências`:'Nenhuma tarefa nova: as incongruências graves já têm tarefas'); }
+  else if(act==='gen-coleta'){ let n=0; AREAS.forEach(a=>{ const done=a.q.every(x=>cur.resp[x[0]]); if(!done&&!cur.acoes.some(t=>t.origem==='coleta:'+a.id)){ newTask({txt:`Coletar dados: ${a.nome} (entrevista 1 a 1)`,area:a.id,origem:'coleta:'+a.id}); n++; } }); autoTasks(); touch(true); toast(n?`${n} tarefas de coleta criadas`:'Todas as áreas já têm tarefa de coleta'); }
+  else if(act==='task-new'){ const t=newTask({status:d.col||'A fazer',area:d.area||'',txt:d.txt||''}); ui.openTask=t.id; if(ui.view==='fases'&&ui.stage!=='execucao'){ ui.view='tarefas'; saveUi(); } touch(true); const ta=document.querySelector(`.kedit textarea[data-id="${t.id}"]`); if(ta){ ta.focus(); ta.scrollIntoView({block:'center'}); } }
+  else if(act==='task-open'){ ui.openTask=d.id; render(); const ta=document.querySelector(`.kedit textarea[data-id="${d.id}"]`); ta&&ta.focus(); }
+  else if(act==='task-close'){ ui.openTask=null; render(); }
+  else if(act==='task-del'){ cur.acoes=cur.acoes.filter(t=>t.id!==d.id); ui.openTask=null; touch(true); }
+  else if(act==='tasks-area'){ ui.kf={dono:'',area:d.v}; go('tarefas'); }
+  else if(act==='tasks-mem'){ ui.kf={dono:d.id,area:''}; go('tarefas'); }
+  else if(act==='kf-clear'){ ui.kf={dono:'',area:''}; render(); }
+  else if(act==='teste-new'){ cur.testes.push({id:uid(),hip:'',area:'',i:'',c:'',f:''}); touch(true); }
+  else if(act==='teste-del'){ cur.testes.splice(+d.i,1); touch(true); }
+  else if(act==='kpi-add'){ cur.kpis.push({id:uid(),nome:d.n,un:'',meta:'',real:''}); touch(true); }
+  else if(act==='kpi-del'){ cur.kpis.splice(+d.i,1); touch(true); }
+  else if(act==='mem-area'){ const a=d.v, id=d.id; if(cur.dono_area[a]===id) delete cur.dono_area[a]; else cur.dono_area[a]=id; syncColetaDono(a); touch(true); }
+  else if(act==='copy'){ copyText(summary(),'Resumo copiado'); }
+  else if(act==='copy-close'){ ui.copy=null; render(); }
+  else if(act==='dor-del'){ cur.dores=cur.dores.filter(x=>x.id!==d.id); touch(true); }
+  else if(act==='dor-task'){ const x=cur.dores.find(y=>y.id===d.id); if(x){ newTask({txt:'Resolver: '+x.txt,area:x.area,origem:'dor:'+x.id}); touch(true); toast('Tarefa criada no kanban'); } }
+  else if(act==='dor-filter'){ ui.dorF.etapa=ui.dorF.etapa===d.v?'':d.v; render(); }
+  else if(act==='dor-farea'){ ui.dorF.area=ui.dorF.area===d.v?'':d.v; render(); }
+  else if(act==='sys-add'){ const x={id:uid(),nome:d.n,uso:'',quem:'',satisf:'',integra:'',custo:'',prob:''}; cur.sistemas.push(x); touch(true); const i=document.querySelector(`[data-sys="${x.id}"][data-f="${d.n?'uso':'nome'}"]`); i&&i.focus(); }
+  else if(act==='sys-del'){ cur.sistemas=cur.sistemas.filter(x=>x.id!==d.id); touch(true); }
+});
+function syncColetaDono(areaId){ const t=cur.acoes.find(x=>x.origem==='coleta:'+areaId&&x.status!=='Concluída'); if(t){ t.dono=cur.dono_area[areaId]||''; } }
+
+document.addEventListener('submit',e=>{
+  e.preventDefault(); const f=e.target;
+  if(f.id==='f-auth'){ submitAuth(f); return; }
+  if(f.id==='f-novo'){ const nm=$('#novo-nome').value.trim(); if(nm) createDiag(nm); return; }
+  if(f.id==='f-novo2'){ const nm=$('#novo-nome2').value.trim(); if(nm) createDiag(nm); return; }
+  if(f.id==='f-convite'){ const fd=new FormData(f); const c={email:String(fd.get('email')||'').trim().toLowerCase(),nome:String(fd.get('nome')||'').trim(),funcao:String(fd.get('funcao')||'').trim()||null,papel:fd.get('papel'),convidado_por:me.id};
+    (async()=>{ const r=await sb.from('convites').upsert(c); if(r.error){ toast('Não foi possível convidar: '+r.error.message); return; } f.reset(); await loadTeam(); render(); copyText(conviteTexto(c),'Convite registrado e texto copiado'); })(); return; }
+  if(!cur) return;
+  if(f.dataset.dorform){ const fd=new FormData(f); const txt=String(fd.get('txt')||'').trim(); if(!txt)return; const preset=f.dataset.area;
+    const dor={id:uid(),txt,area:preset||String(fd.get('area')||''),etapa:fd.get('etapa'),tipo:fd.get('tipo'),sev:fd.get('sev'),freq:fd.get('freq'),quem:String(fd.get('quem')||'').trim(),sistema:fd.get('sistema')||'',data:today()};
+    f.querySelector('.dtxt').value=''; cur.dores.push(dor); ui.dorDef={...ui.dorDef,etapa:dor.etapa,tipo:dor.tipo,sev:dor.sev,freq:dor.freq,quem:dor.quem,sistema:dor.sistema,...(preset?{}:{area:dor.area})};
+    touch(true); toast('Dor registrada'); const n=document.querySelector(`form[data-dorform][data-area="${preset||''}"] .dtxt`); n&&n.focus(); return; }
+  if(f.dataset.fofa){ const inp=f.querySelector('input'); const t=inp.value.trim(); if(!t)return; inp.value=''; const key=f.dataset.fofa,k=f.dataset.k; cur.fofa[key]=cur.fofa[key]||{}; (cur.fofa[key][k]=cur.fofa[key][k]||[]).push(t); touch(true); const n=document.querySelector(`form[data-fofa="${key}"][data-k="${k}"] input`); n&&n.focus(); }
+});
+document.addEventListener('input',e=>{
+  const t=e.target, d=t.dataset;
+  if(d.mem!=null){ const p=profiles.find(x=>x.id===d.mem); if(p){ const f={nome:'nome',papel:'funcao',contato:'contato'}[d.f]; p[f]=t.value; if(cur)cur.equipe=equipeList(); saveProfile(p.id); } return; }
+  if(!cur) return;
+  if(d.nota!=null){ if(t.value)cur.notas[d.nota]=t.value; else delete cur.notas[d.nota]; autoGrow(t); touch(false); }
+  else if(d.campo!=null){ if(t.value)cur.campos[d.campo]=t.value; else delete cur.campos[d.campo]; if(t.tagName==='TEXTAREA')autoGrow(t); touch(false); }
+  else if(t.id==='nome-diag'){ cur.nome=t.value||'Sem nome'; touch(false); }
+  else if(d.ent!=null&&t.type!=='date'){ cur.entrevistas[+d.ent][d.f]=t.value; touch(false); }
+  else if(d.taskF==='txt'){ const x=cur.acoes.find(a=>a.id===d.id); if(x){ x.txt=t.value; autoGrow(t); touch(false); } }
+  else if(d.teste!=null&&(d.f==='hip'||d.f==='area')){ cur.testes[+d.teste][d.f]=t.value; touch(false); }
+  else if(d.kpi!=null&&(d.f==='nome'||d.f==='un')){ cur.kpis[+d.kpi][d.f]=t.value; touch(false); }
+  else if(d.sys!=null&&t.tagName==='INPUT'){ const x=cur.sistemas.find(y=>y.id===d.sys); if(x){ x[d.f]=t.value; touch(false); } }
+});
+document.addEventListener('change',e=>{
+  const t=e.target, d=t.dataset;
+  if(!cur) return;
+  if(t.id==='sel-diag'){ openDiag(t.value); }
+  else if(t.id==='area-sel'){ ui.area=t.value; saveUi(); render(); window.scrollTo({top:0}); }
+  else if(t.id==='kf-dono'){ ui.kf.dono=t.value; render(); }
+  else if(t.id==='kf-area'){ ui.kf.area=t.value; render(); }
+  else if(d.evid!=null){ if(t.checked)cur.evid[d.evid]=true; else delete cur.evid[d.evid]; touch(false); }
+  else if(d.campo!=null){ touch(false); soon(); }
+  else if(d.ent!=null&&t.type==='date'){ cur.entrevistas[+d.ent].data=t.value; touch(false); }
+  else if(d.taskF&&d.taskF!=='txt'){ const x=cur.acoes.find(a=>a.id===d.id); if(x){ x[d.taskF]=t.value; touch(false); } }
+  else if(d.donoArea!=null){ if(t.value)cur.dono_area[d.donoArea]=t.value; else delete cur.dono_area[d.donoArea]; syncColetaDono(d.donoArea); touch(true); }
+  else if(d.teste!=null&&['i','c','f'].includes(d.f)){ cur.testes[+d.teste][d.f]=t.value; touch(false); soon(); }
+  else if(d.kpi!=null&&(d.f==='meta'||d.f==='real')){ cur.kpis[+d.kpi][d.f]=t.value; touch(false); soon(); }
+  else if(d.sys!=null){ const x=cur.sistemas.find(y=>y.id===d.sys); if(x){ x[d.f]=t.value; touch(false); soon(); } }
+});
+document.addEventListener('focusout',()=>{ setTimeout(()=>{ if(!isTyping()&&(pendingData||pendingRemote))adoptRemote(); },0); });
+window.addEventListener('pagehide',()=>{ if(ver!==savedVer) flush(); });
+window.addEventListener('beforeunload',e=>{ if(ver!==savedVer){ flush(); e.preventDefault(); e.returnValue=''; } });
+boot();
