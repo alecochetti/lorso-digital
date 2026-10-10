@@ -18,9 +18,9 @@ function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 
 /* ================= ESTADO ================= */
-const MAPS=['resp','evid','notas','campos','fofa','dono_area'], ARRS=['entrevistas','acoes','testes','kpis','equipe','dores','sistemas','cursos','iniciativas'];
+const MAPS=['resp','evid','notas','campos','fofa','dono_area'], ARRS=['entrevistas','acoes','testes','kpis','equipe','dores','sistemas','cursos','iniciativas','fontes'];
 const COLS=['A fazer','Em andamento','Em revisão','Concluída'];
-function blank(nome){return {id:uid(),nome:nome||'Novo diagnóstico',exemplo:false,resp:{},evid:{},notas:{},campos:{},fofa:{},dono_area:{},entrevistas:[],acoes:[],testes:[],kpis:[],equipe:[],dores:[],sistemas:[],cursos:[],iniciativas:[],criadoEm:new Date().toISOString(),atualizadoEm:null};}
+function blank(nome){return {id:uid(),nome:nome||'Novo diagnóstico',exemplo:false,resp:{},evid:{},notas:{},campos:{},fofa:{},dono_area:{},entrevistas:[],acoes:[],testes:[],kpis:[],equipe:[],dores:[],sistemas:[],cursos:[],iniciativas:[],fontes:[],criadoEm:new Date().toISOString(),atualizadoEm:null};}
 function norm(d){
   const b=blank(); const o=Object.assign(b,JSON.parse(JSON.stringify(d||{})));
   MAPS.forEach(k=>{ if(!o[k]||typeof o[k]!=='object'||Array.isArray(o[k]))o[k]={}; Object.keys(o[k]).forEach(x=>{if(o[k][x]==null)delete o[k][x];}); });
@@ -483,6 +483,7 @@ function baseHtml(INS){
   return `<section class="panel">
    <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">// Passo 1 · <b>Base de conhecimento</b></span><h2 style="margin-top:8px">Base de conhecimento</h2><p class="lead">Antes das entrevistas: o que a instituição vende, por quanto, com quantas vagas e quanto já captou. Esses números entram nos cruzamentos com as expectativas da reitoria.</p></div></header>
    <div class="stats"><div class="stat"><b>${vig}</b><span>cursos vigentes</span></div><div class="stat"><b>${lan}</b><span>lançamentos previstos</span></div><div class="stat"><b>${tv!=null?tv.toLocaleString('pt-BR'):'—'}</b><span>vagas no ciclo</span></div><div class="stat ${tv&&tc!=null&&tc/tv<0.7?'warn':''}"><b>${tv&&tc!=null?pct(tc/tv):'—'}</b><span>ocupação das vagas</span></div><div class="stat ${tm&&tc!=null&&tc/tm<0.8?'bad':''}"><b>${tm&&tc!=null?pct(tc/tm):'—'}</b><span>da meta de captação</span></div></div>
+   ${fontesHtml()}
    <section class="block"><div class="block-h"><h3>Capacidade de captação por UN e turno</h3><p>Vagas do ciclo, meta, quantos já captou e a mensalidade média.</p></div>
     <div class="tblw"><table class="tbl cap"><thead><tr><th>UN</th><th>Turno ou modalidade</th><th class="r">Vagas</th><th class="r">Meta de captação</th><th class="r">Captados</th><th class="r">Mensalidade média</th><th class="r">Ocupação</th><th class="r">Da meta</th></tr></thead><tbody>
      ${rows.map(r=>`<tr><td>${r.nm}</td><td class="muted">${r.mod}</td><td>${cap$(r.k,'vagas')}</td><td>${cap$(r.k,'meta')}</td><td>${cap$(r.k,'captados')}</td><td>${cap$(r.k,'ticket','R$')}</td>${pctCell(r.ocup,0.7)}${pctCell(r.ating,0.8)}</tr>`).join('')}
@@ -1130,6 +1131,7 @@ const ICO={
  lua:'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z',
  sair:'M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10',
  lista:'M4 6h16M4 12h16M4 18h10',
+ site:'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z',
  fases:'M4 5h16v4H4zM4 11h16v4H4zM4 17h10v3H4z',
  dre:'M12 3v18M16.5 7.5c0-1.9-2-3-4.5-3s-4.5 1.2-4.5 3.2c0 4.5 9 2.3 9 6.8 0 2-2 3.3-4.5 3.3s-4.5-1.2-4.5-3.1',
  lancamento:'M5 15c-1.5 1.5-2 5-2 5s3.5-.5 5-2M14 4c3-1 6-1 6-1s0 3-1 6l-7 7-5-5zM9.5 9.5 5 9l-2 2 4 1M14.5 14.5 15 19l-2 2-1-4',
@@ -1336,6 +1338,90 @@ function tempoHtml(){
   </section>`;
 }
 
+/* ================= BASE DE CONHECIMENTO: FONTES, SITE E EXPORTAÇÃO ================= */
+const FONTE_TIPO={notebooklm:['NotebookLM','entrevistas'],site:['Site','site'],arquivo:['Arquivo','base'],texto:['Texto','base']};
+const palavras=t=>(String(t||'').match(/\S+/g)||[]).length;
+function dlFile(nome,conteudo,tipo){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([conteudo],{type:tipo||'text/plain;charset=utf-8'})); a.download=nome; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800); }
+const slugN=s=>String(s||'cliente').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'cliente';
+function fontesHtml(){
+  const F=[...cur.fontes].sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')));
+  const ab=ui.fonteAba||'';
+  return `<section class="block" id="fontes"><div class="block-h"><h3>Fontes de conhecimento</h3><p>Traga o que já existe sobre o cliente. Tudo fica guardado aqui e entra na exportação.</p></div>
+   <div class="fsrc">
+    <button class="fbtn ${ab==='nb'?'on':''}" data-act="fonte-aba" data-v="nb">${ico('entrevistas',20)}<span><b>Colar do NotebookLM</b><small>Resumo, notas ou guia de estudo</small></span></button>
+    <button class="fbtn ${ab==='arq'?'on':''}" data-act="fonte-aba" data-v="arq">${ico('base',20)}<span><b>Subir arquivo</b><small>PDF, Word, texto, planilha CSV</small></span></button>
+    <button class="fbtn ${ab==='site'?'on':''}" data-act="fonte-aba" data-v="site">${ico('site',20)}<span><b>Ler o site do cliente</b><small>Cursos, preços e institucional</small></span></button>
+   </div>
+   ${ab==='nb'?`<form id="f-fonte-nb" class="fform"><label>Título<input name="titulo" placeholder="Ex.: NotebookLM · resumo da instituição" required></label><label>Conteúdo<textarea name="conteudo" rows="8" placeholder="No NotebookLM, copie o resumo, as notas ou o guia gerado e cole aqui." required></textarea></label><div><button class="btn primary" type="submit">Guardar fonte</button> <button class="btn ghost" type="button" data-act="fonte-aba" data-v="">Cancelar</button></div></form>`:''}
+   ${ab==='arq'?`<div class="fform"><label class="drop"><input type="file" id="fonte-file" accept=".txt,.md,.csv,.json,.html,.htm,.pdf,.docx" multiple><span>Clique para escolher ou arraste arquivos aqui</span><small>Do NotebookLM, use "Exportar para o Documentos Google" e baixe como .docx ou .pdf. Até 15 MB por arquivo.</small></label>${ui.fonteLendo?`<p class="muted">Lendo ${esc(ui.fonteLendo)}…</p>`:''}</div>`:''}
+   ${ab==='site'?`<form id="f-fonte-site" class="fform"><label>Endereço do site<input name="url" inputmode="url" autocomplete="url" placeholder="https://www.instituicao.edu.br" value="${esc(ui.fonteUrl||'')}" required></label><label>Páginas para ler<select name="paginas"><option value="4">Até 4 (rápido)</option><option value="8" selected>Até 8</option><option value="12">Até 12 (mais completo)</option></select></label><div><button class="btn primary" type="submit" ${ui.lendoSite?'disabled':''}>${ui.lendoSite?'Lendo o site…':'Ler site'}</button></div><p class="muted" style="font-size:13px">Lê a página inicial e as páginas de cursos, inscrição e mensalidades que ela linka. Pode levar até 1 minuto.</p></form>`:''}
+   ${F.length?`<div class="flist">${F.map(f=>{ const [tn,ic]=FONTE_TIPO[f.tipo]||FONTE_TIPO.texto; const d=f.dados||{}; const ia=d.ia&&!d.ia.erro?d.ia:null; const cs=ia&&Array.isArray(ia.cursos)?ia.cursos.filter(c=>c&&c.nome&&!cur.cursos.some(x=>x.nome===c.nome&&x.un===(c.un||''))):[];
+     return `<article class="fitem"><div class="fh">${ico(ic,18)}<div class="ft"><b>${esc(f.titulo||'Sem título')}</b><small>${tn} · ${palavras(f.conteudo).toLocaleString('pt-BR')} palavras${f.url?` · <a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.url.replace(/^https?:\/\//,'').slice(0,48))}</a>`:''}${f.created_at?` · ${new Date(f.created_at).toLocaleDateString('pt-BR')}`:''}</small></div><button class="xbtn" data-act="fonte-del" data-id="${f.id}" aria-label="Excluir fonte">×</button></div>
+      ${ia&&ia.resumo?`<p class="fres">${esc(ia.resumo)}</p>`:''}
+      ${d.precos&&d.precos.length?`<p class="muted" style="font-size:13px;margin:6px 0 0">${pl(d.precos.length,'valor em R$ encontrado','valores em R$ encontrados')} no site.</p>`:''}
+      ${cs.length?`<div style="margin-top:8px"><button class="btn sm primary" data-act="fonte-cursos" data-id="${f.id}">Adicionar ${pl(cs.length,'curso encontrado','cursos encontrados')} à tabela</button></div>`:''}
+      <details data-keep="fonte-${f.id}" ${ui.open['fonte-'+f.id]?'open':''}><summary>Ver conteúdo</summary><pre class="fpre">${esc(String(f.conteudo||'').slice(0,12000))}${String(f.conteudo||'').length>12000?'\n\n[… continua na exportação]':''}</pre></details></article>`; }).join('')}</div>`:''}
+   <div class="fexp"><button class="btn" data-act="base-md">Exportar para o NotebookLM (.md)</button><button class="btn" data-act="base-json">Exportar dados (.json)</button><span class="muted" style="font-size:13px">Leva capacidade, cursos, contexto, respostas da reitoria e todas as fontes.</span></div>
+  </section>`;
+}
+function baseMarkdown(){
+  const L=[]; const ln=s=>L.push(s);
+  ln(`# Base de conhecimento · ${cur.nome}`); ln(`Exportado da Central de Diagnóstico da LORSO Digital em ${new Date().toLocaleDateString('pt-BR')}.`); ln('');
+  const rows=capRows().filter(r=>r.vagas!=null||r.meta!=null||r.captados!=null);
+  if(rows.length){ ln('## Capacidade de captação por UN e turno'); ln('| UN | Turno ou modalidade | Vagas | Meta | Captados | Mensalidade média | Ocupação |'); ln('|---|---|---|---|---|---|---|');
+    rows.forEach(r=>ln(`| ${r.nm} | ${r.mod} | ${r.vagas??''} | ${r.meta??''} | ${r.captados??''} | ${r.ticket!=null?brl(r.ticket):''} | ${r.ocup!=null?pct(r.ocup):''} |`)); ln(''); }
+  if(cur.cursos.length){ ln('## Cursos'); ln('| UN | Curso | Modalidade | Turno | Mensalidade | Vagas | Matriculados | Status | Lançamento |'); ln('|---|---|---|---|---|---|---|---|---|');
+    cur.cursos.forEach(c=>ln(`| ${(UNS.find(u=>u.id===c.un)||{}).nome||''} | ${c.nome} | ${c.modalidade} | ${c.turno} | ${c.preco} | ${c.vagas} | ${c.matriculados} | ${c.status} | ${c.lancamento} |`)); ln(''); }
+  const ctx=Object.keys(cur.campos).filter(k=>k.startsWith('base.')&&!k.startsWith('base.cap.'));
+  if(ctx.length){ ln('## Contexto do mercado'); ctx.forEach(k=>{ ln(`**${k.replace('base.','')}**`); ln(String(cur.campos[k])); ln(''); }); }
+  LID.forEach(a=>{ const it=(a.vol||[]).filter(v=>cur.campos[a.id+'.'+v[0]]); if(!it.length)return; ln(`## ${a.nome}`);
+    it.forEach(v=>{ const k=a.id+'.'+v[0]; ln(`**${v[1]}**`); ln(v[2]==='p'?priTxt(k):String(cur.campos[k])); if(cur.campos[k+'.obs'])ln('Comentário: '+cur.campos[k+'.obs']); ln(''); }); });
+  const ux=UNS.filter(u=>unExpResumo(u.id)); if(ux.length){ ln('## Expectativas da reitoria por UN'); ux.forEach(u=>ln(`- **${u.nome}:** ${unExpResumo(u.id)}`)); ln(''); }
+  cur.fontes.forEach(f=>{ ln(`## Fonte: ${f.titulo||'Sem título'}`); if(f.url)ln(f.url); ln(''); ln(String(f.conteudo||'')); ln(''); });
+  return L.join('\n');
+}
+function baseJson(){ return JSON.stringify({formato:'lorso-base-v1',cliente:cur.nome,exportado:new Date().toISOString(),
+  capacidade:Object.fromEntries(Object.entries(cur.campos).filter(([k])=>k.startsWith('base.'))), cursos:cur.cursos.map(({id,...c})=>c),
+  reitoria:Object.fromEntries(Object.entries(cur.campos).filter(([k])=>LID.some(a=>k.startsWith(a.id+'.')))),
+  fontes:cur.fontes.map(f=>({tipo:f.tipo,titulo:f.titulo,url:f.url,conteudo:f.conteudo,dados:f.dados||null}))},null,1); }
+function addFonte(o){ const f={id:uid(),tipo:'texto',titulo:'',url:'',conteudo:'',dados:null,created_at:new Date().toISOString(),...o}; if(f.conteudo&&f.conteudo.length>400000)f.conteudo=f.conteudo.slice(0,400000); cur.fontes.push(f); touch(true); return f; }
+async function lerArquivo(file){
+  const n=file.name.toLowerCase();
+  if(file.size>15*1024*1024) throw new Error('arquivo maior que 15 MB');
+  if(n.endsWith('.pdf')){ await loadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js'); const lib=window.pdfjsLib; lib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+    const doc=await lib.getDocument({data:await file.arrayBuffer()}).promise; const out=[]; for(let i=1;i<=Math.min(doc.numPages,300);i++){ const p=await doc.getPage(i); const c=await p.getTextContent(); out.push(c.items.map(x=>x.str).join(' ').replace(/\s+/g,' ').trim()); } return out.filter(Boolean).join('\n\n'); }
+  if(n.endsWith('.docx')){ await loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js'); const r=await window.mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()}); return r.value; }
+  const t=await file.text();
+  if(/\.html?$/.test(n)){ const d=new DOMParser().parseFromString(t,'text/html'); d.querySelectorAll('script,style,noscript').forEach(x=>x.remove()); return (d.body?d.body.innerText||d.body.textContent:'').replace(/\n{3,}/g,'\n\n').trim(); }
+  return t;
+}
+async function importarArquivos(files){
+  for(const file of files){ ui.fonteLendo=file.name; render();
+    try{ const txt=await lerArquivo(file);
+      if(file.name.toLowerCase().endsWith('.json')){ try{ const j=JSON.parse(txt); if(j&&j.formato==='lorso-base-v1'){ importarBaseJson(j); continue; } }catch(e){ /* JSON comum vira texto */ } }
+      if(!String(txt||'').trim()){ toast(`${file.name}: não encontrei texto (PDF escaneado precisa de OCR)`); continue; }
+      addFonte({tipo:/notebook/i.test(file.name)?'notebooklm':'arquivo',titulo:file.name.replace(/\.[^.]+$/,''),conteudo:txt}); toast(`${file.name} guardado`);
+    }catch(e){ console.error(e); toast(`Não foi possível ler ${file.name}: ${e.message||e}`); } }
+  ui.fonteLendo=null; render();
+}
+function importarBaseJson(j){
+  let n=0; Object.entries(j.capacidade||{}).forEach(([k,v])=>{ if(k.startsWith('base.')&&v!=null&&!cur.campos[k]){ cur.campos[k]=String(v); n++; } });
+  (j.cursos||[]).forEach(c=>{ if(c&&c.nome&&!cur.cursos.some(x=>x.nome===c.nome&&x.un===c.un)){ cur.cursos.push({id:uid(),un:'',modalidade:'',turno:'',preco:'',vagas:'',matriculados:'',status:'Vigente',lancamento:'',obs:'',...c}); n++; } });
+  (j.fontes||[]).forEach(f=>{ if(f&&f.conteudo&&!cur.fontes.some(x=>x.titulo===f.titulo&&x.conteudo===f.conteudo)){ cur.fontes.push({id:uid(),created_at:new Date().toISOString(),...f}); n++; } });
+  touch(true); toast(n?`Base importada: ${n} itens novos`:'Nada novo para importar');
+}
+async function lerSite(url,paginas){
+  ui.lendoSite=true; ui.fonteUrl=url; render();
+  try{ const r=await sb.functions.invoke('ler-site',{body:{url,paginas:+paginas||8}});
+    let d=r.data; if(r.error){ let m=r.error.message||'erro'; try{ const b=await r.error.context.json(); if(b&&b.erro)m=b.erro; }catch(e){} throw new Error(m); }
+    if(typeof d==='string'){ try{ d=JSON.parse(d); }catch(e){} }
+    if(!d||d.erro) throw new Error(d&&d.erro||'resposta vazia');
+    addFonte({tipo:'site',titulo:d.titulo||url,url:d.url||url,conteudo:d.texto||'',dados:{paginas:d.paginas||[],precos:d.precos||[],ia:d.ia||null}});
+    ui.fonteAba=''; ui.fonteUrl=''; toast(`Site lido: ${(d.paginas||[]).length} páginas guardadas`);
+  }catch(e){ console.error(e); toast('Não foi possível ler o site: '+(e.message||e)); }
+  ui.lendoSite=false; render();
+}
+
 function focusKey(el){
   if(!el||el===document.body||!el.tagName||!/INPUT|TEXTAREA|SELECT/.test(el.tagName))return null;
   if(el.id)return '#'+CSS.escape(el.id);
@@ -1348,7 +1434,7 @@ function focusKey(el){
 let soonT=null; function soon(){ clearTimeout(soonT); soonT=setTimeout(render,0); }
 function render(){
   const ae=document.activeElement, fk=focusKey(ae); let selS=null,selE=null; try{selS=ae.selectionStart;selE=ae.selectionEnd;}catch(e){}
-  const DRAFT='form[data-dorform] input, form[data-dorform] select, form[data-fofa] input, #f-convite input, #f-convite select, #novo-nome, #novo-nome2';
+  const DRAFT='form[data-dorform] input, form[data-dorform] select, form[data-fofa] input, #f-convite input, #f-convite select, #novo-nome, #novo-nome2, #f-fonte-nb input, #f-fonte-nb textarea, #f-fonte-site input';
   const drafts=[...document.querySelectorAll(DRAFT)].map(el=>[focusKey(el),el.value]).filter(x=>x[0]&&x[1]);
   document.querySelectorAll('details[data-keep]').forEach(d=>{ ui.open[d.dataset.keep]=d.open; });
   renderInner();
@@ -1558,6 +1644,7 @@ const ARR_DB={
  testes:{t:'experimentos',to:x=>({id:x.id,hipotese:nz(x.hip),area:nz(x.area),impacto:toInt(x.i),confianca:toInt(x.c),facilidade:toInt(x.f)}),from:r=>({id:r.id,hip:r.hipotese||'',area:r.area||'',i:r.impacto??'',c:r.confianca??'',f:r.facilidade??''})},
  kpis:{t:'indicadores',to:x=>({id:x.id,nome:nz(x.nome),un:nz(x.un),meta:nz(x.meta),realizado:nz(x.real)}),from:r=>({id:r.id,nome:r.nome||'',un:r.un||'',meta:r.meta||'',real:r.realizado||''})},
  dores:{t:'dores',to:x=>({id:x.id,descricao:x.txt,area:nz(x.area),etapa:nz(x.etapa),tipo:nz(x.tipo),gravidade:toInt(x.sev),frequencia:nz(x.freq),relatado_por:nz(x.quem),sistema:nz(x.sistema),data:nz(x.data)}),from:r=>({id:r.id,txt:r.descricao,area:r.area||'',etapa:r.etapa||'',tipo:r.tipo||'',sev:String(r.gravidade||2),freq:r.frequencia||'',quem:r.relatado_por||'',sistema:r.sistema||'',data:r.data||''})},
+ fontes:{t:'fontes',to:x=>({id:x.id,tipo:x.tipo||'texto',titulo:nz(x.titulo),url:nz(x.url),conteudo:nz(x.conteudo),dados:x.dados||null}),from:r=>({id:r.id,tipo:r.tipo||'texto',titulo:r.titulo||'',url:r.url||'',conteudo:r.conteudo||'',dados:r.dados||null,created_at:r.created_at})},
  cursos:{t:'cursos',to:x=>({id:x.id,un:nz(x.un),nome:nz(x.nome),modalidade:nz(x.modalidade),turno:nz(x.turno),preco:nz(x.preco),vagas:nz(x.vagas),matriculados:nz(x.matriculados),status:x.status||'Vigente',lancamento:nz(x.lancamento),obs:nz(x.obs)}),from:r=>({id:r.id,un:r.un||'',nome:r.nome||'',modalidade:r.modalidade||'',turno:r.turno||'',preco:r.preco||'',vagas:r.vagas||'',matriculados:r.matriculados||'',status:r.status||'Vigente',lancamento:r.lancamento||'',obs:r.obs||''})},
  iniciativas:{t:'iniciativas',to:x=>({id:x.id,titulo:nz(x.titulo),bloco:nz(x.bloco),area:nz(x.area),horizonte:nz(x.horizonte),impacto:toInt(x.impacto),esforco:toInt(x.esforco),risco:toInt(x.risco),dependencias:nz(x.dependencias),alinhamento:nz(x.alinhamento),recomendacao:nz(x.recomendacao),motivo:nz(x.motivo),indicador:nz(x.indicador),ordem:toInt(x.ordem)??0}),from:r=>({id:r.id,titulo:r.titulo||'',bloco:r.bloco||'',area:r.area||'',horizonte:r.horizonte||'',impacto:r.impacto??'',esforco:r.esforco??'',risco:r.risco??'',dependencias:r.dependencias||'',alinhamento:r.alinhamento||'',recomendacao:r.recomendacao||'',motivo:r.motivo||'',indicador:r.indicador||'',ordem:r.ordem||0})},
  sistemas:{t:'sistemas',to:x=>({id:x.id,nome:nz(x.nome),uso:nz(x.uso),usuarios:nz(x.quem),satisfacao:toInt(x.satisf),integra:nz(x.integra),custo_mensal:nz(x.custo),problemas:nz(x.prob)}),from:r=>({id:r.id,nome:r.nome||'',uso:r.uso||'',quem:r.usuarios||'',satisf:r.satisfacao!=null?String(r.satisfacao):'',integra:r.integra||'',custo:r.custo_mensal||'',prob:r.problemas||''})},
@@ -1764,6 +1851,13 @@ document.addEventListener('click',e=>{
     if(L.length)cur.campos[k]=L.join('|'); else delete cur.campos[k]; touch(true);
     if(act==='pri-outra'){ const n=document.querySelector(`[data-pri-outra="${CSS.escape(k)}"]`); n&&n.focus(); }
     return; }
+  if(act==='fonte-aba'){ ui.fonteAba=ui.fonteAba===d.v?'':d.v; render(); const f=document.querySelector('#f-fonte-nb [name=titulo],#f-fonte-site [name=url]'); f&&f.focus(); return; }
+  if(act==='fonte-del'){ cur.fontes=cur.fontes.filter(f=>f.id!==d.id); touch(true); return; }
+  if(act==='fonte-cursos'){ const f=cur.fontes.find(x=>x.id===d.id); const cs=((f&&f.dados&&f.dados.ia&&f.dados.ia.cursos)||[]).filter(c=>c&&c.nome); let n=0;
+    cs.forEach(c=>{ if(cur.cursos.some(x=>x.nome===c.nome&&x.un===(c.un||'')))return; cur.cursos.push({id:uid(),un:UNS.some(u=>u.id===c.un)?c.un:'',nome:c.nome,modalidade:c.modalidade||'',turno:c.turno||'',preco:c.preco||'',vagas:'',matriculados:'',status:c.status==='Lançamento'?'Lançamento':'Vigente',lancamento:'',obs:'do site'}); n++; });
+    touch(true); toast(n?`${n} cursos adicionados`:'Esses cursos já estão na tabela'); return; }
+  if(act==='base-md'){ dlFile(`base-${slugN(cur.nome)}.md`,baseMarkdown(),'text/markdown;charset=utf-8'); return; }
+  if(act==='base-json'){ dlFile(`base-${slugN(cur.nome)}.json`,baseJson(),'application/json'); return; }
   if(act==='view'){ go(d.v); return; }
   if(act==='print-rel'){ setTimeout(()=>window.print(),50); return; }
   if(act==='print-como'){ document.body.classList.add('printing'); setTimeout(()=>{ window.print(); document.body.classList.remove('printing'); },50); return; }
@@ -1839,10 +1933,15 @@ document.addEventListener('click',e=>{
 });
 function syncColetaDono(areaId){ const t=cur.acoes.find(x=>x.origem==='coleta:'+areaId&&x.status!=='Concluída'); if(t){ t.dono=cur.dono_area[areaId]||''; } const it=internas.find(x=>x.diagnostico_id===cur.id&&x.origem==='coleta:'+areaId&&x.status!=='Concluída'); if(it){ it.responsavel=cur.dono_area[areaId]||''; itSave(it); } }
 
+document.addEventListener('dragover',e=>{ const z=e.target.closest&&e.target.closest('.drop'); if(z){ e.preventDefault(); z.classList.add('over'); } });
+document.addEventListener('dragleave',e=>{ const z=e.target.closest&&e.target.closest('.drop'); if(z)z.classList.remove('over'); });
+document.addEventListener('drop',e=>{ const z=e.target.closest&&e.target.closest('.drop'); if(!z||!cur)return; e.preventDefault(); z.classList.remove('over'); const fl=[...(e.dataTransfer&&e.dataTransfer.files||[])]; if(fl.length)importarArquivos(fl); });
 document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.priOutra!=null){ e.preventDefault(); const b=e.target.parentNode.querySelector('[data-act="pri-outra"]'); b&&b.click(); return; } if(e.key==='Escape'&&document.body.classList.contains('sb-on')){ ui.sbOpen=false; document.body.classList.remove('sb-on'); $('.sb-open')&&$('.sb-open').focus(); } });
 document.addEventListener('submit',e=>{
   e.preventDefault(); const f=e.target;
   if(f.id==='f-auth'){ submitAuth(f); return; }
+  if(f.id==='f-fonte-nb'&&cur){ const t=f.titulo.value.trim(), c=f.conteudo.value.trim(); if(!c)return; addFonte({tipo:'notebooklm',titulo:t||'NotebookLM',conteudo:c}); ui.fonteAba=''; render(); toast('Fonte guardada'); return; }
+  if(f.id==='f-fonte-site'&&cur){ lerSite(f.url.value.trim(),f.paginas.value); return; }
   if(f.id==='f-senha'){ const a=f.s1.value, b2=f.s2.value; if(a!==b2){ toast('As duas senhas não são iguais'); return; } if(a.length<8){ toast('Use pelo menos 8 caracteres'); return; }
     sb.auth.updateUser({password:a}).then(r=>{ if(r.error) toast('Não foi possível trocar a senha: '+r.error.message); else { f.reset(); toast('Senha alterada'); } }); return; }
   if(f.id==='f-novo'){ const nm=$('#novo-nome').value.trim(); if(nm) createDiag(nm); return; }
@@ -1878,6 +1977,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target, d=t.dataset;
+  if(t.id==='fonte-file'&&t.files&&t.files.length){ importarArquivos([...t.files]); t.value=''; return; }
   if(t.id==='itf-resp'||t.id==='itf-cli'){ ui.itf=ui.itf||{resp:'',cli:''}; ui.itf[t.id==='itf-resp'?'resp':'cli']=t.value; render(); return; }
   if(d.itF&&d.itF!=='titulo'&&d.itF!=='descricao'){ const x=internas.find(y=>y.id===d.id); if(x){ x[d.itF]=t.value; itSave(x); } return; }
   if(!cur) return;
