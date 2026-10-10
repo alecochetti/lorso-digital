@@ -23,6 +23,7 @@ resto do site: sobe junto com o GitHub Pages a cada push na `main`.
 | `supabase/functions/ler-site` | Função que lê o site do cliente para a base de conhecimento |
 | `dre.js` | Módulo DRE e orçamento, ligado ao financeiro e às UNs do diagnóstico |
 | `equipe.js` | Tarefas e projetos da equipe LORSO: lista, quadro, tabela, por área e métricas |
+| `operacao.js` | SLA por tipo de demanda, passagem de bastão por etapa, campanhas por grupo (CPL, CPA, CAC) e as regras de atendimento às unidades |
 | `tema.css` | Visual da Central (claro e escuro), gráficos de resultados e módulos |
 | `modulos/lancamento.enc` | App de lançamento de curso **criptografado**. A versão aberta fica no Project do Claude (modulos/lancamento-curso-integrado.html); para atualizar, criptografe de novo com a chave de `app_recursos` |
 

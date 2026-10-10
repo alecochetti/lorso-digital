@@ -439,7 +439,9 @@ function renderAreaPanel(INS, LIST, override){
      ${a.roteiro?volBlock:''}
      ${a.id==='financeiro'?dreHtmlImport():''}
      ${a.id==='reitoria'?unExpHtml():''}
-     ${a.id==='demandas'?trelloHtml()+tempoHtml():''}
+     ${a.id==='demandas'?trelloHtml()+(typeof slaHtml==='function'?slaHtml():'')+tempoHtml():''}
+     ${a.id==='fluxo'&&typeof etapaHtml==='function'?etapaHtml():''}
+     ${a.id==='growth'&&typeof grpHtml==='function'?grpHtml():''}
      ${a.q.map(qHtml).join('')}
      <section class="block"><div class="block-h"><h3>Dores relatadas nesta área</h3><p>${cur.dores.filter(d=>d.area===a.id).length} registradas · alimentam o mapa de gargalos</p></div>
       ${cur.dores.some(d=>d.area===a.id)?`<div class="tblw"><table class="tbl"><thead><tr><th>Dor</th><th>Etapa</th><th>Tipo</th><th>Gravidade</th><th>Frequência</th><th>Relatado por</th><th></th></tr></thead><tbody>${cur.dores.filter(d=>d.area===a.id).map(d=>dorRow(d,true)).join('')}</tbody></table></div>`:''}
@@ -835,6 +837,7 @@ function renderResultados(INS){
     <section class="block"><div class="block-h"><h3>O que explica os problemas</h3><p>Peso de cada causa raiz</p></div>${causasDonut(INS)}</section>
     ${tempoStats()?`<section class="block"><div class="block-h"><h3>Para onde vai o tempo do marketing</h3><button class="chip" data-act="goto" data-v="demandas">Editar horas</button></div>${tempoDonut()}</section>`:`<section class="block"><div class="block-h"><h3>Unidades de negócio</h3></div>${unTiles()}</section>`}
    </div>
+   ${typeof operacaoRes==='function'?operacaoRes():''}
    ${tempoStats()?`<section class="block"><div class="block-h"><h3>Unidades de negócio</h3><p>Maturidade e receita contra a meta</p></div>${unTiles()}</section>`:''}
    <section class="block"><div class="block-h"><h3>Causas raiz</h3><p>${INS.length} incongruências agrupadas em ${pl(nB,'bloco','blocos')}, do mais pesado para o mais leve.</p></div>${blocosHtml(INS)}</section>
    ${nB?`<section class="block"><div class="block-h"><h3>Plano no tempo</h3><p>Diretrizes por horizonte para as causas raiz acima.</p></div>${planoHtml(INS)}</section>`:''}
