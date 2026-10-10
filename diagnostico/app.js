@@ -806,7 +806,7 @@ function renderAuth(){
 }
 function authErr(e){
   const s=(e&&e.message)||'';
-  if(/Invalid login credentials/i.test(s))return 'E-mail ou senha incorretos.';
+  if(/Invalid login credentials/i.test(s))return 'E-mail ou senha incorretos. Se é a sua primeira vez aqui, clique em "Primeiro acesso" para criar a senha.';
   if(/Email not confirmed/i.test(s))return 'Confirme seu e-mail pelo link que enviamos antes de entrar.';
   if(/convidado|Database error saving new user/i.test(s))return 'Este e-mail ainda não foi convidado. Peça o convite à LORSO Digital.';
   if(/already registered|already been registered/i.test(s))return 'Este e-mail já tem senha. Use "Já tenho senha" ou "Esqueci a senha".';
