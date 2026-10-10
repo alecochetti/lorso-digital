@@ -613,3 +613,24 @@ body.rp-mode .subnav,body.rp-mode .rail{display:none}
   .prow{flex-direction:column;align-items:flex-start}
 }
 @media print{ .sb,.topbar,.sb-scrim{display:none !important} .app{display:block} #main.wrap{padding:0} }
+/* tarefas da equipe, plano por horizonte, tempo do marketing */
+.sb-top{flex:none}
+.prio{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--n1);border:1px solid color-mix(in srgb,var(--n1) 45%,transparent);border-radius:4px;padding:0 4px;margin-right:2px}
+.people{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.pchip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:4px 12px 4px 4px;font-size:13.5px}
+.pchip .av{width:26px;height:26px;font-size:11px}
+.pchip b{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.pchip em{font-style:normal;font-size:11.5px;color:var(--n1)}
+.pchip.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.kedit .row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
+.chip.hz-c{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+.chip.hz-m{color:var(--n3);border-color:color-mix(in srgb,var(--n3) 45%,transparent)}
+.chip.hz-l{color:var(--n2);border-color:color-mix(in srgb,var(--n2) 45%,transparent)}
+.hzbars{display:flex;flex-direction:column;gap:8px;margin:0 0 16px}
+.hzrow{display:grid;grid-template-columns:220px minmax(0,1fr) 56px;align-items:center;gap:12px;font-size:14px}
+.hzrow .mono{font-size:12px;color:var(--faint);text-align:right}
+.tsum{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:14px 0 10px}
+.tsum b{font-family:var(--display);font-size:34px;font-weight:800;letter-spacing:-.02em}
+.tsum b.warn{color:var(--n2)} .tsum b.bad{color:var(--n1)}
+.tsum span{color:var(--muted);font-size:14px}
+@media (max-width:560px){ .hzrow{grid-template-columns:minmax(0,1fr) 48px} .hzrow .vb{grid-column:1/-1;grid-row:2} }

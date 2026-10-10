@@ -32,7 +32,7 @@ function norm(d){
 let cur = null;          // diagnóstico aberto
 let all = {};            // lista de diagnósticos: id -> {id, nome, updated_at}
 let ui = {view:'fases', stage:'diagnostico', area:'reitoria', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}, fofaSug:{}, drePreview:null, dreTxt:'', dstep:'base', cursoPreview:null, open:{}};
-try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(['base','reitoria','entrevistas'].includes(u.dstep))ui.dstep=u.dstep; if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','tarefas','equipe','como','visao','perfil'].includes(u.view))ui.view=u.view;}catch(e){}
+try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(['base','reitoria','entrevistas'].includes(u.dstep))ui.dstep=u.dstep; if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','equipe','como','visao','perfil','internas'].includes(u.view))ui.view=u.view;}catch(e){}
 const saveUi=()=>lsSet('cd.ui',JSON.stringify({stage:ui.stage,area:ui.area,view:ui.view,dstep:ui.dstep}));
 const member=id=>cur.equipe.find(m=>m.id===id);
 const initials=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(p=>p[0]||'').join('').toUpperCase()||'?';
@@ -258,7 +258,19 @@ RULES.push(
   rec:['Mutirão para cancelar ou destravar os parados','Regra: parado há 15 dias volta para o solicitante']},
  {id:'CRZ-52',sev:'alta',pad:'Gargalo de capacidade',areas:['demandas','financeiro'],t:'A fila leva semanas para zerar',
   test:()=>{const t=trelloStats();return t&&t.semanas!=null&&t.semanas>=6;}, txt:()=>{const t=trelloStats();return `No ritmo atual (${t.concl} projetos concluídos por mês), a fila de ${t.abertos} projetos abertos leva cerca de ${dec(t.semanas,0)} semanas para zerar, sem contar o que ainda vai chegar.`;},
-  rec:['Limitar o que entra por semana à capacidade real','Cortar ou adiar o backlog sem dono','Medir a vazão semanal e mostrar à reitoria']}
+  rec:['Limitar o que entra por semana à capacidade real','Cortar ou adiar o backlog sem dono','Medir a vazão semanal e mostrar à reitoria']},
+ {id:'CRZ-53',sev:'alta',pad:'Gargalo de capacidade',areas:['demandas'],t:'O administrativo come a capacidade do marketing',
+  test:()=>{const s=tempoStats();return s&&s.pAdm>=0.3&&s.pAdm<0.45;}, txt:()=>{const s=tempoStats();return `${pct(s.pAdm)} das horas do marketing vão para tarefas administrativas e internas (${dec(s.v.adm,0)} de ${dec(s.tot,0)} h por semana). É tempo que não chega às unidades de negócio.`;},
+  rec:['Listar as tarefas administrativas recorrentes e quem pediu cada uma','Devolver ao dono o que não é marketing (compras, prestação de contas, pedidos de outras áreas)','Bloco fixo semanal para o administrativo, fora do horário de produção']},
+ {id:'CRZ-54',sev:'crit',pad:'Gargalo de capacidade',areas:['demandas'],t:'Quase metade do marketing trabalha no administrativo',
+  test:()=>{const s=tempoStats();return s&&s.pAdm>=0.45;}, txt:()=>{const s=tempoStats();return `${pct(s.pAdm)} das horas do marketing vão para tarefas administrativas e internas (${dec(s.v.adm,0)} de ${dec(s.tot,0)} h por semana). Com essa divisão, a fila das unidades nunca anda no ritmo que a reitoria espera.`;},
+  rec:['Auditoria de 2 semanas com apontamento de horas por tipo de tarefa','Retirar do marketing o que é de outras áreas, com aval da reitoria','Meta: administrativo abaixo de 25% do tempo em 90 dias']},
+ {id:'CRZ-55',sev:'alta',pad:'Desalinhamento estratégico',areas:u=>{const s=tempoStats();return s?s.uns.filter(x=>unxGet(x.id,'expect')==='Crescer'&&x.pt<0.15).map(x=>x.id):[];},t:'UN que deve crescer recebe pouco tempo do marketing',
+  test:()=>{const s=tempoStats();return !!s&&s.uns.some(x=>unxGet(x.id,'expect')==='Crescer'&&x.pt<0.15);}, txt:()=>{const s=tempoStats();const L=s.uns.filter(x=>unxGet(x.id,'expect')==='Crescer'&&x.pt<0.15);return `A reitoria espera crescer ${L.map(x=>x.nome).join(' e ')}, mas ${L.length>1?'essas UNs recebem':'essa UN recebe'} só ${L.map(x=>pct(x.pt)).join(' e ')} do tempo do marketing.`;},
+  rec:['Reservar capacidade fixa do marketing para a UN prioritária','Rever com a reitoria o que sai da fila para abrir espaço']},
+ {id:'CRZ-56',sev:'media',pad:'Desalinhamento estratégico',areas:u=>{const s=tempoStats();return s?s.uns.filter(x=>x.pr!=null&&x.pr>=0.25&&x.pt<x.pr/2).map(x=>x.id):[];},t:'Tempo do marketing não acompanha o peso da receita',
+  test:()=>{const s=tempoStats();return !!s&&s.uns.some(x=>x.pr!=null&&x.pr>=0.25&&x.pt<x.pr/2);}, txt:()=>{const s=tempoStats();const L=s.uns.filter(x=>x.pr!=null&&x.pr>=0.25&&x.pt<x.pr/2);return L.map(x=>`${x.nome} traz ${pct(x.pr)} da receita e recebe ${pct(x.pt)} do tempo do marketing`).join('; ')+'.';},
+  rec:['Distribuir a capacidade do marketing pelo peso de receita e pela meta de cada UN']}
 );
 function finRows(){
   const rows=UNS.map(u=>{const f=unFin(u.id);return {id:u.id,nome:u.nome,level:L(u.id),score:SC[u.id].score,...f};});
@@ -417,7 +429,7 @@ function renderAreaPanel(INS, LIST, override){
      ${a.roteiro?volBlock:''}
      ${a.id==='financeiro'?dreHtmlImport():''}
      ${a.id==='reitoria'?unExpHtml():''}
-     ${a.id==='demandas'?trelloHtml():''}
+     ${a.id==='demandas'?trelloHtml()+tempoHtml():''}
      ${a.q.map(qHtml).join('')}
      <section class="block"><div class="block-h"><h3>Dores relatadas nesta área</h3><p>${cur.dores.filter(d=>d.area===a.id).length} registradas · alimentam o mapa de gargalos</p></div>
       ${cur.dores.some(d=>d.area===a.id)?`<div class="tblw"><table class="tbl"><thead><tr><th>Dor</th><th>Etapa</th><th>Tipo</th><th>Gravidade</th><th>Frequência</th><th>Relatado por</th><th></th></tr></thead><tbody>${cur.dores.filter(d=>d.area===a.id).map(d=>dorRow(d,true)).join('')}</tbody></table></div>`:''}
@@ -510,7 +522,7 @@ function direcHtml(){
       <td><input type="date" data-campo="jornada.${id}.data" value="${esc(cur.campos['jornada.'+id+'.data']||'')}" aria-label="Data prevista"></td>
       <td><select data-dono-area="${id}" aria-label="Responsável"><option value="">Sem responsável</option>${cur.equipe.map(m=>`<option value="${m.id}" ${cur.dono_area[id]===m.id?'selected':''}>${esc(m.nome||'Sem nome')}</option>`).join('')}</select></td>
       <td style="white-space:nowrap"><button class="xbtn" data-act="jornada-up" data-v="${id}" aria-label="Subir" ${i?'':'disabled'}>↑</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Toque nas áreas acima na ordem em que quer entrevistar.</p>'}
-    <div style="display:flex;gap:8px;flex-wrap:wrap">${pri.length?`<button class="btn" data-act="jornada-tarefas">Criar entrevistas no kanban</button>`:''}<button class="btn primary" data-act="dstep" data-v="entrevistas">Começar entrevistas →</button></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${pri.length?`<button class="btn" data-act="jornada-tarefas">Criar entrevistas em Tarefas da equipe</button>`:''}<button class="btn primary" data-act="dstep" data-v="entrevistas">Começar entrevistas →</button></div>
    </section>
    ${fieldHtml('jornada.notas','Direcionamentos da reitoria para a consultoria (o que olhar com mais atenção, quem ouvir, o que evitar)','t')}`;
 }
@@ -546,18 +558,18 @@ function cardHtml(t){
     </div></article>`;
   return `<button class="kcard" draggable="true" data-task="${t.id}" data-act="task-open" data-id="${t.id}">
     <span class="kt">${esc(t.txt||'Sem título')}</span>
-    <span class="km">${t.area?`<span class="chip">${esc(nameOf(t.area))}</span>`:''}${t.origem&&t.origem.startsWith('CRZ')?`<span class="chip">${esc(t.origem)}</span>`:''}${t.prazo?`<span class="due ${isLate(t)?'late':''}">${isLate(t)?'Atrasada · ':''}${fmtDate(t.prazo)}</span>`:''}${m?`<span class="av" title="${esc(m.nome)}" style="margin-left:auto">${esc(initials(m.nome))}</span>`:''}</span></button>`;
+    <span class="km">${planoHz(t)?`<span class="chip hz-${planoHz(t)}">${HZN[planoHz(t)]} prazo</span>`:''}${t.area?`<span class="chip">${esc(nameOf(t.area))}</span>`:''}${t.origem&&t.origem.startsWith('CRZ')?`<span class="chip">${esc(t.origem)}</span>`:''}${t.prazo?`<span class="due ${isLate(t)?'late':''}">${isLate(t)?'Atrasada · ':''}${fmtDate(t.prazo)}</span>`:''}${m?`<span class="av" title="${esc(m.nome)}" style="margin-left:auto">${esc(initials(m.nome))}</span>`:''}</span></button>`;
 }
 function kanbanHtml(){
-  const f=ui.kf; const list=cur.acoes.filter(t=>(!f.dono||t.dono===f.dono||(f.dono==='-'&&!t.dono))&&(!f.area||t.area===f.area));
+  const f=ui.kf; const list=cur.acoes.filter(t=>isPlano(t)&&(!f.dono||t.dono===f.dono||(f.dono==='-'&&!t.dono))&&(!f.area||t.area===f.area));
   return `<div class="kfilters"><select id="kf-dono" aria-label="Filtrar por responsável"><option value="">Todos os responsáveis</option><option value="-" ${f.dono==='-'?'selected':''}>Sem responsável</option>${cur.equipe.map(m=>`<option value="${m.id}" ${f.dono===m.id?'selected':''}>${esc(m.nome||'Sem nome')}</option>`).join('')}</select>
     <select id="kf-area" aria-label="Filtrar por área"><option value="">Todas as áreas</option>${AREAS.concat(STAGES.slice(1,4)).map(x=>`<option value="${x.id}" ${f.area===x.id?'selected':''}>${esc(x.nome)}</option>`).join('')}</select>
     ${f.dono||f.area?`<button class="chip" data-act="kf-clear">Limpar filtros</button>`:''}
     <span class="muted" style="font-size:13px;margin-left:auto">Arraste os cartões entre colunas</span></div>
-   <div class="kanban">${COLS.map(c=>{const items=list.filter(t=>t.status===c);return `<section class="kcol" data-col="${c}"><div class="kcol-h"><b>${c}</b><span class="ct">${items.length}</span></div>${items.map(cardHtml).join('')}<button class="kadd" data-act="task-new" data-col="${c}">+ Tarefa</button></section>`;}).join('')}</div>`;
+   <div class="kanban">${COLS.map(c=>{const hzo=t=>({c:0,m:1,l:2}[planoHz(t)]??3); const items=list.filter(t=>t.status===c).sort((x,y)=>hzo(x)-hzo(y)||(x.prazo||'9').localeCompare(y.prazo||'9'));return `<section class="kcol" data-col="${c}"><div class="kcol-h"><b>${c}</b><span class="ct">${items.length}</span></div>${items.map(cardHtml).join('')}<button class="kadd" data-act="task-new" data-col="${c}">+ Tarefa</button></section>`;}).join('')}</div>`;
 }
 function crossTasks(INS){
-  const open=cur.acoes.filter(t=>t.status!=='Concluída');
+  const open=cur.acoes.filter(t=>isPlano(t)&&t.status!=='Concluída');
   const late=open.filter(isLate);
   const semTarefa=INS.filter(i=>i.sev!=='media'&&!cur.acoes.some(t=>t.origem===i.id||i.rec.includes(t.txt)));
   const fracas=AREAS.filter(a=>SC[a.id].score!=null&&SC[a.id].level<=2&&!open.some(t=>t.area===a.id));
@@ -586,22 +598,34 @@ function renderTarefas(INS){
 }
 function renderExecucao(INS){
   const st=STG.execucao; const sg=suggestions(INS);
+  const nNovos=syncPlano(INS); if(nNovos) touch(false);
+  const P=cur.acoes.filter(isPlano), done=P.filter(t=>t.status==='Concluída').length, x=crossTasks(INS);
+  const hzBar=k=>{ const L=P.filter(t=>planoHz(t)===k); if(!L.length)return ''; const d=L.filter(t=>t.status==='Concluída').length; return `<div class="hzrow"><span>${HZN[k]} prazo <small class="muted">${HZ.find(h=>h[0]===k)[2]}</small></span><span class="vb"><span style="width:${Math.round(d/L.length*100)}%"></span></span><span class="mono">${d}/${L.length}</span></div>`; };
   $('#main').innerHTML=`<section class="panel">${stageHead(st)}
-   <section class="block"><div class="block-h"><h3>Plano de ação</h3><p>${cur.acoes.length} tarefas · ${cur.acoes.filter(a=>a.status==='Concluída').length} concluídas</p></div>${kanbanHtml()}</section>
+   <section class="block"><div class="block-h"><h3>Plano de ação</h3><p>${P.length} ações · ${done} concluídas${x.late.length?` · <span style="color:var(--n1)">${x.late.length} atrasadas</span>`:''}</p></div>
+    <p class="muted" style="font-size:13.5px;margin:-4px 0 14px">Preenchido sozinho com as ações das causas raiz do diagnóstico, em "A fazer" e com prazo pelo horizonte. É só arrastar até Concluída. Ação excluída não volta.</p>
+    ${P.length?`<div class="hzbars">${['c','m','l'].map(hzBar).join('')}</div>`:''}
+    ${P.length||blocosDe(INS).length?kanbanHtml():'<p class="empty">O plano aparece aqui assim que o diagnóstico tiver respostas suficientes para apontar as causas raiz.</p>'}</section>
+   ${x.semTarefa.length||x.fracas.length?`<section class="block"><div class="block-h"><h3>Ainda sem ação no plano</h3><p>O que o diagnóstico aponta e não tem cartão.</p></div><div class="xlist">
+    ${x.semTarefa.map(i=>`<div class="xitem ${i.sev}"><span class="t">${esc(i.t)}<small>${i.id} · ${SEV[i.sev]} · ${i.areas.map(nameOf).join(', ')}</small></span><button class="chip" data-act="plan-ins" data-id="${i.id}" data-t="${esc(i.t)}">Criar ações</button></div>`).join('')}
+    ${x.fracas.map(a=>`<div class="xitem alta"><span class="t">${esc(a.nome)} está no nível ${SC[a.id].level} sem ação aberta<small>${weakest(a.id)?'Ponto mais fraco: '+esc(weakest(a.id)):''}</small></span><button class="chip" data-act="task-new" data-area="${a.id}" data-txt="${esc(weakest(a.id)?'Evoluir '+weakest(a.id).toLowerCase()+' em '+a.nome:'Plano de evolução: '+a.nome)}">Criar ação</button></div>`).join('')}
+   </div></section>`:''}
    <section class="block"><div class="block-h"><h3>Sugestões do diagnóstico</h3><p>Vindas das incongruências e das perguntas de alto impacto com nota baixa.</p></div>
-   ${sg.length?`<div class="sugs">${sg.map(s=>`<div class="sug"><span class="t">${esc(s.txt)}<small>${esc(s.src)} · ${esc(nameOf(s.area)||'Geral')}</small></span>${s.in?'<span class="chip">No kanban</span>':`<button class="chip" data-act="acao-add" data-txt="${esc(s.txt)}" data-area="${esc(s.area)}" data-src="${esc(s.src)}">+ Adicionar</button>`}</div>`).join('')}</div>`:'<p class="empty">Responda o diagnóstico para receber sugestões.</p>'}</section>
+   ${sg.length?`<div class="sugs">${sg.map(s=>`<div class="sug"><span class="t">${esc(s.txt)}<small>${esc(s.src)} · ${esc(nameOf(s.area)||'Geral')}</small></span>${s.in?'<span class="chip">No plano</span>':`<button class="chip" data-act="acao-add" data-txt="${esc(s.txt)}" data-area="${esc(s.area)}" data-src="${esc(s.src)}">+ Adicionar</button>`}</div>`).join('')}</div>`:'<p class="empty">Responda o diagnóstico para receber sugestões.</p>'}</section>
    ${stageQs(st)}${nextBtn(st)}</section>`;
   bindDnD();
 }
 function bindDnD(){
   document.querySelectorAll('.kcard[draggable]').forEach(c=>{
-    c.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',c.dataset.task);e.dataTransfer.effectAllowed='move';c.classList.add('dragging');});
+    c.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',c.dataset.task||c.dataset.it);e.dataTransfer.effectAllowed='move';c.classList.add('dragging');});
     c.addEventListener('dragend',()=>c.classList.remove('dragging'));
   });
   document.querySelectorAll('.kcol').forEach(col=>{
     col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('drop');});
     col.addEventListener('dragleave',()=>col.classList.remove('drop'));
-    col.addEventListener('drop',e=>{e.preventDefault();col.classList.remove('drop');const id=e.dataTransfer.getData('text/plain');const t=cur.acoes.find(x=>x.id===id);if(t&&t.status!==col.dataset.col){t.status=col.dataset.col;mark('acoes');touch(true);}});
+    col.addEventListener('drop',e=>{e.preventDefault();col.classList.remove('drop');const id=e.dataTransfer.getData('text/plain');
+      if(col.dataset.board==='it'){ const it=internas.find(x=>x.id===id); if(it&&it.status!==col.dataset.col){ it.status=col.dataset.col; itSave(it,true); render(); } return; }
+      const t=cur.acoes.find(x=>x.id===id);if(t&&t.status!==col.dataset.col){t.status=col.dataset.col;mark('acoes');touch(true);}});
   });
 }
 /* ---------- Equipe ---------- */
@@ -664,13 +688,13 @@ const BLOCOS=[
   rules:['CRZ-23','CRZ-26','CRZ-29','CRZ-42','CRZ-48','CRZ-50','CRZ-51','CRZ-11'],kpi:'% de pedidos urgentes · prazo médio de entrega',
   h:{c:['Formulário único de pedidos com prazo mínimo por tipo de peça','Critério escrito de urgência e de quem pode declarar','Comunicado da reitoria com as novas regras'],m:['Cota de capacidade por UN e reunião quinzenal de fila','Calendário de lançamentos com 6 meses de antecedência'],l:['Planejamento trimestral conjunto com as UNs','SLA por tipo de demanda medido e publicado']}},
  {id:'capacidade',t:'A capacidade do marketing não acompanha a demanda',r:'A fila cresce mais rápido do que sai, as aprovações travam o fluxo e o time trabalha sem limite de tarefas.',
-  rules:['CRZ-24','CRZ-25','CRZ-27','CRZ-34','CRZ-38','CRZ-39','CRZ-45','CRZ-52','CRZ-15','CRZ-16','CRZ-22','CRZ-03','CRZ-12'],kpi:'projetos abertos · semanas para zerar a fila · entregas no prazo',
-  h:{c:['Triagem do backlog: cancelar, adiar ou fazer','Aprovador único e no máximo 2 rodadas','Limite de tarefas em andamento por pessoa'],m:['Templates e autosserviço para pedidos recorrentes','Kanban único com vazão semanal medida','Redesenho de papéis do time'],l:['Capacidade planejada por período, com reserva por UN','Squads por UN ou objetivo']}},
+  rules:['CRZ-54','CRZ-53','CRZ-24','CRZ-25','CRZ-27','CRZ-34','CRZ-38','CRZ-39','CRZ-45','CRZ-52','CRZ-15','CRZ-16','CRZ-22','CRZ-03','CRZ-12'],kpi:'projetos abertos · semanas para zerar a fila · entregas no prazo',
+  h:{c:['Triagem do backlog: cancelar, adiar ou fazer','Separar e devolver as tarefas administrativas que não são do marketing','Aprovador único e no máximo 2 rodadas','Limite de tarefas em andamento por pessoa'],m:['Templates e autosserviço para pedidos recorrentes','Kanban único com vazão semanal medida','Redesenho de papéis do time'],l:['Capacidade planejada por período, com reserva por UN','Squads por UN ou objetivo']}},
  {id:'sistemas',t:'Sistemas e dados que não conversam',r:'O trabalho passa por WhatsApp, planilhas e ferramentas soltas. Ninguém vê a fila inteira e os dados de resultado não fecham.',
   rules:['CRZ-28','CRZ-35','CRZ-36','CRZ-05','CRZ-06','CRZ-10','CRZ-13','CRZ-33'],kpi:'horas de trabalho manual por semana · sistemas integrados',
   h:{c:['Uma ferramenta de gestão de tarefas para todo o time','Inventário de sistemas: manter, treinar ou trocar'],m:['Pedidos integrados à ferramenta de tarefas','Rastreamento e atribuição até a matrícula','Painel único de indicadores por UN'],l:['Base unificada de marketing, CRM e acadêmico','Réguas automatizadas por UN']}},
  {id:'receita',t:'Receita, vagas e investimento desalinhados',r:'Há UNs abaixo da meta, vagas ociosas e verba distribuída sem relação com o retorno, enquanto a reitoria espera crescer.',
-  rules:['CRZ-40','CRZ-41','CRZ-18','CRZ-19','CRZ-20','CRZ-47','CRZ-49','CRZ-44','CRZ-46','CRZ-21','CRZ-07','CRZ-09','CRZ-30'],kpi:'ocupação de vagas · receita x meta · CAC por UN',
+  rules:['CRZ-40','CRZ-41','CRZ-18','CRZ-19','CRZ-20','CRZ-47','CRZ-49','CRZ-44','CRZ-46','CRZ-55','CRZ-56','CRZ-21','CRZ-07','CRZ-09','CRZ-30'],kpi:'ocupação de vagas · receita x meta · CAC por UN',
   h:{c:['Mapa de ocupação de vagas por curso','Meta e verba por UN revisadas com o financeiro'],m:['Plano de ocupação dos cursos com vagas ociosas','Modelo de CAC e retorno por UN','Régua de ex-alunos da graduação para a pós'],l:['Orçamento base zero por meta e retorno','Portfólio de cursos orientado por demanda']}},
  {id:'mandato',t:'Mandato e régua de sucesso indefinidos',r:'Sem patrocínio formal e sem indicadores combinados, as mudanças dependem de aval caso a caso e o trabalho é julgado por percepção.',
   rules:['CRZ-37','CRZ-43'],kpi:'indicadores pactuados acompanhados em comitê',
@@ -792,6 +816,7 @@ function renderResultados(INS){
    ${nB?`<section class="block"><div class="block-h"><h3>Plano no tempo</h3><p>Diretrizes por horizonte para as causas raiz acima.</p></div>${planoHtml(INS)}</section>`:''}
    ${priorizacaoHtml(INS)}
    <section class="block"><div class="block-h"><h3>Expectativa da reitoria x realidade das UNs</h3><p>O que a reitoria quer de cada UN frente à maturidade, às vagas e aos números.</p></div>${unScoreHtml()}</section>
+   ${tempoStats()?`<section class="block"><div class="block-h"><h3>Para onde vai o tempo do marketing</h3><button class="chip" data-act="goto" data-v="demandas">Editar horas</button></div><div class="tsum"><b class="${tempoStats().pAdm>=0.45?'bad':tempoStats().pAdm>=0.3?'warn':''}">${pct(tempoStats().pAdm)}</b><span>no administrativo e interno · ${pct(1-tempoStats().pAdm-(tempoStats().p.institucional||0))} direto nas unidades de negócio</span></div>${tempoView(tempoStats())}</section>`:''}
    ${t||cur.dores.length?`<div class="two">${t?`<section class="block"><div class="block-h"><h3>Capacidade do marketing</h3><button class="chip" data-act="goto" data-v="demandas">Retrato do Trello</button></div>${trelloView(t)}</section>`:''}${cur.dores.length?`<section class="block"><div class="block-h"><h3>Onde o trabalho trava</h3><button class="chip" data-act="view" data-v="dores">Mapa de dores</button></div>${gargaloChart(false)}</section>`:''}</div>`:''}
    <div class="two">
     <section class="block"><div class="block-h"><h3>Maturidade por área</h3><div class="legend">${[1,2,3,4].map(l=>`<span class="lv l${l}" title="${LVL[l]}">N${l} ${LVL[l]}</span>`).join('')}</div></div>${chart}</section>
@@ -1095,7 +1120,7 @@ const ICO={
  sair:'M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10',
  lista:'M4 6h16M4 12h16M4 18h10',
  fases:'M4 5h16v4H4zM4 11h16v4H4zM4 17h10v3H4z',
- interno:'M9 4h6v3H9zM6 6H5v15h14V6h-1M9 12h6M9 16h4'
+ internas:'M9 4h6v3H9zM6 6H5v15h14V6h-1M9 12h6M9 16h4'
 };
 const ico=(k,sz)=>!ICO[k]?'':`<svg class="ic" viewBox="0 0 24 24" width="${sz||18}" height="${sz||18}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICO[k]}"/></svg>`;
 const temaAtual=()=>document.documentElement.dataset.theme==='light'?'light':'dark';
@@ -1115,6 +1140,7 @@ function sideItem(k,label,act,v,meta,hot){
 function renderSide(INS){
   const adm=me&&me.papel==='admin', pc=x=>Math.round(x*100)+'%';
   let h=`<div class="sb-brand"><span class="sb-logo">L</span><span><b>LORSO Digital</b><small>Central de Diagnóstico</small></span></div>`;
+  if(podeInternas()){ const mn=minhasAbertas(), lt=internas.filter(t=>t.responsavel===me.id&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas','Tarefas da equipe','view','internas',mn||'',lt>0)}</nav>`; }
   if(cur){
     const x=crossTasks(INS), hot=x.late.length+x.semTarefa.length, g=overall();
     h+=`<nav class="sb-nav" aria-label="Etapas">
@@ -1124,11 +1150,10 @@ function renderSide(INS){
      ${sideItem('entrevistas','Entrevistas','dstep','entrevistas',pc(stepProgress('entrevistas')))}
      ${sideItem('visao','Diagnóstico','view','visao',g.level?'N'+g.level:'')}
      <span class="sb-g">Fases 2 a 5</span>
-     ${STAGES.slice(1).map(st=>sideItem(st.id,st.nome,'stage',st.id,st.q&&st.q.length?pc(stageProgress(st)):'')).join('')}
+     ${STAGES.slice(1).map(st=>sideItem(st.id,st.nome,'stage',st.id,st.id==='execucao'&&cur.acoes.some(isPlano)?`${cur.acoes.filter(t=>isPlano(t)&&t.status==='Concluída').length}/${cur.acoes.filter(isPlano).length}`:st.q&&st.q.length?pc(stageProgress(st)):'',st.id==='execucao'&&hot)).join('')}
      <span class="sb-g">Operação</span>
      ${sideItem('dores','Dores e gargalos','view','dores',cur.dores.length||'')}
      ${sideItem('sistemas','Sistemas','view','sistemas',cur.sistemas.filter(y=>y.nome).length||'')}
-     ${sideItem('tarefas','Tarefas','view','tarefas',x.open.length||'',hot)}
      <span class="sb-g">Apoio</span>
      ${sideItem('como','Como funciona','view','como')}
      ${sideItem('equipe','Equipe','view','equipe',cur.equipe.length||'')}
@@ -1192,6 +1217,110 @@ function renderPerfil(){
      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="view" data-v="equipe">Equipe e convites</button><button class="btn" data-act="view" data-v="como">Como funciona (proposta)</button>${me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo diagnóstico</button>`:''}</div></section>`:''}
    </div></section>`;
 }
+/* ================= TAREFAS INTERNAS DA EQUIPE LORSO (fora do cliente) ================= */
+let internas=[], itCh=null, itT={};
+const PRIO=['Alta','Média','Baixa'];
+const itFrom=r=>({id:r.id,titulo:r.titulo||'',descricao:r.descricao||'',responsavel:r.responsavel||'',diagnostico_id:r.diagnostico_id||'',area:r.area||'',prazo:r.prazo||'',prioridade:r.prioridade||'Média',status:r.status||'A fazer',origem:r.origem||'',created_at:r.created_at});
+const itTo=t=>({id:t.id,titulo:nz(t.titulo),descricao:nz(t.descricao),responsavel:nz(t.responsavel),diagnostico_id:nz(t.diagnostico_id),area:nz(t.area),prazo:nz(t.prazo),prioridade:t.prioridade||'Média',status:t.status||'A fazer',origem:nz(t.origem),updated_at:new Date().toISOString()});
+const podeInternas=()=>me&&me.papel!=='cliente';
+async function loadInternas(){
+  if(!podeInternas()){ internas=[]; return; }
+  const r=await sb.from('tarefas_internas').select('*').order('created_at');
+  if(r.error){ console.warn('tarefas_internas',r.error.message); internas=[]; return; }
+  internas=(r.data||[]).map(itFrom);
+  if(!itCh){ itCh=sb.channel('internas'); itCh.on('postgres_changes',{event:'*',schema:'public',table:'tarefas_internas'},()=>{ clearTimeout(itT._r); itT._r=setTimeout(async()=>{ if(isTyping())return; const r2=await sb.from('tarefas_internas').select('*').order('created_at'); if(!r2.error){ internas=(r2.data||[]).map(itFrom); render(); } },600); }); itCh.subscribe(); }
+}
+function itSave(t,now){ clearTimeout(itT[t.id]); const go=async()=>{ const r=await sb.from('tarefas_internas').upsert(itTo(t)); if(r.error) toast('Não foi possível salvar a tarefa: '+r.error.message); }; if(now) go(); else itT[t.id]=setTimeout(go,600); }
+async function itDel(id){ internas=internas.filter(t=>t.id!==id); const r=await sb.from('tarefas_internas').delete().eq('id',id); if(r.error) toast('Não foi possível excluir a tarefa'); }
+function itNew(o){ const t={id:uid(),titulo:'',descricao:'',responsavel:'',diagnostico_id:'',area:'',prazo:'',prioridade:'Média',status:'A fazer',origem:'',...o}; internas.push(t); itSave(t,true); return t; }
+const itLate=t=>t.prazo&&t.status!=='Concluída'&&t.prazo<today();
+const pessoa=id=>profiles.find(p=>p.id===id);
+const diagNome=id=>id?(cur&&cur.id===id?cur.nome:(all[id]||{}).nome||'Cliente'):'';
+function minhasAbertas(){ return me?internas.filter(t=>t.responsavel===me.id&&t.status!=='Concluída').length:0; }
+function itCard(t){
+  const p=pessoa(t.responsavel);
+  if(ui.openIt===t.id) return `<article class="kcard open" data-it="${t.id}"><div class="kedit">
+    <textarea data-it-f="titulo" data-id="${t.id}" aria-label="Tarefa" placeholder="O que precisa ser feito">${esc(t.titulo)}</textarea>
+    <textarea data-it-f="descricao" data-id="${t.id}" aria-label="Detalhes" placeholder="Detalhes, links, combinados (opcional)" rows="2">${esc(t.descricao)}</textarea>
+    <select data-it-f="responsavel" data-id="${t.id}" aria-label="Responsável"><option value="">Sem responsável</option>${profiles.filter(x=>x.ativo&&x.papel!=='cliente').map(x=>`<option value="${x.id}" ${t.responsavel===x.id?'selected':''}>${esc(x.nome||x.email)}</option>`).join('')}</select>
+    <select data-it-f="diagnostico_id" data-id="${t.id}" aria-label="Cliente"><option value="">Interno LORSO</option>${Object.values(all).map(d=>`<option value="${d.id}" ${t.diagnostico_id===d.id?'selected':''}>${esc(diagNome(d.id))}</option>`).join('')}</select>
+    <div class="row2"><input type="date" data-it-f="prazo" data-id="${t.id}" value="${esc(t.prazo)}" aria-label="Prazo"><select data-it-f="prioridade" data-id="${t.id}" aria-label="Prioridade">${PRIO.map(x=>`<option ${t.prioridade===x?'selected':''}>${x}</option>`).join('')}</select></div>
+    <select data-it-f="status" data-id="${t.id}" aria-label="Coluna">${COLS.map(c=>`<option ${t.status===c?'selected':''}>${c}</option>`).join('')}</select>
+    <div class="row"><button class="btn sm ghost" data-act="it-del" data-id="${t.id}">Excluir</button><button class="btn sm primary" data-act="it-close">Pronto</button></div>
+   </div></article>`;
+  return `<button class="kcard" draggable="true" data-it="${t.id}" data-act="it-open" data-id="${t.id}">
+    <span class="kt">${t.prioridade==='Alta'?'<span class="prio">Alta</span> ':''}${esc(t.titulo||'Sem título')}</span>
+    <span class="km">${t.diagnostico_id?`<span class="chip">${esc(diagNome(t.diagnostico_id))}</span>`:'<span class="chip">Interno</span>'}${t.area&&AREA[t.area]?`<span class="chip">${esc(AREA[t.area].nome)}</span>`:''}${t.prazo?`<span class="due ${itLate(t)?'late':''}">${itLate(t)?'Atrasada · ':''}${fmtDate(t.prazo)}</span>`:''}${p?`<span class="av" title="${esc(p.nome||p.email)}" style="margin-left:auto">${esc(initials(p.nome||p.email))}</span>`:''}</span></button>`;
+}
+function renderInternas(){
+  const f=ui.itf||(ui.itf={resp:'',cli:''});
+  const L=internas.filter(t=>(!f.resp||(f.resp==='-'?!t.responsavel:f.resp==='eu'?t.responsavel===me.id:t.responsavel===f.resp))&&(!f.cli||(f.cli==='-'?!t.diagnostico_id:t.diagnostico_id===f.cli)));
+  const ab=internas.filter(t=>t.status!=='Concluída'), late=ab.filter(itLate);
+  const porPessoa=profiles.filter(p=>p.ativo&&p.papel!=='cliente').map(p=>({p,n:ab.filter(t=>t.responsavel===p.id).length,l:late.filter(t=>t.responsavel===p.id).length}));
+  $('#main').innerHTML=`<section class="panel">
+   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">// LORSO · <b>Equipe</b></span><h2 style="margin-top:8px">Tarefas da equipe</h2><p class="lead">O que você pede para a equipe e o que cada um tem na mão. Fica fora do diagnóstico: o cliente não vê este quadro.</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${cur?`<button class="btn" data-act="gen-coleta" title="Cria uma tarefa por área ainda incompleta de ${esc(cur.nome)}">Gerar tarefas de coleta</button>`:''}</div></header>
+   <div class="stats">
+    <div class="stat"><b>${ab.length}</b><span>tarefas abertas</span></div>
+    <div class="stat ${late.length?'bad':''}"><b>${late.length}</b><span>atrasadas</span></div>
+    <div class="stat"><b>${ab.filter(t=>!t.responsavel).length}</b><span>sem responsável</span></div>
+    <div class="stat"><b>${internas.filter(t=>t.status==='Concluída').length}</b><span>concluídas</span></div>
+   </div>
+   <div class="people">${porPessoa.map(x=>`<button class="pchip ${f.resp===x.p.id?'on':''}" data-act="itf" data-k="resp" data-v="${f.resp===x.p.id?'':x.p.id}"><span class="av">${esc(initials(x.p.nome||x.p.email))}</span>${esc((x.p.nome||x.p.email).split(' ')[0])}<b>${x.n}</b>${x.l?`<em>${x.l} atras.</em>`:''}</button>`).join('')}</div>
+   <div class="kfilters">
+    <select id="itf-resp" aria-label="Filtrar por responsável"><option value="">Todos os responsáveis</option><option value="eu" ${f.resp==='eu'?'selected':''}>Minhas tarefas</option><option value="-" ${f.resp==='-'?'selected':''}>Sem responsável</option>${profiles.filter(p=>p.ativo&&p.papel!=='cliente').map(p=>`<option value="${p.id}" ${f.resp===p.id?'selected':''}>${esc(p.nome||p.email)}</option>`).join('')}</select>
+    <select id="itf-cli" aria-label="Filtrar por cliente"><option value="">Todos os clientes</option><option value="-" ${f.cli==='-'?'selected':''}>Só internas</option>${Object.values(all).map(d=>`<option value="${d.id}" ${f.cli===d.id?'selected':''}>${esc(diagNome(d.id))}</option>`).join('')}</select>
+    ${f.resp||f.cli?`<button class="chip" data-act="itf-clear">Limpar filtros</button>`:''}
+    <span class="muted" style="font-size:13px;margin-left:auto">Arraste os cartões entre colunas</span></div>
+   <div class="kanban">${COLS.map(c=>{const items=L.filter(t=>t.status===c).sort((a,b)=>PRIO.indexOf(a.prioridade)-PRIO.indexOf(b.prioridade)||(a.prazo||'9').localeCompare(b.prazo||'9'));return `<section class="kcol" data-col="${c}" data-board="it"><div class="kcol-h"><b>${c}</b><span class="ct">${items.length}</span></div>${items.map(itCard).join('')}<button class="kadd" data-act="it-new" data-col="${c}">+ Tarefa</button></section>`;}).join('')}</div>
+  </section>`;
+  bindDnD();
+}
+/* coleta: conclui sozinha quando a área fica completa */
+function autoColeta(){
+  if(!cur)return; internas.forEach(t=>{ if(t.diagnostico_id!==cur.id||!t.origem||!t.origem.startsWith('coleta:'))return; const a=AREA[t.origem.slice(7)]; if(!a)return; const ans=a.q.filter(x=>cur.resp[x[0]]).length;
+    if(ans===a.q.length&&t.status!=='Concluída'){t.status='Concluída';itSave(t);}
+    else if(ans>0&&ans<a.q.length&&t.status==='A fazer'){t.status='Em andamento';itSave(t);} });
+}
+
+/* ================= PLANO DE AÇÃO (EXECUÇÃO): preenchido pelo diagnóstico ================= */
+const HZD={c:90,m:180,l:365}, HZN={c:'Curto',m:'Médio',l:'Longo'};
+const addDias=n=>{const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
+const planoKey=(k,b,t)=>`plano:${k}:${b}:${t}`;
+const planoHz=t=>t.origem&&t.origem.startsWith('plano:')?t.origem.split(':')[1]:'';
+function ignorados(){ try{return JSON.parse(cur.campos['plano.ignorados']||'[]')}catch(e){return []} }
+function syncPlano(INS){
+  const B=blocosDe(INS).slice(0,5); if(!B.length)return 0;
+  const ign=new Set(ignorados()), tem=new Set(cur.acoes.map(t=>t.origem)); let n=0;
+  B.forEach(b=>HZ.forEach(([k])=>(b.h[k]||[]).forEach(txt=>{ const key=planoKey(k,b.id,txt); if(tem.has(key)||ign.has(key))return;
+    newTask({txt,area:b.areas[0]||'',origem:key,status:'A fazer',prazo:addDias(HZD[k])}); n++; })));
+  return n;
+}
+const isPlano=t=>!(t.origem&&t.origem.startsWith('coleta:'));
+
+/* ================= TEMPO DO MARKETING: ADMINISTRATIVO x UNIDADES ================= */
+const TEMPO=[['adm','Administrativo e interno','Relatórios, reuniões internas, compras, prestação de contas, pedidos de outras áreas','var(--faint)'],['institucional','Marca institucional','Campanhas da instituição, imprensa, eventos gerais','var(--accent-2)'],['colegio','Colégio','','var(--n3)'],['graduacao','Graduação','','var(--accent)'],['pos','Pós-Graduação','','var(--n2)'],['mestrado','Mestrado','','#9b7bd4']];
+function tempoStats(){
+  const v={}; let tot=0; TEMPO.forEach(([k])=>{ v[k]=num(cur.campos['demandas.tempo_'+k])||0; tot+=v[k]; }); if(!tot)return null;
+  const p={}; TEMPO.forEach(([k])=>p[k]=v[k]/tot);
+  const recT=UNS.reduce((a,u)=>a+(unFin(u.id).receita||0),0);
+  const uns=UNS.map(u=>{ const r=unFin(u.id).receita; return {id:u.id,nome:u.nome,pt:p[u.id]||0,pr:recT>0&&r!=null?r/recT:null}; });
+  return {v,tot,p,pAdm:p.adm,uns};
+}
+function tempoView(s){
+  return `<div class="stack" role="img" aria-label="Divisão do tempo do marketing">${TEMPO.filter(([k])=>s.v[k]).map(([k,l,,c])=>`<span style="flex:${s.v[k]};background:${c}" title="${l}: ${pct(s.p[k])}"></span>`).join('')}</div>
+   <div class="legend">${TEMPO.filter(([k])=>s.v[k]).map(([k,l,,c])=>`<span class="lg"><i style="background:${c}"></i>${l} <b>${pct(s.p[k])}</b></span>`).join('')}</div>
+   ${s.uns.some(u=>u.pr!=null)?`<div class="tblw" style="margin-top:12px"><table class="tbl"><thead><tr><th>UN</th><th class="r">% do tempo</th><th class="r">% da receita</th><th class="r">Diferença</th></tr></thead><tbody>${s.uns.filter(u=>u.pr!=null||u.pt).map(u=>{const d=u.pr!=null?u.pt-u.pr:null;return `<tr><td>${esc(u.nome)}</td><td class="r num">${pct(u.pt)}</td><td class="r num">${pct(u.pr)}</td><td class="r num" style="color:${d!=null&&Math.abs(d)>=0.15?'var(--n1)':'inherit'}">${d==null?'—':(d>0?'+':'')+(d*100).toFixed(0)+' p.p.'}</td></tr>`;}).join('')}</tbody></table></div>`:''}`;
+}
+function tempoHtml(){
+  const s=tempoStats();
+  return `<section class="block"><div class="block-h"><h3>Para onde vai o tempo do marketing</h3><p>Horas por semana do time somado. Separe o que é administrativo do que é trabalho para as unidades.</p></div>
+   <div class="fields">${TEMPO.map(([k,l,ds])=>`<div class="field"><label for="c-demandas.tempo_${k}">${l}${ds?`<small class="muted" style="display:block;font-size:12px">${ds}</small>`:''}</label><div class="inu"><input id="c-demandas.tempo_${k}" data-campo="demandas.tempo_${k}" inputmode="decimal" value="${esc(cur.campos['demandas.tempo_'+k]||'')}" placeholder="0"><span class="u">h/sem</span></div></div>`).join('')}
+    <div class="field"><label for="c-demandas.tempo_fonte">Como foi medido</label><select id="c-demandas.tempo_fonte" data-campo="demandas.tempo_fonte">${['','Estimativa da equipe','Apontamento de horas','Contagem de tarefas no Trello'].map(o=>`<option ${cur.campos['demandas.tempo_fonte']===o?'selected':''} value="${o}">${o||'Escolha'}</option>`).join('')}</select></div></div>
+   ${s?`<div class="tsum"><b class="${s.pAdm>=0.45?'bad':s.pAdm>=0.3?'warn':''}">${pct(s.pAdm)}</b><span>do tempo vai para tarefas administrativas e internas · ${dec(s.tot,0)} h por semana no total</span></div>${tempoView(s)}`:''}
+  </section>`;
+}
+
 function focusKey(el){
   if(!el||el===document.body||!el.tagName||!/INPUT|TEXTAREA|SELECT/.test(el.tagName))return null;
   if(el.id)return '#'+CSS.escape(el.id);
@@ -1214,10 +1343,12 @@ function render(){
 function renderInner(){
   if(!cur){ renderBar(); renderSide([]);
     if(ui.view==='perfil'){ renderPerfil(); return; }
+    if(ui.view==='internas'&&podeInternas()){ renderInternas(); return; }
     if(ui.view==='equipe'&&me&&me.papel==='admin'){ SC={}; renderEquipe(); return; }
     if(ui.view==='como'){ $('#main').innerHTML=comoHtml(); return; }
     $('#main').innerHTML=`<section class="auth" style="min-height:auto"><div class="auth-box"><h2>Nenhum diagnóstico ainda</h2><p>${me&&me.papel!=='cliente'?'Crie o primeiro com o nome do cliente. Depois convide a equipe e distribua as áreas.':'Nenhum diagnóstico foi liberado para você ainda. Fale com a LORSO Digital.'}</p>${me&&me.papel!=='cliente'?`<form id="f-novo2"><label>Cliente<input id="novo-nome2" required placeholder="Nome da instituição"></label><button class="btn primary" type="submit">Criar diagnóstico</button></form>`:''}</div></section>`;
     return; }
+  if(ui.view==='tarefas'){ ui.view='fases'; ui.stage='execucao'; }
   computeAll(); const INS=runEngine();
   renderBar(); renderSide(INS);
   document.body.classList.toggle('rp-mode', ui.view==='relatorio');
@@ -1228,6 +1359,7 @@ function renderInner(){
   else if(ui.view==='sistemas') renderSistemas();
   else if(ui.view==='equipe') renderEquipe();
   else if(ui.view==='visao') renderVisao(INS);
+  else if(ui.view==='internas'&&podeInternas()) renderInternas();
   else if(ui.view==='perfil') renderPerfil();
   else { ({diagnostico:renderDiagnostico,estrategia:renderEstrategia,execucao:renderExecucao,otimizacao:renderOtimizacao,resultados:renderResultados})[ui.stage](INS); }
   renderIV();
@@ -1235,7 +1367,7 @@ function renderInner(){
 }
 /* tarefas de coleta acompanham o preenchimento */
 function autoTasks(){
-  let ch=false;
+  autoColeta(); let ch=false;
   cur.acoes.forEach(t=>{ if(!t.origem||!t.origem.startsWith('coleta:'))return; const a=AREA[t.origem.slice(7)]; if(!a)return; const ans=a.q.filter(x=>cur.resp[x[0]]).length;
     if(ans===a.q.length&&t.status!=='Concluída'){t.status='Concluída';ch=true;}
     else if(ans>0&&ans<a.q.length&&t.status==='A fazer'){t.status='Em andamento';ch=true;} });
@@ -1312,6 +1444,11 @@ async function exportPptx(){
   const exps=UNS.map(u=>[u.nome,unExpResumo(u.id)]).filter(x=>x[1]);
   if(exps.length) sl.addText(exps.map(([n,tx])=>({text:`${n}: ${tx}`,options:{bullet:true,breakLine:true}})),{x:0.5,y:4.8,w:12.3,h:2,fontFace:F,fontSize:11,color:C.mut,valign:'top'});
   // capacidade
+  const ts=tempoStats(); if(ts){ sl=base('Para onde vai o tempo do marketing','Operação');
+    const L=TEMPO.filter(([k])=>ts.v[k]);
+    sl.addChart(pptx.ChartType.doughnut,[{name:'Horas',labels:L.map(([,l])=>l),values:L.map(([k])=>ts.v[k])}],{x:0.5,y:1.5,w:5.6,h:4.6,holeSize:58,chartColors:L.map(([k])=>({adm:'6B716E',institucional:'00E5FF',colegio:C.n3,graduacao:C.acc,pos:C.n2,mestrado:'9B7BD4'})[k]),showLegend:true,legendPos:'b',legendColor:C.fg,legendFontSize:10,showPercent:true,dataLabelColor:'0A0A0A',dataLabelFontSize:10});
+    sl.addText([{text:pct(ts.pAdm),options:{fontSize:44,bold:true,color:ts.pAdm>=0.45?C.n1:ts.pAdm>=0.3?C.n2:C.fg,breakLine:true}},{text:'do tempo do marketing vai para tarefas administrativas e internas',options:{fontSize:14,color:C.mut,breakLine:true}},{text:`${dec(ts.tot,0)} h por semana no total`,options:{fontSize:12,color:C.mut,breakLine:true}},
+      ...ts.uns.filter(u=>u.pr!=null).map(u=>({text:`${u.nome}: ${pct(u.pt)} do tempo · ${pct(u.pr)} da receita`,options:{fontSize:12,color:Math.abs(u.pt-u.pr)>=0.15?C.n1:C.fg,breakLine:true}}))],{x:6.6,y:1.7,w:6.2,h:4.4,fontFace:F,valign:'top'}); }
   if(t||cur.dores.length){ sl=base('Capacidade do marketing e onde o trabalho trava','Operação');
     if(t){ const lab=TRELLO.filter(([k])=>t.v[k]).map(([,l])=>l), val=TRELLO.filter(([k])=>t.v[k]).map(([k])=>t.v[k]);
       sl.addChart(pptx.ChartType.bar,[{name:'Projetos',labels:lab,values:val}],{x:0.5,y:1.6,w:6.2,h:3.6,barDir:'col',chartColors:[C.acc],catAxisLabelColor:C.fg,valAxisLabelColor:C.mut,catAxisLabelFontSize:9,valAxisLabelFontSize:9,valGridLine:{color:C.line,size:0.5},showValue:true,dataLabelColor:C.fg,dataLabelFontSize:10,plotArea:{fill:{color:C.bg}}});
@@ -1362,6 +1499,7 @@ function renderRelatorio(INS){
    <section><h2>Base de conhecimento</h2>${(()=>{const R=capRows().filter(r=>r.vagas!=null||r.captados!=null);return R.length?`<table class="tbl"><thead><tr><th>UN</th><th>Turno ou modalidade</th><th class="r">Vagas</th><th class="r">Meta</th><th class="r">Captados</th><th class="r">Ocupação</th><th class="r">Da meta</th></tr></thead><tbody>${R.map(r=>`<tr><td>${r.nm}</td><td>${r.mod}</td><td class="r">${r.vagas??'—'}</td><td class="r">${r.meta??'—'}</td><td class="r">${r.captados??'—'}</td><td class="r">${pct(r.ocup)}</td><td class="r">${pct(r.ating)}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Não preenchida.</p>';})()}
     ${cur.cursos.length?`<p class="muted">${pl(cur.cursos.length,'curso cadastrado','cursos cadastrados')}, ${pl(cur.cursos.filter(c=>c.status==='Lançamento').length,'lançamento','lançamentos')}.</p>`:''}</section>
    ${t?`<section><h2>Capacidade do marketing</h2>${trelloView(t)}</section>`:''}
+   ${tempoStats()?`<section><h2>Para onde vai o tempo do marketing</h2><p><b>${pct(tempoStats().pAdm)}</b> das horas no administrativo e interno${cur.campos['demandas.tempo_fonte']?' · fonte: '+esc(cur.campos['demandas.tempo_fonte']).toLowerCase():''}.</p>${tempoView(tempoStats())}</section>`:''}
    ${cur.dores.length?`<section><h2>Dores e gargalos</h2>${gargaloChart(false)}<table class="tbl"><thead><tr><th>Dor</th><th>Área</th><th>Etapa</th><th>Gravidade</th><th>Frequência</th><th>Relatado por</th></tr></thead><tbody>${[...cur.dores].sort((a,b)=>dorScore(b)-dorScore(a)).map(d=>`<tr><td>${esc(d.txt)}</td><td>${esc(nameOf(d.area)||'—')}</td><td>${esc(d.etapa)}</td><td>${SEVN[d.sev]||'—'}</td><td>${esc(d.freq)}</td><td>${esc(d.quem||'—')}</td></tr>`).join('')}</tbody></table></section>`:''}
    ${cur.sistemas.some(x=>x.nome)?`<section><h2>Sistemas</h2><table class="tbl"><thead><tr><th>Sistema</th><th>Uso</th><th>Satisfação</th><th>Integra</th><th>Problemas</th></tr></thead><tbody>${cur.sistemas.filter(x=>x.nome).map(x=>`<tr><td>${esc(x.nome)}</td><td>${esc(x.uso)}</td><td>${esc(x.satisf||'—')}</td><td>${esc(x.integra||'—')}</td><td>${esc(x.prob)}</td></tr>`).join('')}</tbody></table></section>`:''}
    ${dreHtml()}
@@ -1567,7 +1705,7 @@ async function start(session){
   try{
     const p=ok(await sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle());
     if(!p||!p.ativo){ started=false; await sb.auth.signOut(); authMode='entrar'; authMsg={t:'Seu acesso não está ativo. Fale com a LORSO Digital.'}; showAuth(); return; }
-    me=p; await Promise.all([loadList(),loadTeam()]);
+    me=p; await Promise.all([loadList(),loadTeam()]); await loadInternas();
     let id=lsGet('cd.last'); if(!all[id]) id=Object.keys(all)[0];
     if(id) await openDiag(id); else { cur=null; render(); }
   }catch(e){ console.error(e); $('#main').innerHTML='<p class="loading">Não foi possível carregar. Recarregue a página.</p>'; started=false; }
@@ -1575,7 +1713,7 @@ async function start(session){
 async function boot(){
   sb.auth.onAuthStateChange((ev,session)=>{
     if(ev==='PASSWORD_RECOVERY'){ authMode='nova-senha'; authMsg=null; started=false; showAuth(); return; }
-    if(ev==='SIGNED_OUT'){ started=false; me=null; cur=null; snap=null; if(channel){sb.removeChannel(channel);channel=null;} showAuth(); return; }
+    if(ev==='SIGNED_OUT'){ started=false; me=null; cur=null; snap=null; internas=[]; if(itCh){sb.removeChannel(itCh);itCh=null;} if(channel){sb.removeChannel(channel);channel=null;} showAuth(); return; }
     if((ev==='SIGNED_IN'||ev==='INITIAL_SESSION')&&session&&authMode!=='nova-senha') setTimeout(()=>start(session),0);
     if(ev==='INITIAL_SESSION'&&!session) showAuth();
   });
@@ -1597,6 +1735,12 @@ document.addEventListener('click',e=>{
   if(act==='sb-close'){ ui.sbOpen=false; document.body.classList.remove('sb-on'); return; }
   if(act==='tema'){ setPref('theme',temaAtual()==='light'?'dark':'light'); render(); return; }
   if(act==='pref'){ setPref(d.k,d.v); render(); return; }
+  if(act==='it-new'){ const t=itNew({status:d.col||'A fazer',responsavel:ui.itf&&ui.itf.resp&&ui.itf.resp!=='-'?(ui.itf.resp==='eu'?me.id:ui.itf.resp):'',diagnostico_id:ui.itf&&ui.itf.cli&&ui.itf.cli!=='-'?ui.itf.cli:''}); ui.openIt=t.id; render(); const ta=document.querySelector(`[data-it-f="titulo"][data-id="${t.id}"]`); ta&&ta.focus(); return; }
+  if(act==='it-open'){ ui.openIt=d.id; render(); const ta=document.querySelector(`[data-it-f="titulo"][data-id="${d.id}"]`); ta&&ta.focus(); return; }
+  if(act==='it-close'){ const t=internas.find(x=>x.id===ui.openIt); if(t)itSave(t,true); ui.openIt=null; render(); return; }
+  if(act==='it-del'){ itDel(d.id); ui.openIt=null; render(); return; }
+  if(act==='itf'){ ui.itf=ui.itf||{resp:'',cli:''}; ui.itf[d.k]=d.v; render(); return; }
+  if(act==='itf-clear'){ ui.itf={resp:'',cli:''}; render(); return; }
   if(act==='view'){ go(d.v); return; }
   if(act==='print-rel'){ setTimeout(()=>window.print(),50); return; }
   if(act==='print-como'){ document.body.classList.add('printing'); setTimeout(()=>{ window.print(); document.body.classList.remove('printing'); },50); return; }
@@ -1625,7 +1769,7 @@ document.addEventListener('click',e=>{
   else if(act==='curso-aplicar'){ const pv=ui.cursoPreview||[]; cur.cursos.push(...pv); ui.cursoPreview=null; ui.cursoTxt=''; touch(true); toast(`${pv.length} cursos adicionados`); }
   else if(act==='jornada-toggle'){ let L=jornadaIds(); L=L.includes(d.v)?L.filter(x=>x!==d.v):[...L,d.v]; if(L.length)cur.campos['jornada.ordem']=L.join('|'); else delete cur.campos['jornada.ordem']; touch(true); }
   else if(act==='jornada-up'){ const L=jornadaIds(); const i=L.indexOf(d.v); if(i>0){ [L[i-1],L[i]]=[L[i],L[i-1]]; cur.campos['jornada.ordem']=L.join('|'); touch(true);} }
-  else if(act==='jornada-tarefas'){ let n=0; jornadaIds().forEach(id=>{ if(cur.acoes.some(t=>t.origem==='coleta:'+id))return; const quem=cur.campos['jornada.'+id+'.quem']; newTask({txt:`Entrevistar ${quem||'responsável'} · ${AREA[id].nome}`,area:id,origem:'coleta:'+id,prazo:cur.campos['jornada.'+id+'.data']||''}); n++; }); touch(true); toast(n?`${n} entrevistas criadas no kanban`:'As entrevistas já estão no kanban'); }
+  else if(act==='jornada-tarefas'){ let n=0; jornadaIds().forEach(id=>{ if(internas.some(t=>t.diagnostico_id===cur.id&&t.origem==='coleta:'+id))return; const quem=cur.campos['jornada.'+id+'.quem']; itNew({titulo:`Entrevistar ${quem||'responsável'} · ${AREA[id].nome}`,diagnostico_id:cur.id,area:id,origem:'coleta:'+id,prazo:cur.campos['jornada.'+id+'.data']||'',responsavel:cur.dono_area[id]||''}); n++; }); render(); toast(n?`${n} entrevistas criadas em Tarefas da equipe`:'As entrevistas já estão em Tarefas da equipe'); }
   else if(act==='opt'){
     const q=d.q, n=+d.n, wasEmpty=!cur.resp[q];
     if(cur.resp[q]===n)delete cur.resp[q]; else cur.resp[q]=n;
@@ -1647,11 +1791,11 @@ document.addEventListener('click',e=>{
   else if(act==='acao-add'){ newTask({txt:d.txt,area:d.area,origem:d.src||''}); touch(true); toast('Tarefa adicionada ao kanban'); }
   else if(act==='plan-ins'){ computeAll(); const r=runEngine().find(i=>i.id===d.id&&i.t===d.t); if(r){ const n=genFromInsight(r); touch(true); toast(n?`${n} tarefas criadas`:'Essas tarefas já estão no kanban'); } }
   else if(act==='gen-ins'){ computeAll(); let n=0; runEngine().filter(i=>i.sev!=='media').forEach(i=>n+=genFromInsight(i)); touch(true); toast(n?`${n} tarefas criadas a partir das incongruências`:'Nenhuma tarefa nova: as incongruências graves já têm tarefas'); }
-  else if(act==='gen-coleta'){ let n=0; AREAS.forEach(a=>{ const done=a.q.every(x=>cur.resp[x[0]]); if(!done&&!cur.acoes.some(t=>t.origem==='coleta:'+a.id)){ newTask({txt:`Coletar dados: ${a.nome} (entrevista 1 a 1)`,area:a.id,origem:'coleta:'+a.id}); n++; } }); autoTasks(); touch(true); toast(n?`${n} tarefas de coleta criadas`:'Todas as áreas já têm tarefa de coleta'); }
-  else if(act==='task-new'){ const t=newTask({status:d.col||'A fazer',area:d.area||'',txt:d.txt||''}); ui.openTask=t.id; if(ui.view==='fases'&&ui.stage!=='execucao'){ ui.view='tarefas'; saveUi(); } touch(true); const ta=document.querySelector(`.kedit textarea[data-id="${t.id}"]`); if(ta){ ta.focus(); ta.scrollIntoView({block:'center'}); } }
+  else if(act==='gen-coleta'){ let n=0; AREAS.forEach(a=>{ const done=a.q.every(x=>cur.resp[x[0]]); if(!done&&!internas.some(t=>t.diagnostico_id===cur.id&&t.origem==='coleta:'+a.id)){ itNew({titulo:`Coletar dados: ${a.nome} (entrevista 1 a 1)`,diagnostico_id:cur.id,area:a.id,origem:'coleta:'+a.id,responsavel:cur.dono_area[a.id]||''}); n++; } }); autoColeta(); render(); toast(n?`${n} tarefas de coleta criadas para a equipe`:'Nenhuma tarefa nova: as áreas já estão completas ou têm tarefa de coleta'); }
+  else if(act==='task-new'){ const t=newTask({status:d.col||'A fazer',area:d.area||'',txt:d.txt||''}); ui.openTask=t.id; if(ui.view!=='fases'||ui.stage!=='execucao'){ ui.view='fases'; ui.stage='execucao'; saveUi(); } touch(true); const ta=document.querySelector(`.kedit textarea[data-id="${t.id}"]`); if(ta){ ta.focus(); ta.scrollIntoView({block:'center'}); } }
   else if(act==='task-open'){ ui.openTask=d.id; render(); const ta=document.querySelector(`.kedit textarea[data-id="${d.id}"]`); ta&&ta.focus(); }
   else if(act==='task-close'){ ui.openTask=null; render(); }
-  else if(act==='task-del'){ cur.acoes=cur.acoes.filter(t=>t.id!==d.id); ui.openTask=null; touch(true); }
+  else if(act==='task-del'){ const x=cur.acoes.find(t=>t.id===d.id); if(x&&x.origem&&x.origem.startsWith('plano:')){ const ig=ignorados(); ig.push(x.origem); cur.campos['plano.ignorados']=JSON.stringify(ig); } cur.acoes=cur.acoes.filter(t=>t.id!==d.id); ui.openTask=null; touch(true); }
   else if(act==='tasks-area'){ ui.kf={dono:'',area:d.v}; go('tarefas'); }
   else if(act==='tasks-mem'){ ui.kf={dono:d.id,area:''}; go('tarefas'); }
   else if(act==='kf-clear'){ ui.kf={dono:'',area:''}; render(); }
@@ -1670,7 +1814,7 @@ document.addEventListener('click',e=>{
   else if(act==='sys-add'){ const x={id:uid(),nome:d.n,uso:'',quem:'',satisf:'',integra:'',custo:'',prob:''}; cur.sistemas.push(x); touch(true); const i=document.querySelector(`[data-sys="${x.id}"][data-f="${d.n?'uso':'nome'}"]`); i&&i.focus(); }
   else if(act==='sys-del'){ cur.sistemas=cur.sistemas.filter(x=>x.id!==d.id); touch(true); }
 });
-function syncColetaDono(areaId){ const t=cur.acoes.find(x=>x.origem==='coleta:'+areaId&&x.status!=='Concluída'); if(t){ t.dono=cur.dono_area[areaId]||''; } }
+function syncColetaDono(areaId){ const t=cur.acoes.find(x=>x.origem==='coleta:'+areaId&&x.status!=='Concluída'); if(t){ t.dono=cur.dono_area[areaId]||''; } const it=internas.find(x=>x.diagnostico_id===cur.id&&x.origem==='coleta:'+areaId&&x.status!=='Concluída'); if(it){ it.responsavel=cur.dono_area[areaId]||''; itSave(it); } }
 
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&document.body.classList.contains('sb-on')){ ui.sbOpen=false; document.body.classList.remove('sb-on'); $('.sb-open')&&$('.sb-open').focus(); } });
 document.addEventListener('submit',e=>{
@@ -1694,6 +1838,7 @@ document.addEventListener('input',e=>{
   const t=e.target, d=t.dataset;
   if(t.id==='curso-txt'){ ui.cursoTxt=t.value; return; }
   if(t.id==='dre-txt'){ ui.dreTxt=t.value; return; }
+  if(d.itF==='titulo'||d.itF==='descricao'){ const x=internas.find(y=>y.id===d.id); if(x){ x[d.itF]=t.value; itSave(x); } return; }
   if(d.me!=null&&me){ me[d.me]=t.value; let p=profiles.find(x=>x.id===me.id); if(!p){ p={...me}; profiles.push(p); } p[d.me]=t.value; if(cur)cur.equipe=equipeList(); saveProfile(me.id); return; }
   if(d.mem!=null){ const p=profiles.find(x=>x.id===d.mem); if(p){ const f={nome:'nome',papel:'funcao',contato:'contato'}[d.f]; p[f]=t.value; if(cur)cur.equipe=equipeList(); saveProfile(p.id); } return; }
   if(!cur) return;
@@ -1710,6 +1855,8 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target, d=t.dataset;
+  if(t.id==='itf-resp'||t.id==='itf-cli'){ ui.itf=ui.itf||{resp:'',cli:''}; ui.itf[t.id==='itf-resp'?'resp':'cli']=t.value; render(); return; }
+  if(d.itF&&d.itF!=='titulo'&&d.itF!=='descricao'){ const x=internas.find(y=>y.id===d.id); if(x){ x[d.itF]=t.value; itSave(x); } return; }
   if(!cur) return;
   if(t.id==='sel-diag'){ openDiag(t.value); }
   else if(t.id==='area-sel'){ ui.area=t.value; saveUi(); render(); window.scrollTo({top:0}); }

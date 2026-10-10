@@ -14,6 +14,8 @@ resto do site: sobe junto com o GitHub Pages a cada push na `main`.
 | `app.js` | Cálculo de maturidade, motor de cruzamento, telas, login e gravação no Supabase |
 | `config.js` | Endereço e chave **pública** do Supabase (pode ficar no navegador) |
 | `supabase/0001_estrutura.sql` | Estrutura do banco e regras de acesso (já aplicada no projeto) |
+| `supabase/0002_base_e_priorizacao.sql` | Cursos da base de conhecimento e matriz de priorização interna |
+| `supabase/0003_tarefas_internas.sql` | Kanban interno da equipe LORSO, fora do contexto do cliente |
 
 ## Banco (Supabase)
 
@@ -58,5 +60,5 @@ Cada pergunta em `perguntas.js` é:
 - Impacto: 3 alto, 2 médio, 1 baixo. Eliminatória: `1` limita a área a Estruturado se a resposta for N1.
 - Nunca reaproveite um `id` para outra pergunta: as respostas ficam gravadas pelo id.
 
-As regras do motor de cruzamento (`CRZ-01` a `CRZ-52`) ficam em `app.js`, na seção
+As regras do motor de cruzamento (`CRZ-01` a `CRZ-56`) ficam em `app.js`, na seção
 `MOTOR DE CRUZAMENTO`.
