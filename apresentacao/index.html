@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Apresentação institucional da LORSO Digital: metodologia, frentes de atuação, portfólio de sistemas, apps, sites e conteúdo.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.lorsodigital.com.br/apresentacao/">
+<meta property="og:title" content="LORSO Digital | Apresentação Institucional">
+<meta property="og:description" content="Metodologia, portfólio e cases da LORSO Digital, Hub de Inteligência Operacional e Escala.">
+<meta property="og:image" content="https://www.lorsodigital.com.br/assets/img/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="theme-color" content="#0A0D13">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="64x64" href="/assets/img/favicon.png">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<title>LORSO Digital | Apresentação Institucional</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script>
+tailwind.config={theme:{extend:{
+  fontFamily:{sans:['Inter','system-ui','sans-serif'],display:['Archivo','Arial Black','sans-serif'],mono:['"JetBrains Mono"','ui-monospace','monospace']},
+  colors:{bg:'#0A0D13',panel:'#0E121A',ink:'#F2F5F7',graph:'#A9B3C1',mute:'#7D8796',line:'#1C222D',emer:'#00FF87',cyan:'#00E5FF',sand:'#D9C7A7'}
+}}}
+</script>
+<style>
+/* Layout: palco 16:9 fixo (1280x720) escalado para a tela; tom oficial do site LORSO: grafite azulado quase preto, verde neon, rótulos mono "// 0X"; mídias reais em molduras de navegador e celular com zoom */
+:root{--bg:#0A0D13;--panel:#0E121A;--panel2:#121722;--ink:#F2F5F7;--mute:#7D8796;--line:#1C222D;--neon:#00FF87;--cyan:#00E5FF;--sand:#D9C7A7;color-scheme:dark}
+html,body{height:100%}
+body{background:#05070B;color:var(--ink);font-family:Inter,system-ui,sans-serif;overflow:hidden}
+#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{width:1280px;height:720px;flex:none;position:relative;overflow:hidden;background:var(--bg);border-radius:18px;border:1px solid var(--line);box-shadow:0 40px 120px -40px rgba(0,255,135,.12);transform-origin:center}
+.slide{position:absolute;inset:0;padding:56px 72px 96px;display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateX(40px);transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1),visibility 0s .55s}
+.slide.on{opacity:1;visibility:visible;transform:none;transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
+.slide.back{transform:translateX(-40px)}
+.slide.on .rise{animation:rise .7s both cubic-bezier(.2,.7,.2,1)}
+.slide.on .rise:nth-child(2){animation-delay:.08s}.slide.on .rise:nth-child(3){animation-delay:.16s}.slide.on .rise:nth-child(4){animation-delay:.24s}.slide.on .rise:nth-child(5){animation-delay:.32s}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.eyebrow{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.eyebrow b{font-weight:500;color:var(--neon)}
+.ttl{font-family:Archivo,"Arial Black",sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:-.02em;line-height:1.02;text-wrap:balance}
+.ttl em{font-style:normal;color:var(--neon)}
+.float{animation:float 6s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-8px)}}
+.grain{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:64px 64px;opacity:.35;mask-image:radial-gradient(ellipse at 70% 30%,#000,transparent 70%)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;transition:transform .25s,box-shadow .3s,border-color .3s}
+.card:hover{transform:translateY(-4px);border-color:rgba(0,255,135,.45)}
+.num{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:Archivo,sans-serif;font-weight:800;font-size:17px;background:#151A24;color:var(--ink);transition:all .3s}
+.step .bar{height:2px;background:var(--line);border-radius:2px;margin-top:auto;position:relative;overflow:hidden}
+.step .bar i{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,var(--neon),var(--cyan))}
+.step.act{border-color:rgba(0,255,135,.55);background:#101620;box-shadow:0 24px 60px -20px rgba(0,255,135,.35)}
+.step.act .num{background:var(--neon);color:#06110B;box-shadow:0 0 24px rgba(0,255,135,.45)}
+.step.act .bar i{animation:fill 3.2s linear forwards}
+@keyframes fill{to{width:100%}}
+.step.done .num{background:rgba(0,255,135,.12);color:var(--neon)}
+.chip{font-family:"JetBrains Mono",monospace;font-size:11px;padding:6px 10px;border-radius:99px;border:1px solid var(--line);color:var(--mute);white-space:nowrap}
+.chip.g{border-color:rgba(0,255,135,.5);color:var(--neon)}
+.tab{padding:8px 15px;border-radius:99px;font-size:13px;font-weight:600;color:var(--mute);border:1px solid var(--line);background:var(--panel);cursor:pointer;transition:all .2s}
+.tab[aria-selected="true"]{background:var(--neon);color:#06110B;border-color:var(--neon)}
+.tabpanel{animation:rise .45s both}
+.foot{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.1em;color:var(--neon);display:flex;justify-content:space-between;align-items:center}
+.cat{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--sand)}
+ul.ck{display:flex;flex-direction:column;gap:11px;color:#A9B3C1;font-size:15px;line-height:1.45}
+ul.ck li{display:flex;gap:12px}
+ul.ck li::before{content:"";flex:none;width:7px;height:7px;margin-top:7px;border-radius:2px;background:var(--neon);box-shadow:0 0 10px rgba(0,255,135,.6)}
+
+/* molduras com mídia real */
+.frame{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 30px 70px -30px rgba(0,255,135,.22)}
+.fbar{display:flex;gap:6px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.fbar i{width:9px;height:9px;border-radius:50%;background:#252C39}
+.fbar span{margin-left:8px;font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--mute)}
+.scr{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;object-position:top;background:#000}
+.phone{width:190px;flex:none;border-radius:30px;border:7px solid #1A202B;background:#000;overflow:hidden;position:relative;box-shadow:0 30px 60px -25px rgba(0,229,255,.25)}
+.phone>video,.phone>img{display:block;width:100%;aspect-ratio:780/1688;object-fit:cover;object-position:top}
+.tall{width:220px;flex:none;border-radius:18px;border:1px solid var(--line);overflow:hidden;background:#000;box-shadow:0 30px 60px -25px rgba(0,255,135,.2)}
+.tall>video{display:block;width:100%;aspect-ratio:9/16;object-fit:cover}
+.zoom{cursor:zoom-in;position:relative}
+.zoom::after{content:"";position:absolute;right:10px;top:10px;width:28px;height:28px;border-radius:8px;background:rgba(10,13,19,.75) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300FF87' stroke-width='2'%3E%3Cpath d='M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7'/%3E%3C/svg%3E") center/14px no-repeat;opacity:0;transition:opacity .2s}
+.zoom:hover::after{opacity:1}
+.lbl{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);text-align:center;margin-top:10px}
+.thumb{width:96px;border-radius:8px;border:1px solid var(--line);overflow:hidden;cursor:pointer;opacity:.6;transition:all .2s}
+.thumb img,.thumb video{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;object-position:top}
+.thumb.on,.thumb:hover{opacity:1;border-color:var(--neon)}
+.tree{display:flex;flex-wrap:wrap;gap:6px}
+.tree span{font-size:12px;padding:5px 9px;border-radius:6px;background:#151A24;color:#C9D1DB}
+
+/* zoom */
+#lb{position:absolute;inset:0;z-index:30;background:rgba(5,7,11,.92);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:40px}
+#lb>*{max-width:100%;max-height:100%;border-radius:12px;border:1px solid var(--line);box-shadow:0 30px 100px -20px rgba(0,255,135,.3)}
+#lb .x{position:absolute;top:18px;right:22px;font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--mute);border:0;box-shadow:none}
+
+/* controles */
+#progress{position:absolute;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--neon),var(--cyan));box-shadow:0 0 12px rgba(0,255,135,.6);transition:width .5s ease;z-index:10}
+.ctl{position:absolute;bottom:24px;z-index:10;display:flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:99px;border:1px solid var(--line);background:rgba(14,18,26,.85);backdrop-filter:blur(6px);font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;transition:all .2s;text-decoration:none}
+.ctl:hover{border-color:var(--neon);color:var(--neon)}
+.ctl:disabled{opacity:.3;cursor:default}
+.ctl.pri{background:var(--neon);color:#06110B;border-color:var(--neon)}
+.ctl.pri:hover{color:#06110B;box-shadow:0 0 24px rgba(0,255,135,.45)}
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+#prev{left:28px}#next{right:28px}
+#back{top:20px;bottom:auto;right:28px;height:36px;font-size:12px;border-color:rgba(0,255,135,.45);color:var(--neon)}
+#back:hover{background:var(--neon);color:#06110B}
+#counter{position:absolute;bottom:37px;left:50%;transform:translateX(-50%);font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.12em;color:var(--mute);z-index:10}
+
+.cnode{background:none;border:0;cursor:pointer;color:inherit}
+.cnode[aria-selected="true"] .num{background:var(--neon);color:#06110B;box-shadow:0 0 24px rgba(0,255,135,.45)}
+.cnode[aria-selected="true"] span:last-child{color:var(--neon)}
+/* hub final */
+.hcard{display:flex;gap:12px;align-items:flex-start;padding:13px 15px;background:rgba(14,18,26,.92);border:1px solid var(--line);border-radius:12px;transition:border-color .25s,box-shadow .25s,transform .25s;cursor:default}
+.hcard:hover,.hcard.hot{border-color:rgba(0,255,135,.55);box-shadow:0 18px 40px -18px rgba(0,255,135,.4);transform:translateY(-2px)}
+.hcard .ic{width:36px;height:36px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#121B22;border:1px solid #1E2A33;color:var(--neon)}
+.hcard b{display:block;font-family:Archivo,sans-serif;font-weight:800;font-size:14.5px;letter-spacing:-.01em}
+.hcard p{font-size:12px;line-height:1.45;color:#A9B3C1;margin-top:3px}
+#hubCore{width:180px;height:180px}
+.ring{position:absolute;left:50%;top:50%;border-radius:50%;transform:translate(-50%,-50%)}
+.ring.r1{width:250px;height:250px;border:1px solid rgba(0,229,255,.18)}
+.ring.r2{width:330px;height:330px;border:1px dashed rgba(0,255,135,.22);animation:spin 40s linear infinite}
+.ring.r3{width:410px;height:410px;border:1px solid rgba(255,255,255,.05)}
+.ring.r2::before{content:"";position:absolute;top:-4px;left:50%;width:8px;height:8px;border-radius:50%;background:var(--neon);box-shadow:0 0 12px var(--neon)}
+@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.core{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 40%,#122019,#0A0D13 70%);border:2px solid rgba(0,255,135,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;box-shadow:0 0 60px rgba(0,255,135,.25),inset 0 0 30px rgba(0,255,135,.12);animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 90px rgba(0,255,135,.4),inset 0 0 40px rgba(0,255,135,.2)}}
+.glow{position:absolute;left:50%;top:50%;width:520px;height:520px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(0,255,135,.12),transparent 60%);pointer-events:none}
+#hubSvg path.base{fill:none;stroke:rgba(140,160,180,.16);stroke-width:1.2}
+#hubSvg path.hp{fill:none;stroke-width:1.6;opacity:.75;transition:opacity .25s,stroke-width .25s}
+#hubSvg path.hp.hot{opacity:1;stroke-width:2.6}
+#hubSvg .go{stroke-dasharray:var(--l);stroke-dashoffset:var(--l);animation:draw 1.3s cubic-bezier(.4,.1,.2,1) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+/* ===== versão mobile (celular em pé): slides viram página de rolagem ===== */
+html.m,html.m body{height:auto}
+html.m body{overflow-x:hidden;overflow-y:auto}
+html.m #viewport{position:static;display:block}
+html.m #stage{width:100%;height:auto;transform:none!important;border-radius:0;border:0;overflow:visible}
+html.m .slide{position:relative;inset:auto;opacity:1;visibility:visible;transform:none;padding:52px 18px 44px;min-height:0;border-bottom:1px solid var(--line);overflow:hidden;transition:none}
+html.m .slide .rise{animation:none!important}
+html.m .slide [class*="grid-cols"]{grid-template-columns:1fr!important}
+html.m .slide .grid{gap:14px!important}
+html.m .ttl{font-size:30px!important;line-height:1.05}
+html.m .slide:first-of-type .ttl{font-size:38px!important}
+html.m .slide p.text-xl,html.m .slide p.text-lg{font-size:16px!important}
+html.m .float{animation:none}
+html.m .step{height:auto!important}
+html.m .flex.items-end.justify-between{flex-direction:column;align-items:flex-start;gap:16px}
+html.m [role="tablist"]{flex-wrap:wrap}
+html.m .slide .flex.gap-4.items-start,html.m .slide .flex.gap-5.items-start,html.m .slide .flex.gap-6.items-start{flex-wrap:wrap;justify-content:center;gap:14px}
+html.m .slide .mt-10,html.m .slide .mt-8,html.m .slide .mt-12{margin-top:0!important}
+html.m .phone{width:44vw!important;max-width:200px}
+html.m .tall{width:44vw!important;max-width:220px}
+html.m .w-px.self-stretch{display:none}
+html.m .mt-auto{margin-top:24px!important}
+html.m .grain{display:none}
+html.m #prev,html.m #next,html.m #counter,html.m #back{display:none!important}
+html.m #progress{position:fixed;top:0;z-index:40}
+html.m #lb{position:fixed;padding:16px}
+html.m #hubSvg,html.m .ring,html.m .glow{display:none}
+html.m #hub{display:flex;flex-direction:column;gap:14px}
+html.m #hub>div:nth-child(3){order:-1;height:auto;padding:8px 0 20px}
+html.m #hub>div:nth-child(3) .absolute{position:static;transform:none;margin-top:10px}
+html.m #hub>div:nth-child(3){flex-direction:column}
+html.m #hubCore{width:130px;height:130px}
+html.m .min-h-\[208px\],html.m .min-h-\[150px\]{min-height:0}
+html.m .cnode .num{width:36px;height:36px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+
+
+</head>
+<body>
+<div id="viewport"><div id="stage">
+<div id="progress"></div>
+
+<!-- 1 CAPA -->
+<section class="slide" aria-label="Capa">
+  <div class="grain"></div>
+  <div class="absolute -right-24 -top-24 w-[560px] h-[560px] rounded-full" style="background:radial-gradient(circle,rgba(0,255,135,.18),transparent 65%)"></div>
+  <div class="relative flex items-center gap-3 rise">
+    <svg width="44" height="44" viewBox="0 0 54 54" aria-hidden="true"><path d="M8 6h12v30h26v12H8z" fill="#00FF87"/><path d="M30 6h16l-8 22H22z" fill="#00E5FF"/><circle cx="41" cy="14" r="3.4" fill="#fff"/></svg>
+    <div class="leading-none"><div class="font-display font-extrabold text-xl tracking-wide">LORSO</div><div class="text-[11px] tracking-[.32em] text-mute mt-1">DIGITAL.</div></div>
+  </div>
+  <div class="relative mt-auto flex flex-col gap-6 max-w-[960px]">
+    <span class="eyebrow rise">// <b>Hub de Inteligência Operacional e Escala</b></span>
+    <h1 class="ttl rise text-[72px]">Da estratégia à operação rodando, <em>de ponta a ponta.</em></h1>
+    <p class="rise text-xl text-graph max-w-[720px]">Marketing, Growth e Operações Comerciais com sistemas, apps, sites e conteúdo construídos sob medida.</p>
+    <div class="rise flex items-center gap-6 mt-2">
+      <button class="ctl pri !static" data-go="1">Começar apresentação <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+      <span class="text-sm text-mute">Alessandro Cochetti · Fundador</span>
+    </div>
+  </div>
+</section>
+
+<!-- 2 QUEM SOMOS -->
+<section class="slide" aria-label="Quem somos">
+  <span class="eyebrow rise">// 01 <b>Quem somos</b></span>
+  <div class="grid grid-cols-[1.1fr_1fr] gap-14 mt-6 flex-1 items-center">
+    <div class="flex flex-col gap-5">
+      <h2 class="ttl rise text-[48px]">Liderança de negócio, sem agência <em>inchada.</em></h2>
+      <p class="rise text-lg text-graph leading-relaxed">Mais de 17 anos à frente de unidades de negócio em EdTech, SaaS, Fintech e E-commerce. Para cada projeto, montamos o time certo com especialistas de mercado.</p>
+      <div class="rise flex gap-2 flex-wrap"><span class="chip g">São Paulo, SP</span><span class="chip">Time sob medida</span><span class="chip">Um ponto de contato</span></div>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="card p-6 rise float"><i data-lucide="trending-up" class="w-6 h-6 text-emer"></i><div class="font-display text-[40px] font-extrabold mt-3 tabular-nums">+R$<span data-count="40">40</span> mi</div><p class="text-sm text-mute">em receita gerada com growth, branding e go-to-market</p></div>
+      <div class="card p-6 rise float" style="animation-delay:1s"><i data-lucide="briefcase" class="w-6 h-6 text-emer"></i><div class="font-display text-[40px] font-extrabold mt-3 tabular-nums"><span data-count="17">17</span>+</div><p class="text-sm text-mute">anos liderando operações de grande porte</p></div>
+      <div class="card p-6 rise float" style="animation-delay:2s"><i data-lucide="layers" class="w-6 h-6 text-emer"></i><div class="font-display text-[40px] font-extrabold mt-3 tabular-nums" data-count="5">5</div><p class="text-sm text-mute">etapas de uma metodologia validada</p></div>
+      <div class="card p-6 rise float" style="animation-delay:3s"><i data-lucide="boxes" class="w-6 h-6 text-emer"></i><div class="font-display text-[40px] font-extrabold mt-3 tabular-nums" data-count="9">9</div><p class="text-sm text-mute">sistemas, apps e sites neste portfólio</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 METODOLOGIA -->
+<section class="slide" aria-label="Metodologia">
+  <span class="eyebrow rise">// 02 <b>Processo validado</b></span>
+  <h2 class="ttl rise text-[52px] mt-4">Metodologia em 5 etapas</h2>
+  <p class="rise text-[17px] text-graph mt-4 max-w-[640px]">Nossa metodologia em 5 etapas para garantir resultados previsíveis, eliminando achismos e alinhando execução diária aos objetivos financeiros da sua empresa.</p>
+  <div class="grid grid-cols-5 gap-4 mt-auto mb-1 rise" id="method">
+    <div class="card step p-5 flex flex-col gap-4 h-[262px] cursor-pointer"><div class="flex justify-between items-center"><span class="num">01</span><span class="font-mono text-[11px] tracking-[.14em] text-mute">FASE 1</span></div><div class="font-display font-extrabold uppercase text-[17px]">Diagnóstico</div><p class="text-[13px] leading-relaxed text-graph">Análise profunda da maturidade do seu negócio, auditoria de canais e localização cirúrgica dos gargalos de conversão.</p><div class="bar"><i></i></div></div>
+    <div class="card step p-5 flex flex-col gap-4 h-[262px] cursor-pointer"><div class="flex justify-between items-center"><span class="num">02</span><span class="font-mono text-[11px] tracking-[.14em] text-mute">FASE 2</span></div><div class="font-display font-extrabold uppercase text-[17px]">Estratégia</div><p class="text-[13px] leading-relaxed text-graph">Plano de ação executivo com metas trimestrais, desenho de funil, alocação de verba e projeção de retorno financeiro.</p><div class="bar"><i></i></div></div>
+    <div class="card step p-5 flex flex-col gap-4 h-[262px] cursor-pointer"><div class="flex justify-between items-center"><span class="num">03</span><span class="font-mono text-[11px] tracking-[.14em] text-mute">FASE 3</span></div><div class="font-display font-extrabold uppercase text-[17px]">Execução</div><p class="text-[13px] leading-relaxed text-graph">Time de especialistas selecionado para cada desafio, implementando campanhas, fluxos de automação e páginas com agilidade e alto rigor técnico.</p><div class="bar"><i></i></div></div>
+    <div class="card step p-5 flex flex-col gap-4 h-[262px] cursor-pointer"><div class="flex justify-between items-center"><span class="num">04</span><span class="font-mono text-[11px] tracking-[.14em] text-mute">FASE 4</span></div><div class="font-display font-extrabold uppercase text-[17px]">Otimização</div><p class="text-[13px] leading-relaxed text-graph">Inteligência Artificial e engenharia de dados refinando criativos, segmentações e taxas de conversão de ponta a ponta.</p><div class="bar"><i></i></div></div>
+    <div class="card step p-5 flex flex-col gap-4 h-[262px] cursor-pointer"><div class="flex justify-between items-center"><span class="num">05</span><span class="font-mono text-[11px] tracking-[.14em] text-mute">FASE 5</span></div><div class="font-display font-extrabold uppercase text-[17px]">Resultados</div><p class="text-[13px] leading-relaxed text-graph">Dashboards em tempo real, transparência sem filtros, tração acelerada e comprovação contínua de retorno sobre investimento (ROI).</p><div class="bar"><i></i></div></div>
+  </div>
+</section>
+
+<!-- 4 FRENTES -->
+<section class="slide" aria-label="Frentes">
+  <span class="eyebrow rise">// 03 <b>Frentes de atuação</b></span>
+  <h2 class="ttl rise text-[48px] mt-4">Quatro frentes que <em>conversam entre si.</em></h2>
+  <div class="grid grid-cols-4 gap-5 mt-auto mb-2">
+    <div class="card p-6 rise flex flex-col gap-3"><div class="w-11 h-11 rounded-xl bg-[#0F2A1F] flex items-center justify-center"><i data-lucide="bar-chart-3" class="w-5 h-5 text-emer"></i></div><div class="font-display font-extrabold uppercase text-[17px]">Growth e Performance</div><p class="text-sm text-graph">Funis B2B e B2C, tráfego pago em Google e Meta, squads de SDR e Closer.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3"><div class="w-11 h-11 rounded-xl bg-[#0F2A1F] flex items-center justify-center"><i data-lucide="package-check" class="w-5 h-5 text-emer"></i></div><div class="font-display font-extrabold uppercase text-[17px]">Produto e<br><span class="whitespace-nowrap">Go-to-Market</span></div><p class="text-sm text-graph">Discovery, posicionamento, pricing e lançamento de ofertas de alto ticket.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3"><div class="w-11 h-11 rounded-xl bg-[#0F2A1F] flex items-center justify-center"><i data-lucide="store" class="w-5 h-5 text-emer"></i></div><div class="font-display font-extrabold uppercase text-[17px]">Operações Comerciais</div><p class="text-sm text-graph">Omnichannel, expansão B2B e atacado, políticas comerciais de canal.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3"><div class="w-11 h-11 rounded-xl bg-[#0F2A1F] flex items-center justify-center"><i data-lucide="workflow" class="w-5 h-5 text-emer"></i></div><div class="font-display font-extrabold uppercase text-[17px]">Branding e Automação</div><p class="text-sm text-graph">Marca, conteúdo, automação de CRM e WhatsApp com inteligência artificial.</p></div>
+  </div>
+</section>
+
+<!-- GESTÃO -->
+<section class="slide" aria-label="Gestão e acompanhamento">
+  <span class="eyebrow rise">// 04 <b>Gestão e acompanhamento</b></span>
+  <div class="grid grid-cols-[1fr_1fr] gap-12 flex-1 items-center mt-2">
+    <div class="flex flex-col gap-5">
+      <h2 class="ttl rise text-[44px]">Acompanhamento <em>sem achismo.</em></h2>
+      <p class="rise text-graph text-[15px]">Depois de colocar para rodar, a gente fica junto: lê os números, ajusta a rota com o time e documenta o processo para a operação seguir com autonomia.</p>
+      <div class="grid grid-cols-2 gap-3 rise">
+        <div class="card p-4 flex flex-col gap-2"><i data-lucide="file-bar-chart" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14px]">Avaliação de reports</div><p class="text-[13px] text-graph leading-snug">Mídia, CRM e vendas lidos com o que fazer a seguir.</p></div>
+        <div class="card p-4 flex flex-col gap-2"><i data-lucide="users" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14px]">Rituais com o time</div><p class="text-[13px] text-graph leading-snug">Alinhamentos com marketing, comercial e operação.</p></div>
+        <div class="card p-4 flex flex-col gap-2"><i data-lucide="gauge" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14px]">Dashboards e metas</div><p class="text-[13px] text-graph leading-snug">Indicadores à vista e metas trimestrais acompanhadas.</p></div>
+        <div class="card p-4 flex flex-col gap-2"><i data-lucide="book-open-check" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14px]">Playbooks</div><p class="text-[13px] text-graph leading-snug">Processos documentados e time treinado para rodar sozinho.</p></div>
+      </div>
+    </div>
+    <div class="card p-7 rise flex flex-col gap-6" style="background:#0C1118">
+      <div class="flex items-center justify-between"><div class="cat">Cadência de acompanhamento</div><i data-lucide="calendar-clock" class="w-5 h-5 text-mute"></i></div>
+      <div class="relative">
+        <div class="absolute left-[24px] right-[24px] top-[23px] h-[2px] bg-line"></div>
+        <div class="relative grid grid-cols-4" role="tablist" id="cad">
+          <button class="cnode flex flex-col items-center gap-2" role="tab" aria-selected="true" data-ctab="s"><span class="num">S</span><span class="font-mono text-[11px] tracking-[.12em] text-mute">SEMANAL</span></button>
+          <button class="cnode flex flex-col items-center gap-2" role="tab" aria-selected="false" data-ctab="q"><span class="num">Q</span><span class="font-mono text-[11px] tracking-[.12em] text-mute">QUINZENAL</span></button>
+          <button class="cnode flex flex-col items-center gap-2" role="tab" aria-selected="false" data-ctab="m"><span class="num">M</span><span class="font-mono text-[11px] tracking-[.12em] text-mute">MENSAL</span></button>
+          <button class="cnode flex flex-col items-center gap-2" role="tab" aria-selected="false" data-ctab="t"><span class="num">T</span><span class="font-mono text-[11px] tracking-[.12em] text-mute">TRIMESTRAL</span></button>
+        </div>
+      </div>
+      <div class="min-h-[150px]">
+        <div class="tabpanel" data-cpanel="s"><div class="font-display font-extrabold uppercase text-[18px] mb-3">Leitura e ajuste</div><ul class="ck"><li>Leitura dos reports de mídia e do funil</li><li>Ajustes de campanha, criativo e público</li><li>Checagem das tarefas e prazos do plano</li></ul></div>
+        <div class="tabpanel" data-cpanel="q" hidden><div class="font-display font-extrabold uppercase text-[18px] mb-3">Alinhamento com o time</div><ul class="ck"><li>Reunião com marketing, comercial e operação</li><li>Qualidade dos leads e taxa de conversão</li><li>Gargalos destravados e próximos passos</li></ul></div>
+        <div class="tabpanel" data-cpanel="m" hidden><div class="font-display font-extrabold uppercase text-[18px] mb-3">Report para a liderança</div><ul class="ck"><li>Resultado do mês contra a meta</li><li>Aprendizados e o que muda no plano</li><li>Retorno sobre o investimento</li></ul></div>
+        <div class="tabpanel" data-cpanel="t" hidden><div class="font-display font-extrabold uppercase text-[18px] mb-3">Revisão estratégica</div><ul class="ck"><li>Revisão de metas e prioridades do trimestre</li><li>Novo diagnóstico de maturidade por área</li><li>Plano do próximo ciclo aprovado</li></ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 PORTFÓLIO ÍNDICE -->
+<section class="slide" aria-label="Portfólio" id="portIdx">
+  <span class="eyebrow rise">// 05 <b>Portfólio</b></span>
+  <div class="flex items-end justify-between mt-4 rise">
+    <h2 class="ttl text-[48px] max-w-[600px]">O que já está <em>construído e rodando.</em></h2>
+    <div class="flex gap-2" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="saas">Sistemas</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="apps">Apps</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="sites">Sites</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="video">Conteúdo</button>
+    </div>
+  </div>
+  <div class="mt-auto mb-2 rise">
+    <div class="tabpanel grid grid-cols-3 gap-5" data-panel="saas">
+      <div class="card p-6 cursor-pointer" data-go="6"><div class="cat">Plataforma própria</div><div class="font-display font-extrabold text-xl mt-3">Central de Diagnóstico</div><p class="text-sm text-graph mt-2">Maturidade por área, gargalos e plano de ação.</p><div class="foot mt-6"><span>VER PROJETO</span><span>↗</span></div></div>
+      <div class="card p-6 cursor-pointer" data-go="7"><div class="cat">Plataforma própria</div><div class="font-display font-extrabold text-xl mt-3">Plataforma de Lançamentos</div><p class="text-sm text-graph mt-2">Cronograma, checklist e metas do lançamento.</p><div class="foot mt-6"><span>VER PROJETO</span><span>↗</span></div></div>
+      <div class="card p-6 cursor-pointer" data-go="8"><div class="cat">Varejo e atacado</div><div class="font-display font-extrabold text-xl mt-3">Espaço ADM e DRE</div><p class="text-sm text-graph mt-2">Resultado da loja mês a mês, sem planilha.</p><div class="foot mt-6"><span>VER PROJETO</span><span>↗</span></div></div>
+    </div>
+    <div class="tabpanel grid grid-cols-3 gap-5" data-panel="apps" hidden>
+      <div class="card p-6 cursor-pointer" data-go="9"><div class="cat">Esporte</div><div class="font-display font-extrabold text-xl mt-3">Garrafão Lab</div><p class="text-sm text-graph mt-2">Atletas e clubes de basquete no mesmo lugar. Lançamento Q1 2027.</p><div class="foot mt-6"><span>VER PROJETO</span><span>↗</span></div></div>
+      <div class="card p-6 cursor-pointer" data-go="10"><div class="cat">Bem-estar</div><div class="font-display font-extrabold text-xl mt-3">Astrare</div><p class="text-sm text-graph mt-2">Marketplace de terapeutas holísticos. Lançamento Q1 2027.</p><div class="foot mt-6"><span>VER PROJETO</span><span>↗</span></div></div>
+      <div class="card p-6 cursor-pointer" data-go="11"><div class="cat">Comunidade</div><div class="font-display font-extrabold text-xl mt-3">Mapa do Terreiro</div><p class="text-sm text-graph mt-2">Terreiros por região, giras e agendamento. Lançamento Q1 2027.</p><div class="foot mt-6"><span>VER PROJETO</span><span>↗</span></div></div>
+    </div>
+    <div class="tabpanel grid grid-cols-3 gap-5" data-panel="sites" hidden>
+      <div class="card p-6 cursor-pointer" data-go="12"><div class="cat">Site institucional</div><div class="font-display font-extrabold text-xl mt-3">LORSO Digital</div><p class="text-sm text-graph mt-2">Do briefing ao ar, com identidade nova.</p><div class="foot mt-6"><span>VER PROJETO</span><span>↗</span></div></div>
+      <div class="card p-6 cursor-pointer" data-go="13"><div class="cat">Landing pages</div><div class="font-display font-extrabold text-xl mt-3">Meu Vista</div><p class="text-sm text-graph mt-2">LPs de tráfego pago integradas ao CRM.</p><div class="foot mt-6"><span>VER PROJETO</span><span>↗</span></div></div>
+      <div class="card p-6 cursor-pointer" data-go="15"><div class="cat">E-commerce</div><div class="font-display font-extrabold text-xl mt-3">Dolce Abbraccio</div><p class="text-sm text-graph mt-2">Loja, SEO, taxonomia e catálogo.</p><div class="foot mt-6"><span>VER PROJETO</span><span>↗</span></div></div>
+    </div>
+    <div class="tabpanel grid grid-cols-3 gap-5" data-panel="video" hidden>
+      <div class="card p-6 cursor-pointer" data-go="16"><div class="cat">Redes sociais</div><div class="font-display font-extrabold text-xl mt-3">Instagram</div><p class="text-sm text-graph mt-2">Meu Vista, LORSO e Garrafão Lab.</p><div class="foot mt-6"><span>VER PROJETO</span><span>↗</span></div></div>
+      <div class="card p-6 cursor-pointer" data-go="17"><div class="cat">RP e autoridade</div><div class="font-display font-extrabold text-xl mt-3">LinkedIn</div><p class="text-sm text-graph mt-2">Artigos com SEO e capital social.</p><div class="foot mt-6"><span>VER PROJETO</span><span>↗</span></div></div>
+      <div class="card p-6 cursor-pointer" data-go="18"><div class="cat">Vídeo</div><div class="font-display font-extrabold text-xl mt-3">Vídeos de marca</div><p class="text-sm text-graph mt-2">Hello Gabiru e Dolce Abbraccio.</p><div class="foot mt-6"><span>VER PROJETO</span><span>↗</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 CENTRAL DE DIAGNÓSTICO -->
+<section class="slide" aria-label="Central de Diagnóstico" data-cat="saas">
+  <div class="grid grid-cols-[1.3fr_1fr] gap-12 flex-1 items-center">
+    <div class="frame rise zoom" tabindex="0"><div class="fbar"><i></i><i></i><i></i><span>lorso · central de diagnóstico</span></div><video class="scr" src="media/02-diagnostico-demo.mp4" muted loop playsinline preload="metadata"></video></div>
+    <div class="flex flex-col gap-5">
+      <span class="eyebrow rise">// Sistemas <b>1 de 3</b> · Fase 1 da metodologia</span>
+      <h2 class="ttl rise text-[40px]">Central de <em>Diagnóstico</em></h2>
+      <ul class="ck rise">
+        <li>Entrevistas com a equipe registradas por área e por cargo</li>
+        <li>Nota de maturidade em processos, pessoas, ferramentas e cultura</li>
+        <li>Mapa de onde atacar primeiro, por maturidade e pressão</li>
+        <li>Plano de ação com dono, prazo, linha de base e meta</li>
+      </ul>
+      <div class="rise flex gap-2"><span class="chip g">Plataforma própria</span><span class="chip">Área restrita</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 LANÇAMENTOS -->
+<section class="slide" aria-label="Plataforma de Lançamentos" data-cat="saas">
+  <div class="grid grid-cols-[1fr_1.3fr] gap-12 flex-1 items-center">
+    <div class="flex flex-col gap-5">
+      <span class="eyebrow rise">// Sistemas <b>2 de 3</b></span>
+      <h2 class="ttl rise text-[40px]">Plataforma de <em>Lançamentos</em></h2>
+      <ul class="ck rise">
+        <li>Painel com checklist validado, críticos pendentes e ticket projetado</li>
+        <li>Cronograma por área com responsável, prazo e alerta de atraso</li>
+        <li>Roadmap, ofertas, peças e metas do lançamento em um só lugar</li>
+      </ul>
+      <div class="rise flex gap-2"><span class="chip g">Plataforma própria</span><span class="chip">Infoprodutos</span><span class="chip">Educação</span></div>
+    </div>
+    <div class="frame rise zoom" tabindex="0"><div class="fbar"><i></i><i></i><i></i><span>lançamento · painel e cronograma</span></div><video class="scr" src="media/02-lancamento.mp4" muted loop playsinline preload="metadata"></video></div>
+  </div>
+</section>
+
+<!-- 8 DRE -->
+<section class="slide" aria-label="Espaço ADM e DRE" data-cat="saas">
+  <div class="grid grid-cols-[1.3fr_1fr] gap-12 flex-1 items-center">
+    <div class="frame rise zoom" tabindex="0"><div class="fbar"><i></i><i></i><i></i><span>espaço adm · DRE da loja</span></div><video class="scr" src="media/03-painel-dre.mp4" muted loop playsinline preload="metadata"></video></div>
+    <div class="flex flex-col gap-5">
+      <span class="eyebrow rise">// Sistemas <b>3 de 3</b> · Varejo e atacado</span>
+      <h2 class="ttl rise text-[40px]">Espaço ADM <em>e DRE</em></h2>
+      <ul class="ck rise">
+        <li>Painel com vendas, lucro líquido, sobra de caixa e dívidas do ano</li>
+        <li>DRE mês a mês, realizado contra previsto</li>
+        <li>Vendas abertas em varejo, atacado, loja física e loja online até a margem de contribuição</li>
+      </ul>
+      <div class="rise flex gap-2"><span class="chip g">Projeto para cliente</span><span class="chip">Gestão financeira</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 GARRAFÃO LAB -->
+<section class="slide" aria-label="Garrafão Lab" data-cat="apps">
+  <div class="grid grid-cols-[1fr_auto] gap-12 flex-1 items-center">
+    <div class="flex flex-col gap-5">
+      <span class="eyebrow rise">// Apps <b>1 de 3</b> · Lançamento Q1 2027</span>
+      <h2 class="ttl rise text-[44px]">Garrafão <em>Lab</em></h2>
+      <p class="rise text-graph">O seu jogo na frente de quem contrata. App que conecta atletas e comissão técnica de basquete aos clubes do Brasil.</p>
+      <ul class="ck rise">
+        <li>Currículo de atleta com estatísticas e vídeos</li>
+        <li>Vagas de clubes e candidatura direto pelo app</li>
+        <li>Pronto para a janela de contratações de atletas e comissão técnica</li>
+      </ul>
+      <div class="rise flex gap-2"><span class="chip g">● Lançamento Q1 2027</span><span class="chip">Projeto próprio</span></div>
+    </div>
+    <div class="flex gap-5 items-start rise">
+      <div><div class="phone zoom" tabindex="0"><img src="media/09-basket-destaque.png" alt="Tela inicial do Garrafão Lab"></div><div class="lbl">Entrada</div></div>
+      <div class="mt-10"><div class="phone zoom" tabindex="0"><video src="media/09-basket-home.mp4" muted loop playsinline preload="metadata"></video></div><div class="lbl">Início e vagas</div></div>
+      <div><div class="phone zoom" tabindex="0"><video src="media/09-basket-fluxo.mp4" muted loop playsinline preload="metadata"></video></div><div class="lbl">Perfil de atleta</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 ASTRARE -->
+<section class="slide" aria-label="Astrare" data-cat="apps">
+  <div class="grid grid-cols-[1fr_auto] gap-12 flex-1 items-center">
+    <div class="flex flex-col gap-5">
+      <span class="eyebrow rise">// Apps <b>2 de 3</b> · Lançamento Q1 2027</span>
+      <h2 class="ttl rise text-[44px]">Astrare</h2>
+      <p class="rise text-graph">Marketplace que conecta clientes a terapeutas holísticos.</p>
+      <ul class="ck rise">
+        <li>Busca de terapeutas, perfil e agendamento</li>
+        <li>Carta do dia para criar hábito de uso</li>
+        <li>Marca, posicionamento e captação de terapeutas no beta</li>
+      </ul>
+      <div class="rise flex gap-2"><span class="chip g">● Lançamento Q1 2027</span><span class="chip">Projeto próprio</span></div>
+    </div>
+    <div class="flex gap-5 items-start rise">
+      <div><div class="phone zoom" tabindex="0"><video src="media/04-astrare-busca.mp4" muted loop playsinline preload="metadata"></video></div><div class="lbl">Busca</div></div>
+      <div class="mt-10"><div class="phone zoom" tabindex="0"><video src="media/04-astrare-agenda.mp4" muted loop playsinline preload="metadata"></video></div><div class="lbl">Agendamento</div></div>
+      <div><div class="phone zoom" tabindex="0"><video src="media/04-astrare-carta.mp4" muted loop playsinline preload="metadata"></video></div><div class="lbl">Carta do dia</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 MAPA DO TERREIRO -->
+<section class="slide" aria-label="Mapa do Terreiro" data-cat="apps">
+  <div class="grid grid-cols-[1fr_auto] gap-12 flex-1 items-center">
+    <div class="flex flex-col gap-5">
+      <span class="eyebrow rise">// Apps <b>3 de 3</b> · Lançamento Q1 2027</span>
+      <h2 class="ttl rise text-[44px]">Mapa do <em>Terreiro</em></h2>
+      <p class="rise text-graph">App para encontrar terreiros e locais sagrados por região, com respeito e acolhimento.</p>
+      <ul class="ck rise">
+        <li>Mapa com terreiros abertos hoje e filtros por tradição</li>
+        <li>Perfil com giras, atendimentos e como chegar</li>
+        <li>Agendamento de atendimento com confirmação na hora</li>
+      </ul>
+      <div class="rise flex gap-2"><span class="chip g">● Lançamento Q1 2027</span><span class="chip">Projeto próprio</span></div>
+    </div>
+    <div class="flex gap-6 items-start rise">
+      <div><div class="phone zoom" tabindex="0"><video src="media/04-terreiro-busca.mp4" muted loop playsinline preload="metadata"></video></div><div class="lbl">Mapa e busca</div></div>
+      <div class="mt-10"><div class="phone zoom" tabindex="0"><video src="media/04-terreiro-agenda.mp4" muted loop playsinline preload="metadata"></video></div><div class="lbl">Agendamento</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 SITE LORSO -->
+<section class="slide" aria-label="Site LORSO" data-cat="sites">
+  <div class="grid grid-cols-[1.3fr_1fr] gap-12 flex-1 items-center">
+    <div class="frame rise zoom" tabindex="0"><div class="fbar"><i></i><i></i><i></i><span>lorsodigital.com.br</span></div><video class="scr" src="media/05-site-lorso.mp4" muted loop playsinline preload="metadata"></video></div>
+    <div class="flex flex-col gap-5">
+      <span class="eyebrow rise">// Sites <b>1 de 3</b></span>
+      <h2 class="ttl rise text-[40px]">Site <em>LORSO Digital</em></h2>
+      <ul class="ck rise">
+        <li>Posicionamento e identidade visual novos</li>
+        <li>Copy orientada a conversão, com metodologia e cases</li>
+        <li>Formulário ligado a régua de e-mail e WhatsApp</li>
+      </ul>
+      <div class="rise flex gap-2"><span class="chip g">Framer</span><span class="chip">Branding</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 MEU VISTA DESKTOP -->
+<section class="slide" aria-label="Meu Vista desktop" data-cat="sites">
+  <div class="grid grid-cols-[0.75fr_1.7fr] gap-10 flex-1 items-center">
+    <div class="flex flex-col gap-5">
+      <span class="eyebrow rise">// Sites <b>2 de 3</b> · SaaS Fintech</span>
+      <h2 class="ttl rise text-[36px]">Meu Vista: <em>LPs de venda</em></h2>
+      <p class="rise text-graph text-[15px]">Família de landing pages de tráfego pago para planejadores financeiros, com formulário de demonstração integrado ao CRM e ao time de SDR.</p>
+      <div class="rise grid grid-cols-1 gap-3">
+        <div class="card p-4"><div class="font-display text-3xl font-extrabold tabular-nums">+<span data-count="5000">5.000</span></div><p class="text-xs text-mute mt-1">clientes finais atendidos pela plataforma</p></div>
+        <div class="card p-4"><div class="font-display text-3xl font-extrabold tabular-nums">+<span data-count="800">800</span></div><p class="text-xs text-mute mt-1">planejadores ativos</p></div>
+      </div>
+    </div>
+    <div class="rise flex flex-col gap-4 min-w-0">
+      <div class="frame zoom" tabindex="0"><div class="fbar"><i></i><i></i><i></i><span>meuvista.com · LP desktop</span></div><div id="mvMain"><video class="scr" src="media/06-meuvista-lp.mp4" muted loop playsinline preload="metadata"></video></div></div>
+      <div class="flex gap-2 items-center" id="mvThumbs"><span class="font-mono text-[11px] tracking-[.12em] text-mute mr-2">OUTRAS LPS</span>
+        <button class="thumb on" data-src="media/06-meuvista-lp.mp4" data-kind="video" aria-label="LP principal"><img src="media/06-meuvista-lp2.png" alt="" style="filter:saturate(.6)"></button>
+        <button class="thumb" data-src="media/06-meuvista-lp2.png" aria-label="LP 2"><img src="media/06-meuvista-lp2.png" alt=""></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 13B MEU VISTA MOBILE -->
+<section class="slide" aria-label="Meu Vista mobile" data-cat="sites">
+  <div class="grid grid-cols-[auto_1fr] gap-12 flex-1 items-center">
+    <div class="flex gap-6 items-start rise">
+      <div><div class="phone zoom" style="width:205px" tabindex="0"><video src="media/06-meuvista-lp-mobile.mp4" muted loop playsinline preload="metadata"></video></div><div class="lbl">Meu Vista</div></div>
+      <div class="mt-10"><div class="phone zoom" style="width:205px" tabindex="0"><video src="media/06-vistafinance-mobile.mp4" muted loop playsinline preload="metadata"></video></div><div class="lbl">Vista Finance</div></div>
+    </div>
+    <div class="flex flex-col gap-5 min-w-0">
+      <span class="eyebrow rise">// Sites <b>2 de 3</b> · Experiência mobile</span>
+      <h2 class="ttl rise text-[36px]">Pensada primeiro <em>para o celular</em></h2>
+      <p class="rise text-graph text-[15px]">O tráfego pago chega pelo telefone. Por isso cada LP nasce no mobile, com linguagem e cor próprias para cada oferta, e depois se adapta ao desktop.</p>
+      <div class="grid grid-cols-2 gap-3 rise">
+        <div class="card p-4 flex flex-col gap-2"><i data-lucide="code-2" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14px]">Front-end mobile first</div><p class="text-[13px] text-graph leading-snug">Código leve e rápido para quem chega pelo anúncio.</p></div>
+        <div class="card p-4 flex flex-col gap-2"><i data-lucide="list-tree" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14px]">Estruturação</div><p class="text-[13px] text-graph leading-snug">Blocos na ordem da decisão: promessa, prova, perfis e formulário.</p></div>
+        <div class="card p-4 flex flex-col gap-2"><i data-lucide="pointer" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14px]">UX e UI</div><p class="text-[13px] text-graph leading-snug">Botões ao alcance do polegar, contraste alto e cards no lugar de tabelas.</p></div>
+        <div class="card p-4 flex flex-col gap-2"><i data-lucide="navigation" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14px]">Navegação</div><p class="text-[13px] text-graph leading-snug">Topo fixo com o botão de demonstração sempre visível.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 14 DOLCE -->
+<section class="slide" aria-label="Dolce Abbraccio" data-cat="sites">
+  <div class="grid grid-cols-[1.15fr_1fr] gap-10 flex-1 items-center">
+    <div class="frame rise zoom" tabindex="0"><div class="fbar"><i></i><i></i><i></i><span>dolceabbraccio.com.br</span></div><video class="scr" style="aspect-ratio:1280/670" src="media/13-dolce-site.mp4" muted loop playsinline preload="metadata"></video></div>
+    <div class="flex flex-col gap-4">
+      <span class="eyebrow rise">// Sites <b>3 de 3</b> · E-commerce</span>
+      <h2 class="ttl rise text-[36px]">Dolce Abbraccio: <em>loja, SEO e catálogo</em></h2>
+      <div class="rise flex gap-2" role="tablist">
+        <button class="tab" role="tab" aria-selected="true" data-dtab="tax">Taxonomia</button>
+        <button class="tab" role="tab" aria-selected="false" data-dtab="seo">SEO</button>
+        <button class="tab" role="tab" aria-selected="false" data-dtab="cat">Catálogo e mídia</button>
+      </div>
+      <div class="rise min-h-[208px]">
+        <div class="tabpanel flex flex-col gap-3" data-dpanel="tax">
+          <p class="text-[14px] text-graph">7 categorias e 37 subcategorias em três eixos que se cruzam.</p>
+          <div><div class="cat text-[11px] mb-2">Ocasião · produto principal</div><div class="tree"><span>Saída Maternidade</span><span>Menina</span><span>Menino</span><span>Prematuro</span><span>Unissex</span></div></div>
+          <div><div class="cat text-[11px] mb-2">Público</div><div class="tree"><span>Menina</span><span>Menino</span><span>Unissex</span><span>Prematuro</span></div></div>
+          <div><div class="cat text-[11px] mb-2">Peça</div><div class="tree"><span>Macacão</span><span>Conjunto</span><span>Manta</span><span>Body</span><span>Romper</span><span>Casaco</span><span>Gorro</span></div></div>
+        </div>
+        <div class="tabpanel" data-dpanel="seo" hidden>
+          <ul class="ck">
+            <li>Cada categoria mira um termo de compra somado ao diferencial da marca: tricot, antialérgico e bordado à mão</li>
+            <li>Padrão de título e descrição por página, com dados estruturados de produto e breadcrumb</li>
+            <li>Canonical em todas as URLs e sitemap com 534 páginas</li>
+          </ul>
+        </div>
+        <div class="tabpanel" data-dpanel="cat" hidden>
+          <ul class="ck">
+            <li>Migração de VNDA para Nuvemshop com catálogo, URLs e integrações refeitos</li>
+            <li>Catálogo de cerca de 2,6 mil itens sincronizado com a Meta e o Google</li>
+            <li>Anúncios levando para a página de Saída Maternidade em vez da home</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 15 REDES SOCIAIS -->
+<section class="slide" aria-label="Redes sociais" data-cat="video">
+  <div class="grid grid-cols-[300px_1fr] gap-10 flex-1 items-center">
+    <div class="flex flex-col gap-5">
+      <span class="eyebrow rise">// Conteúdo <b>1 de 3</b></span>
+      <h2 class="ttl rise text-[38px]">Conteúdo que <em>sustenta a venda.</em></h2>
+      <ul class="ck rise">
+        <li>Linha editorial por público, com regras de marca para cada perfil</li>
+        <li>Carrosséis, Reels e artes produzidos com inteligência artificial</li>
+        <li>Plano de Reels com pontuação para ganho de alcance</li>
+      </ul>
+      <p class="rise font-mono text-[11px] tracking-[.1em] text-mute">CLIQUE NO REELS PARA VER COM SOM</p>
+    </div>
+    <div class="flex gap-4 items-start justify-end rise">
+      <div><div class="tall zoom" style="width:168px" tabindex="0"><video src="media/15-reel-1.mp4" muted loop playsinline preload="metadata"></video></div><div class="lbl">Reels Meu Vista</div></div>
+      <div class="mt-8"><div class="tall zoom" style="width:168px" tabindex="0"><video src="media/15-reel-2.mp4" muted loop playsinline preload="metadata"></video></div><div class="lbl">Reels Garrafão Lab</div></div>
+      <div class="w-px self-stretch bg-line mx-1"></div>
+      <div><div class="phone zoom" style="width:132px;border-width:5px;border-radius:22px" tabindex="0"><img src="media/14-social-1.jpg" alt="Instagram Meu Vista"></div><div class="lbl">Meu Vista</div></div>
+      <div class="mt-8"><div class="phone zoom" style="width:132px;border-width:5px;border-radius:22px" tabindex="0"><img src="media/14-social-2.jpg" alt="Instagram LORSO Digital"></div><div class="lbl">LORSO</div></div>
+      <div><div class="phone zoom" style="width:132px;border-width:5px;border-radius:22px" tabindex="0"><img src="media/14-social-3.jpg" alt="Instagram Garrafão Lab"></div><div class="lbl">Garrafão Lab</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 16 VÍDEOS -->
+<section class="slide" aria-label="RP e LinkedIn" data-cat="video">
+  <div class="grid grid-cols-[360px_1fr] gap-10 flex-1 items-center">
+    <div class="flex flex-col gap-5">
+      <span class="eyebrow rise">// Conteúdo <b>2 de 3</b> · RP e LinkedIn</span>
+      <h2 class="ttl rise text-[38px]">RP e autoridade <em>no LinkedIn</em></h2>
+      <ul class="ck rise">
+        <li>Artigos com SEO: título, texto e hashtags pensados para busca dentro e fora do LinkedIn</li>
+        <li>Capital social: a rede do fundador e dos especialistas amplificando a marca</li>
+        <li>Comportamento do lead: cada conteúdo puxa para um próximo passo, como a Morning Call ao vivo</li>
+        <li>Pautas de RP que posicionam a marca como referência no setor</li>
+      </ul>
+    </div>
+    <div class="flex flex-col gap-3 rise min-w-0">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="frame zoom" tabindex="0"><div class="fbar"><i></i><i></i><i></i><span>linkedin · artigo</span></div><video class="block w-full" style="aspect-ratio:632/616;object-fit:cover" src="media/16-linkedin-artigo1.mp4" muted loop playsinline preload="metadata"></video></div>
+        <div class="frame zoom" tabindex="0"><div class="fbar"><i></i><i></i><i></i><span>linkedin · artigo</span></div><video class="block w-full" style="aspect-ratio:632/616;object-fit:cover" src="media/16-linkedin-artigo2.mp4" muted loop playsinline preload="metadata"></video></div>
+      </div>
+      
+      <div class="lbl" style="text-align:left">Meu Vista · artigos e posts no LinkedIn</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" aria-label="Vídeos de marca" data-cat="video">
+  <div class="grid grid-cols-[1fr_auto] gap-12 flex-1 items-center">
+    <div class="flex flex-col gap-5">
+      <span class="eyebrow rise">// Conteúdo <b>3 de 3</b></span>
+      <h2 class="ttl rise text-[44px]">Vídeos de <em>marca</em></h2>
+      <ul class="ck rise">
+        <li>Roteiro, edição e finalização com parceiros especializados</li>
+        <li>Formato vertical pensado para Reels e anúncios</li>
+        <li>Identidade visual de cada marca em cada quadro</li>
+      </ul>
+      <div class="rise flex gap-2"><span class="chip g">Vídeo</span><span class="chip">Reels</span><span class="chip">Anúncios</span></div>
+    </div>
+    <div class="flex gap-6 items-start rise">
+      <div><div class="tall zoom" tabindex="0"><video src="media/10-video-gagabiru.mp4" poster="media/10-gagabiru-capa.png" muted loop playsinline preload="metadata"></video></div><div class="lbl">Hello Gabiru Piercing</div></div>
+      <div class="mt-10"><div class="tall zoom" tabindex="0"><video src="media/11-video-dolce.mp4" poster="media/11-dolce-capa.png" muted loop playsinline preload="metadata"></video></div><div class="lbl">Dolce Abbraccio</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 17 CLIENTES -->
+<section class="slide" aria-label="Clientes e trajetória">
+  <span class="eyebrow rise">// 06 <b>Clientes e trajetória</b></span>
+  <h2 class="ttl rise text-[44px] mt-4">Quem já confiou <em>o crescimento a nós.</em></h2>
+  <div class="grid grid-cols-2 gap-4 mt-auto rise">
+    <div class="card p-6 flex flex-col gap-2"><div class="cat">SaaS Fintech</div><div class="font-display font-extrabold text-[22px]">MEU VISTA</div><p class="text-[14px] text-graph">Head de Marketing com landing pages de tráfego pago, conteúdo B2B e B2C e integração do marketing com o time comercial.</p><div class="foot mt-2"><span>MARKETING &amp; AQUISIÇÃO</span><span>↗</span></div></div>
+    <div class="card p-6 flex flex-col gap-2"><div class="cat">E-commerce</div><div class="font-display font-extrabold text-[22px]">Dolce Abbraccio</div><p class="text-[14px] text-graph">Operações e Growth com mídia em Meta e Google, migração da loja, SEO, taxonomia e catálogo integrado.</p><div class="foot mt-2"><span>OPERAÇÕES &amp; GROWTH</span><span>↗</span></div></div>
+    <div class="card p-6 flex flex-col gap-2"><div class="cat">Produtos educacionais</div><div class="font-display font-extrabold text-[22px]">Me Poupe!</div><p class="text-[14px] text-graph">Estratégia de produtos educacionais e lançamentos perpétuos, estruturação de ofertas high ticket e gestão operacional de ponta a ponta.</p><div class="foot mt-2"><span>PRODUTO &amp; RECEITA</span><span>↗</span></div></div>
+    <div class="card p-6 flex flex-col gap-2"><div class="cat">Educação financeira</div><div class="font-display font-extrabold text-[22px]">DSOP</div><p class="text-[14px] text-graph">Gestão de marketing em referência nacional de educação financeira.</p><div class="foot mt-2"><span>MARKETING &amp; MARCA</span><span>↗</span></div></div>
+  </div>
+  <div class="rise flex items-center gap-8 mt-5 text-graph text-sm"><span class="text-mute font-mono text-xs tracking-[.12em]">TRAJETÓRIA TAMBÉM EM</span><b class="text-ink">FECAP</b><b class="text-ink">Banco de Alimentos</b></div>
+</section>
+
+<!-- 20 HUB -->
+<section class="slide" aria-label="Hub LORSO" id="hubSlide" style="padding-top:44px">
+  <div class="flex items-end justify-between rise">
+    <div><span class="eyebrow">// 07 <b>Hub de Inteligência Operacional e Escala</b></span>
+    <h2 class="ttl text-[34px] mt-3">Tudo o que construímos, <em>conectado em um só hub.</em></h2></div>
+  </div>
+  <div id="hub" class="relative flex-1 mt-5 grid grid-cols-[340px_1fr_340px] items-center">
+    <svg id="hubSvg" class="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true"><defs>
+      <linearGradient id="gL" x1="0" x2="1"><stop offset="0" stop-color="#00E5FF"/><stop offset="1" stop-color="#00FF87"/></linearGradient>
+      <linearGradient id="gR" x1="1" x2="0"><stop offset="0" stop-color="#8B7CFF"/><stop offset="1" stop-color="#00FF87"/></linearGradient></defs><g id="hubG"></g></svg>
+    <div class="relative z-[1] flex flex-col gap-3" id="hubL"><div class="hcard" data-h="0"><div class="ic"><i data-lucide="palette" class="w-[18px] h-[18px]"></i></div><div><b>Branding e conteúdo</b><p>Marca, RP, LinkedIn, redes sociais e vídeo com uma voz só.</p></div></div><div class="hcard" data-h="1"><div class="ic"><i data-lucide="megaphone" class="w-[18px] h-[18px]"></i></div><div><b>Captação e mídia</b><p>Meta Ads, Google Ads e LPs que transformam clique em lead.</p></div></div><div class="hcard" data-h="2"><div class="ic"><i data-lucide="sparkles" class="w-[18px] h-[18px]"></i></div><div><b>Inteligência artificial</b><p>IA no conteúdo, no diagnóstico e na otimização das campanhas.</p></div></div><div class="hcard" data-h="3"><div class="ic"><i data-lucide="workflow" class="w-[18px] h-[18px]"></i></div><div><b>Automações</b><p>CRM, WhatsApp e réguas de e-mail levando o lead até a venda.</p></div></div></div>
+    <div class="relative flex items-center justify-center h-full">
+      <div class="glow"></div><div class="ring r3"></div><div class="ring r2"></div><div class="ring r1"></div>
+      <div id="hubCore" class="relative z-[1]"><div class="core">
+        <svg width="52" height="52" viewBox="0 0 54 54" aria-hidden="true"><path d="M8 6h12v30h26v12H8z" fill="#00FF87"/><path d="M30 6h16l-8 22H22z" fill="#00E5FF"/><circle cx="41" cy="14" r="3.4" fill="#fff"/></svg>
+        <div class="font-display font-extrabold tracking-wide leading-none text-center">LORSO<div class="text-[9px] tracking-[.32em] text-mute mt-1 font-sans font-medium">DIGITAL.</div></div>
+      </div></div>
+      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 font-mono text-[11px] tracking-[.22em] text-mute whitespace-nowrap">TUDO CONECTADO</div>
+    </div>
+    <div class="relative z-[1] flex flex-col gap-3" id="hubR"><div class="hcard" data-h="4"><div class="ic"><i data-lucide="store" class="w-[18px] h-[18px]"></i></div><div><b>Operações comerciais</b><p>Varejo, atacado e e-commerce com canais organizados e DRE.</p></div></div><div class="hcard" data-h="5"><div class="ic"><i data-lucide="line-chart" class="w-[18px] h-[18px]"></i></div><div><b>Dados e inteligência</b><p>Diagnóstico, dashboards, avaliação de reports e metas.</p></div></div><div class="hcard" data-h="6"><div class="ic"><i data-lucide="rocket" class="w-[18px] h-[18px]"></i></div><div><b>Produto e lançamentos</b><p>Go-to-market, ofertas e plataforma de lançamentos.</p></div></div><div class="hcard" data-h="7"><div class="ic"><i data-lucide="smartphone" class="w-[18px] h-[18px]"></i></div><div><b>Apps e plataformas</b><p>Sistemas e apps próprios construídos do zero.</p></div></div></div>
+  </div>
+</section>
+
+<!-- 18 CONTATO -->
+<section class="slide" aria-label="Contato">
+  <div class="grain"></div>
+  <div class="absolute -right-24 -bottom-24 w-[580px] h-[580px] rounded-full" style="background:radial-gradient(circle,rgba(0,255,135,.18),transparent 65%)"></div>
+  <span class="eyebrow rise relative">// <b>Próximo passo</b></span>
+  <div class="relative mt-auto flex flex-col gap-6 max-w-[900px] mb-4">
+    <h2 class="ttl rise text-[64px]">Vamos diagnosticar <em>a sua operação?</em></h2>
+    <p class="rise text-xl text-graph">Uma conversa para entender o momento do negócio, mapear gargalos e mostrar ao vivo os sistemas que aceleram o resultado.</p>
+    <div class="rise flex flex-wrap gap-3">
+      <a href="https://www.lorsodigital.com.br" target="_blank" rel="noopener" class="ctl pri !static"><i data-lucide="globe" class="w-4 h-4"></i>lorsodigital.com.br</a>
+      <a href="https://www.instagram.com/lorsodigital" target="_blank" rel="noopener" class="ctl !static"><i data-lucide="instagram" class="w-4 h-4"></i>@lorsodigital</a>
+      <button class="ctl !static" data-go="0"><i data-lucide="rotate-ccw" class="w-4 h-4"></i>Reiniciar</button>
+    </div>
+  </div>
+</section>
+
+<div id="lb" hidden></div>
+<button class="ctl" id="prev" aria-label="Slide anterior"><i data-lucide="arrow-left" class="w-4 h-4"></i>Anterior</button>
+<div id="counter"></div>
+<button class="ctl" id="back" hidden><i data-lucide="layout-grid" class="w-4 h-4"></i><span>Menu</span></button>
+<button class="ctl" id="next" aria-label="Próximo slide">Próximo<i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+</div></div>
+
+<script>
+(function(){
+  try{lucide.createIcons()}catch(e){}
+  var stage=document.getElementById('stage'),S=[].slice.call(stage.querySelectorAll('.slide')),N=S.length,cur=-1;
+  var prog=document.getElementById('progress'),cnt=document.getElementById('counter'),pv=document.getElementById('prev'),nx=document.getElementById('next'),lb=document.getElementById('lb');
+  function fit(){if(document.documentElement.classList.contains('m'))return;var s=Math.min((innerWidth-24)/1280,(innerHeight-24)/720,1.5);stage.style.transform='scale('+s+')'}
+  addEventListener('resize',fit);fit();
+  function countUp(sl){sl.querySelectorAll('[data-count]').forEach(function(el){var t=+el.dataset.count,t0=null;function f(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/1200,1);el.textContent=Math.round(t*(1-Math.pow(1-p,3))).toLocaleString('pt-BR');if(p<1)requestAnimationFrame(f)}requestAnimationFrame(f)})}
+  /* vídeos tocam só no slide visível */
+  function media(i){stage.querySelectorAll('.slide video').forEach(function(v){if(S[i].contains(v)){v.currentTime=0;var p=v.play();if(p&&p.catch)p.catch(function(){})}else v.pause()})}
+  /* metodologia */
+  var steps=[].slice.call(stage.querySelectorAll('#method .step')),mi=0,mt=null;
+  function setStep(i){mi=i;steps.forEach(function(s,j){s.classList.remove('act');void s.offsetWidth;s.classList.toggle('done',j<i)});steps[i].classList.add('act')}
+  function loop(){clearInterval(mt);mt=setInterval(function(){setStep((mi+1)%steps.length)},3200)}
+  steps.forEach(function(s,j){s.addEventListener('click',function(){setStep(j);loop()})});
+  function go(i){
+    if(i<0||i>=N||i===cur)return;
+    var back=i<cur;closeLb();
+    S.forEach(function(s,j){s.classList.toggle('on',j===i);s.classList.toggle('back',back&&j!==i)});
+    cur=i;prog.style.width=((i+1)/N*100)+'%';cnt.textContent='SLIDE '+(i+1)+' DE '+N;
+    pv.style.visibility=nx.style.visibility=i===0?'hidden':'visible';pv.disabled=i===0;nx.disabled=i===N-1;
+    if(S[i].querySelector('#method')){setStep(0);loop()}else clearInterval(mt);
+    countUp(S[i]);media(i);
+  }
+  /* zoom */
+  function openLb(z){var m=z.querySelector('#mvMain video,#mvMain img')||z.querySelector('video,img');if(!m)return;var c;
+    if(m.tagName==='VIDEO'){c=document.createElement('video');c.src=m.currentSrc||m.src;c.muted=!/15-reel/.test(m.src);c.loop=true;c.playsInline=true;c.controls=true;c.autoplay=true;c.currentTime=m.currentTime}
+    else{c=document.createElement('img');c.src=m.src;c.alt=m.alt||''}
+    lb.innerHTML='<span class="x">ESC · FECHAR</span>';lb.appendChild(c);lb.hidden=false;if(c.play){var p=c.play();if(p&&p.catch)p.catch(function(){})}}
+  function closeLb(){if(!lb.hidden){lb.hidden=true;lb.innerHTML=''}}
+  lb.addEventListener('click',function(e){if(e.target.tagName!=='VIDEO')closeLb()});
+  pv.onclick=function(){go(cur-1)};nx.onclick=function(){go(cur+1)};
+  stage.addEventListener('click',function(e){
+    var t=e.target.closest('[data-go]');if(t){go(+t.dataset.go);return}
+    var th=e.target.closest('.thumb');if(th){swapMV(th);return}
+    var z=e.target.closest('.zoom');if(z&&!e.target.closest('#lb'))openLb(z);
+  });
+  document.addEventListener('keydown',function(e){
+    if(!lb.hidden){if(e.key==='Escape'){closeLb()}return}
+    var onCtl=e.target.closest&&e.target.closest('button,a');
+    if(e.key==='Enter'&&e.target.classList&&e.target.classList.contains('zoom')){openLb(e.target);return}
+    if(e.key==='ArrowRight'||e.key==='PageDown'||(!onCtl&&(e.key===' '||e.key==='Enter'))){e.preventDefault();go(cur+1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(cur-1)}
+    else if(e.key==='Home'){go(0)}
+  });
+  var tx=null;stage.addEventListener('touchstart',function(e){tx=e.touches[0].clientX},{passive:true});
+  stage.addEventListener('touchend',function(e){if(tx===null||!lb.hidden||root.classList.contains('m'))return;var d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(cur+(d<0?1:-1));tx=null});
+  /* abas */
+  function tabs(btnAttr,panelAttr){stage.querySelectorAll('['+btnAttr+']').forEach(function(b){b.addEventListener('click',function(){
+    stage.querySelectorAll('['+btnAttr+']').forEach(function(x){x.setAttribute('aria-selected',x===b)});
+    stage.querySelectorAll('['+panelAttr+']').forEach(function(p){p.hidden=p.getAttribute(panelAttr)!==b.getAttribute(btnAttr)});
+  })})}
+  tabs('data-tab','data-panel');tabs('data-ctab','data-cpanel');
+  var cadT=0;setInterval(function(){if(!S[cur]||S[cur].getAttribute('aria-label')!=='Gestão e acompanhamento'||Date.now()-cadT<9000)return;var bs=[].slice.call(stage.querySelectorAll('[data-ctab]')),k=bs.findIndex(function(b){return b.getAttribute('aria-selected')==='true'});bs[(k+1)%bs.length].click();cadT=Date.now()-6000},3000);
+  stage.querySelectorAll('[data-ctab]').forEach(function(b){b.addEventListener('pointerdown',function(){cadT=Date.now()+20000})});tabs('data-dtab','data-dpanel');
+  /* Meu Vista: troca de LP */
+  var mv=document.getElementById('mvMain');
+  function swapMV(th){document.querySelectorAll('#mvThumbs .thumb').forEach(function(x){x.classList.toggle('on',x===th)});
+    var src=th.dataset.src;mv.innerHTML=th.dataset.kind==='video'?'<video class="scr" src="'+src+'" muted loop playsinline autoplay></video>':'<img class="scr" src="'+src+'" alt="Landing page Meu Vista">';
+    var v=mv.querySelector('video');if(v){var p=v.play();if(p&&p.catch)p.catch(function(){})}}
+  /* hub: linhas animadas dos cards até o núcleo */
+  var hub=document.getElementById('hub'),hubG=document.getElementById('hubG'),NS='http://www.w3.org/2000/svg';
+  function off(el){var x=0,y=0;while(el&&el!==hub){x+=el.offsetLeft;y+=el.offsetTop;el=el.offsetParent}return{x:x,y:y}}
+  function drawHub(){
+    hubG.innerHTML='';var core=document.getElementById('hubCore'),co=off(core),cx=co.x+core.offsetWidth/2,cy=co.y+core.offsetHeight/2,r=core.offsetWidth/2+4;
+    hub.querySelectorAll('.hcard').forEach(function(c,i){
+      var o=off(c),left=i<4,sx=left?o.x+c.offsetWidth:o.x,sy=o.y+c.offsetHeight/2;
+      var a=Math.atan2(sy-cy,sx-cx),ex=cx+r*Math.cos(a),ey=cy+r*Math.sin(a),k=(left?1:-1)*Math.abs(ex-sx)*.55;
+      var d='M'+sx+' '+sy+' C'+(sx+k)+' '+sy+' '+(ex-k*.6)+' '+ey+' '+ex+' '+ey;
+      var b=document.createElementNS(NS,'path');b.setAttribute('d',d);b.setAttribute('class','base');hubG.appendChild(b);
+      var p=document.createElementNS(NS,'path');p.setAttribute('d',d);p.setAttribute('id','hp'+i);p.setAttribute('class','hp go');p.setAttribute('stroke','url(#'+(left?'gL':'gR')+')');
+      hubG.appendChild(p);var L=p.getTotalLength();p.style.setProperty('--l',L);p.style.animationDelay=(.15+i*.09)+'s';
+      var n=document.createElementNS(NS,'circle');n.setAttribute('cx',sx);n.setAttribute('cy',sy);n.setAttribute('r',3.5);n.setAttribute('fill',left?'#00E5FF':'#8B7CFF');hubG.appendChild(n);
+      [0,1].forEach(function(j){var dot=document.createElementNS(NS,'circle');dot.setAttribute('r',3);dot.setAttribute('fill','#00FF87');dot.setAttribute('style','filter:drop-shadow(0 0 6px #00FF87)');
+        var m=document.createElementNS(NS,'animateMotion');m.setAttribute('dur','2.6s');m.setAttribute('repeatCount','indefinite');m.setAttribute('begin',(1.4+i*.23+j*1.3)+'s');
+        var mp=document.createElementNS(NS,'mpath');mp.setAttributeNS('http://www.w3.org/1999/xlink','href','#hp'+i);mp.setAttribute('href','#hp'+i);m.appendChild(mp);dot.appendChild(m);dot.setAttribute('opacity',0);var st=document.createElementNS(NS,'set');st.setAttribute('attributeName','opacity');st.setAttribute('to',1);st.setAttribute('begin',m.getAttribute('begin'));dot.appendChild(st);hubG.appendChild(dot)});
+    });
+  }
+  hub.querySelectorAll('.hcard').forEach(function(c){var i=c.dataset.h;
+    c.addEventListener('mouseenter',function(){var p=document.getElementById('hp'+i);if(p)p.classList.add('hot')});
+    c.addEventListener('mouseleave',function(){var p=document.getElementById('hp'+i);if(p)p.classList.remove('hot')})});
+  var _go=go;go=function(i){_go(i);if(S[i]&&S[i].id==='hubSlide')setTimeout(drawHub,250)};
+  addEventListener('resize',function(){if(S[cur]&&S[cur].id==='hubSlide')drawHub()});
+  /* destaque automático em sequência */
+  setInterval(function(){if(!S[cur]||S[cur].id!=='hubSlide')return;var cs=hub.querySelectorAll('.hcard'),k=Math.floor(Date.now()/1800)%cs.length;cs.forEach(function(c,j){c.classList.toggle('hot',j===k);var p=document.getElementById('hp'+j);if(p)p.classList.toggle('hot',j===k)})},300);
+  /* menu inteligente: volta para a aba de origem do portfólio */
+  var back=document.getElementById('back'),catName={saas:'Sistemas',apps:'Apps',sites:'Sites',video:'Conteúdo'},idx=S.indexOf(document.getElementById('portIdx'));
+  function selTab(c){stage.querySelectorAll('[data-tab]').forEach(function(x){x.setAttribute('aria-selected',x.dataset.tab===c)});stage.querySelectorAll('[data-panel]').forEach(function(p){p.hidden=p.dataset.panel!==c})}
+  var _go2=go;go=function(i){_go2(i);var c=S[cur]&&S[cur].dataset.cat;back.hidden=!c;if(c)back.querySelector('span').textContent='Voltar ao menu '+catName[c]};
+  back.addEventListener('click',function(e){e.stopPropagation();var c=S[cur].dataset.cat;go(idx);selTab(c)});
+  document.addEventListener('keydown',function(e){if((e.key==='Escape'||e.key==='Backspace')&&lb.hidden&&!back.hidden){e.preventDefault();back.click()}},true);
+  /* versão mobile */
+  function isM(){return innerWidth<640||(innerWidth<900&&innerHeight>innerWidth)}
+  var root=document.documentElement,mObs=null;
+  function applyM(){var on=isM();root.classList.toggle('m',on);
+    if(on){stage.style.transform='none';if(!mObs){mObs=new IntersectionObserver(function(es){es.forEach(function(e){var v=e.target;if(e.isIntersecting){var p=v.play();if(p&&p.catch)p.catch(function(){})}else v.pause()})},{threshold:.4});stage.querySelectorAll('.slide video').forEach(function(v){mObs.observe(v)})}}
+    else{if(mObs){mObs.disconnect();mObs=null}fit();media(cur)}}
+  addEventListener('resize',applyM);addEventListener('orientationchange',function(){setTimeout(applyM,200)});
+  var _goM=go;go=function(i){if(isM()){if(S[i]){cur=i;S[i].scrollIntoView({behavior:'smooth'})}return}_goM(i)};
+  addEventListener('scroll',function(){if(!isM())return;var h=document.documentElement.scrollHeight-innerHeight;prog.style.width=(h>0?scrollY/h*100:0)+'%'},{passive:true});
+  go(0);applyM();
+})();
+</script>
+
+</body>
+</html>
