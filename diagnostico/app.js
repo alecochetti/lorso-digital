@@ -1726,6 +1726,8 @@ function summary(){
 }
 
 /* ================= SUPABASE: DADOS ================= */
+// Link de convite (#...type=invite): lido antes do cliente limpar o endereço, para pedir a criação da senha.
+const CONVITE=/(^|[#&])type=invite(&|$)/.test(location.hash);
 const sb = window.supabase.createClient(window.CD_CONFIG.url, window.CD_CONFIG.key, {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 let me=null, profiles=[], convites=[], snap=null, channel=null, pendingData=null;
 let ver=0, savedVer=0, saving=false, timer=null, saveErr=null, pendingRemote=false;
@@ -1913,7 +1915,7 @@ async function start(session){
 }
 async function boot(){
   sb.auth.onAuthStateChange((ev,session)=>{
-    if(ev==='PASSWORD_RECOVERY'){ authMode='nova-senha'; authMsg=null; started=false; showAuth(); return; }
+    if(ev==='PASSWORD_RECOVERY'||(CONVITE&&session&&(ev==='SIGNED_IN'||ev==='INITIAL_SESSION')&&authMode!=='nova-senha'&&!started)){ authMode='nova-senha'; authMsg=null; started=false; showAuth(); return; }
     if(ev==='SIGNED_OUT'){ started=false; me=null; cur=null; snap=null; internas=[]; projetos=[]; if(itCh){sb.removeChannel(itCh);itCh=null;} if(channel){sb.removeChannel(channel);channel=null;} showAuth(); return; }
     if((ev==='SIGNED_IN'||ev==='INITIAL_SESSION')&&session&&authMode!=='nova-senha') setTimeout(()=>start(session),0);
     if(ev==='INITIAL_SESSION'&&!session) showAuth();
