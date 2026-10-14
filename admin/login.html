@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Área do Cliente · LORSO Digital</title>
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/assets/admin.css">
+</head><body>
+<div class="center"><div class="box">
+  <a class="logo" href="/" id="logo"><b>LORSO Digital</b></a>
+  <h1>Área do Cliente</h1>
+  <p id="sub">Entre para acessar seus módulos ou peça acesso.</p>
+
+  <div class="tabs" role="tablist" aria-label="Entrar ou solicitar acesso">
+    <button type="button" role="tab" id="tab-entrar" aria-controls="entrar" aria-selected="true">Entrar</button>
+    <button type="button" role="tab" id="tab-solicitar" aria-controls="solicitar" aria-selected="false">Solicitar acesso</button>
+  </div>
+
+  <form id="entrar" role="tabpanel" aria-labelledby="tab-entrar" novalidate>
+    <label>E-mail<input id="l-email" type="email" autocomplete="email" required></label>
+    <label>Senha<input id="l-senha" type="password" autocomplete="current-password" required></label>
+    <button class="btn" type="submit" id="l-btn">Entrar</button>
+    <button class="link" type="button" id="esqueci">Esqueci minha senha</button>
+    <div class="msg" id="l-msg" role="alert"></div>
+  </form>
+
+  <form id="solicitar" role="tabpanel" aria-labelledby="tab-solicitar" novalidate hidden>
+    <label>Nome<input id="s-nome" autocomplete="name" required maxlength="120"></label>
+    <label>E-mail<input id="s-email" type="email" autocomplete="email" required maxlength="200"></label>
+    <label>Empresa<input id="s-empresa" autocomplete="organization" maxlength="160"></label>
+    <label>Telefone<input id="s-telefone" type="tel" autocomplete="tel" maxlength="40"></label>
+    <label>Módulo
+      <select id="s-produto" required>
+        <option value="diagnostico">Diagnóstico (inclui Lançamentos e DRE)</option>
+        <option value="lancamento">Lançamentos</option>
+        <option value="dre">DRE</option>
+      </select>
+    </label>
+    <div class="hp" aria-hidden="true"><label>Website<input id="s-website" name="website" tabindex="-1" autocomplete="off"></label></div>
+    <button class="btn" type="submit" id="s-btn">Solicitar acesso</button>
+    <div class="msg" id="s-msg" role="alert"></div>
+  </form>
+</div></div>
+
+<script type="module">
+import { supabase, chamarFuncao, destinoSeguro, usuarioAtual, MODULOS, LOGO, SITE_URL } from "/admin/assets/auth.js";
+
+const $ = (id) => document.getElementById(id);
+$("logo").insertAdjacentHTML("afterbegin", LOGO);
+const q = new URLSearchParams(location.search);
+const app = MODULOS[q.get("app")] ? q.get("app") : "";
+const volta = destinoSeguro(q.get("volta"));
+const destino = () => volta || `/admin/painel.html${app ? "?app=" + app : ""}`;
+if (app) {
+  document.getElementById("s-produto").value = app;
+  document.getElementById("sub").textContent = `Entre para acessar o ${MODULOS[app].nome} ou peça acesso.`;
+}
+
+// já logado? vai direto (menos quando veio pedir acesso a outro módulo)
+const pedindo = q.get("aba") === "solicitar" || location.hash === "#solicitar";
+const logado = await usuarioAtual();
+if (logado && !pedindo) location.replace(destino());
+if (logado) { $("s-email").value = logado.email; if (logado.user_metadata?.nome) $("s-nome").value = logado.user_metadata.nome; }
+
+function msg(el, texto, tipo) { el.textContent = texto; el.className = "msg" + (tipo ? " " + tipo : ""); }
+
+function aba(nome) {
+  for (const n of ["entrar", "solicitar"]) {
+    $("tab-" + n).setAttribute("aria-selected", n === nome ? "true" : "false");
+    $(n).hidden = n !== nome;
+  }
+}
+$("tab-entrar").addEventListener("click", () => aba("entrar"));
+$("tab-solicitar").addEventListener("click", () => aba("solicitar"));
+if (pedindo) aba("solicitar");
+
+$("entrar").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = $("l-email").value.trim().toLowerCase(), password = $("l-senha").value;
+  if (!email || !password) return msg($("l-msg"), "Preencha e-mail e senha.", "erro");
+  $("l-btn").disabled = true; $("l-btn").textContent = "Entrando…"; msg($("l-msg"), "");
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (!error) return location.replace(destino());
+  $("l-btn").disabled = false; $("l-btn").textContent = "Entrar";
+  msg($("l-msg"), /confirm/i.test(error.message)
+    ? "Seu acesso ainda não foi ativado. Use o link do e-mail de convite para criar a senha."
+    : "E-mail ou senha incorretos.", "erro");
+});
+
+$("esqueci").addEventListener("click", async () => {
+  const email = $("l-email").value.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { $("l-email").focus(); return msg($("l-msg"), "Digite seu e-mail acima e clique de novo em Esqueci minha senha.", "erro"); }
+  msg($("l-msg"), "Enviando…");
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${SITE_URL}/admin/definir-senha.html` });
+  if (error && /rate|seconds/i.test(error.message)) return msg($("l-msg"), "Aguarde um minuto antes de pedir outro link.", "erro");
+  msg($("l-msg"), "Se este e-mail tiver acesso, você vai receber um link para criar uma nova senha.", "ok");
+});
+
+$("solicitar").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const corpo = {
+    nome: $("s-nome").value.trim(), email: $("s-email").value.trim().toLowerCase(),
+    empresa: $("s-empresa").value.trim(), telefone: $("s-telefone").value.trim(),
+    produto: $("s-produto").value, website: $("s-website").value,
+  };
+  if (!corpo.nome || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(corpo.email)) return msg($("s-msg"), "Preencha nome e um e-mail válido.", "erro");
+  $("s-btn").disabled = true; $("s-btn").textContent = "Enviando…"; msg($("s-msg"), "");
+  try {
+    await chamarFuncao("solicitar-acesso", corpo);
+    $("solicitar").reset();
+    $("s-btn").textContent = "Pedido enviado";
+    msg($("s-msg"), "Pedido recebido. Você vai receber um e-mail assim que o acesso for liberado.", "ok");
+  } catch (err) {
+    $("s-btn").disabled = false; $("s-btn").textContent = "Solicitar acesso";
+    msg($("s-msg"), err.message, "erro");
+  }
+});
+</script>
+</body></html>

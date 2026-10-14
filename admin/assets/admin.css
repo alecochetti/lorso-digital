@@ -1,0 +1,63 @@
+/* Estilo compartilhado da Área do Cliente (/admin) */
+:root{--bg:#0A0A0A;--surface:#111513;--line:rgba(242,241,236,.12);--line-2:rgba(242,241,236,.24);--text:#F2F1EC;--muted:#A3A8A5;--neon:#00FF87;--cyan:#00E5FF;--err:#FF7A66;
+ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+ font-family:"Space Grotesk",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;color:var(--text);background-color:var(--bg);
+ background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:54px 54px}
+:focus-visible{outline:2px solid var(--neon);outline-offset:3px}
+[hidden]{display:none!important}
+a{color:var(--neon)}
+
+/* tela centralizada (login, senha, aprovação) */
+.center{min-height:100vh;display:grid;place-items:center;padding:22px}
+.box{width:100%;max-width:420px;display:grid;gap:14px}
+.logo{display:inline-flex;align-items:center;gap:12px;text-decoration:none;color:var(--text);margin-bottom:8px}
+.logo svg{height:36px;width:auto}
+.logo b{font-size:18px;letter-spacing:-.02em}
+h1{margin:0;font-size:clamp(26px,5vw,34px);letter-spacing:-.03em;line-height:1.1}
+p{margin:0;color:var(--muted);line-height:1.5}
+
+/* abas */
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px}
+.tabs button{font:inherit;font-weight:600;color:var(--muted);background:none;border:0;border-radius:999px;padding:10px 12px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--neon);color:#0A0A0A}
+
+/* formulários */
+form{display:grid;gap:12px}
+label{font-size:14px;color:var(--muted);display:grid;gap:6px}
+input,select{width:100%;font:inherit;color:var(--text);background:var(--surface);border:1px solid rgba(242,241,236,.18);border-radius:14px;padding:13px 16px}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 15px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+.hp{position:absolute!important;left:-9999px!important;width:1px;height:1px;overflow:hidden}
+.btn{display:inline-block;text-align:center;text-decoration:none;font:inherit;font-weight:700;color:#0A0A0A;background:var(--neon);border:0;border-radius:999px;padding:14px 20px;cursor:pointer}
+.btn[disabled]{opacity:.6;cursor:wait}
+.btn.ghost{background:none;color:var(--text);border:1px solid var(--line-2)}
+.link{background:none;border:0;padding:0;font:inherit;font-size:14px;color:var(--muted);text-decoration:underline;cursor:pointer;justify-self:start}
+.link:hover{color:var(--text)}
+.msg{min-height:1.4em;font-size:14px;line-height:1.5;color:var(--muted)}
+.msg.erro{color:var(--err)}
+.msg.ok{color:var(--neon)}
+.nota{font-size:13px;color:var(--muted)}
+
+/* painel */
+main.wrap{max-width:1080px;margin:0 auto;padding:28px 22px 80px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.top .logo{margin:0}
+.out{background:none;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:8px 16px;font:inherit;cursor:pointer}
+.out:hover{color:var(--text);border-color:var(--line-2)}
+.titulo{font-size:clamp(30px,5vw,46px);letter-spacing:-.03em;line-height:1.05;margin:56px 0 10px;font-weight:700}
+.lead{color:var(--muted);font-size:17px;max-width:56ch;margin:0 0 32px;line-height:1.5}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.card{display:grid;gap:14px;align-content:space-between;text-decoration:none;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px;transition:border-color .15s}
+.card:hover{border-color:var(--neon)}
+.card .n{font-size:28px;font-weight:700;letter-spacing:-.03em}
+.card .c{color:var(--muted);font-size:14px;line-height:1.5}
+.card .go{font-weight:700;color:var(--neon);font-size:14px}
+.sec{margin-top:56px;border-top:1px solid var(--line);padding-top:28px}
+.sec h2{margin:0 0 6px;font-size:22px;letter-spacing:-.02em}
+.sec > p{margin-bottom:20px}
+.vazio{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:24px;display:grid;gap:14px;max-width:560px}
+footer.pe{margin-top:56px;color:var(--muted);font-size:13px}
+@media (max-width:640px){.titulo{margin-top:40px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}

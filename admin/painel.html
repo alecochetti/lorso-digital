@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Painel · LORSO Digital</title>
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/assets/admin.css">
+</head><body>
+<main class="wrap">
+  <div class="top">
+    <a class="logo" href="/" id="logo" aria-label="Ir para o site da LORSO Digital"><b>LORSO Digital</b></a>
+    <button class="out" type="button" id="sair">Sair</button>
+  </div>
+
+  <h1 class="titulo" id="ola">Área do Cliente</h1>
+  <p class="lead" id="lead">Carregando seus módulos…</p>
+  <div class="cards" id="cards"></div>
+
+  <section class="sec" id="demos" hidden>
+    <h2>Demonstrações</h2>
+    <p>Visível só para a equipe LORSO. Cada sistema guarda os dados no navegador de quem usa.</p>
+    <div class="cards" id="demo-cards"></div>
+  </section>
+
+  <footer class="pe">Área restrita da LORSO Digital.</footer>
+</main>
+
+<script type="module">
+import { exigirSessao, carregarPerfil, carregarDiagnosticos, ehEquipe, sair, MODULOS, LOGO, esc } from "/admin/assets/auth.js";
+
+// Demonstrações (páginas cifradas geradas pelo _admin-src/build.mjs)
+const DEMOS = [
+  { grupo: "SaaS", titulo: "Financeiro da loja", texto: "Vendas, custos, despesas, DRE, metas por canal e ponto de equilíbrio.", link: "/admin/financeiro-loja/" },
+  { grupo: "Lançamento", titulo: "Lançamento de curso", texto: "Checklist, cronograma, quadro, roadmap, ofertas, metas do funil e P&L.", link: "/admin/lancamento-curso/" },
+  { grupo: "Lançamento", titulo: "Lançamento perpétuo", texto: "Perpétuo, evergreen ou high ticket: checklist, roadmap, ofertas e metas.", link: "/admin/lancamento-perpetuo/" },
+  { grupo: "Portfólio", titulo: "Portfólio", texto: "Projetos e cases. Em breve.", link: null },
+];
+
+document.getElementById("logo").insertAdjacentHTML("afterbegin", LOGO);
+document.getElementById("sair").addEventListener("click", sair);
+const $ = (id) => document.getElementById(id);
+
+const usuario = await exigirSessao(new URLSearchParams(location.search).get("app"));
+let perfil = null, diags = [];
+try {
+  [perfil, diags] = await Promise.all([carregarPerfil(usuario), carregarDiagnosticos()]);
+} catch (e) {
+  $("lead").textContent = "Não foi possível carregar seus módulos agora. Atualize a página em instantes.";
+  throw e;
+}
+const equipe = ehEquipe(perfil);
+const liberados = equipe ? Object.keys(MODULOS) : Object.keys(MODULOS).filter((k) => diags.some((d) => (d.modulos || []).includes(k)));
+
+// abre direto quando há um destino claro
+const app = new URLSearchParams(location.search).get("app");
+if (app && liberados.includes(app)) { location.replace(MODULOS[app].url); }
+else if (!equipe && liberados.length === 1) { location.replace(MODULOS[liberados[0]].url); }
+else {
+  const primeiroNome = (perfil?.nome || usuario.user_metadata?.nome || "").split(" ")[0];
+  $("ola").textContent = primeiroNome ? `Olá, ${primeiroNome}` : "Área do Cliente";
+
+  if (liberados.length) {
+    $("lead").textContent = app && MODULOS[app] && !liberados.includes(app)
+      ? `Você ainda não tem acesso ao ${MODULOS[app].nome}. Estes são os módulos liberados para você:`
+      : "Escolha o módulo que deseja abrir.";
+    $("cards").innerHTML = liberados.map((k) => `<a class="card" href="${MODULOS[k].url}">
+      <span class="n">${esc(MODULOS[k].nome)}</span><span class="c">${esc(MODULOS[k].texto)}</span><span class="go">Abrir ›</span></a>`).join("");
+  } else {
+    $("lead").textContent = "";
+    $("cards").outerHTML = `<div class="vazio"><b>Nenhum módulo liberado ainda.</b>
+      <p>Se você já pediu acesso, aguarde o e-mail de aprovação. Se não, faça o pedido agora.</p>
+      <a class="btn" href="/admin/login.html?aba=solicitar${app && MODULOS[app] ? "&app=" + app : ""}">Solicitar acesso</a></div>`;
+  }
+
+  if (equipe) {
+    $("demo-cards").innerHTML = DEMOS.map((d) => d.link
+      ? `<a class="card" href="${d.link}"><span class="c">${esc(d.grupo)}</span><span class="n">${esc(d.titulo)}</span><span class="c">${esc(d.texto)}</span><span class="go">Abrir demonstração ›</span></a>`
+      : `<div class="card" aria-disabled="true"><span class="c">${esc(d.grupo)}</span><span class="n">${esc(d.titulo)}</span><span class="c">${esc(d.texto)}</span></div>`).join("");
+    $("demos").hidden = false;
+  }
+}
+</script>
+</body></html>

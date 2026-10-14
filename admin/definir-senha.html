@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Criar senha · LORSO Digital</title>
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/assets/admin.css">
+<script>window.__retorno = location.hash + "&" + location.search.slice(1);</script>
+</head><body>
+<div class="center"><div class="box">
+  <a class="logo" href="/" id="logo"><b>LORSO Digital</b></a>
+
+  <div id="carregando"><p>Verificando o link…</p></div>
+
+  <form id="senha" novalidate hidden>
+    <h1>Crie sua senha</h1>
+    <p id="quem"></p>
+    <label>Nova senha<input id="p1" type="password" autocomplete="new-password" minlength="8" required></label>
+    <label>Confirme a senha<input id="p2" type="password" autocomplete="new-password" minlength="8" required></label>
+    <p class="nota">Mínimo de 8 caracteres.</p>
+    <button class="btn" type="submit" id="p-btn">Salvar senha e entrar</button>
+    <div class="msg" id="p-msg" role="alert"></div>
+  </form>
+
+  <form id="novo" novalidate hidden>
+    <h1>Link expirado</h1>
+    <p>Este link já foi usado ou passou do prazo. Digite seu e-mail para receber um novo.</p>
+    <label>E-mail<input id="n-email" type="email" autocomplete="email" required></label>
+    <button class="btn" type="submit" id="n-btn">Enviar novo link</button>
+    <a class="link" href="/admin/login.html">Voltar para o login</a>
+    <div class="msg" id="n-msg" role="alert"></div>
+  </form>
+</div></div>
+
+<script type="module">
+import { supabase, usuarioAtual, LOGO, SITE_URL } from "/admin/assets/auth.js";
+
+document.getElementById("logo").insertAdjacentHTML("afterbegin", LOGO);
+const $ = (id) => document.getElementById(id);
+function msg(el, texto, tipo) { el.textContent = texto; el.className = "msg" + (tipo ? " " + tipo : ""); }
+
+const retorno = new URLSearchParams((window.__retorno || "").replace(/^#/, ""));
+const usuario = retorno.get("error") ? null : await usuarioAtual();
+$("carregando").hidden = true;
+
+if (usuario) {
+  $("quem").textContent = `Conta: ${usuario.email}`;
+  $("senha").hidden = false;
+  $("p1").focus();
+} else {
+  $("novo").hidden = false;
+}
+
+$("senha").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const p1 = $("p1").value, p2 = $("p2").value;
+  if (p1.length < 8) return msg($("p-msg"), "A senha precisa ter pelo menos 8 caracteres.", "erro");
+  if (p1 !== p2) return msg($("p-msg"), "As senhas não conferem.", "erro");
+  $("p-btn").disabled = true; $("p-btn").textContent = "Salvando…"; msg($("p-msg"), "");
+  const { error } = await supabase.auth.updateUser({ password: p1 });
+  if (!error) return location.replace("/admin/painel.html");
+  $("p-btn").disabled = false; $("p-btn").textContent = "Salvar senha e entrar";
+  msg($("p-msg"), /different|same/i.test(error.message)
+    ? "Escolha uma senha diferente da anterior."
+    : /session|jwt|expired/i.test(error.message)
+      ? "Sua sessão expirou. Peça um novo link pelo login."
+      : "Não foi possível salvar. Tente uma senha mais forte.", "erro");
+});
+
+$("novo").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = $("n-email").value.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return msg($("n-msg"), "Digite um e-mail válido.", "erro");
+  $("n-btn").disabled = true; msg($("n-msg"), "Enviando…");
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${SITE_URL}/admin/definir-senha.html` });
+  $("n-btn").disabled = false;
+  if (error && /rate|seconds/i.test(error.message)) return msg($("n-msg"), "Aguarde um minuto antes de pedir outro link.", "erro");
+  msg($("n-msg"), "Se este e-mail tiver acesso, você vai receber um novo link em instantes.", "ok");
+});
+</script>
+</body></html>

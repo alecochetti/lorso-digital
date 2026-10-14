@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Lançamentos · LORSO Digital</title>
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/assets/admin.css">
+</head><body>
+<div class="center" id="app" hidden><div class="box">
+  <a class="logo" href="/" id="logo"><b>LORSO Digital</b></a>
+  <h1>Lançamentos</h1>
+  <p>Em breve. Seu acesso ao Lançamentos já está liberado e o módulo aparece aqui assim que for publicado.</p>
+  <a class="btn ghost" href="/admin/painel.html">Voltar ao painel</a>
+  <button class="link" type="button" id="sair">Sair da conta</button>
+</div></div>
+<script type="module">
+import { exigirModulo, sair, LOGO } from "/admin/assets/auth.js";
+await exigirModulo("lancamento");
+document.getElementById("logo").insertAdjacentHTML("afterbegin", LOGO);
+document.getElementById("sair").addEventListener("click", sair);
+document.getElementById("app").hidden = false;
+</script>
+</body></html>
