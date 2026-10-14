@@ -7,18 +7,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/admin/assets/admin.css">
 </head><body>
-<div class="center" id="app" hidden><div class="box">
-  <a class="logo" href="/" id="logo"><b>LORSO Digital</b></a>
-  <h1>Diagnóstico</h1>
-  <p>Em breve. Seu acesso ao Diagnóstico já está liberado e o módulo aparece aqui assim que for publicado.</p>
-  <a class="btn ghost" href="/admin/painel.html">Voltar ao painel</a>
-  <button class="link" type="button" id="sair">Sair da conta</button>
-</div></div>
+<div class="center"><p>Abrindo a Central de Diagnóstico…</p></div>
 <script type="module">
-import { exigirModulo, sair, LOGO } from "/admin/assets/auth.js";
+import { exigirModulo } from "/admin/assets/auth.js";
 await exigirModulo("diagnostico");
-document.getElementById("logo").insertAdjacentHTML("afterbegin", LOGO);
-document.getElementById("sair").addEventListener("click", sair);
-document.getElementById("app").hidden = false;
+location.replace("/diagnostico/");
 </script>
 </body></html>

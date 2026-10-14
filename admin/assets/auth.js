@@ -14,7 +14,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 
 // chave → nome e endereço de cada módulo
 export const MODULOS = {
-  diagnostico: { nome: "Diagnóstico", url: "/admin/diagnostico/", texto: "Diagnóstico completo da operação, com Lançamentos e DRE." },
+  // o Diagnóstico é a Central já publicada em /diagnostico/ (mesma sessão Supabase)
+  diagnostico: { nome: "Diagnóstico", url: "/diagnostico/", texto: "Diagnóstico completo da operação, com Lançamentos e DRE." },
   lancamento: { nome: "Lançamentos", url: "/admin/lancamentos/", texto: "Planejamento e acompanhamento dos seus lançamentos." },
   dre: { nome: "DRE", url: "/admin/dre/", texto: "Demonstrativo de resultado mês a mês." },
 };
