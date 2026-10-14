@@ -140,9 +140,15 @@ RULES.push(
   test:()=>le(R('flu6'),2)&&le(R('dem4'),2), txt:()=>'Cada passagem de bastão depende de cobrança e o solicitante não enxerga o andamento do que pediu. É assim que um bom trabalho vira a percepção de "o marketing não me atende".',
   rec:['Quadro único com etapas e dono por etapa','Solicitante com acesso ao status do próprio pedido','Mensagem automática ao solicitante a cada mudança de etapa']}
 );
+RULES.push(
+ {id:'CRZ-65',sev:'media',pad:'Teto de ferramenta',areas:()=>AREAS.filter(a=>naoSei(a.q).length>=2).map(a=>a.id),t:'Ninguém sabe responder pontos básicos da operação',
+  test:()=>AREAS.some(a=>naoSei(a.q).length>=2), txt:()=>{ const L=AREAS.map(a=>[a,naoSei(a.q).length]).filter(x=>x[1]>=2).sort((x,y)=>y[1]-x[1]); return L.slice(0,3).map(([a,n])=>`${a.nome}: ${n} perguntas sem resposta`).join('; ')+'. Quando ninguém sabe responder, é porque o dado não é registrado nem acompanhado.'; },
+  rec:['Definir um dono para cada indicador que ninguém soube informar','Registrar o dado na ferramenta já usada pelo time','Revisar os números no ritual mensal']}
+);
 BLOCOS.push(
  {id:'atendimento',t:'O marketing não atende as unidades como clientes',r:'Pedidos sem ponto focal, sem prazo combinado e sem acompanhamento. A demanda trava entre as mãos e o coordenador sente falta de um atendimento próximo.',
   rules:['CRZ-57','CRZ-58','CRZ-59','CRZ-60','CRZ-61','CRZ-63','CRZ-64'],kpi:'satisfação dos solicitantes · % do volume no prazo · dias por etapa',
   h:{c:['Ponto focal do marketing para cada unidade','Briefing obrigatório e devolução do pedido incompleto','SLA por tipo de peça publicado aos coordenadores'],m:['Quadro com etapas, dono por etapa e status visível ao solicitante','Ritual mensal com os coordenadores de cada unidade','Pesquisa curta de satisfação a cada entrega'],l:['Atendimento consultivo: o marketing participa do planejamento das unidades','SLA medido por unidade e apresentado à reitoria']}}
 );
 const _blReceita=BLOCOS.find(b=>b.id==='receita'); if(_blReceita) _blReceita.rules.push('CRZ-62');
+const _blSist=BLOCOS.find(b=>b.id==='sistemas'); if(_blSist) _blSist.rules.push('CRZ-65');

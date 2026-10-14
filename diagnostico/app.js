@@ -49,6 +49,11 @@ function scoreOf(qs){
   return {score:s,level:lvOf(s),pil:ps,ans,total:qs.length,elim};
 }
 function mediaSem(areaId,qid){ const a=AREA[areaId]; if(!a)return null; let s=0,w=0; a.q.forEach(x=>{ if(x[0]===qid)return; const n=cur.resp[x[0]]; if(n){ s+=n*x[3]; w+=x[3]; } }); return w?s/w:null; }
+const META_T={2:1.75,3:2.5,4:3.25};
+const metaDe=id=>{ const m=num(cur.campos['meta.'+id]); return [2,3,4].includes(m)?m:3; };
+const faltaMeta=id=>{ const s=SC[id]; if(!s||s.score==null)return null; return Math.max(0,META_T[metaDe(id)]-s.score); };
+const naoSei=qs=>qs.filter(x=>cur.resp[x[0]]===0);
+function confianca(){ let resp=0,comp=0,ns=0; AREAS.forEach(a=>a.q.forEach(x=>{ const n=cur.resp[x[0]]; if(n===0){ns++;return;} if(n){ resp++; if(cur.evid[x[0]])comp++; } })); return {resp,comp,ns,p:resp?comp/resp:null}; }
 let SC={};
 function computeAll(){ SC={}; AREAS.forEach(a=>SC[a.id]=scoreOf(a.q)); STAGES.forEach(s=>{if(s.q)SC[s.id]=scoreOf(s.q)}); }
 function unFin(id){ const g=k=>num(cur.campos[id+'.'+k]); return {meta_mat:g('meta_mat'),meta_rec:g('meta_rec'),receita:g('receita'),folha:g('folha'),orcamento:g('orcamento'),alunos:g('alunos')}; }
@@ -66,7 +71,7 @@ function overall(){
 
 /* ================= MOTOR DE CRUZAMENTO ================= */
 const L=id=>SC[id]&&SC[id].score!=null?SC[id].level:null;
-const R=q=>cur.resp[q];
+const R=q=>cur.resp[q]||null; // 0 = não se aplica / não sei: fica fora de nota e de regra
 const P=(id,p)=>SC[id]&&SC[id].pil[p]!=null?SC[id].pil[p]:null;
 const V=(id,k)=>num(cur.campos[id+'.'+k]);
 const ge=(x,v)=>x!=null&&x>=v, le=(x,v)=>x!=null&&x<=v;
@@ -312,8 +317,8 @@ function autoFofa(id, INS){
 /* ================= RENDER ================= */
 function lvChip(l){return `<span class="lv l${l}" title="${l?LVL_DESC[l]:''}">${l?'N'+l+' · '+LVL[l]:'Sem nota'}</span>`;}
 function stageProgress(s){
-  if(s.id==='diagnostico'){let t=0,a=0;AREAS.forEach(x=>{t+=x.q.length;a+=x.q.filter(q=>cur.resp[q[0]]).length;});return (a/t)*0.9+baseProgress()*0.1;}
-  const q=s.q||[]; return q.length?q.filter(x=>cur.resp[x[0]]).length/q.length:0;
+  if(s.id==='diagnostico'){let t=0,a=0;AREAS.forEach(x=>{t+=x.q.length;a+=x.q.filter(q=>cur.resp[q[0]]!=null).length;});return (a/t)*0.9+baseProgress()*0.1;}
+  const q=s.q||[]; return q.length?q.filter(x=>cur.resp[x[0]]!=null).length/q.length:0;
 }
 function renderRail(){
   $('#rail').innerHTML=STAGES.map(s=>{const p=Math.round(stageProgress(s)*100);return `<button class="phase ${ui.stage===s.id?'on':''}" data-act="stage" data-v="${s.id}" aria-current="${ui.stage===s.id?'step':'false'}">
@@ -363,19 +368,29 @@ function qHtml(x){
   return `<article class="q" id="q-${x[0]}">
    <div class="qmeta"><span class="tag">${PIL[x[2]]}</span><span class="tag">${IMP[x[3]]}</span>${x[4]?'<span class="tag warn">Eliminatória</span>':''}<span class="code">${x.code}</span></div>
    <h4>${esc(x[5])}</h4>
-   <div class="opts" role="radiogroup" aria-label="${esc(x[1])}">${x[6].map((o,i)=>`<button class="opt ${n===i+1?'on n'+(i+1):''}" role="radio" aria-checked="${n===i+1}" data-act="opt" data-q="${x[0]}" data-n="${i+1}"><span class="on-n"><span>N${i+1}</span><span>${LVL[i+1]}</span></span><span>${esc(o)}</span></button>`).join('')}</div>
+   <div class="opts" role="radiogroup" aria-label="${esc(x[1])}">${x[6].map((o,i)=>`<button class="opt ${n===i+1?'on n'+(i+1):''}" role="radio" aria-checked="${n===i+1}" data-act="opt" data-q="${x[0]}" data-n="${i+1}"><span class="on-n"><span>N${i+1}</span><span>${LVL[i+1]}</span></span><span>${esc(o)}</span></button>`).join('')}<button class="opt na ${n===0?'on':''}" role="radio" aria-checked="${n===0}" data-act="opt" data-q="${x[0]}" data-n="0" title="Fica fora da nota e entra na lista do que ninguém soube responder"><span class="on-n"><span>—</span><span>Fora da nota</span></span><span>Não se aplica / não sei</span></button></div>
    <div class="qfoot">${cur.notas[x[0]]||ui.notesOpen[x[0]]?`<textarea data-nota="${x[0]}" rows="1" placeholder="Evidências e observações da entrevista" aria-label="Observações sobre ${esc(x[1])}">${esc(cur.notas[x[0]]||'')}</textarea>`:`<button class="addnote" data-act="note" data-q="${x[0]}">+ Adicionar observação</button>`}
    <label class="evid"><input type="checkbox" data-evid="${x[0]}" ${cur.evid[x[0]]?'checked':''}>Comprovado com evidência</label></div>
   </article>`;
 }
+function confiancaHtml(){ const c=confianca(); if(!c.resp&&!c.ns)return '';
+  const NS=AREAS.map(a=>({a,q:naoSei(a.q)})).filter(x=>x.q.length).sort((x,y)=>y.q.length-x.q.length);
+  return `<section class="block"><div class="block-h"><h3>Confiança do diagnóstico</h3><p>O que foi comprovado, o que foi declarado e o que ninguém soube responder</p></div>
+   <div class="cfw"><div class="ring cfr"><div class="rw">${ringSvg(c.p!=null?1+c.p*3:null,c.p==null?0:c.p>=.6?4:c.p>=.3?2:1)}<span class="rv">${c.p!=null?pct(c.p).replace(',0%','%'):'—'}</span></div><b>comprovado com evidência</b><small>${c.comp} de ${c.resp} respostas</small></div>
+    <div class="cfl"><div class="cfs"><span class="sw ev"></span><b>${c.comp}</b> comprovadas: alguém mostrou o dado, o processo ou a ferramenta</div><div class="cfs"><span class="sw dc"></span><b>${c.resp-c.comp}</b> declaradas: o que o entrevistado disse</div><div class="cfs"><span class="sw ns"></span><b>${c.ns}</b> sem resposta conhecida: ninguém soube responder</div>
+     ${NS.length?`<details class="cfd" data-keep="cf-ns" ${ui.open['cf-ns']?'open':''}><summary>O que ninguém soube responder</summary>${NS.map(x=>`<div class="cfa"><button class="chip" data-act="goto" data-v="${x.a.id}">${esc(x.a.nome)}</button><ul>${x.q.map(q=>`<li>${esc(q[1])}</li>`).join('')}</ul></div>`).join('')}</details>`:''}</div></div></section>`; }
+function metaHtml(id,s){ const m=metaDe(id), f=faltaMeta(id), qs=AREA[id].q, ns=naoSei(qs).length, ev=qs.filter(x=>cur.resp[x[0]]&&cur.evid[x[0]]).length, rs=qs.filter(x=>cur.resp[x[0]]).length;
+  return `<div class="metaline"><label>Meta da área<select data-campo="meta.${id}" aria-label="Meta da área">${[2,3,4].map(n=>`<option value="${n}" ${m===n?'selected':''}>N${n} · ${LVL[n]}</option>`).join('')}</select></label>
+   <span class="mt-gap ${f==null?'':f>0?'falta':'ok'}">${f==null?'Sem nota ainda':f>0?`Faltam <b>${dec(f)}</b> pontos para N${m}`:`Meta N${m} atingida`}</span>
+   ${rs?`<span class="mt-ev">${ev} de ${rs} respostas comprovadas</span>`:''}${ns?`<span class="mt-ns">${ns} sem resposta conhecida</span>`:''}</div>`; }
 function pillarsHtml(s){
   return `<div class="pillars">${Object.entries(PIL).map(([k,nm])=>{const v=s.pil[k]; const l=lvOf(v); return `<div class="pill"><div class="pl"><span>${nm}</span><span class="num">${v==null?'—':dec(v)}</span></div><div class="bar4"><span style="width:${v==null?0:((v-1)/3*100).toFixed(1)}%;background:var(--n${l||1})"></span></div></div>`;}).join('')}</div>`;
 }
-function headHtml(eyebrow,title,lead,s){
+function headHtml(eyebrow,title,lead,s,id){
   const sc = s&&s.score!=null;
   return `<header class="ph"><div><span class="eyebrow">${eyebrow}</span><h2 style="margin-top:8px">${esc(title)}</h2>${lead?`<p class="lead">${esc(lead)}</p>`:''}</div>
    <div class="scorebox">${lvChip(sc?s.level:0)}<div class="big">${sc?dec(s.score):'—'}<small> / 4</small></div><span class="muted mono" style="font-size:12px">${s?`${s.ans} de ${s.total} respondidas`:''}${s&&s.elim?' · travado por eliminatória':''}</span></div>
-   ${s?pillarsHtml(s):''}</header>`;
+   ${s?pillarsHtml(s):''}${id&&AREA[id]?metaHtml(id,s):''}</header>`;
 }
 function interviewsHtml(areaId){
   const rows=cur.entrevistas.map((e,i)=>({e,i})).filter(r=>r.e.area===areaId);
@@ -433,7 +448,7 @@ function renderAreaPanel(INS, LIST, override){
    <div class="work" style="margin-top:16px">
     <aside class="side" aria-label="Áreas">${ui.dstep==='entrevistas'&&pri.length?`<div class="grp"><span class="eyebrow">Jornada priorizada</span>${jornadaLista().filter(x=>pri.includes(x.id)).map((x,i)=>`<button class="anav ${x.id===a.id?'on':''}" data-act="area" data-v="${x.id}"><span>${i+1}. ${x.nome}</span>${SC[x.id].score!=null?`<span class="lv l${SC[x.id].level}">N${SC[x.id].level}</span>`:`<span class="cnt">${SC[x.id].ans}/${SC[x.id].total}</span>`}</button>`).join('')}</div>`:''}${nav}${ui.dstep==='reitoria'?`<div class="grp"><span class="eyebrow">Saída da reitoria</span><button class="anav ${ui.area==='direcionamentos'?'on':''}" data-act="area" data-v="direcionamentos"><span>Direcionamentos</span><span class="cnt">${pri.length}</span></button></div>`:''}</aside>
     <section class="panel">${sel}
-     ${headHtml(`${a.g} · <b>${idx+1} de ${ORD.length}</b>`,a.nome,a.desc,s)}
+     ${headHtml(`${a.g} · <b>${idx+1} de ${ORD.length}</b>`,a.nome,a.desc,s,a.id)}
      ${a.un&&unExpResumo(a.id)?`<div class="banner"><span><b>Reitoria:</b> ${esc(unExpResumo(a.id))}</span><button class="chip" data-act="area" data-v="reitoria">Ver na Reitoria</button></div>`:''}
      <div class="ivcta"><button class="btn primary" data-act="iv-start" data-v="${a.id}">▶ Modo entrevista: ${esc(a.nome)}</button><span class="muted">Uma pergunta por tela, com o roteiro ao lado.</span></div>
      <div class="collector"><span>Coleta desta área:</span><select data-dono-area="${a.id}" aria-label="Responsável pela coleta"><option value="">Sem responsável</option>${cur.equipe.map(m=>`<option value="${m.id}" ${dono===m.id?'selected':''}>${esc(m.nome||'Sem nome')}</option>`).join('')}</select>
@@ -468,7 +483,7 @@ const jornadaLista=()=>{ const p=jornadaIds(); return [...p.map(id=>AREA[id]), .
 const CAPROWS=[['colegio','colegio','Colégio','Ano letivo'],['grad_diurno','graduacao','Graduação','Presencial diurno'],['grad_noturno','graduacao','Graduação','Presencial noturno'],['grad_ead','graduacao','Graduação','EAD'],['pos_noturno','pos','Pós-Graduação','Noturno'],['pos_ead','pos','Pós-Graduação','EAD'],['pos_hibrido','pos','Pós-Graduação','Híbrido'],['mestrado','mestrado','Mestrado','Presencial']];
 function capRows(){ return CAPROWS.map(([k,un,nm,mod])=>{ const g=f=>num(cur.campos[`base.cap.${k}.${f}`]); const r={k,un,nm,mod,vagas:g('vagas'),meta:g('meta'),captados:g('captados'),ticket:g('ticket')}; r.ocup=r.vagas>0&&r.captados!=null?r.captados/r.vagas:null; r.ating=r.meta>0&&r.captados!=null?r.captados/r.meta:null; return r; }); }
 function baseProgress(){ const filled=capRows().filter(r=>r.vagas!=null).length; return Math.min(1,(filled/CAPROWS.length)*0.6+(cur.cursos.length?0.4:0)); }
-function stepProgress(id){ if(id==='base')return baseProgress(); const L=id==='reitoria'?LID:ENT; let t=0,a=0; L.forEach(x=>{t+=x.q.length;a+=x.q.filter(q=>cur.resp[q[0]]).length;}); return t?a/t:0; }
+function stepProgress(id){ if(id==='base')return baseProgress(); const L=id==='reitoria'?LID:ENT; let t=0,a=0; L.forEach(x=>{t+=x.q.length;a+=x.q.filter(q=>cur.resp[q[0]]!=null).length;}); return t?a/t:0; }
 function stepperHtml(){ return `<nav class="dsteps" aria-label="Passos do diagnóstico">${DSTEPS.map(([id,nm,ds],i)=>`<button class="dstep ${ui.dstep===id?'on':''}" data-act="dstep" data-v="${id}"><span class="dn">${i+1}</span><span class="dt"><b>${nm}</b><small>${ds}</small></span><span class="dp">${Math.round(stepProgress(id)*100)}%</span></button>`).join('')}</nav>`; }
 function renderDiagnostico(INS){
   let inner;
@@ -735,6 +750,7 @@ function leituraAuto(INS){
   if(ov.score!=null) L.push(`A maturidade geral de marketing está em ${dec(ov.score)} de 4 (N${ov.level} · ${LVL[ov.level]}).`);
   if(B.length) L.push(`Principal causa raiz: ${B[0].t.charAt(0).toLowerCase()+B[0].t.slice(1)}.${B[1]?` Em seguida: ${B[1].t.charAt(0).toLowerCase()+B[1].t.slice(1)}.`:''}`);
   if(fortes.length&&fracos.length) L.push(`Os pontos mais fortes são ${fortes.join(' e ')}; os mais frágeis, ${fracos.join(', ')}.`);
+  const cf=confianca(); if(cf.resp>=10&&(cf.comp>0||cf.ns>0)) L.push(`${pct(cf.p).replace(',0%','%')} das respostas foram comprovadas com evidência; o restante é o que os entrevistados declararam.${cf.ns?` Em ${cf.ns} ${cf.ns===1?'pergunta':'perguntas'} ninguém soube responder, sinal de que esses pontos não são medidos.`:''}`);
   if(t) L.push(`Hoje há ${t.abertos} projetos abertos no Trello${t.semanas!=null?`, o que leva cerca de ${dec(t.semanas,0)} semanas para zerar no ritmo atual`:''}.`);
   return L;
 }
@@ -831,6 +847,7 @@ function renderResultados(INS){
     <div class="rx-sum"><h3>Resumo executivo</h3>${leit.length?`<ul class="leit">${leit.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`:'<p class="muted">O resumo aparece quando houver respostas suficientes.</p>'}</div>
     <div class="rx-kpis"><div><b>${avaliadas}/${AREAS.length}</b><span>áreas avaliadas</span></div><div><b>${cur.entrevistas.length}</b><span>pessoas ouvidas</span></div><div><b>${nB}</b><span>causas raiz</span></div><div class="${INS.filter(i=>i.sev==='crit').length?'bad':''}"><b>${INS.filter(i=>i.sev==='crit').length}</b><span>incongruências críticas</span></div></div></section>
    <section class="block"><div class="block-h"><h3>Leitura do consultor</h3><p>Entra na apresentação e no relatório.</p></div><div class="fields">${fieldHtml('res.leitura','Sua leitura em poucas frases','t')}</div></section>
+   ${confiancaHtml()}
    <section class="block"><div class="block-h"><h3>Os quatro pilares</h3><p>Média de todas as áreas, de 1 a 4.</p></div>
     <div class="rings">${Object.entries(PIL).map(([k,n])=>{ const v=pilarMedia()[k], l=v!=null?lvOf(v):0; return `<div class="ring"><div class="rw">${ringSvg(v,l)}<span class="rv">${v!=null?dec(v):'—'}</span></div><b>${esc(n)}</b>${lvChip(l)}<p>${esc(PIL_DESC[k])}</p></div>`; }).join('')}</div></section>
    <div class="rx-two">
@@ -1049,7 +1066,7 @@ function ivOrder(){ return stepOf(ui.iv.area)==='reitoria'?LID:jornadaLista(); }
 function ivHtml(){
   const a=AREA[ui.iv.area]; if(!a) return '';
   const qs=a.q, i=Math.min(ui.iv.i,qs.length), done=i>=qs.length, x=qs[i];
-  const ans=qs.filter(q=>cur.resp[q[0]]).length, s=SC[a.id];
+  const ans=qs.filter(q=>cur.resp[q[0]]!=null).length, s=SC[a.id];
   const ORD=ivOrder(), nextA=ORD[ORD.indexOf(a)+1];
   const ents=cur.entrevistas.filter(e=>e.area===a.id&&e.nome);
   const rot=(a.vol||[]).filter(v=>v[2]==='t'||v[2]==='p');
@@ -1061,7 +1078,7 @@ function ivHtml(){
    : `<div class="iv-prog"><span>${esc(a.nome)} · pergunta ${i+1} de ${qs.length}</span><span class="iv-dots">${qs.map((q,k)=>`<button class="iv-dot ${k===i?'on':''} ${cur.resp[q[0]]?'ok':''}" data-act="iv-go" data-v="${k}" aria-label="Pergunta ${k+1}"></button>`).join('')}</span></div>
       <div class="iv-tags"><span class="tag">${PIL[x[2]]}</span><span class="tag">${IMP[x[3]]}</span>${x[4]?'<span class="tag warn">Eliminatória</span>':''}</div>
       <h2 class="iv-q">${esc(x[5])}</h2>
-      <div class="iv-opts">${x[6].map((o,k)=>{const n=k+1, on=cur.resp[x[0]]===n;return `<button class="iv-opt n${n} ${on?'on':''}" data-act="iv-pick" data-q="${x[0]}" data-n="${n}" aria-pressed="${on}"><span class="k">${n}</span><span class="t">${esc(o)}</span><span class="l">${LVL[n]}</span></button>`;}).join('')}</div>
+      <div class="iv-opts">${x[6].map((o,k)=>{const n=k+1, on=cur.resp[x[0]]===n;return `<button class="iv-opt n${n} ${on?'on':''}" data-act="iv-pick" data-q="${x[0]}" data-n="${n}" aria-pressed="${on}"><span class="k">${n}</span><span class="t">${esc(o)}</span><span class="l">${LVL[n]}</span></button>`;}).join('')}<button class="iv-opt na ${cur.resp[x[0]]===0?'on':''}" data-act="iv-pick" data-q="${x[0]}" data-n="0"><span class="k">0</span><span class="t">Não se aplica / não sei</span><span class="l">Fora da nota</span></button></div>
       <div class="iv-note"><textarea data-nota="${x[0]}" rows="2" placeholder="O que a pessoa disse que sustenta a resposta (opcional)">${esc(cur.notas[x[0]]||'')}</textarea><label class="evid"><input type="checkbox" data-evid="${x[0]}" ${cur.evid[x[0]]?'checked':''}>Comprovado com evidência</label></div>
       <div class="iv-nav"><button class="btn" data-act="iv-go" data-v="${i-1}" ${i?'':'disabled'}>← Anterior</button><span class="muted iv-hint">Teclas 1 a 4 respondem · setas navegam · Esc sai</span><button class="btn primary" data-act="iv-go" data-v="${i+1}">${cur.resp[x[0]]?'Próxima →':'Pular →'}</button></div>`;
   return `<div class="iv-wrap" role="dialog" aria-label="Modo entrevista">
@@ -1086,7 +1103,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){ ui.iv=null; render(); return; }
   if(/INPUT|TEXTAREA|SELECT/.test(tag)) return;
   const a=AREA[ui.iv.area]; const x=a.q[ui.iv.i];
-  if(x&&/^[1-4]$/.test(e.key)){ const b=document.querySelector(`[data-act="iv-pick"][data-n="${e.key}"]`); b&&b.click(); e.preventDefault(); }
+  if(x&&/^[0-4]$/.test(e.key)){ const b=document.querySelector(`[data-act="iv-pick"][data-n="${e.key}"]`); b&&b.click(); e.preventDefault(); }
   else if(e.key==='ArrowRight'){ ui.iv.i=Math.min(a.q.length,ui.iv.i+1); render(); }
   else if(e.key==='ArrowLeft'){ ui.iv.i=Math.max(0,ui.iv.i-1); render(); }
 });
@@ -1236,10 +1253,10 @@ function renderSide(INS){
 }
 function renderVisao(INS){
   const g=overall(), B=blocosDe(INS);
-  const cnt=L=>{let t=0,a=0;L.forEach(x=>{t+=x.q.length;a+=x.q.filter(q=>cur.resp[q[0]]).length;});return [a,t];};
+  const cnt=L=>{let t=0,a=0;L.forEach(x=>{t+=x.q.length;a+=x.q.filter(q=>cur.resp[q[0]]!=null).length;});return [a,t];};
   const [aa,tt]=cnt(AREAS);
   const grupos=[...new Set(AREAS.map(a=>a.g))];
-  const row=a=>{ const s=SC[a.id]||{}; const n=a.q.filter(q=>cur.resp[q[0]]).length; const dono=member(cur.dono_area[a.id]);
+  const row=a=>{ const s=SC[a.id]||{}; const n=a.q.filter(q=>cur.resp[q[0]]!=null).length; const dono=member(cur.dono_area[a.id]);
     return `<button class="vrow" data-act="area" data-v="${a.id}"><span class="vn">${esc(a.nome)}</span><span class="vb" aria-hidden="true"><span style="width:${Math.round(n/a.q.length*100)}%"></span></span><span class="vc mono">${n}/${a.q.length}</span>${lvChip(s.score!=null?s.level:0)}<span class="vd muted">${dono?esc(dono.nome||''):''}</span></button>`; };
   $('#main').innerHTML=`<section class="panel">
    <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Fase 1 · <b>Visão geral</b></span><h2 style="margin-top:8px">Diagnóstico</h2><label class="field" style="max-width:380px;margin-top:12px"><span class="lbl">Nome do cliente</span><input id="nome-diag" value="${esc(cur.nome)}"></label><p class="lead">Onde a coleta está, o nível de cada área e o que já aparece de incongruência. Clique numa área para abrir as perguntas.</p></div></header>
@@ -1283,7 +1300,7 @@ function renderPerfil(){
 }
 /* coleta: conclui sozinha quando a área fica completa */
 function autoColeta(){
-  if(!cur)return; internas.forEach(t=>{ if(t.diagnostico_id!==cur.id||!t.origem||!t.origem.startsWith('coleta:'))return; const a=AREA[t.origem.slice(7)]; if(!a)return; const ans=a.q.filter(x=>cur.resp[x[0]]).length;
+  if(!cur)return; internas.forEach(t=>{ if(t.diagnostico_id!==cur.id||!t.origem||!t.origem.startsWith('coleta:'))return; const a=AREA[t.origem.slice(7)]; if(!a)return; const ans=a.q.filter(x=>cur.resp[x[0]]!=null).length;
     if(ans===a.q.length&&t.status!=='Concluída'){itStatus(t,'Concluída');}
     else if(ans>0&&ans<a.q.length&&t.status==='A fazer'){t.status='Em andamento';itSave(t);} });
 }
@@ -1430,9 +1447,9 @@ function donutSvg(segs){ const tot=segs.reduce((a,s)=>a+s.v,0)||1, r=70, c=2*Mat
 function pilarMedia(){ const o={}; Object.keys(PIL).forEach(k=>{ const v=AREAS.map(a=>SC[a.id]&&SC[a.id].pil[k]).filter(x=>x!=null); o[k]=v.length?v.reduce((a,b)=>a+b,0)/v.length:null; }); return o; }
 function areaBars(){
   const grupos=[...new Set(AREAS.map(a=>a.g))]; const tx=v=>((v-1)/3*100).toFixed(1)+'%';
-  return `<div class="hbar" role="img" aria-label="Maturidade por área, de 1 a 4, com a meta N3 tracejada">${grupos.map(g=>`<div class="hb-g">${esc(g)}</div>${AREAS.filter(a=>a.g===g).map(a=>{ const s=SC[a.id]||{};
-     return `<button class="hb-row" data-act="goto" data-v="${a.id}" data-tip="${esc(a.nome)}: ${s.score!=null?dec(s.score)+' · N'+s.level+' '+LVL[s.level]:'sem nota'}"><span class="hn">${esc(a.nome)}</span><span class="ht">${s.score!=null?`<i style="width:max(10px,${tx(s.score)});background:${LVC(s.level)}"></i>`:''}<span class="tgt" style="left:${tx(3)}"></span></span><span class="hv">${s.score!=null?dec(s.score)+' · N'+s.level:'<span class="muted">sem nota</span>'}</span></button>`; }).join('')}`).join('')}
-   <div class="hb-ax"><span></span><span class="tk"><span>1</span><span>2</span><span>3 · meta</span><span>4</span></span><span></span></div></div>`;
+  return `<div class="hbar" role="img" aria-label="Maturidade por área, de 1 a 4, com a meta de cada área tracejada">${grupos.map(g=>`<div class="hb-g">${esc(g)}</div>${AREAS.filter(a=>a.g===g).map(a=>{ const s=SC[a.id]||{};
+     return `<button class="hb-row" data-act="goto" data-v="${a.id}" data-tip="${esc(a.nome)}: ${s.score!=null?dec(s.score)+' · N'+s.level+' '+LVL[s.level]:'sem nota'}"><span class="hn">${esc(a.nome)}</span><span class="ht">${s.score!=null?`<i style="width:max(10px,${tx(s.score)});background:${LVC(s.level)}"></i>`:''}<span class="tgt" style="left:${tx(META_T[metaDe(a.id)])}" title="Meta N${metaDe(a.id)}"></span></span><span class="hv">${s.score!=null?dec(s.score)+' · N'+s.level+(faltaMeta(a.id)>0?`<small class="fm">faltam ${dec(faltaMeta(a.id))}</small>`:'<small class="fm ok">meta</small>'):'<span class="muted">sem nota</span>'}</span></button>`; }).join('')}`).join('')}
+   <div class="hb-ax"><span></span><span class="tk"><span>1</span><span>2</span><span>3</span><span>4</span></span><span></span></div></div>`;
 }
 function pressaoArea(INS){ const m={}; AREAS.forEach(a=>m[a.id]={d:0,i:0,n:0});
   cur.dores.forEach(d=>{ if(m[d.area]){ m[d.area].d+=dorScore(d); m[d.area].n++; } });
@@ -1564,7 +1581,7 @@ function renderInner(){
 /* tarefas de coleta acompanham o preenchimento */
 function autoTasks(){
   autoColeta(); let ch=false;
-  cur.acoes.forEach(t=>{ if(!t.origem||!t.origem.startsWith('coleta:'))return; const a=AREA[t.origem.slice(7)]; if(!a)return; const ans=a.q.filter(x=>cur.resp[x[0]]).length;
+  cur.acoes.forEach(t=>{ if(!t.origem||!t.origem.startsWith('coleta:'))return; const a=AREA[t.origem.slice(7)]; if(!a)return; const ans=a.q.filter(x=>cur.resp[x[0]]!=null).length;
     if(ans===a.q.length&&t.status!=='Concluída'){t.status='Concluída';ch=true;}
     else if(ans>0&&ans<a.q.length&&t.status==='A fazer'){t.status='Em andamento';ch=true;} });
   if(ch)mark('acoes');
@@ -1674,7 +1691,7 @@ async function exportPptx(){
   toast('Apresentação baixada');
 }
 /* ---------- Relatório completo (página para PDF) ---------- */
-function respostaTxt(x){ const n=cur.resp[x[0]]; return n?`N${n} · ${x[6][n-1]}`:'Sem resposta'; }
+function respostaTxt(x){ const n=cur.resp[x[0]]; return n===0?'Não se aplica / não sei':n?`N${n} · ${x[6][n-1]}`:'Sem resposta'; }
 function renderRelatorio(INS){
   const ov=overall(), B=blocosDe(INS), t=trelloStats(), leit=leituraAuto(INS), interno=me&&me.papel!=='cliente';
   const areaSec=a=>{ const s=SC[a.id]; return `<section class="rp-area"><div class="rp-ah"><h3>${esc(a.nome)}</h3>${lvChip(s.score!=null?s.level:0)}<b class="num">${s.score!=null?dec(s.score):'—'}</b></div>
@@ -1761,7 +1778,7 @@ async function loadDiag(id){
   const res=await Promise.all([sb.from('diagnosticos').select('*').eq('id',id).single(),q('respostas'),q('campos'),q('responsaveis_area'),q('fofa_itens').order('ordem').order('created_at'),...Object.values(ARR_DB).map(m=>q(m.t).order('created_at'))]);
   const [d,resp,campos,resA,fofa,...arrs]=res.map(ok);
   const o=blank(d.nome); o.id=id; o.atualizadoEm=d.updated_at;
-  resp.forEach(r=>{ if(r.nivel)o.resp[r.pergunta_id]=r.nivel; if(r.nota)o.notas[r.pergunta_id]=r.nota; if(r.evidenciada)o.evid[r.pergunta_id]=true; });
+  resp.forEach(r=>{ if(r.nivel!=null)o.resp[r.pergunta_id]=r.nivel; if(r.nota)o.notas[r.pergunta_id]=r.nota; if(r.evidenciada)o.evid[r.pergunta_id]=true; });
   campos.forEach(r=>{ if(r.valor!=null&&r.valor!=='')o.campos[r.chave]=r.valor; });
   resA.forEach(r=>{ o.dono_area[r.area]=r.user_id; });
   fofa.forEach(r=>{ o.fofa[r.chave]=o.fofa[r.chave]||{}; (o.fofa[r.chave][r.quadrante]=o.fofa[r.chave][r.quadrante]||[]).push(r.texto); });
@@ -1781,7 +1798,7 @@ async function flush(){
     // respostas: nível, observação e evidência por pergunta
     const qids=new Set([...Object.keys(now.resp),...Object.keys(now.notas),...Object.keys(now.evid),...Object.keys(was.resp),...Object.keys(was.notas),...Object.keys(was.evid)]);
     const rUp=[],rDel=[];
-    qids.forEach(q=>{ const a=[now.resp[q]||null,now.notas[q]||null,!!now.evid[q]], b=[was.resp[q]||null,was.notas[q]||null,!!was.evid[q]]; if(JSON.stringify(a)===JSON.stringify(b))return; if(!a[0]&&!a[1]&&!a[2])rDel.push(q); else rUp.push({diagnostico_id:D,pergunta_id:q,nivel:a[0],nota:a[1],evidenciada:a[2],updated_at:ts}); });
+    qids.forEach(q=>{ const a=[now.resp[q]??null,now.notas[q]||null,!!now.evid[q]], b=[was.resp[q]??null,was.notas[q]||null,!!was.evid[q]]; if(JSON.stringify(a)===JSON.stringify(b))return; if(a[0]==null&&!a[1]&&!a[2])rDel.push(q); else rUp.push({diagnostico_id:D,pergunta_id:q,nivel:a[0],nota:a[1],evidenciada:a[2],updated_at:ts}); });
     if(rUp.length) ops.push(sb.from('respostas').upsert(rUp));
     if(rDel.length) ops.push(sb.from('respostas').delete().eq('diagnostico_id',D).in('pergunta_id',rDel));
     // campos abertos
@@ -1969,10 +1986,10 @@ document.addEventListener('click',e=>{
   if(!cur) return;
   if(act==='stage'){ ui.view='fases'; ui.stage=d.v; ui.copy=null; saveUi(); render(); window.scrollTo({top:0}); }
   else if(act==='area'||act==='goto'){ ui.view='fases'; if(AREA[d.v]||d.v==='direcionamentos'){ui.stage='diagnostico';ui.area=d.v;ui.dstep=stepOf(d.v);} else if(STG[d.v]) ui.stage=d.v; saveUi(); render(); window.scrollTo({top:0}); }
-  else if(act==='iv-start'){ const a=AREA[d.v]; const first=a.q.findIndex(q=>!cur.resp[q[0]]); ui.iv={area:d.v,i:first<0?0:first}; render(); }
+  else if(act==='iv-start'){ const a=AREA[d.v]; const first=a.q.findIndex(q=>cur.resp[q[0]]==null); ui.iv={area:d.v,i:first<0?0:first}; render(); }
   else if(act==='iv-exit'){ ui.area=ui.iv?ui.iv.area:ui.area; ui.iv=null; render(); }
   else if(act==='iv-go'){ if(ui.iv){ ui.iv.i=Math.max(0,+d.v); render(); } }
-  else if(act==='iv-area'){ const a=AREA[d.v]; const first=a.q.findIndex(q=>!cur.resp[q[0]]); ui.iv={area:d.v,i:first<0?0:first}; ui.area=d.v; ui.dstep=stepOf(d.v); saveUi(); render(); }
+  else if(act==='iv-area'){ const a=AREA[d.v]; const first=a.q.findIndex(q=>cur.resp[q[0]]==null); ui.iv={area:d.v,i:first<0?0:first}; ui.area=d.v; ui.dstep=stepOf(d.v); saveUi(); render(); }
   else if(act==='iv-pick'){ const q=d.q,n=+d.n; const was=cur.resp[q]; if(was===n)delete cur.resp[q]; else cur.resp[q]=n; autoTasks(); touch(true); if(was!==n&&ui.iv){ const a=AREA[ui.iv.area]; clearTimeout(ui.ivT); ui.ivT=setTimeout(()=>{ if(!ui.iv)return; ui.iv.i=Math.min(a.q.length,ui.iv.i+1); render(); },reduced()?0:280); } }
   else if(act==='ini-gerar'){ computeAll(); const B=blocosDe(runEngine()); const have=new Set(cur.iniciativas.map(x=>x.titulo)); let n=0;
     B.forEach((b,bi)=>HZ.forEach(([k])=>(b.h[k]||[]).forEach(t=>{ if(have.has(t))return; const hz={c:'Curto',m:'Médio',l:'Longo'}[k]; cur.iniciativas.push({id:uid(),titulo:t,bloco:b.id,area:b.areas[0]||'',horizonte:hz,impacto:String(Math.max(2,5-Math.floor(bi/2))),esforco:String({c:2,m:3,l:4}[k]),risco:'2',dependencias:'',alinhamento:b.t,recomendacao:k==='c'?'Fazer agora':'Próximo',motivo:'',indicador:b.kpi,ordem:0}); n++; })));
@@ -1988,11 +2005,11 @@ document.addEventListener('click',e=>{
   else if(act==='jornada-up'){ const L=jornadaIds(); const i=L.indexOf(d.v); if(i>0){ [L[i-1],L[i]]=[L[i],L[i-1]]; cur.campos['jornada.ordem']=L.join('|'); touch(true);} }
   else if(act==='jornada-tarefas'){ let n=0; jornadaIds().forEach(id=>{ if(internas.some(t=>t.diagnostico_id===cur.id&&t.origem==='coleta:'+id))return; const quem=cur.campos['jornada.'+id+'.quem']; itNew({titulo:`Entrevistar ${quem||'responsável'} · ${AREA[id].nome}`,diagnostico_id:cur.id,area:id,origem:'coleta:'+id,prazo:cur.campos['jornada.'+id+'.data']||'',responsavel:cur.dono_area[id]||''}); n++; }); render(); toast(n?`${n} entrevistas criadas em Tarefas da equipe`:'As entrevistas já estão em Tarefas da equipe'); }
   else if(act==='opt'){
-    const q=d.q, n=+d.n, wasEmpty=!cur.resp[q];
+    const q=d.q, n=+d.n, wasEmpty=cur.resp[q]==null;
     if(cur.resp[q]===n)delete cur.resp[q]; else cur.resp[q]=n;
     autoTasks(); touch(true);
-    if(wasEmpty&&cur.resp[q]){ const box=STG[QAREA[q]]&&!AREA[QAREA[q]]?STG[QAREA[q]]:AREA[QAREA[q]]; const qs=box.q; const i=qs.findIndex(x=>x[0]===q);
-      const nx=qs.slice(i+1).find(x=>!cur.resp[x[0]]); if(nx){ const el=document.getElementById('q-'+nx[0]); if(el){ const r=el.getBoundingClientRect(); if(r.top>window.innerHeight*0.7||r.top<0) el.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'}); } } }
+    if(wasEmpty&&cur.resp[q]!=null){ const box=STG[QAREA[q]]&&!AREA[QAREA[q]]?STG[QAREA[q]]:AREA[QAREA[q]]; const qs=box.q; const i=qs.findIndex(x=>x[0]===q);
+      const nx=qs.slice(i+1).find(x=>cur.resp[x[0]]==null); if(nx){ const el=document.getElementById('q-'+nx[0]); if(el){ const r=el.getBoundingClientRect(); if(r.top>window.innerHeight*0.7||r.top<0) el.scrollIntoView({block:'center',behavior:reduced()?'auto':'smooth'}); } } }
   }
   else if(act==='note'){ ui.notesOpen[d.q]=true; render(); const t=document.querySelector(`[data-nota="${d.q}"]`); t&&t.focus(); }
   else if(act==='ent-add'){ cur.entrevistas.push({id:uid(),area:d.area,nome:'',cargo:'',depto:nameOf(d.area),data:today()}); touch(true); const els=document.querySelectorAll('[data-ent][data-f="nome"]'); els.length&&els[els.length-1].focus(); }
@@ -2008,7 +2025,7 @@ document.addEventListener('click',e=>{
   else if(act==='acao-add'){ newTask({txt:d.txt,area:d.area,origem:d.src||''}); touch(true); toast('Tarefa adicionada ao kanban'); }
   else if(act==='plan-ins'){ computeAll(); const r=runEngine().find(i=>i.id===d.id&&i.t===d.t); if(r){ const n=genFromInsight(r); touch(true); toast(n?`${n} tarefas criadas`:'Essas tarefas já estão no kanban'); } }
   else if(act==='gen-ins'){ computeAll(); let n=0; runEngine().filter(i=>i.sev!=='media').forEach(i=>n+=genFromInsight(i)); touch(true); toast(n?`${n} tarefas criadas a partir das incongruências`:'Nenhuma tarefa nova: as incongruências graves já têm tarefas'); }
-  else if(act==='gen-coleta'){ let n=0; AREAS.forEach(a=>{ const done=a.q.every(x=>cur.resp[x[0]]); if(!done&&!internas.some(t=>t.diagnostico_id===cur.id&&t.origem==='coleta:'+a.id)){ itNew({titulo:`Coletar dados: ${a.nome} (entrevista 1 a 1)`,diagnostico_id:cur.id,area:a.id,origem:'coleta:'+a.id,responsavel:cur.dono_area[a.id]||''}); n++; } }); autoColeta(); render(); toast(n?`${n} tarefas de coleta criadas para a equipe`:'Nenhuma tarefa nova: as áreas já estão completas ou têm tarefa de coleta'); }
+  else if(act==='gen-coleta'){ let n=0; AREAS.forEach(a=>{ const done=a.q.every(x=>cur.resp[x[0]]!=null); if(!done&&!internas.some(t=>t.diagnostico_id===cur.id&&t.origem==='coleta:'+a.id)){ itNew({titulo:`Coletar dados: ${a.nome} (entrevista 1 a 1)`,diagnostico_id:cur.id,area:a.id,origem:'coleta:'+a.id,responsavel:cur.dono_area[a.id]||''}); n++; } }); autoColeta(); render(); toast(n?`${n} tarefas de coleta criadas para a equipe`:'Nenhuma tarefa nova: as áreas já estão completas ou têm tarefa de coleta'); }
   else if(act==='task-new'){ const t=newTask({status:d.col||'A fazer',area:d.area||'',txt:d.txt||''}); ui.openTask=t.id; if(ui.view!=='fases'||ui.stage!=='execucao'){ ui.view='fases'; ui.stage='execucao'; saveUi(); } touch(true); const ta=document.querySelector(`.kedit textarea[data-id="${t.id}"]`); if(ta){ ta.focus(); ta.scrollIntoView({block:'center'}); } }
   else if(act==='task-open'){ ui.openTask=d.id; render(); const ta=document.querySelector(`.kedit textarea[data-id="${d.id}"]`); ta&&ta.focus(); }
   else if(act==='task-close'){ ui.openTask=null; render(); }

@@ -710,3 +710,30 @@ input:focus,select:focus,textarea:focus{border-color:var(--brand-2)!important;bo
 @media (min-width:1100px){ .paf{grid-template-columns:1.5fr 1fr 1fr 1.3fr .8fr .8fr .7fr} }
 .paf label{justify-content:flex-end}
 .paj .por{color:var(--muted)} .paj .por b{color:var(--fg)}
+
+/* ================= Não sei, meta da área e confiança ================= */
+.opt.na{border-style:dashed;color:var(--muted)}
+.opt.na.on{background:var(--surface-2);border-color:var(--fg);color:var(--fg);border-style:solid}
+.iv-opt.na{border-style:dashed}
+.iv-opt.na.on{background:var(--surface-2);border-color:var(--fg)}
+.metaline{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-top:10px;padding-top:12px;border-top:1px solid var(--line);font-size:13px}
+.metaline label{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--muted)}
+.metaline select{height:32px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface-2);color:var(--fg);font:inherit;font-size:13px;padding:0 8px}
+.mt-gap{font-weight:600}.mt-gap.falta{color:var(--n2i)}.mt-gap.ok{color:var(--n4i)}
+.mt-ev,.mt-ns{color:var(--muted)}.mt-ns{color:var(--n1i)}
+.hb-row .hv small.fm{display:block;font-size:10.5px;color:var(--n2i);font-weight:600}
+.hb-row .hv small.fm.ok{color:var(--n4i)}
+.hb-row{grid-template-columns:minmax(120px,190px) minmax(0,1fr) 96px}
+.cfw{display:grid;grid-template-columns:200px minmax(0,1fr);gap:20px;align-items:center}
+.cfr{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.cfr b{font-size:14px}.cfr small{font-size:12px;color:var(--muted)}
+.cfl{display:flex;flex-direction:column;gap:8px}
+.cfs{display:flex;align-items:center;gap:8px;font-size:14px}
+.cfs .sw{width:12px;height:12px;border-radius:3px;flex:none}
+.sw.ev{background:var(--n4)}.sw.dc{background:var(--line-2)}.sw.ns{background:var(--n1)}
+.cfd summary{cursor:pointer;font-weight:600;font-size:13.5px;margin-top:4px}
+.cfa{display:flex;gap:10px;align-items:flex-start;margin-top:8px}.cfa ul{margin:2px 0;padding-left:18px;font-size:13px;line-height:1.5}
+@media (max-width:760px){.cfw{grid-template-columns:1fr}}
+.opt.na{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:flex-start;gap:12px;min-height:0;padding:8px 12px}
+.opt.na .on-n{order:2;margin:0}
+.cfr.ring{align-self:center}
