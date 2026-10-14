@@ -15,10 +15,11 @@
   <button class="link" type="button" id="sair">Sair da conta</button>
 </div></div>
 <script type="module">
-import { exigirModulo, sair, LOGO } from "/admin/assets/auth.js";
+import { exigirModulo, sair, LOGO, MODULOS } from "/admin/assets/auth.js";
 await exigirModulo("dre");
 document.getElementById("logo").insertAdjacentHTML("afterbegin", LOGO);
 document.getElementById("sair").addEventListener("click", sair);
-document.getElementById("app").hidden = false;
+// por enquanto o módulo roda dentro da Central
+location.replace(MODULOS["dre"].url);
 </script>
 </body></html>
