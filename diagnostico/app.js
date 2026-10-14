@@ -327,15 +327,16 @@ function statusHtml(){
   return `<span class="status"><i></i>Salvo</span>`;
 }
 function renderBar(){
-  const list=Object.values(all).sort((a,b)=>(b.updated_at||'').localeCompare(a.updated_at||''));
+  let list=Object.values(all).sort((a,b)=>(b.updated_at||'').localeCompare(a.updated_at||''));
+  if(FOCO&&list.some(focoTem)) list=list.filter(d=>focoTem(d)||(cur&&d.id===cur.id));
   const who='';
   $('#diagbar').innerHTML = ui.novo ? `
     <form id="f-novo" class="diag"><label class="lbl" for="novo-nome">Cliente</label><input id="novo-nome" placeholder="Nome do grupo ou instituição" required style="width:min(260px,100%)">
     <button class="btn primary" type="submit">Criar diagnóstico</button><button class="btn ghost" type="button" data-act="novo-cancel">Cancelar</button></form>${who}` : `
     ${cur?`<label class="lbl" for="sel-diag">Cliente</label>
     <select id="sel-diag">${list.map(d=>`<option value="${esc(d.id)}" ${d.id===cur.id?'selected':''}>${esc(d.id===cur.id?cur.nome:d.nome)}</option>`).join('')}</select>`:''}
-    ${cur?`<button class="btn" data-act="dre-go">Importar DRE</button>`:''}
-    ${me&&me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo</button>`:''}
+    ${cur&&!FOCO?`<button class="btn" data-act="dre-go">Importar DRE</button>`:''}
+    ${me&&me.papel!=='cliente'&&!FOCO?`<button class="btn" data-act="novo">+ Novo</button>`:''}
     ${cur?`<span id="status">${statusHtml()}</span>`:''}${who}`;
 }
 function renderStatus(){const s=$('#status'); if(s)s.innerHTML=statusHtml();}
@@ -1184,13 +1185,20 @@ function sideItem(k,label,act,v,meta,hot){
   return `<button class="sn ${on?'on':''}" data-act="${act}" data-v="${v}" ${on?'aria-current="page"':''}>${ico(k)}<span class="lb">${label}</span>${meta!=null&&meta!==''?`<span class="mt ${hot?'hot':''}">${meta}</span>`:''}</button>`;
 }
 const MODS_TODOS=[['diagnostico','Diagnóstico de maturidade'],['dre','DRE e orçamento'],['lancamento','Lançamento de curso']];
-function modsAtivos(){ const m=cur&&all[cur.id]&&Array.isArray(all[cur.id].modulos)?all[cur.id].modulos:null; return m&&m.length?m:['diagnostico','dre','lancamento']; }
+// Modo foco: /diagnostico/?modulo=lancamento ou ?modulo=dre (vem do painel do /admin) mostra só aquele módulo.
+const FOCO=(()=>{ const m=new URLSearchParams(location.search).get('modulo'); return m==='dre'||m==='lancamento'?m:null; })();
+const FOCO_VIEW={dre:'dre',lancamento:'lancamento'};
+let focoIni=false;
+const focoTem=d=>!Array.isArray(d.modulos)||!d.modulos.length||d.modulos.includes(FOCO);
+function modsCliente(){ const m=cur&&all[cur.id]&&Array.isArray(all[cur.id].modulos)?all[cur.id].modulos:null; return m&&m.length?m:['diagnostico','dre','lancamento']; }
+function modsAtivos(){ const b=modsCliente(); return FOCO&&b.includes(FOCO)?[FOCO]:b; }
 const temMod=k=>modsAtivos().includes(k);
 async function setMods(lista){ if(!cur)return; const r=await sb.from('diagnosticos').update({modulos:lista}).eq('id',cur.id); if(r.error){ toast('Não foi possível mudar os módulos: '+r.error.message); return; } all[cur.id]=Object.assign(all[cur.id]||{},{modulos:lista}); render(); toast('Módulos do cliente atualizados'); }
 function renderSide(INS){
   const adm=me&&me.papel==='admin', pc=x=>Math.round(x*100)+'%';
-  let h=`<div class="sb-brand">${LOGO_SVG}<span class="sb-word"><b>LORSO</b><i>DIGITAL<em>.</em></i></span></div><div class="sb-prod">Central de Diagnóstico</div>`;
-  if(podeInternas()){ const mn=minhasAbertas(), lt=internas.filter(t=>itDono(t,me.id)&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas','Tarefas da equipe','view','internas',mn||'',lt>0)}</nav>`; }
+  let h=`<div class="sb-brand">${LOGO_SVG}<span class="sb-word"><b>LORSO</b><i>DIGITAL<em>.</em></i></span></div><div class="sb-prod">${FOCO?esc(MODS_TODOS.find(x=>x[0]===FOCO)[1]):'Central de Diagnóstico'}</div>`;
+  if(FOCO) h+=`<nav class="sb-nav sb-top" aria-label="Área do Cliente"><a class="sn" href="/admin/painel.html"><span class="lb">‹ Trocar de módulo</span></a></nav>`;
+  if(podeInternas()&&!FOCO){ const mn=minhasAbertas(), lt=internas.filter(t=>itDono(t,me.id)&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas','Tarefas da equipe','view','internas',mn||'',lt>0)}</nav>`; }
   if(cur){
     const x=crossTasks(INS), hot=x.late.length+x.semTarefa.length, g=overall();
     h+=`<nav class="sb-nav" aria-label="Etapas">
@@ -1211,7 +1219,7 @@ function renderSide(INS){
      ${podeInternas()&&typeof pdiPessoas==='function'?sideItem('pdi','PDI Marketing','view','pdi',pdiPessoas().length||''):''}
      <span class="sb-g">Apoio</span>
      ${sideItem('como','Método LORSO','view','como')}`:'<span class="sb-g">Apoio</span>'}
-     ${sideItem('equipe','Equipe','view','equipe',cur.equipe.length||'')}
+     ${FOCO?'':sideItem('equipe','Equipe','view','equipe',cur.equipe.length||'')}
     </nav>`;
   } else {
     h+=`<nav class="sb-nav" aria-label="Menu">${sideItem('fases','Diagnósticos','view','fases')}${sideItem('como','Método LORSO','view','como')}${adm?sideItem('equipe','Equipe','view','equipe'):''}</nav>`;
@@ -1269,7 +1277,7 @@ function renderPerfil(){
      <form id="f-senha" class="fields"><label class="field"><span>Nova senha</span><input name="s1" type="password" minlength="8" autocomplete="new-password" required></label><label class="field"><span>Repita a nova senha</span><input name="s2" type="password" minlength="8" autocomplete="new-password" required></label><div><button class="btn primary" type="submit">Salvar nova senha</button></div></form></section>
     ${adm?`<section class="block"><div class="block-h"><h3>Administração</h3><p>Só administradores veem esta parte.</p></div>
      <div class="kpis k3"><div class="kpi"><b>${profiles.length}</b><span>${profiles.length===1?'pessoa com acesso':'pessoas com acesso'}</span></div><div class="kpi"><b>${nConv}</b><span>${nConv===1?'convite aguardando':'convites aguardando'}</span></div><div class="kpi"><b>${Object.keys(all).length}</b><span>${Object.keys(all).length===1?'diagnóstico':'diagnósticos'}</span></div></div>
-     ${cur?`<div class="prow" style="border-top:0;padding-top:0"><span><b>Módulos de ${esc(cur.nome)}</b><small>O que este cliente vê. Quem entra como cliente só enxerga os módulos ligados.</small></span><div class="seg" role="group">${MODS_TODOS.map(([k,l])=>`<button class="${temMod(k)?'on':''}" data-act="mod-toggle" data-v="${k}" aria-pressed="${temMod(k)}">${l}</button>`).join('')}</div></div>`:''}
+     ${cur?`<div class="prow" style="border-top:0;padding-top:0"><span><b>Módulos de ${esc(cur.nome)}</b><small>O que este cliente vê. Quem entra como cliente só enxerga os módulos ligados.</small></span><div class="seg" role="group">${MODS_TODOS.map(([k,l])=>`<button class="${modsCliente().includes(k)?'on':''}" data-act="mod-toggle" data-v="${k}" aria-pressed="${modsCliente().includes(k)}">${l}</button>`).join('')}</div></div>`:''}
      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="view" data-v="equipe">Equipe e convites</button><button class="btn" data-act="view" data-v="como">Método LORSO (proposta)</button>${FERRAMENTAS.map(([k,l,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">${l} (versão avulsa) ↗</a>`).join('')}${me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo diagnóstico</button>`:''}</div></section>`:''}
    </div></section>`;
 }
@@ -1513,6 +1521,7 @@ function focusKey(el){
 }
 let soonT=null; function soon(){ clearTimeout(soonT); soonT=setTimeout(render,0); }
 function render(){
+  if(FOCO&&cur&&!focoIni&&temMod(FOCO)){ focoIni=true; ui.view=FOCO_VIEW[FOCO]; }
   const ae=document.activeElement, fk=focusKey(ae); let selS=null,selE=null; try{selS=ae.selectionStart;selE=ae.selectionEnd;}catch(e){}
   const DRAFT='form[data-dorform] input, form[data-dorform] select, form[data-fofa] input, #f-convite input, #f-convite select, #novo-nome, #novo-nome2, #f-fonte-nb input, #f-fonte-nb textarea, #f-fonte-site input';
   const drafts=[...document.querySelectorAll(DRAFT)].map(el=>[focusKey(el),el.value]).filter(x=>x[0]&&x[1]);
@@ -1897,7 +1906,8 @@ async function start(session){
     const p=ok(await sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle());
     if(!p||!p.ativo){ started=false; await sb.auth.signOut(); authMode='entrar'; authMsg={t:'Seu acesso não está ativo. Fale com a LORSO Digital.'}; showAuth(); return; }
     me=p; await Promise.all([loadList(),loadTeam()]); await loadInternas();
-    let id=lsGet('cd.last'); if(!all[id]) id=Object.keys(all)[0];
+    const ok1=x=>all[x]&&(!FOCO||focoTem(all[x]));
+    let id=lsGet('cd.last'); if(!ok1(id)) id=Object.keys(all).find(ok1)||Object.keys(all)[0];
     if(id) await openDiag(id); else { cur=null; render(); }
   }catch(e){ console.error(e); $('#main').innerHTML='<p class="loading">Não foi possível carregar. Recarregue a página.</p>'; started=false; }
 }
@@ -1945,7 +1955,7 @@ document.addEventListener('click',e=>{
     touch(true); toast(n?`${n} cursos adicionados`:'Esses cursos já estão na tabela'); return; }
   if(act==='base-md'){ dlFile(`base-${slugN(cur.nome)}.md`,baseMarkdown(),'text/markdown;charset=utf-8'); return; }
   if(act==='base-json'){ dlFile(`base-${slugN(cur.nome)}.json`,baseJson(),'application/json'); return; }
-  if(act==='mod-toggle'){ const L=modsAtivos(); const n=L.includes(d.v)?L.filter(x=>x!==d.v):[...L,d.v]; if(!n.length){ toast('O cliente precisa de pelo menos um módulo'); return; } setMods(MODS_TODOS.map(x=>x[0]).filter(k=>n.includes(k))); return; }
+  if(act==='mod-toggle'){ const L=modsCliente(); const n=L.includes(d.v)?L.filter(x=>x!==d.v):[...L,d.v]; if(!n.length){ toast('O cliente precisa de pelo menos um módulo'); return; } setMods(MODS_TODOS.map(x=>x[0]).filter(k=>n.includes(k))); return; }
   if(act==='view'){ go(d.v); return; }
   if(act==='print-rel'){ setTimeout(()=>window.print(),50); return; }
   if(act==='print-como'){ document.body.classList.add('printing'); setTimeout(()=>{ window.print(); document.body.classList.remove('printing'); },50); return; }

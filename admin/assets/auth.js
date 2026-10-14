@@ -14,11 +14,11 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 
 // chave → nome e endereço de cada módulo
 export const MODULOS = {
-  // Os três abrem na Central em /diagnostico/ (mesma sessão Supabase), que mostra só os módulos
-  // liberados em diagnosticos.modulos. Quando Lançamentos e DRE tiverem app próprio, troque a url.
+  // Os três abrem na Central em /diagnostico/ (mesma sessão Supabase). Com ?modulo= ela entra em modo foco
+  // e mostra só aquele módulo. Quando Lançamentos e DRE tiverem app próprio, troque a url.
   diagnostico: { nome: "Diagnóstico", url: "/diagnostico/", texto: "Diagnóstico completo da operação, com Lançamentos e DRE." },
-  lancamento: { nome: "Lançamentos", url: "/diagnostico/", texto: "Planejamento e acompanhamento dos seus lançamentos." },
-  dre: { nome: "DRE", url: "/diagnostico/", texto: "Demonstrativo de resultado mês a mês." },
+  lancamento: { nome: "Lançamentos", url: "/diagnostico/?modulo=lancamento", texto: "Planejamento e acompanhamento dos seus lançamentos." },
+  dre: { nome: "DRE", url: "/diagnostico/?modulo=dre", texto: "Demonstrativo de resultado mês a mês." },
 };
 
 // Chama uma Edge Function pública (POST JSON). Devolve {ok, mensagem} ou lança Error com a mensagem do servidor.

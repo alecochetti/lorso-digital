@@ -52,9 +52,9 @@ try {
 const equipe = ehEquipe(perfil);
 const liberados = equipe ? Object.keys(MODULOS) : Object.keys(MODULOS).filter((k) => diags.some((d) => (d.modulos || []).includes(k)));
 
-// abre direto quando há um destino claro
+// cliente abre direto quando há um destino claro; admin e equipe sempre escolhem no painel
 const app = new URLSearchParams(location.search).get("app");
-if (app && liberados.includes(app)) { location.replace(MODULOS[app].url); }
+if (!equipe && app && liberados.includes(app)) { location.replace(MODULOS[app].url); }
 else if (!equipe && liberados.length === 1) { location.replace(MODULOS[liberados[0]].url); }
 else {
   const primeiroNome = (perfil?.nome || usuario.user_metadata?.nome || "").split(" ")[0];
@@ -63,7 +63,7 @@ else {
   if (liberados.length) {
     $("lead").textContent = app && MODULOS[app] && !liberados.includes(app)
       ? `Você ainda não tem acesso ao ${MODULOS[app].nome}. Estes são os módulos liberados para você:`
-      : "Escolha o módulo que deseja abrir.";
+      : equipe ? "Escolha o módulo. Lançamentos e DRE abrem só com aquele módulo; Diagnóstico abre a Central completa." : "Escolha o módulo que deseja abrir.";
     $("cards").innerHTML = liberados.map((k) => `<a class="card" href="${MODULOS[k].url}">
       <span class="n">${esc(MODULOS[k].nome)}</span><span class="c">${esc(MODULOS[k].texto)}</span><span class="go">Abrir ›</span></a>`).join("");
   } else {
