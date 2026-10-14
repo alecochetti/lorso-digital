@@ -1236,10 +1236,11 @@ function renderSide(INS){
      ${podeInternas()&&typeof pdiPessoas==='function'?sideItem('pdi','PDI Marketing','view','pdi',pdiPessoas().length||''):''}
      <span class="sb-g">Apoio</span>
      ${sideItem('como','Método LORSO','view','como')}`:'<span class="sb-g">Apoio</span>'}
+     ${typeof renderGuia==='function'?sideItem('guia','Guia de preenchimento','view','guia'):''}
      ${FOCO?'':sideItem('equipe','Equipe','view','equipe',cur.equipe.length||'')}
     </nav>`;
   } else {
-    h+=`<nav class="sb-nav" aria-label="Menu">${sideItem('fases','Diagnósticos','view','fases')}${sideItem('como','Método LORSO','view','como')}${adm?sideItem('equipe','Equipe','view','equipe'):''}</nav>`;
+    h+=`<nav class="sb-nav" aria-label="Menu">${sideItem('fases','Diagnósticos','view','fases')}${sideItem('como','Método LORSO','view','como')}${typeof renderGuia==='function'?sideItem('guia','Guia de preenchimento','view','guia'):''}${adm?sideItem('equipe','Equipe','view','equipe'):''}</nav>`;
   }
   const nm=me?(me.nome||me.email):'';
   h+=`<div class="sb-foot">
@@ -1258,7 +1259,7 @@ function renderVisao(INS){
   const grupos=[...new Set(AREAS.map(a=>a.g))];
   const row=a=>{ const s=SC[a.id]||{}; const n=a.q.filter(q=>cur.resp[q[0]]!=null).length; const dono=member(cur.dono_area[a.id]);
     return `<button class="vrow" data-act="area" data-v="${a.id}"><span class="vn">${esc(a.nome)}</span><span class="vb" aria-hidden="true"><span style="width:${Math.round(n/a.q.length*100)}%"></span></span><span class="vc mono">${n}/${a.q.length}</span>${lvChip(s.score!=null?s.level:0)}<span class="vd muted">${dono?esc(dono.nome||''):''}</span></button>`; };
-  $('#main').innerHTML=`<section class="panel">
+  $('#main').innerHTML=`${typeof guiaBanner==='function'?guiaBanner():''}<section class="panel">
    <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Fase 1 · <b>Visão geral</b></span><h2 style="margin-top:8px">Diagnóstico</h2><label class="field" style="max-width:380px;margin-top:12px"><span class="lbl">Nome do cliente</span><input id="nome-diag" value="${esc(cur.nome)}"></label><p class="lead">Onde a coleta está, o nível de cada área e o que já aparece de incongruência. Clique numa área para abrir as perguntas.</p></div></header>
    <div class="kpis">
     <div class="kpi"><b>${g.level?'N'+g.level:'—'}</b><span>${g.level?esc(LVL[g.level]):'nível geral ainda sem nota'}${g.score!=null?' · '+dec(g.score,2):''}</span></div>
@@ -1553,6 +1554,7 @@ function renderInner(){
     if(ui.view==='internas'&&podeInternas()){ renderInternas(); return; }
     if(ui.view==='equipe'&&me&&me.papel==='admin'){ SC={}; renderEquipe(); return; }
     if(ui.view==='como'){ $('#main').innerHTML=comoHtml(); return; }
+    if(ui.view==='guia'&&typeof renderGuia==='function'){ renderGuia(); return; }
     $('#main').innerHTML=`<section class="auth" style="min-height:auto"><div class="auth-box"><h2>Nenhum diagnóstico ainda</h2><p>${me&&me.papel!=='cliente'?'Crie o primeiro com o nome do cliente. Depois convide a equipe e distribua as áreas.':'Nenhum diagnóstico foi liberado para você ainda. Fale com a LORSO Digital.'}</p>${me&&me.papel!=='cliente'?`<form id="f-novo2"><label>Cliente<input id="novo-nome2" required placeholder="Nome da instituição"></label><button class="btn primary" type="submit">Criar diagnóstico</button></form>`:''}</div></section>`;
     return; }
   if(ui.view==='tarefas'){ ui.view='fases'; ui.stage='execucao'; }
@@ -1573,6 +1575,7 @@ function renderInner(){
   else if(ui.view==='internas'&&podeInternas()) renderInternas();
   else if(ui.view==='pdi'&&podeInternas()&&typeof renderPdi==='function') renderPdi(INS);
   else if(ui.view==='plano'&&typeof renderPlano==='function') renderPlano(INS);
+  else if(ui.view==='guia'&&typeof renderGuia==='function') renderGuia();
   else if(ui.view==='perfil') renderPerfil();
   else { ({diagnostico:renderDiagnostico,estrategia:renderEstrategia,execucao:renderExecucao,otimizacao:renderOtimizacao,resultados:renderResultados})[ui.stage](INS); }
   renderIV();
@@ -1955,6 +1958,7 @@ document.addEventListener('click',e=>{
   if(act.startsWith('eq-')&&eqClick(act,d)) return;
   if(act.startsWith('pdi-')&&typeof pdiClick==='function'&&pdiClick(act,d)) return;
   if(act.startsWith('pa-')&&typeof paClick==='function'&&cur&&paClick(act,d)) return;
+  if(act.startsWith('guia-')&&typeof guiaClick==='function'&&guiaClick(act,d)) return;
   if(act==='sb-open'){ ui.sbOpen=true; document.body.classList.add('sb-on'); const f=document.querySelector('#sb .sn.on')||document.querySelector('#sb .sn'); f&&f.focus(); return; }
   if(act==='sb-close'){ ui.sbOpen=false; document.body.classList.remove('sb-on'); return; }
   if(act==='tema'){ setPref('theme',temaAtual()==='light'?'dark':'light'); render(); return; }

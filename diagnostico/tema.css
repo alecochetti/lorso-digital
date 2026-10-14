@@ -737,3 +737,38 @@ input:focus,select:focus,textarea:focus{border-color:var(--brand-2)!important;bo
 .opt.na{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:flex-start;gap:12px;min-height:0;padding:8px 12px}
 .opt.na .on-n{order:2;margin:0}
 .cfr.ring{align-self:center}
+
+/* ================= Guia de preenchimento ================= */
+.gprog{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.gprog span{display:block;height:100%;background:linear-gradient(90deg,var(--brand-2),var(--brand));border-radius:99px}
+.gwrap{display:grid;grid-template-columns:260px minmax(0,1fr);gap:18px;margin-top:14px;align-items:start}
+.gcaps{display:flex;flex-direction:column;gap:3px;position:sticky;top:76px}
+.gcap{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;font-size:13.5px;color:var(--muted)}
+.gcap:hover{background:var(--surface-2);color:var(--fg)}
+.gcap:focus-visible{outline:2px solid var(--brand-2)}
+.gcap .gn{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:700;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line-2)}
+.gcap.lido .gn{background:var(--n4);color:#fff;box-shadow:none}
+.gcap.on{background:var(--surface);color:var(--fg);font-weight:700;box-shadow:var(--shadow)}
+.gcap.on .gn{background:var(--brand);color:var(--brand-ink);box-shadow:none}
+.gcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:26px 28px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px;max-width:760px}
+.gstep{font-size:12px;font-weight:700;color:var(--muted)}
+.gcard h3{margin:0;font-family:var(--display);font-size:26px;line-height:1.2}
+.glead{margin:0;font-size:16px;color:var(--muted);line-height:1.55}
+.gpassos{margin:0;padding:0;list-style:none;counter-reset:gp;display:flex;flex-direction:column;gap:10px}
+.gpassos li{counter-increment:gp;display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;font-size:15px;line-height:1.55}
+.gpassos li::before{content:counter(gp);width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-weight:700;font-size:13px;background:color-mix(in srgb,var(--brand-2) 16%,var(--surface));color:var(--fg)}
+.gdica{margin:0;display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--n2) 10%,var(--surface-2));font-size:14px;line-height:1.5}
+.gdica svg{flex:none;color:var(--n2i);margin-top:2px}
+.gnav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:6px;padding-top:14px;border-top:1px solid var(--line)}
+.gm{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:14px;border-radius:12px;background:var(--surface-2)}
+.gm-seta{color:var(--faint)}
+.gm-n{display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:10px;background:var(--surface);font-size:12.5px;color:var(--muted);border-top:3px solid var(--line-2);min-width:96px}
+.gm-n b{color:var(--fg);font-size:13px}
+.gm-n.n1{border-top-color:var(--n1)}.gm-n.n2{border-top-color:var(--n2)}.gm-n.n3{border-top-color:var(--n3)}.gm-n.n4{border-top-color:var(--n4)}.gm-n.na{border-top-style:dashed}
+.gall{display:none}
+.gban{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:16px 18px;margin-bottom:16px;border-radius:var(--r);background:color-mix(in srgb,var(--brand) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--brand) 45%,var(--line))}
+.gban>div:first-child{display:flex;gap:12px;align-items:center}
+.gban>div:first-child>div{display:flex;flex-direction:column;gap:2px}
+.gban b{font-family:var(--display);font-size:16px}.gban span{font-size:13.5px;color:var(--muted)}
+@media (max-width:900px){ .gwrap{grid-template-columns:1fr} .gcaps{position:static;flex-direction:row;overflow-x:auto;padding-bottom:4px} .gcap{flex:none} .gcap span:last-child{white-space:nowrap} .gcard{padding:20px} }
+@media print{ body.guia-printing .gwrap,body.guia-printing .gprog,body.guia-printing .guia .ph .btn,body.guia-printing .guia>.muted{display:none!important} body.guia-printing .gall{display:block} body.guia-printing .gprint{break-inside:avoid;margin-bottom:14px} body.guia-printing .gprint ol{padding-left:20px} }
