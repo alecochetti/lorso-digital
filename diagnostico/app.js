@@ -1310,6 +1310,16 @@ const focoTem=d=>!Array.isArray(d.modulos)||!d.modulos.length||d.modulos.include
 function modsCliente(){ const m=cur&&all[cur.id]&&Array.isArray(all[cur.id].modulos)?all[cur.id].modulos:null; return m&&m.length?m:['diagnostico','dre','lancamento']; }
 function modsAtivos(){ const b=modsCliente(); return FOCO&&b.includes(FOCO)?[FOCO]:b; }
 const temMod=k=>modsAtivos().includes(k);
+/* Logo do cliente: reduzido no navegador (até 300x84) e guardado no cadastro do cliente */
+async function logoSalvar(url){ if(!cur) return; const r=await sb.from('diagnosticos').update({logo:url}).eq('id',cur.id); if(r.error){ toast('Não foi possível salvar o logo: '+r.error.message); return; } all[cur.id]=Object.assign(all[cur.id]||{},{logo:url}); render(); toast(url?'Logo salvo':'Logo removido'); }
+/* Recorta a margem vazia: transparente ou da mesma cor do canto */
+function logoRecorte(img){ const W=img.naturalWidth||img.width, H=img.naturalHeight||img.height; try{ const c=document.createElement('canvas'); c.width=W; c.height=H; const g=c.getContext('2d'); g.drawImage(img,0,0); const d=g.getImageData(0,0,W,H).data;
+  const c0=[d[0],d[1],d[2],d[3]]; let x0=W,y0=H,x1=-1,y1=-1;
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const i=(y*W+x)*4, a=d[i+3]; const cheio=c0[3]<16?a>16:(a>16&&Math.abs(d[i]-c0[0])+Math.abs(d[i+1]-c0[1])+Math.abs(d[i+2]-c0[2])>60); if(cheio){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; } }
+  if(x1<0) return {x:0,y:0,w:W,h:H}; const m=Math.round(Math.max(x1-x0,y1-y0)*0.04); x0=Math.max(0,x0-m); y0=Math.max(0,y0-m); x1=Math.min(W-1,x1+m); y1=Math.min(H-1,y1+m); return {x:x0,y:y0,w:x1-x0+1,h:y1-y0+1}; }catch(e){ return {x:0,y:0,w:W,h:H}; } }
+function logoLer(file){ if(!file) return; if(file.size>5e6){ toast('Imagem grande demais (máximo 5 MB)'); return; }
+  const fr=new FileReader(); fr.onload=()=>{ const img=new Image(); img.onload=()=>{ const r=logoRecorte(img); const k=Math.min(1,300/r.w,84/r.h), w=Math.max(1,Math.round(r.w*k)), h=Math.max(1,Math.round(r.h*k)); const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,r.x,r.y,r.w,r.h,0,0,w,h); logoSalvar(c.toDataURL('image/png')); }; img.onerror=()=>toast('Não consegui ler essa imagem'); img.src=fr.result; }; fr.readAsDataURL(file); }
+document.addEventListener('change',e=>{ if(e.target&&e.target.id==='logo-file'){ logoLer(e.target.files[0]); e.target.value=''; } });
 async function setMods(lista){ if(!cur)return; const r=await sb.from('diagnosticos').update({modulos:lista}).eq('id',cur.id); if(r.error){ toast('Não foi possível mudar os módulos: '+r.error.message); return; } all[cur.id]=Object.assign(all[cur.id]||{},{modulos:lista}); render(); toast('Módulos do cliente atualizados'); }
 function renderSide(INS){
   const adm=me&&me.papel==='admin', pc=x=>Math.round(x*100)+'%';
@@ -1403,6 +1413,7 @@ function renderPerfil(){
     ${adm?`<section class="block"><div class="block-h"><h3>Administração</h3><p>Só administradores veem esta parte.</p></div>
      <div class="kpis k3"><div class="kpi"><b>${profiles.length}</b><span>${profiles.length===1?'pessoa com acesso':'pessoas com acesso'}</span></div><div class="kpi"><b>${nConv}</b><span>${nConv===1?'convite aguardando':'convites aguardando'}</span></div><div class="kpi"><b>${Object.keys(all).length}</b><span>${Object.keys(all).length===1?'diagnóstico':'diagnósticos'}</span></div></div>
      ${cur?`<div class="prow" style="border-top:0;padding-top:0"><span><b>Módulos de ${esc(cur.nome)}</b><small>O que este cliente vê. Quem entra como cliente só enxerga os módulos ligados.</small></span><div class="seg" role="group">${MODS_TODOS.map(([k,l])=>`<button class="${modsCliente().includes(k)?'on':''}" data-act="mod-toggle" data-v="${k}" aria-pressed="${modsCliente().includes(k)}">${l}</button>`).join('')}</div></div>`:''}
+     ${cur?(()=>{ const lg=(all[cur.id]||{}).logo; return `<div class="prow"><span><b>Logo de ${esc(cur.nome)}</b><small>Aparece no painel inicial e no Tarefas LORSO, sempre sobre fundo escuro. PNG com fundo transparente fica melhor.</small></span><div class="logo-up"><span class="logo-plate">${lg?`<img src="${lg}" alt="Logo de ${esc(cur.nome)}">`:'<i>sem logo</i>'}</span><label class="btn" for="logo-file">${lg?'Trocar logo':'Enviar logo'}</label><input type="file" id="logo-file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>${lg?'<button class="btn ghost" data-act="logo-del">Remover</button>':''}</div></div>`; })():''}
      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="view" data-v="equipe">Equipe e convites</button><button class="btn" data-act="view" data-v="como">Método LORSO (proposta)</button>${FERRAMENTAS.map(([k,l,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">${l} (versão avulsa) ↗</a>`).join('')}${me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo diagnóstico</button>`:''}</div></section>`:''}
    </div></section>`;
 }
@@ -1899,7 +1910,7 @@ const ARR_DB={
 const DIAG_TABLES=['respostas','campos','responsaveis_area','fofa_itens','modulos',...Object.values(ARR_DB).map(m=>m.t)];
 const ok=r=>{ if(r&&r.error) throw r.error; return r?r.data:null; };
 function equipeList(){ return profiles.filter(p=>p.ativo&&(p.papel!=='cliente'||!cur||(me&&me.papel!=='admin')||membros.some(x=>x.user_id===p.id&&x.diagnostico_id===cur.id))).map(p=>({id:p.id,nome:p.nome||p.email,papel:p.funcao||'',contato:p.contato||'',email:p.email,role:p.papel})); }
-async function loadList(){ let r=await sb.from('diagnosticos').select('id,nome,updated_at,modulos').order('updated_at',{ascending:false}); if(r.error) r=await sb.from('diagnosticos').select('id,nome,updated_at').order('updated_at',{ascending:false}); const d=ok(r); all=Object.fromEntries((d||[]).map(x=>[x.id,x])); }
+async function loadList(){ let r=await sb.from('diagnosticos').select('id,nome,updated_at,modulos,logo').order('updated_at',{ascending:false}); if(r.error) r=await sb.from('diagnosticos').select('id,nome,updated_at,modulos').order('updated_at',{ascending:false}); if(r.error) r=await sb.from('diagnosticos').select('id,nome,updated_at').order('updated_at',{ascending:false}); const d=ok(r); all=Object.fromEntries((d||[]).map(x=>[x.id,x])); }
 async function loadTeam(){
   const p=ok(await sb.from('profiles').select('*').order('nome'));
   profiles=p||[];
@@ -2121,6 +2132,7 @@ document.addEventListener('click',e=>{
     touch(true); toast(n?`${n} cursos adicionados`:'Esses cursos já estão na tabela'); return; }
   if(act==='base-md'){ dlFile(`base-${slugN(cur.nome)}.md`,baseMarkdown(),'text/markdown;charset=utf-8'); return; }
   if(act==='base-json'){ dlFile(`base-${slugN(cur.nome)}.json`,baseJson(),'application/json'); return; }
+  if(act==='logo-del'){ logoSalvar(null); return; }
   if(act==='mod-toggle'){ const L=modsCliente(); const n=L.includes(d.v)?L.filter(x=>x!==d.v):[...L,d.v]; if(!n.length){ toast('O cliente precisa de pelo menos um módulo'); return; } setMods(MODS_TODOS.map(x=>x[0]).filter(k=>n.includes(k))); return; }
   if(act==='view'){ go(d.v); return; }
   if(act==='print-rel'){ setTimeout(()=>window.print(),50); return; }

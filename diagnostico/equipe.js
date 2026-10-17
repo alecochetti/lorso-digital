@@ -19,8 +19,21 @@ const podeInternas=()=>me&&me.papel!=='cliente';
 const CENTRAL_LORSO=new URLSearchParams(location.search).get('central')==='lorso';
 const eqNoCliente=()=>!CENTRAL_LORSO&&typeof cur!=='undefined'&&!!cur;
 const tCli=t=>t.diagnostico_id||(projetos.find(p=>p.id===t.projeto_id)||{}).diagnostico_id||'';
-function eqBase(){ return eqNoCliente()?internas.filter(t=>tCli(t)===cur.id):internas; }
-function pjBase(){ return eqNoCliente()?projetos.filter(p=>p.diagnostico_id===cur.id):projetos; }
+function eqBase(){ if(eqNoCliente()) return internas.filter(t=>tCli(t)===cur.id); const c=CENTRAL_LORSO?eqUi().cli:''; return c?internas.filter(t=>c==='-'?!tCli(t):tCli(t)===c):internas; }
+function pjBase(){ if(eqNoCliente()) return projetos.filter(p=>p.diagnostico_id===cur.id); const c=CENTRAL_LORSO?eqUi().cli:''; return c?projetos.filter(p=>c==='-'?!p.diagnostico_id:p.diagnostico_id===c):projetos; }
+/* Central LORSO: faixa de clientes. Cada botão abre só as tarefas daquele cliente. */
+const eqIniciais=n=>{ const p=String(n||'?').split(/\s+/).filter(x=>x.length>2||/^[A-Z]{2,}$/.test(x)); return (p.length>1?p.slice(0,2).map(x=>x[0]).join(''):String(p[0]||n||'?').slice(0,2)).toUpperCase(); };
+const eqModsDe=id=>{ const d=all[id]; return d&&Array.isArray(d.modulos)&&d.modulos.length?d.modulos:['diagnostico','dre','lancamento']; };
+function eqCliBar(){ const f=eqUi(); const ab=c=>internas.filter(t=>t.status!=='Concluída'&&(c==='-'?!tCli(t):tCli(t)===c)).length;
+  const bt=(id,nome,mono,n)=>{ const lg=id&&id!=='-'&&all[id]&&all[id].logo; return `<button class="eqcb ${f.cli===id?'on':''} ${lg?'comlogo':''}" data-act="eq-cli" data-v="${id}" aria-pressed="${f.cli===id}">${lg?`<span class="logo-plate"><img src="${lg}" alt=""></span>`:`<span class="mono">${mono}</span>`}<span class="nm">${esc(nome)}<small>${n} ${n===1?'aberta':'abertas'}</small></span></button>`; };
+  return `<nav class="eqclibar" aria-label="Escolha o cliente">${bt('','Todos os clientes','≡',internas.filter(t=>t.status!=='Concluída').length)}${Object.values(all).sort((a,b)=>a.nome.localeCompare(b.nome)).map(d=>bt(d.id,diagNome(d.id),esc(eqIniciais(diagNome(d.id))),ab(d.id))).join('')}${bt('-','Interno LORSO','L',ab('-'))}</nav>`; }
+/* Tarefas do Lançamento de curso do cliente escolhido: a própria aba Tarefas do módulo, só desse cliente */
+async function eqLancMontar(){ const f=eqUi(), id=f.cli, box=document.getElementById('eq-lanc'); if(!box||!id) return;
+  if(!cur||cur.id!==id){ box.innerHTML='<p class="loading">Abrindo o cliente…</p>'; await openDiag(id); return; }
+  try{ const k='lorso-lancamento-ui-v1'; const u=JSON.parse(localStorage.getItem(k)||'{}')||{}; u.view='quadro'; localStorage.setItem(k,JSON.stringify(u)); }catch(e){}
+  try{ const html=await modCarregar('lancamento'); const b2=document.getElementById('eq-lanc'); if(!b2||eqUi().cli!==id||eqUi().aba!=='lanc'||!cur||cur.id!==id) return;
+    const fr=document.createElement('iframe'); fr.className='modframe'; fr.dataset.c=id; fr.title='Tarefas do Lançamento de curso'; fr.srcdoc=typeof modComAlinha==='function'?modComAlinha(html):html; b2.innerHTML=''; b2.appendChild(fr); }
+  catch(e){ box.innerHTML=`<p class="empty">Não foi possível abrir o Lançamento: ${esc(e.message||String(e))}. Recarregue a página.</p>`; } }
 async function loadInternas(){
   if(!podeInternas()){ internas=[]; projetos=[]; return; }
   const [r,q]=await Promise.all([sb.from('tarefas_internas').select('*').order('created_at'),sb.from('projetos').select('*').order('created_at')]);
@@ -44,7 +57,7 @@ function minhasAbertas(){ return me?eqBase().filter(t=>itDono(t,me.id)&&t.status
 function itStatus(t,s){ if(t.status===s)return; t.status=s; t.concluida_em=s==='Concluída'?new Date().toISOString():null; itSave(t,true); }
 
 /* ---------- filtros e agrupamentos ---------- */
-function eqUi(){ return ui.eq||(ui.eq={aba:'tarefas',visao:'lista',grupo:'prazo',escopo:'time',pessoa:'',area:'',projeto:'',prazo:'',busca:'',ordem:'prazo',dir:1,aberta:null,pj:null}); }
+function eqUi(){ return ui.eq||(ui.eq={cli:'',aba:'tarefas',visao:CENTRAL_LORSO?'cliente':'lista',grupo:'prazo',escopo:'time',pessoa:'',area:'',projeto:'',prazo:'',busca:'',ordem:'prazo',dir:1,aberta:null,pj:null}); }
 function eqFiltradas(){ const f=eqUi(), hoje=today(), sem=new Date(); sem.setDate(sem.getDate()+7); const s7=isoLocal(sem);
   return eqBase().filter(t=>(f.escopo!=='minhas'||itDono(t,me.id))&&(!f.pessoa||(f.pessoa==='-'?!t.responsaveis.length:itDono(t,f.pessoa)))&&(!f.area||t.area_eq===f.area)
     &&(!f.projeto||(f.projeto==='-'?!t.projeto_id&&!t.diagnostico_id:f.projeto.startsWith('c:')?t.diagnostico_id===f.projeto.slice(2):t.projeto_id===f.projeto))
@@ -129,7 +142,7 @@ function eqPorCliente(L){
      <div class="eans"><div><b>${ab.length}</b><span>abertas</span></div><div class="${lt.length?'bad':''}"><b>${lt.length}</b><span>atrasadas</span></div><div><b>${mi.length}</b><span>suas</span></div></div>
      ${prox.length?`<ul class="eqcli-prox">${prox.map(t=>`<li><button class="eqt" data-act="eq-abrir" data-v="${t.id}">${esc(t.titulo||'Sem título')}</button>${eqPeriodo(t)}</li>`).join('')}</ul>`:'<p class="muted" style="font-size:13px">Nada aberto.</p>'}
      <div class="eqcli-pjs"><span class="lbl">Projetos</span>${pjs.length?pjs.map(p=>{ const n=internas.filter(t=>t.projeto_id===p.id&&t.status!=='Concluída').length; return `<div class="eqcli-pj"><button class="eqt" data-act="eq-pj" data-v="${p.id}">${esc(p.nome)}</button><span class="muted">${n} abertas</span><button class="btn sm" data-act="eq-nova" data-pj="${p.id}">+ Tarefa</button></div>`; }).join(''):'<p class="muted" style="font-size:12.5px">Nenhum projeto ainda.</p>'}</div>
-     <footer><button class="btn sm" data-act="eq-nova" ${c.id?`data-cli="${c.id}"`:''}>+ Tarefa ${c.id?'do cliente':'interna'}</button><button class="btn sm ghost" data-act="eq-pj-novo" ${c.id?`data-cli="${c.id}"`:''}>+ Projeto</button></footer></article>`; }).join('')}</div>`; }
+     <footer>${c.id&&eqModsDe(c.id).includes('lancamento')?`<button class="btn sm" data-act="eq-cli-lanc" data-v="${c.id}">Tarefas do Lançamento</button>`:''}<button class="btn sm" data-act="eq-nova" ${c.id?`data-cli="${c.id}"`:''}>+ Tarefa ${c.id?'do cliente':'interna'}</button><button class="btn sm ghost" data-act="eq-pj-novo" ${c.id?`data-cli="${c.id}"`:''}>+ Projeto</button></footer></article>`; }).join('')}</div>`; }
 function eqProjetos(){ const f=eqUi();
   return `<div class="eqpjs">${pjBase().map(p=>{ const tl=internas.filter(t=>t.projeto_id===p.id), ok=tl.filter(t=>t.status==='Concluída').length, ab=tl.length-ok, lt=tl.filter(itLate).length, r=pessoa(p.responsavel);
     return `<button class="eqpj" data-act="eq-pj" data-v="${p.id}"><div class="eah"><i style="background:${eqCor(p.area)}"></i><b>${esc(p.nome)}</b><span class="stp pj-${PJ_ST.indexOf(p.status)}">${esc(p.status)}</span></div>
@@ -166,29 +179,36 @@ function eqDrawer(){ const f=eqUi(); if(f.aberta){ const t=internas.find(x=>x.id
    <div class="dsec"><b>Descrição</b><textarea data-pjf="descricao" data-id="${p.id}" rows="3" placeholder="Objetivo e escopo">${esc(p.descricao)}</textarea></div>
    <div class="dfoot"><button class="btn" data-act="eq-pj-tarefas" data-v="${p.id}">Ver tarefas do projeto</button><button class="btn primary" data-act="eq-fechar">Pronto</button></div></aside>`; }
   return ''; }
-function renderInternas(){ const f=eqUi(); const L=eqFiltradas(); const pessoas=profiles.filter(p=>p.ativo&&p.papel!=='cliente');
-  const projOpts=eqNoCliente()?`<option value="">Todos os projetos de ${esc(cur.nome)}</option>${pjBase().map(p=>`<option value="${p.id}" ${f.projeto===p.id?'selected':''}>${esc(p.nome)}</option>`).join('')}`:`<option value="">Todos os projetos</option><option value="-" ${f.projeto==='-'?'selected':''}>Avulsas</option>${projetos.map(p=>`<option value="${p.id}" ${f.projeto===p.id?'selected':''}>${esc(p.nome)}</option>`).join('')}${Object.values(all).map(d=>`<option value="c:${d.id}" ${f.projeto==='c:'+d.id?'selected':''}>Cliente · ${esc(diagNome(d.id))}</option>`).join('')}`;
-  const V={cliente:eqPorCliente,lista:eqLista,quadro:eqQuadro,tabela:eqTabela,area:eqPorArea,metricas:eqMetricas}; if(f.visao==='cliente'&&eqNoCliente()) f.visao='lista';
+function renderInternas(){ const f=eqUi();
+  if(CENTRAL_LORSO&&f.aba==='lanc'&&f.cli&&document.querySelector(`#main iframe.modframe[data-c="${f.cli}"]`)&&document.querySelector('#main .eqclibar')) return;
+  if(CENTRAL_LORSO&&f.aba==='lanc'&&(!f.cli||f.cli==='-'||!eqModsDe(f.cli).includes('lancamento'))) f.aba='tarefas';
+  const L=eqFiltradas(); const pessoas=profiles.filter(p=>p.ativo&&p.papel!=='cliente');
+  const umCli=eqNoCliente()||(CENTRAL_LORSO&&f.cli); const nomeCli=eqNoCliente()?cur.nome:f.cli==='-'?'Interno LORSO':diagNome(f.cli);
+  const projOpts=umCli?`<option value="">Todos os projetos de ${esc(nomeCli)}</option>${pjBase().map(p=>`<option value="${p.id}" ${f.projeto===p.id?'selected':''}>${esc(p.nome)}</option>`).join('')}`:`<option value="">Todos os projetos</option><option value="-" ${f.projeto==='-'?'selected':''}>Avulsas</option>${projetos.map(p=>`<option value="${p.id}" ${f.projeto===p.id?'selected':''}>${esc(p.nome)}</option>`).join('')}${Object.values(all).map(d=>`<option value="c:${d.id}" ${f.projeto==='c:'+d.id?'selected':''}>Cliente · ${esc(diagNome(d.id))}</option>`).join('')}`;
+  const V={cliente:eqPorCliente,lista:eqLista,quadro:eqQuadro,tabela:eqTabela,area:eqPorArea,metricas:eqMetricas}; if(f.visao==='cliente'&&(eqNoCliente()||f.cli)) f.visao='lista';
   $('#main').innerHTML=`<section class="panel eqpanel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">LORSO · <b>${eqNoCliente()?esc(cur.nome):'Todos os clientes'}</b></span><h2 style="margin-top:8px">${eqNoCliente()?'Tarefas da equipe':'Tarefas LORSO'}</h2><p class="lead">${eqNoCliente()?`Só o trabalho da LORSO para ${esc(cur.nome)}. Tarefas de outros clientes ficam na Central LORSO. O cliente não vê este quadro.`:'Seu painel de clientes: as tarefas e os projetos de todos os clientes que você atende, mais as tarefas internas da LORSO.'}</p></div>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">LORSO · <b>${eqNoCliente()?esc(cur.nome):f.cli?esc(f.cli==='-'?'Interno LORSO':diagNome(f.cli)):'Todos os clientes'}</b></span><h2 style="margin-top:8px">${eqNoCliente()?'Tarefas da equipe':'Tarefas LORSO'}</h2><p class="lead">${eqNoCliente()?`Só o trabalho da LORSO para ${esc(cur.nome)}. Tarefas de outros clientes ficam na Central LORSO. O cliente não vê este quadro.`:'Seu painel de clientes: as tarefas e os projetos de todos os clientes que você atende, mais as tarefas internas da LORSO.'}</p></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">${eqNoCliente()&&f.aba==='tarefas'?`<button class="btn" data-act="gen-coleta" title="Cria uma tarefa por área ainda incompleta de ${esc(cur.nome)}">Gerar tarefas de coleta</button>`:''}<button class="btn primary" data-act="${f.aba==='projetos'?'eq-pj-novo':'eq-nova'}">+ ${f.aba==='projetos'?'Novo projeto':'Nova tarefa'}</button></div></header>
-   <nav class="subtabs" aria-label="Tarefas ou projetos"><button class="${f.aba==='tarefas'?'on':''}" data-act="eq-set" data-k="aba" data-v="tarefas">${ico('internas',16)} Tarefas</button><button class="${f.aba==='projetos'?'on':''}" data-act="eq-set" data-k="aba" data-v="projetos">${ico('fases',16)} Projetos <span class="ct">${pjBase().length}</span></button></nav>
-   ${f.aba==='projetos'?eqProjetos():`<div class="eqbar"><div class="seg" role="group"><button class="${f.escopo==='minhas'?'on':''}" data-act="eq-set" data-k="escopo" data-v="minhas">${ico('pessoa',14)} Minhas</button><button class="${f.escopo==='time'?'on':''}" data-act="eq-set" data-k="escopo" data-v="time">${ico('equipe',14)} Time</button></div>
+   ${CENTRAL_LORSO?eqCliBar():''}
+   <nav class="subtabs" aria-label="Tarefas ou projetos"><button class="${f.aba==='tarefas'?'on':''}" data-act="eq-set" data-k="aba" data-v="tarefas">${ico('internas',16)} ${CENTRAL_LORSO&&f.cli?'Tarefas da equipe':'Tarefas'}</button><button class="${f.aba==='projetos'?'on':''}" data-act="eq-set" data-k="aba" data-v="projetos">${ico('fases',16)} Projetos <span class="ct">${pjBase().length}</span></button>${CENTRAL_LORSO&&f.cli&&f.cli!=='-'&&eqModsDe(f.cli).includes('lancamento')?`<button class="${f.aba==='lanc'?'on':''}" data-act="eq-set" data-k="aba" data-v="lanc">${ico('lancamento',16)} Lançamento de curso</button>`:''}</nav>
+   ${f.aba==='lanc'?`<p class="muted eq-lanc-nota">Tarefas do Lançamento de curso de ${esc(diagNome(f.cli))}, direto do módulo. O que você muda aqui vale no módulo do cliente.</p><div id="eq-lanc" class="eq-lanc"><p class="loading">Abrindo o Lançamento…</p></div>`:f.aba==='projetos'?eqProjetos():`<div class="eqbar"><div class="seg" role="group"><button class="${f.escopo==='minhas'?'on':''}" data-act="eq-set" data-k="escopo" data-v="minhas">${ico('pessoa',14)} Minhas</button><button class="${f.escopo==='time'?'on':''}" data-act="eq-set" data-k="escopo" data-v="time">${ico('equipe',14)} Time</button></div>
      <select data-eqfil="pessoa" aria-label="Pessoa"><option value="">Todas as pessoas</option><option value="-" ${f.pessoa==='-'?'selected':''}>Sem responsável</option>${pessoas.map(p=>`<option value="${p.id}" ${f.pessoa===p.id?'selected':''}>${esc(p.nome||p.email)}</option>`).join('')}</select>
      <select data-eqfil="area" aria-label="Área"><option value="">Todas as áreas</option>${EQ_AREAS.map(([a])=>`<option ${f.area===a?'selected':''}>${a}</option>`).join('')}</select>
      <select data-eqfil="projeto" aria-label="Projeto">${projOpts}</select>
      <select data-eqfil="prazo" aria-label="Prazo"><option value="">Qualquer prazo</option><option value="atrasadas" ${f.prazo==='atrasadas'?'selected':''}>Atrasadas</option><option value="semana" ${f.prazo==='semana'?'selected':''}>Próximos 7 dias</option><option value="sem" ${f.prazo==='sem'?'selected':''}>Sem data</option></select>
      <input data-eqfil="busca" placeholder="Buscar tarefa" value="${esc(f.busca)}" aria-label="Buscar">
      ${f.pessoa||f.area||f.projeto||f.prazo||f.busca?`<button class="chip" data-act="eq-limpar">Limpar</button>`:''}
-     <div class="seg vis" role="group" aria-label="Visão">${[...(eqNoCliente()?[]:[['cliente','Por cliente','base']]),['lista','Lista','lista'],['quadro','Quadro','tarefas'],['tabela','Tabela','sistemas'],['area','Por área','equipe'],['metricas','Métricas','resultados']].map(([k,l,i])=>`<button class="${f.visao===k?'on':''}" data-act="eq-set" data-k="visao" data-v="${k}">${ico(i,14)} ${l}</button>`).join('')}</div></div>
+     <div class="seg vis" role="group" aria-label="Visão">${[...(eqNoCliente()||f.cli?[]:[['cliente','Por cliente','base']]),['lista','Lista','lista'],['quadro','Quadro','tarefas'],['tabela','Tabela','sistemas'],['area','Por área','equipe'],['metricas','Métricas','resultados']].map(([k,l,i])=>`<button class="${f.visao===k?'on':''}" data-act="eq-set" data-k="visao" data-v="${k}">${ico(i,14)} ${l}</button>`).join('')}</div></div>
    ${V[f.visao](L)}`}</section>${eqDrawer()}`;
   if(typeof bindDnD==='function') bindDnD();
+  if(CENTRAL_LORSO&&f.aba==='lanc') eqLancMontar();
   const d=document.querySelector('.drawer .dtit'); if(d&&!d.value&&ui.eqFoco){ d.focus(); ui.eqFoco=false; } }
 
 /* ---------- eventos (chamados pelo app.js) ---------- */
 function eqClick(act,d){ const f=eqUi();
   if(act==='eq-set'){ f[d.k]=d.v; if(d.k==='aba'){ f.aberta=null; f.pj=null; } render(); return true; }
-  if(act==='eq-cli-ver'){ f.projeto=d.v==='-'?'-':'c:'+d.v; f.visao='lista'; render(); return true; }
+  if(act==='eq-cli-lanc'){ f.cli=d.v; f.aba='lanc'; f.visao='lista'; f.aberta=null; f.pj=null; render(); return true; }
+  if(act==='eq-cli-ver'||act==='eq-cli'){ f.cli=d.v||''; f.projeto=''; f.aberta=null; f.pj=null; if(act==='eq-cli-ver'||(f.cli&&f.visao==='cliente')) f.visao='lista'; if(!f.cli){ f.visao='cliente'; if(f.aba==='lanc') f.aba='tarefas'; } if(f.aba==='lanc'&&(!f.cli||f.cli==='-'||!eqModsDe(f.cli).includes('lancamento'))) f.aba='tarefas'; render(); return true; }
   if(act==='eq-limpar'){ Object.assign(f,{pessoa:'',area:'',projeto:'',prazo:'',busca:''}); render(); return true; }
   if(act==='eq-abrir'){ f.aberta=d.v; f.pj=null; render(); return true; }
   if(act==='eq-fechar'){ const t=internas.find(x=>x.id===f.aberta); if(t)itSave(t,true); const p=projetos.find(x=>x.id===f.pj); if(p)pjSave(p,true); f.aberta=null; f.pj=null; render(); return true; }
@@ -196,7 +216,7 @@ function eqClick(act,d){ const f=eqUi();
     if(f.projeto&&f.projeto!=='-'){ if(f.projeto.startsWith('c:'))o.diagnostico_id=f.projeto.slice(2); else o.projeto_id=f.projeto; }
     if(d.cli) o.diagnostico_id=d.cli; if(d.pj){ o.projeto_id=d.pj; const pp=projetos.find(x=>x.id===d.pj); if(pp&&pp.diagnostico_id) o.diagnostico_id=pp.diagnostico_id; }
     if(o.projeto_id&&!o.diagnostico_id){ const pp=projetos.find(x=>x.id===o.projeto_id); if(pp&&pp.diagnostico_id) o.diagnostico_id=pp.diagnostico_id; }
-    if(eqNoCliente()) o.diagnostico_id=cur.id;
+    if(eqNoCliente()) o.diagnostico_id=cur.id; else if(CENTRAL_LORSO&&f.cli&&f.cli!=='-'&&!o.diagnostico_id) o.diagnostico_id=f.cli;
     if(d.grupo==='Próximos 7 dias'){ const x=new Date(); x.setDate(x.getDate()+3); o.prazo=isoLocal(x); }
     const t=itNew(o); f.aberta=t.id; ui.eqFoco=true; render(); return true; }
   if(act==='eq-del'){ itDel(d.v); f.aberta=null; render(); return true; }
@@ -206,7 +226,7 @@ function eqClick(act,d){ const f=eqUi();
   if(act==='eq-area'){ f.area=d.v; f.visao='lista'; f.grupo='prazo'; render(); return true; }
   if(act==='eq-feitas'){ ui.open['eq-feitas']=!ui.open['eq-feitas']; render(); return true; }
   if(act==='eq-pj'){ f.pj=d.v; f.aberta=null; render(); return true; }
-  if(act==='eq-pj-novo'){ const p={id:uid(),nome:'',descricao:'',area:'',diagnostico_id:eqNoCliente()?cur.id:(d.cli||''),responsavel:me.id,inicio:today(),fim:'',status:'Em andamento'}; projetos.push(p); pjSave(p,true); f.aba='projetos'; f.pj=p.id; render(); const el=document.querySelector('.drawer .dtit'); el&&el.focus(); return true; }
+  if(act==='eq-pj-novo'){ const p={id:uid(),nome:'',descricao:'',area:'',diagnostico_id:eqNoCliente()?cur.id:(d.cli||(CENTRAL_LORSO&&f.cli&&f.cli!=='-'?f.cli:'')),responsavel:me.id,inicio:today(),fim:'',status:'Em andamento'}; projetos.push(p); pjSave(p,true); f.aba='projetos'; f.pj=p.id; render(); const el=document.querySelector('.drawer .dtit'); el&&el.focus(); return true; }
   if(act==='eq-pj-tarefas'){ f.aba='tarefas'; f.projeto=d.v; f.pj=null; f.visao='lista'; render(); return true; }
   return false; }
 function eqChange(t){ const d=t.dataset; const f=eqUi();
