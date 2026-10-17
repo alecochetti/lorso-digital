@@ -1314,7 +1314,6 @@ async function setMods(lista){ if(!cur)return; const r=await sb.from('diagnostic
 function renderSide(INS){
   const adm=me&&me.papel==='admin', pc=x=>Math.round(x*100)+'%';
   let h=`<div class="sb-brand">${LOGO_SVG}<span class="sb-word"><b>LORSO</b><i>DIGITAL<em>.</em></i></span></div><div class="sb-prod">${CENTRAL_LORSO?'Central LORSO':FOCO?esc(MODS_TODOS.find(x=>x[0]===FOCO)[1]):'Central de Diagnóstico'}</div>`;
-  if(FOCO||CENTRAL_LORSO) h+=`<nav class="sb-nav sb-top" aria-label="Área do Cliente"><a class="sn" href="/admin/painel.html"><span class="lb">‹ Trocar de módulo</span></a></nav>`;
   if(podeInternas()&&!FOCO){ const mn=minhasAbertas(), lt=eqBase().filter(t=>itDono(t,me.id)&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas',CENTRAL_LORSO?'Tarefas LORSO':'Tarefas da equipe','view','internas',mn||'',lt>0)}${me.papel==='admin'&&typeof renderHoras==='function'?sideItem('horas','Horas da equipe','view','horas'):''}</nav>`; }
   if(cur&&!CENTRAL_LORSO){
     const x=crossTasks(INS), hot=x.late.length+x.semTarefa.length, g=overall();
@@ -1351,7 +1350,8 @@ function renderSide(INS){
     <div class="sb-tools">
       <button class="sb-ic" data-act="tema" title="${temaAtual()==='light'?'Mudar para a versão escura':'Mudar para a versão clara'}" aria-label="${temaAtual()==='light'?'Versão escura':'Versão clara'}">${ico(temaAtual()==='light'?'lua':'sol')}</button>
       <button class="sb-ic" data-act="sair" title="Sair" aria-label="Sair">${ico('sair')}</button>
-    </div></div>`;
+    </div>
+    <a class="sb-painel" href="/admin/painel.html">Abrir painel</a></div>`;
   $('#sb').innerHTML=h;
   document.body.classList.toggle('sb-on',!!ui.sbOpen);
 }
@@ -2062,7 +2062,8 @@ async function start(session){
     if(!p||!p.ativo){ started=false; await sb.auth.signOut(); authMode='entrar'; authMsg={t:'Seu acesso não está ativo. Fale com a LORSO Digital.'}; showAuth(); return; }
     me=p; await Promise.all([loadList(),loadTeam()]); await loadInternas();
     const ok1=x=>all[x]&&(!FOCO||focoTem(all[x]));
-    let id=lsGet('cd.last'); if(!ok1(id)) id=Object.keys(all).find(ok1)||Object.keys(all)[0];
+    const pedido=new URLSearchParams(location.search).get('cliente');
+    let id=pedido&&all[pedido]?pedido:lsGet('cd.last'); if(!ok1(id)) id=Object.keys(all).find(ok1)||Object.keys(all)[0];
     if(id) await openDiag(id); else { cur=null; render(); }
   }catch(e){ console.error(e); $('#main').innerHTML='<p class="loading">Não foi possível carregar. Recarregue a página.</p>'; started=false; }
 }

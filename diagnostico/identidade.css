@@ -306,7 +306,7 @@ input.dt.passou{color:var(--muted)}
 .pav.g{width:72px;height:72px;font-size:22px} .pav.xl{width:120px;height:120px;font-size:34px} .pav.r{width:76px;height:76px;font-size:22px}
 .pav-b{all:unset;cursor:pointer;display:inline-flex;border-radius:50%} .pav-b:focus-visible{outline:2px solid var(--l-ciano)}
 td.pav-c{width:44px}
-.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.pesgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
 .pcard2{all:unset;cursor:pointer;display:flex;gap:14px;align-items:flex-start;background:var(--surface);border:1px solid rgba(16,24,40,.07);border-radius:18px;padding:16px;box-shadow:var(--elev-1);transition:transform .18s ease,box-shadow .18s ease}
 .pcard2:hover{transform:translateY(-2px);box-shadow:var(--elev-3)} .pcard2:focus-visible{outline:2px solid var(--l-ciano)}
 .pc-t{display:flex;flex-direction:column;gap:4px;min-width:0}
@@ -533,3 +533,11 @@ h2,h3,.block-h h3{line-height:1.22}
 .eqcli{grid-template-columns:minmax(0,1fr)}.eqcli-prox li{min-width:0}
 /* FOFA: campo de incluir item no rodapé de cada quadrante, na mesma linha dos vizinhos */
 .fq>ul{margin-bottom:auto}
+/* Rodapé do menu: nome, ferramentas e o botão Abrir painel embaixo */
+.sb-foot{flex-wrap:wrap}
+.sb-painel{flex:1 0 100%;display:flex;align-items:center;justify-content:center;min-height:38px;border-radius:10px;font-weight:700;font-size:13.5px;text-decoration:none;color:#fff;background:var(--l-grad);box-shadow:0 4px 10px -4px rgba(16,24,40,.45)}
+.sb-painel:hover{filter:brightness(1.06)}
+.sb-painel:focus-visible{outline:2px solid var(--l-ciano);outline-offset:2px}
+/* Perfil: preferências sempre legíveis, mesmo em cartão estreito */
+.prow{flex-wrap:wrap}.prow>span{flex:1 1 200px;min-width:0}.prow .seg{flex:0 1 auto;max-width:100%}
+a.btn,a.btn:visited{color:var(--fg);text-decoration:none}
