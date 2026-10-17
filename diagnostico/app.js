@@ -1909,13 +1909,14 @@ const ARR_DB={
 };
 const DIAG_TABLES=['respostas','campos','responsaveis_area','fofa_itens','modulos',...Object.values(ARR_DB).map(m=>m.t)];
 const ok=r=>{ if(r&&r.error) throw r.error; return r?r.data:null; };
-function equipeList(){ return profiles.filter(p=>p.ativo&&(p.papel!=='cliente'||!cur||(me&&me.papel!=='admin')||membros.some(x=>x.user_id===p.id&&x.diagnostico_id===cur.id))).map(p=>({id:p.id,nome:p.nome||p.email,papel:p.funcao||'',contato:p.contato||'',email:p.email,role:p.papel})); }
+/* Equipe de um diagnóstico: toda a equipe LORSO e só as pessoas do cliente que são membros DESTE diagnóstico */
+function equipeList(diagId){ const id=diagId||(cur&&cur.id); return profiles.filter(p=>p.ativo&&(p.papel!=='cliente'||(me&&p.id===me.id)||(id&&membros.some(x=>x.user_id===p.id&&x.diagnostico_id===id)))).map(p=>({id:p.id,nome:p.nome||p.email,papel:p.funcao||'',contato:p.contato||'',email:p.email,role:p.papel})); }
 async function loadList(){ let r=await sb.from('diagnosticos').select('id,nome,updated_at,modulos,logo').order('updated_at',{ascending:false}); if(r.error) r=await sb.from('diagnosticos').select('id,nome,updated_at,modulos').order('updated_at',{ascending:false}); if(r.error) r=await sb.from('diagnosticos').select('id,nome,updated_at').order('updated_at',{ascending:false}); const d=ok(r); all=Object.fromEntries((d||[]).map(x=>[x.id,x])); }
 async function loadTeam(){
   const p=ok(await sb.from('profiles').select('*').order('nome'));
   profiles=p||[];
   if(me&&me.papel!=='cliente'){ const c=ok(await sb.from('convites').select('*').order('created_at')); convites=(c||[]).filter(x=>!profiles.some(pp=>pp.email===x.email)); } else convites=[];
-  if(me&&me.papel==='admin'){ const m=ok(await sb.from('membros_diagnostico').select('diagnostico_id,user_id')); membros=m||[]; } else membros=[];
+  if(me&&me.papel!=='cliente'){ const m=ok(await sb.from('membros_diagnostico').select('diagnostico_id,user_id')); membros=m||[]; } else membros=[];
   if(cur) cur.equipe=equipeList();
 }
 async function loadDiag(id){
@@ -1930,7 +1931,7 @@ async function loadDiag(id){
   Object.keys(ARR_DB).forEach((k,i)=>{ o[k]=arrs[i].map(ARR_DB[k].from); });
   o.pdiReitoria=!!d.pdi_reitoria; o.clienteLeitura=!!d.cliente_leitura;
   o.prazo={inicio:d.inicio_projeto||'',fim:d.fim_previsto||'',hist:Array.isArray(d.prazo_historico)?d.prazo_historico:[]};
-  o.equipe=equipeList(); o.mods={};
+  o.equipe=equipeList(id); o.mods={};
   try{ const mr=await sb.from('modulos').select('modulo,dados').eq('diagnostico_id',id); if(!mr.error)(mr.data||[]).forEach(r=>{ o.mods[r.modulo]=r.dados; }); }catch(e){ /* módulos opcionais */ }
   return o;
 }
