@@ -558,3 +558,9 @@ a.btn,a.btn:visited{color:var(--fg);text-decoration:none}
 .logo-up{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .logo-up .logo-plate{height:56px;max-width:180px}.logo-up .logo-plate img{max-height:40px;max-width:160px}
 .eqcb.comlogo{padding-left:6px}
+/* Tarefas vindas do Lançamento de curso (só leitura aqui) */
+.tag.lanc{background:#E0F2FE;color:#0369A1;font-weight:700}
+.tag.quem{background:var(--surface-2);color:var(--muted);font-weight:700}.tag.quem.q-lorso{background:#D1FAE5;color:#047857}
+.eqchk-ext{width:17px;height:17px;border-radius:5px;border:1.5px dashed var(--line-2);display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff}
+.eqchk-ext.ok{background:var(--l-verde);border:0}
+.eqcard.ext{border-style:dashed}
