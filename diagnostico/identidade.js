@@ -11,6 +11,7 @@
       if(ui.stage==='diagnostico') return ui.dstep||'base';
       if(ui.stage==='resultados') return 'resultados';
       if(ui.stage==='execucao') return 'execucao';
+      if(ui.stage==='estrategia'||ui.stage==='otimizacao') return 'fases_auto';
       return null;
     }
     return {visao:'tela',plano:'plano',dores:'dores',sistemas:'sistemas',dre:'dre',pessoas:'entrevistas'}[ui.view]||null;
