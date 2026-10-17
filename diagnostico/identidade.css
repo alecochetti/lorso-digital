@@ -269,3 +269,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--l-verde-escuro)!impor
 .bu-cnt{display:flex;flex-wrap:wrap;gap:6px}
 @media (max-width:760px){ .bu-f{grid-template-columns:1fr} .bu-tabs{top:56px} }
 .bu-tabs{flex-wrap:nowrap;scrollbar-width:none}
+.tcursos tr.irmao td{border-top-color:transparent}
+.curso-irm{display:block;padding-left:14px;font-size:13px;color:var(--muted)}
+.turno-c{display:flex;gap:6px;align-items:center}
+.turno-add{white-space:nowrap;padding:5px 9px}
+.tcursos tr.curso-tot td{background:var(--surface-2);font-size:12.5px;font-weight:700;color:var(--muted);padding-top:6px;padding-bottom:6px}

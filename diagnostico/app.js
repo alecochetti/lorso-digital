@@ -493,6 +493,21 @@ function renderDiagnostico(INS){
   $('#main').innerHTML=inner;
 }
 function cap$(k,f,unit){ const key=`base.cap.${k}.${f}`; return `<div class="inu ${unit==='R$'?'pre':''}"><input data-campo="${key}" id="c-${key}" inputmode="decimal" value="${esc(cur.campos[key]||'')}" placeholder="0" aria-label="${f==='vagas'?'alunos':f}">${unit?`<span class="u">${unit}</span>`:''}</div>`; }
+const TURNOS=['Matutino','Vespertino','Noturno','Diurno','Integral','Flexível'];
+const turnoDe=t=>{ t=t||''; return /not/i.test(t)?'Noturno':/manh|matut/i.test(t)?'Matutino':/tarde|vesp/i.test(t)?'Vespertino':/diur/i.test(t)?'Diurno':/integ/i.test(t)?'Integral':(t.trim()?'Flexível':''); };
+const cursoGrupoK=c=>[c.un,String(c.nome||'').trim().toLowerCase(),c.modalidade,c.obs||''].join('|');
+/* Mesmo curso em turnos diferentes: linhas juntas, a primeira com o nome e as outras como "outro turno". */
+function cursoGrupos(L){
+  const ordem=new Map(); L.forEach((c,i)=>{ const k=cursoGrupoK(c); if(!c.nome||!String(c.nome).trim()) return; if(!ordem.has(k)) ordem.set(k,i); });
+  const ix=c=>{ const k=cursoGrupoK(c); return ordem.has(k)&&c.nome&&String(c.nome).trim()?ordem.get(k):L.indexOf(c); };
+  const S=L.map((c,i)=>({c,i})).sort((a,b)=>ix(a.c)-ix(b.c)||a.i-b.i).map(x=>x.c);
+  return S.map((c,i)=>{ const k=cursoGrupoK(c), nm=c.nome&&String(c.nome).trim(); const irmao=!!nm&&i>0&&cursoGrupoK(S[i-1])===k; const ultimo=!nm||i===S.length-1||cursoGrupoK(S[i+1])!==k; return {c,irmao,ultimo,grupo:nm?S.filter(x=>cursoGrupoK(x)===k):[c]}; });
+}
+function cursoTotHtml(G){
+  const s=f=>{ const v=G.map(c=>num(c[f])).filter(x=>x!=null); return v.length?v.reduce((a,b)=>a+b,0):null; };
+  const n=v=>v==null?'—':v.toLocaleString('pt-BR');
+  return `<tr class="curso-tot"><td></td><td>Total do curso · ${G.length} turnos</td><td></td><td>${G.map(c=>c.turno||'?').join(' + ')}</td><td></td><td>${n(s('turmas'))}</td><td>${n(s('vagas'))}</td><td>${n(s('meta'))}</td><td>${n(s('matriculados'))}</td><td></td><td></td><td></td></tr>`;
+}
 function baseHtml(INS){
   const rows=capRows(); const tot=k=>{const v=rows.map(r=>r[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0):null;};
   const vig=cur.cursos.filter(c=>c.status==='Vigente').length, lan=cur.cursos.filter(c=>c.status==='Lançamento').length;
@@ -501,11 +516,11 @@ function baseHtml(INS){
   const opt=(v,list)=>list.map(o=>`<option ${v===o?'selected':''}>${o}</option>`).join('');
   const pv=ui.cursoPreview;
   const tab=ui.baseUn&&(ui.baseUn==='geral'||ui.baseUn===BU_OUTROS||UNS.some(u=>u.id===ui.baseUn))?ui.baseUn:'geral';
-  const cursosTabela=L=>`${L.length?`<div class="tblw"><table class="tbl tcursos"><thead><tr><th>UN</th><th style="min-width:220px">Curso</th><th>Modalidade</th><th>Turno</th><th>Mensalidade</th><th>Turmas</th><th>Alunos</th><th>Meta</th><th>Matriculados</th><th>Status</th><th>Lançamento</th><th></th></tr></thead><tbody>${L.map(c=>`<tr>
+  const cursosTabela=L0=>{ const L=cursoGrupos(L0); return `${L.length?`<div class="tblw"><table class="tbl tcursos"><thead><tr><th>UN</th><th style="min-width:220px">Curso</th><th>Modalidade</th><th>Turno</th><th>Mensalidade</th><th>Turmas</th><th>Alunos</th><th>Meta</th><th>Matriculados</th><th>Status</th><th>Lançamento</th><th></th></tr></thead><tbody>${L.map(({c,irmao,ultimo,grupo})=>`<tr class="${irmao?'irmao':''}">
       <td><select data-curso="${c.id}" data-f="un" aria-label="UN"><option value=""></option>${UNS.map(u=>`<option value="${u.id}" ${c.un===u.id?'selected':''}>${u.nome}</option>`).join('')}</select></td>
-      <td><input data-curso="${c.id}" data-f="nome" value="${esc(c.nome)}" aria-label="Curso">${c.obs?`<small class="curso-obs">${esc(c.obs)}</small>`:''}</td>
+      <td>${irmao?`<span class="curso-irm">↳ ${esc(c.nome)}</span>`:`<input data-curso="${c.id}" data-f="nome" value="${esc(c.nome)}" aria-label="Curso">${c.obs?`<small class="curso-obs">${esc(c.obs)}</small>`:''}`}</td>
       <td><select data-curso="${c.id}" data-f="modalidade" aria-label="Modalidade"><option value=""></option>${opt(c.modalidade,['Presencial','EAD','Híbrido'])}</select></td>
-      <td><select data-curso="${c.id}" data-f="turno" aria-label="Turno"><option value=""></option>${opt(c.turno,['Diurno','Noturno','Integral','Flexível'])}</select></td>
+      <td><div class="turno-c"><select data-curso="${c.id}" data-f="turno" aria-label="Turno"><option value=""></option>${opt(c.turno,TURNOS)}</select>${ultimo?`<button class="btn sm turno-add" data-act="curso-turno" data-id="${c.id}" title="Mesmo curso em outro turno, com vagas e números próprios">+ turno</button>`:''}</div></td>
       <td><input data-curso="${c.id}" data-f="preco" value="${esc(c.preco)}" inputmode="decimal" aria-label="Mensalidade" style="width:110px"></td>
       <td><input data-curso="${c.id}" data-f="turmas" value="${esc(c.turmas||'')}" inputmode="decimal" aria-label="Turmas" style="width:70px"></td>
       <td><input data-curso="${c.id}" data-f="vagas" value="${esc(c.vagas)}" inputmode="decimal" aria-label="Alunos (capacidade)" style="width:80px"></td>
@@ -513,8 +528,8 @@ function baseHtml(INS){
       <td><input data-curso="${c.id}" data-f="matriculados" value="${esc(c.matriculados)}" inputmode="decimal" aria-label="Matriculados" style="width:90px"></td>
       <td><select data-curso="${c.id}" data-f="status" aria-label="Status">${opt(c.status,['Vigente','Lançamento','Descontinuado'])}</select></td>
       <td><input data-curso="${c.id}" data-f="lancamento" value="${esc(c.lancamento)}" placeholder="mês/ano" aria-label="Lançamento" style="width:90px"></td>
-      <td class="x"><button class="xbtn" data-act="curso-del" data-id="${c.id}" aria-label="Remover curso">×</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Nenhum curso ainda. Adicione um por um ou cole a lista da planilha da instituição.</p>'}
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="curso-add">+ Curso</button></div>`;
+      <td class="x"><button class="xbtn" data-act="curso-del" data-id="${c.id}" aria-label="Remover ${irmao?'este turno':'curso'}">×</button></td></tr>${ultimo&&grupo.length>1?cursoTotHtml(grupo):''}`).join('')}</tbody></table></div>`:'<p class="empty">Nenhum curso ainda. Adicione um por um ou cole a lista da planilha da instituição.</p>'}
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="curso-add">+ Curso</button></div>`; };
   const colar=`    <details class="paste" data-keep="curso-paste" ${pv||ui.open['curso-paste']?'open':''}><summary>Colar lista de cursos da planilha</summary>
      <p class="muted" style="font-size:13px">Cole a lista do site como ela vem: o nome da UN numa linha e, embaixo, um curso por linha, como "Presencial - Administração". Também aceita a tabela copiada do Excel: com a linha de títulos (Curso, UN, Modalidade, Turno, Mensalidade, Turmas, Alunos, Meta, Matriculados), cada coluna vai para o lugar certo, em qualquer ordem. Curso que já existe só recebe os números.</p>
      <textarea id="curso-txt" rows="5" style="width:100%;font-family:var(--mono);font-size:13px" placeholder="Graduação	Administração	Presencial	Noturno	1.290	120	96	Vigente">${esc(ui.cursoTxt||'')}</textarea>
@@ -559,20 +574,22 @@ function cursoParseTabela(txt,exigeCabecalho){
     if(!nome||/^total/i.test(nome)) return null;
     const st=/lan[cç]/i.test(g('status'))?'Lançamento':/descon/i.test(g('status'))?'Descontinuado':'Vigente';
     const md=g('modalidade'), mod=typeof modDe==='function'&&modDe(md)?modDe(md):(md?'Presencial':'');
-    const tr=g('turno'), tur=/not/i.test(tr)?'Noturno':/diur|manh|tarde|vesp|matut/i.test(tr)?'Diurno':/integ/i.test(tr)?'Integral':(tr?'Flexível':'');
+    const tur=turnoDe(g('turno'));
     return {id:uid(),un:mapa.un!=null?unDeTexto(unTxt):unAtual,nome,modalidade:mod,turno:tur,preco:g('preco').replace(/r\$\s*/i,''),turmas:g('turmas'),vagas:g('vagas'),meta:g('meta'),matriculados:g('matriculados'),status:st,lancamento:g('lancamento'),obs:''};
   }).filter(Boolean);
 }
 /* Junta cursos novos com a tabela: o que já existe (mesmo nome e UN) só ganha os números que faltam ou mudaram. */
 function cursosMesclar(lista,simular){
   const chN=c=>String(c.nome||'').toLowerCase().replace(/\s+/g,' ').trim(); let novos=0, atual=0; const vistos=new Set();
-  lista.forEach(c=>{ const k=[c.un,chN(c),c.modalidade,c.obs||''].join('|'); if(vistos.has(k)) return; vistos.add(k);
+  lista.forEach(c=>{ const k=[c.un,chN(c),c.modalidade,c.turno||'',c.obs||''].join('|'); if(vistos.has(k)) return; vistos.add(k);
     const obsOk=x=>!c.obs||!x.obs||x.obs===c.obs;
-    let cands=cur.cursos.filter(x=>chN(x)===chN(c)&&(!c.modalidade||!x.modalidade||x.modalidade===c.modalidade));
+    let cands=cur.cursos.filter(x=>chN(x)===chN(c)&&(!c.modalidade||!x.modalidade||x.modalidade===c.modalidade)&&(!c.turno||!x.turno||x.turno===c.turno));
+    if(c.turno&&cands.length>1){ const mesmo=cands.filter(x=>x.turno===c.turno); cands=mesmo.length?mesmo:cands.filter(x=>!x.turno); }
     cands=c.un?cands.filter(x=>(x.un===c.un||!x.un)&&obsOk(x)):c.obs?cands.filter(x=>!x.un&&obsOk(x)):cands;
     const ex=cands.length===1||c.un?cands[0]:null;
     if(ex){ let mud=false; ['un','modalidade','turno','preco','turmas','vagas','meta','matriculados','lancamento'].forEach(f=>{ if(c[f]&&c[f]!==ex[f]){ if(!simular) ex[f]=c[f]; mud=true; } }); if(mud) atual++; }
-    else { if(!simular) cur.cursos.push({turmas:'',meta:'',...c}); novos++; } });
+    else { if(!simular){ const sib=cur.cursos.find(x=>chN(x)===chN(c)&&x.un===c.un&&(!c.modalidade||x.modalidade===c.modalidade)); const n={turmas:'',meta:'',...c};
+      if(sib){ ['modalidade','obs','preco','status'].forEach(f=>{ if(!n[f]) n[f]=sib[f]; }); cur.cursos.splice(cur.cursos.lastIndexOf(cur.cursos.filter(x=>chN(x)===chN(c)&&x.un===c.un).pop())+1,0,n); } else cur.cursos.push(n); } novos++; } });
   if(!simular) touch(true); return {novos,atual};
 }
 /* Lista simples, como vem do site: o título da UN numa linha e, embaixo, "Modalidade - Curso" ou "Categoria - Curso". */
@@ -2067,6 +2084,11 @@ document.addEventListener('click',e=>{
   else if(act==='ini-add'){ cur.iniciativas.push({id:uid(),titulo:'',bloco:'',area:'',horizonte:'Curto',impacto:'',esforco:'',risco:'',dependencias:'',alinhamento:'',recomendacao:'Próximo',motivo:'',indicador:'',ordem:0}); touch(true); }
   else if(act==='ini-del'){ cur.iniciativas=cur.iniciativas.filter(x=>x.id!==d.id); touch(true); }
   else if(act==='dstep'){ ui.view='fases'; ui.stage='diagnostico'; ui.dstep=d.v; if(d.v==='reitoria'&&!LID.some(a=>a.id===ui.area)&&ui.area!=='direcionamentos')ui.area='reitoria'; if(d.v==='entrevistas'&&!ENT.some(a=>a.id===ui.area))ui.area=jornadaLista()[0].id; saveUi(); render(); window.scrollTo({top:0}); }
+  else if(act==='curso-turno'){ const c=cur.cursos.find(x=>x.id===d.id); if(c){ const k=cursoGrupoK(c);
+    if(!c.turno){ const us0=cur.cursos.filter(x=>cursoGrupoK(x)===k).map(x=>x.turno); c.turno=us0.includes('Noturno')?'Matutino':'Noturno'; }
+    const usados=cur.cursos.filter(x=>cursoGrupoK(x)===k).map(x=>x.turno); const prox=['Noturno','Matutino','Vespertino','Integral'].find(t=>!usados.includes(t))||'';
+    const novo={id:uid(),un:c.un,nome:c.nome,modalidade:c.modalidade,turno:prox,preco:c.preco,turmas:'',vagas:'',meta:'',matriculados:'',status:c.status,lancamento:'',obs:c.obs||''};
+    let at=-1; cur.cursos.forEach((x,i)=>{ if(cursoGrupoK(x)===k) at=i; }); cur.cursos.splice(at+1,0,novo); touch(true); setTimeout(()=>{ const el=document.querySelector(`[data-curso="${novo.id}"][data-f="vagas"]`); if(el) el.focus(); },60); } }
   else if(act==='curso-add'){ cur.cursos.push({id:uid(),un:UNS.some(u=>u.id===ui.baseUn)?ui.baseUn:'',turmas:'',meta:'',nome:'',modalidade:'',turno:'',preco:'',vagas:'',matriculados:'',status:'Vigente',lancamento:'',obs:''}); touch(true); const els=document.querySelectorAll('[data-curso][data-f="nome"]'); els.length&&els[els.length-1].focus(); }
   else if(act==='curso-del'){ cur.cursos=cur.cursos.filter(c=>c.id!==d.id); touch(true); }
   else if(act==='curso-ler'){ ui.cursoTxt=($('#curso-txt')||{}).value||''; ui.cursoPreview=cursoParse(ui.cursoTxt); render(); }

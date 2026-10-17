@@ -96,7 +96,7 @@ function lerFonteAuto(f){
 function leituraDe(f){
   const a=lerFonteAuto(f), ia=f.dados&&f.dados.leitura&&!f.dados.leitura.erro?f.dados.leitura:null;
   if(!ia) return {...a,capacidade:[],resumo:'',via:'auto'};
-  const cursosIA=(ia.cursos||[]).filter(c=>c&&c.nome).map(c=>({id:uid(),un:UNS.some(u=>u.id===c.un)?c.un:'',nome:String(c.nome).trim(),modalidade:['Presencial','EAD','Híbrido'].includes(c.modalidade)?c.modalidade:'',turno:['Diurno','Noturno','Integral','Flexível'].includes(c.turno)?c.turno:'',preco:c.preco||'',vagas:c.vagas||'',matriculados:c.matriculados||'',status:c.status==='Lançamento'?'Lançamento':'Vigente',lancamento:'',obs:c.obs||''}));
+  const cursosIA=(ia.cursos||[]).filter(c=>c&&c.nome).map(c=>({id:uid(),un:UNS.some(u=>u.id===c.un)?c.un:'',nome:String(c.nome).trim(),modalidade:['Presencial','EAD','Híbrido'].includes(c.modalidade)?c.modalidade:'',turno:typeof turnoDe==='function'?turnoDe(c.turno):'',preco:c.preco||'',vagas:c.vagas||'',matriculados:c.matriculados||'',status:c.status==='Lançamento'?'Lançamento':'Vigente',lancamento:'',obs:c.obs||''}));
   const un=(x,y)=>[...x,...y.filter(t=>t&&!x.includes(t))];
   return {cursos:cursosIA.length>=a.cursos.length?cursosIA:a.cursos,calendario:un(ia.calendario||[],a.calendario),concorrentes:un(ia.concorrentes||[],a.concorrentes),diferenciais:un(ia.diferenciais||[],a.diferenciais),
     capacidade:(ia.capacidade||[]).filter(x=>x&&CAPROWS.some(r=>r[0]===x.linha)),resumo:ia.resumo||'',via:'ia'};
@@ -156,7 +156,7 @@ function capLinhaDoCurso(c){
   const m=c.modalidade, t=c.turno;
   if(c.un==='colegio') return 'colegio';
   if(c.un==='mestrado') return 'mestrado';
-  if(c.un==='graduacao'){ if(m==='EAD') return 'grad_ead'; if(t==='Noturno') return 'grad_noturno'; if(t==='Diurno'||t==='Integral') return 'grad_diurno'; return ''; }
+  if(c.un==='graduacao'){ if(m==='EAD') return 'grad_ead'; if(t==='Noturno') return 'grad_noturno'; if(['Diurno','Matutino','Vespertino','Integral'].includes(t)) return 'grad_diurno'; return ''; }
   if(c.un==='pos'){ if(m==='EAD') return 'pos_ead'; if(m==='Híbrido') return 'pos_hibrido'; if(m==='Presencial') return 'pos_noturno'; return ''; }
   return '';
 }
