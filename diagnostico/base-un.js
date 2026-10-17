@@ -174,3 +174,17 @@ function cicloClick(act,d){
   return false;
 }
 ['change'].forEach(ev=>document.addEventListener(ev,e=>{ const t=e.target; if(!t||!t.dataset||t.dataset.ciclo==null) return; const L=ciclosTodos(), c=L.find(x=>x.id===t.dataset.ciclo); if(!c) return; c[t.dataset.f]=t.value; ciclosSalvar(L); render(); }));
+
+/* ---------- Regra: campanha começando com a UN despreparada ---------- */
+function cicloRisco(){
+  const h=cHoje(); return ciclosTodos().map(c=>{ const ini=cDt(c.camp_ini||c.insc_ini); if(!ini||!UNS.some(u=>u.id===c.un)) return null; const dias=Math.round((ini-h)/864e5); if(dias<0||dias>30) return null;
+    const lv=L(c.un), atr=num(cur.campos[`${c.un}.dem_atraso`]); const motivos=[le(lv,2)?`a UN está no nível N${lv}`:null, atr>0?`há ${atr} ${atr===1?'demanda atrasada':'demandas atrasadas'} pelo marketing`:null].filter(Boolean);
+    return motivos.length?{c,dias,motivos}:null; }).filter(Boolean);
+}
+if(typeof RULES!=='undefined'){
+  RULES.push({id:'CRZ-66',sev:'alta',pad:'Campanha sem estrutura',areas:()=>[...new Set(cicloRisco().map(x=>x.c.un))],t:'Campanha de captação começa em menos de 30 dias com a UN despreparada',
+    test:()=>cicloRisco().length>0,
+    txt:()=>cicloRisco().map(x=>`${(UNS.find(u=>u.id===x.c.un)||{}).nome}: "${x.c.nome||'ciclo'}" começa ${x.dias===0?'hoje':`em ${x.dias} ${x.dias===1?'dia':'dias'}`} e ${x.motivos.join(' e ')}`).join('. ')+'. Campanha que começa sem processo pronto gasta verba atraindo gente que a operação não consegue converter.',
+    rec:['Antes de abrir a campanha: briefing, peças e página de inscrição prontas e aprovadas','Fila do marketing reservada para a campanha nas próximas 4 semanas','Ponto de controle semanal com a coordenação da UN até o fim da captação']});
+  const _blCap=typeof BLOCOS!=='undefined'&&BLOCOS.find(b=>b.id==='capacidade'); if(_blCap) _blCap.rules.push('CRZ-66');
+}

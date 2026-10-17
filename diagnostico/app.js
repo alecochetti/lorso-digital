@@ -19,9 +19,9 @@ function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 
 /* ================= ESTADO ================= */
-const MAPS=['resp','evid','notas','campos','fofa','dono_area'], ARRS=['entrevistas','acoes','testes','kpis','equipe','dores','sistemas','cursos','iniciativas','fontes'];
+const MAPS=['resp','evid','notas','campos','fofa','dono_area'], ARRS=['pessoas','entrevistas','acoes','testes','kpis','equipe','dores','sistemas','cursos','iniciativas','fontes'];
 const COLS=['A fazer','Em andamento','Em revisão','Concluída'];
-function blank(nome){return {id:uid(),nome:nome||'Novo diagnóstico',exemplo:false,resp:{},evid:{},notas:{},campos:{},fofa:{},dono_area:{},entrevistas:[],acoes:[],testes:[],kpis:[],equipe:[],dores:[],sistemas:[],cursos:[],iniciativas:[],fontes:[],criadoEm:new Date().toISOString(),atualizadoEm:null};}
+function blank(nome){return {id:uid(),nome:nome||'Novo diagnóstico',exemplo:false,resp:{},evid:{},notas:{},campos:{},fofa:{},dono_area:{},pessoas:[],entrevistas:[],acoes:[],testes:[],kpis:[],equipe:[],dores:[],sistemas:[],cursos:[],iniciativas:[],fontes:[],criadoEm:new Date().toISOString(),atualizadoEm:null};}
 function norm(d){
   const b=blank(); const o=Object.assign(b,JSON.parse(JSON.stringify(d||{})));
   MAPS.forEach(k=>{ if(!o[k]||typeof o[k]!=='object'||Array.isArray(o[k]))o[k]={}; Object.keys(o[k]).forEach(x=>{if(o[k][x]==null)delete o[k][x];}); });
@@ -395,14 +395,16 @@ function headHtml(eyebrow,title,lead,s,id){
 function interviewsHtml(areaId){
   const rows=cur.entrevistas.map((e,i)=>({e,i})).filter(r=>r.e.area===areaId);
   return `<section class="block"><div class="block-h"><h3>Entrevistados</h3><p>Quem você ouviu nesta área, 1 a 1.</p></div>
-   ${rows.length?`<div class="tblw"><table class="tbl"><thead><tr><th>Nome</th><th>Cargo</th><th>Departamento</th><th>Data</th><th title="Entra na avaliação individual (PDI Marketing)">Marketing</th><th></th></tr></thead><tbody>${rows.map(({e,i})=>`<tr>
-     <td><input data-ent="${i}" data-f="nome" value="${esc(e.nome)}" placeholder="Nome" aria-label="Nome"></td>
+   ${rows.length?`<div class="tblw"><table class="tbl"><thead><tr><th></th><th>Nome</th><th>Cargo</th><th>Departamento</th><th>Data</th><th title="Entra na avaliação individual (PDI Marketing)">Marketing</th><th></th></tr></thead><tbody>${rows.map(({e,i})=>{ const pp=typeof pessoaDe==='function'?pessoaDe(e):null; return `<tr>
+     <td class="pav-c">${typeof pAvatar==='function'?`<button class="pav-b" data-act="pes-ver" data-v="${pp?pp.id:''}" title="${pp?'Abrir cadastro':'Sem cadastro: abra Pessoas ouvidas'}">${pAvatar(pp||{nome:e.nome},'s')}</button>`:''}</td>
+     <td><input data-ent="${i}" data-f="nome" value="${esc(e.nome)}" placeholder="Nome" aria-label="Nome" list="dl-pessoas"></td>
      <td><input data-ent="${i}" data-f="cargo" value="${esc(e.cargo)}" placeholder="Cargo" aria-label="Cargo"></td>
      <td><input data-ent="${i}" data-f="depto" value="${esc(e.depto)}" placeholder="Departamento" aria-label="Departamento"></td>
      <td><input type="date" data-ent="${i}" data-f="data" value="${esc(e.data)}" aria-label="Data"></td>
      <td><label class="mktag ${e.mkt?'on':''}"><input type="checkbox" data-ent="${i}" data-f="mkt" ${e.mkt?'checked':''}> MKT</label></td>
-     <td class="x"><button class="xbtn" data-act="ent-del" data-i="${i}" aria-label="Remover entrevistado">×</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Nenhum entrevistado registrado nesta área.</p>'}
-   <div><button class="btn sm" data-act="ent-add" data-area="${areaId}">+ Adicionar entrevistado</button></div></section>`;
+     <td class="x"><button class="xbtn" data-act="ent-del" data-i="${i}" aria-label="Remover entrevistado">×</button></td></tr>`; }).join('')}</tbody></table></div>`:'<p class="empty">Nenhum entrevistado registrado nesta área.</p>'}
+   <datalist id="dl-pessoas">${(cur.pessoas||[]).filter(p=>p.nome).map(p=>`<option value="${esc(p.nome)}">${esc(p.cargo||'')}</option>`).join('')}</datalist>
+   ${typeof pEscolherHtml==='function'?pEscolherHtml(areaId):`<div><button class="btn sm" data-act="ent-add" data-area="${areaId}">+ Adicionar entrevistado</button></div>`}</section>`;
 }
 function fofaHtml(key, auto, title, note){
   const man=cur.fofa[key]||{}; const lib=FOFA_LIB[key]||{};
@@ -1159,7 +1161,8 @@ function ivHtml(){
    <div class="iv-top"><span class="logo"><i></i>Modo entrevista</span><span class="muted">${esc(cur.nome)}</span><button class="btn sm" data-act="iv-exit">Sair (Esc)</button></div>
    <div class="iv-grid"><main class="iv-main">${main}</main>
     <aside class="iv-side">
-     <section><h3>Entrevistado</h3>${ents.length?`<p>${ents.map(e=>`<b>${esc(e.nome)}</b>${e.cargo?` · ${esc(e.cargo)}`:''}`).join('<br>')}</p>`:''}
+     <section><h3>Entrevistado</h3>${ents.length?`<div class="iv-pess">${ents.map(e=>{ const pp=typeof pessoaDe==='function'?pessoaDe(e):null; return `<div>${typeof pAvatar==='function'?pAvatar(pp||{nome:e.nome},'m'):''}<span><b>${esc(e.nome)}</b>${e.cargo?`<small>${esc(e.cargo)}</small>`:''}${pp&&typeof pJornada==='function'&&pJornada(pp)?`<small>${esc(pJornada(pp))}</small>`:''}</span></div>`; }).join('')}</div>`:''}
+      ${typeof pEscolherHtml==='function'&&cur.pessoas.length?pEscolherHtml(a.id).replace(/<button[^>]*pes-nova[^>]*>[^<]*<\/button>/,''):''}
       <form id="f-iv-ent" class="iv-ent"><input name="nome" placeholder="Nome" aria-label="Nome do entrevistado" required><input name="cargo" placeholder="Cargo" aria-label="Cargo"><label class="mktag"><input type="checkbox" name="mkt"> MKT</label><button class="btn sm" type="submit">${ents.length?'+ Outro':'Registrar'}</button></form></section>
      ${rot.length?`<section><h3>Roteiro</h3><div class="fields one">${rot.map(v=>fieldHtml(a.id+'.'+v[0],v[1],v[2])).join('')}</div></section>`:''}
      <section><h3>Dor relatada agora</h3><form class="dorform mini" data-dorform="1" data-area="${a.id}"><input name="txt" class="dtxt" placeholder="Descreva a dor" aria-label="Dor relatada" required>
@@ -1297,6 +1300,7 @@ function renderSide(INS){
      ${sideItem('base','Base de conhecimento','dstep','base',pc(stepProgress('base')))}
      ${sideItem('reitoria','Reitoria','dstep','reitoria',pc(stepProgress('reitoria')))}
      ${sideItem('entrevistas','Entrevistas','dstep','entrevistas',pc(stepProgress('entrevistas')))}
+     ${typeof renderPessoas==='function'?sideItem('pessoas','Pessoas ouvidas','view','pessoas',cur.pessoas.length||''):''}
      ${sideItem('visao','Diagnóstico','view','visao',g.level?'N'+g.level:'')}
      <span class="sb-g">Fases 2 a 5</span>
      ${STAGES.slice(1).map(st=>(st.id==='execucao'&&typeof renderPlano==='function'?sideItem('plano','Plano de ação','view','plano',(()=>{const n=paItens().length;return n||'';})()):'')+sideItem(st.id,st.nome,'stage',st.id,st.id==='execucao'&&cur.acoes.some(isPlano)?`${cur.acoes.filter(t=>isPlano(t)&&t.status==='Concluída').length}/${cur.acoes.filter(isPlano).length}`:st.q&&st.q.length?pc(stageProgress(st)):'',st.id==='execucao'&&hot)).join('')}
@@ -1639,7 +1643,7 @@ function renderInner(){
     $('#main').innerHTML=`<section class="auth" style="min-height:auto"><div class="auth-box"><h2>Nenhum diagnóstico ainda</h2><p>${me&&me.papel!=='cliente'?'Crie o primeiro com o nome do cliente. Depois convide a equipe e distribua as áreas.':'Nenhum diagnóstico foi liberado para você ainda. Fale com a LORSO Digital.'}</p>${me&&me.papel!=='cliente'?`<form id="f-novo2"><label>Cliente<input id="novo-nome2" required placeholder="Nome da instituição"></label><button class="btn primary" type="submit">Criar diagnóstico</button></form>`:''}</div></section>`;
     return; }
   if(ui.view==='tarefas'){ ui.view='fases'; ui.stage='execucao'; }
-  if(!temMod('diagnostico')&&['fases','visao','dores','sistemas','como','relatorio'].includes(ui.view)) ui.view=temMod('dre')?'dre':temMod('lancamento')?'lancamento':'perfil';
+  if(!temMod('diagnostico')&&['fases','visao','dores','sistemas','como','relatorio','pessoas'].includes(ui.view)) ui.view=temMod('dre')?'dre':temMod('lancamento')?'lancamento':'perfil';
   if((ui.view==='dre'&&!temMod('dre'))||(ui.view==='lancamento'&&!temMod('lancamento'))) ui.view=temMod('diagnostico')?'fases':temMod('dre')?'dre':'lancamento';
   computeAll(); const INS=runEngine();
   renderBar(); renderSide(INS);
@@ -1655,6 +1659,7 @@ function renderInner(){
   else if(ui.view==='lancamento') renderLancamento();
   else if(ui.view==='internas'&&podeInternas()) renderInternas();
   else if(ui.view==='horas'&&typeof renderHoras==='function') renderHoras();
+  else if(ui.view==='pessoas'&&typeof renderPessoas==='function') renderPessoas();
   else if(ui.view==='pdi'&&podeInternas()&&typeof renderPdi==='function') renderPdi(INS);
   else if(ui.view==='plano'&&typeof renderPlano==='function') renderPlano(INS);
   else if(ui.view==='guia'&&typeof renderGuia==='function') renderGuia();
@@ -1804,7 +1809,8 @@ function renderRelatorio(INS){
    <section><h2>Maturidade por área</h2><table class="tbl heat"><thead><tr><th>Área</th>${Object.values(PIL).map(p=>`<th style="text-align:center">${p}</th>`).join('')}<th style="text-align:center">Geral</th></tr></thead><tbody>${AREAS.map(a=>{const s=SC[a.id];return `<tr><td>${esc(a.nome)}</td>${Object.keys(PIL).map(k=>`<td class="h l${lvOf(s.pil[k])}">${s.pil[k]==null?'—':dec(s.pil[k])}</td>`).join('')}<td class="h l${s.level}">${s.score==null?'—':dec(s.score)}</td></tr>`;}).join('')}</tbody></table></section>
    <section><h2>Detalhamento por área</h2>${AREAS.map(areaSec).join('')}</section>
    <section><h2>FOFA consolidada</h2>${(()=>{const man=cur.fofa.geral||{};const cons={f:[],w:[],o:[],a:[]};AREAS.forEach(a=>{const f=autoFofa(a.id,[]);FQ.forEach(([k])=>f[k].forEach(it=>cons[k].push(it)));});INS.forEach(i=>cons.a.push({t:i.t,i:SEVW[i.sev]+1}));return `<div class="fofa">${FQ.map(([k,nm])=>`<div class="fq ${k}"><h4>${nm}</h4><ul>${[...(man[k]||[]).map(t=>({t})),...cons[k].sort((x,y)=>y.i-x.i).slice(0,6)].map(it=>`<li><span class="t">${esc(it.t)}</span></li>`).join('')}</ul></div>`).join('')}</div>`;})()}</section>
-   <section><h2>Entrevistados</h2>${cur.entrevistas.filter(e=>e.nome).length?`<table class="tbl"><thead><tr><th>Nome</th><th>Cargo</th><th>Área</th><th>Data</th></tr></thead><tbody>${cur.entrevistas.filter(e=>e.nome).map(e=>`<tr><td>${esc(e.nome)}</td><td>${esc(e.cargo)}</td><td>${esc(nameOf(e.area))}</td><td>${esc(e.data?fmtDate(e.data):'')}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Nenhum registrado.</p>'}</section>
+   <section><h2>Quem ouvimos</h2>${(()=>{ const m=new Map(); cur.entrevistas.filter(e=>e.nome).forEach(e=>{ const pp=typeof pessoaDe==='function'?pessoaDe(e):null; const k=pp?pp.id:e.nome.toLowerCase(); const x=m.get(k)||{p:pp||{nome:e.nome,cargo:e.cargo,depto:e.depto},areas:new Set()}; x.areas.add(nameOf(e.area)); m.set(k,x); }); const L=[...m.values()];
+      return L.length?`<div class="rp-pess">${L.map(({p,areas})=>`<div>${typeof pAvatar==='function'?pAvatar(p,'r'):''}<b>${esc(p.nome)}</b><small>${esc([p.cargo,p.depto].filter(Boolean).join(' · '))}</small><small>${esc([...areas].join(', '))}</small></div>`).join('')}</div>`:'<p class="muted">Nenhum registrado.</p>'; })()}</section>
    <footer class="muted" style="font-size:12px;margin-top:24px">LORSO Digital · Central de Diagnóstico · documento confidencial</footer>
   </article>`;
 }
@@ -1838,7 +1844,8 @@ function mark(){}   // o sincronizador compara o estado inteiro com o último sa
 const nz=v=>v===''||v==null?null:v;
 const toInt=v=>{const n=parseInt(v,10);return isNaN(n)?null:n;};
 const ARR_DB={
- entrevistas:{t:'entrevistas',to:x=>({id:x.id,area:nz(x.area),nome:nz(x.nome),cargo:nz(x.cargo),departamento:nz(x.depto),data:nz(x.data),marketing:!!x.mkt}),from:r=>({id:r.id,area:r.area||'',nome:r.nome||'',cargo:r.cargo||'',depto:r.departamento||'',data:r.data||'',mkt:!!r.marketing})},
+ pessoas:{t:'pessoas',to:x=>({id:x.id,nome:nz(x.nome),cargo:nz(x.cargo),departamento:nz(x.depto),foto:nz(x.foto),email:nz(x.email),telefone:nz(x.tel),regime:nz(x.regime),jornada_horas:nz(x.horas),periodo:nz(x.periodo),frentes:nz((x.frentes||[]).join(',')),tempo_casa:nz(x.tempo),gestor:nz(x.gestor),marketing:!!x.mkt,obs:nz(x.obs)}),from:r=>({id:r.id,nome:r.nome||'',cargo:r.cargo||'',depto:r.departamento||'',foto:r.foto||'',email:r.email||'',tel:r.telefone||'',regime:r.regime||'',horas:r.jornada_horas||'',periodo:r.periodo||'',frentes:(r.frentes||'').split(',').filter(Boolean),tempo:r.tempo_casa||'',gestor:r.gestor||'',mkt:!!r.marketing,obs:r.obs||''})},
+ entrevistas:{t:'entrevistas',to:x=>({id:x.id,area:nz(x.area),nome:nz(x.nome),cargo:nz(x.cargo),departamento:nz(x.depto),data:nz(x.data),marketing:!!x.mkt,pessoa_id:nz(x.pid)}),from:r=>({id:r.id,area:r.area||'',nome:r.nome||'',cargo:r.cargo||'',depto:r.departamento||'',data:r.data||'',mkt:!!r.marketing,pid:r.pessoa_id||''})},
  acoes:{t:'tarefas',to:x=>({id:x.id,titulo:nz(x.txt),area:nz(x.area),responsavel:nz(x.dono),prazo:nz(x.prazo),status:x.status,origem:nz(x.origem)}),from:r=>({id:r.id,txt:r.titulo||'',area:r.area||'',dono:r.responsavel||'',prazo:r.prazo||'',status:r.status,origem:r.origem||''})},
  testes:{t:'experimentos',to:x=>({id:x.id,hipotese:nz(x.hip),area:nz(x.area),impacto:toInt(x.i),confianca:toInt(x.c),facilidade:toInt(x.f)}),from:r=>({id:r.id,hip:r.hipotese||'',area:r.area||'',i:r.impacto??'',c:r.confianca??'',f:r.facilidade??''})},
  kpis:{t:'indicadores',to:x=>({id:x.id,nome:nz(x.nome),un:nz(x.un),meta:nz(x.meta),realizado:nz(x.real)}),from:r=>({id:r.id,nome:r.nome||'',un:r.un||'',meta:r.meta||'',real:r.realizado||''})},
@@ -2045,6 +2052,7 @@ document.addEventListener('click',e=>{
   if(act.startsWith('lt-')&&typeof leituraClick==='function'&&leituraClick(act,d)) return;
   if(act==='cap-somar'&&typeof capSomar==='function'){ capSomar(d.v||''); return; }
   if(act==='bu-tab'){ ui.baseUn=d.v; ui.view='fases'; ui.stage='diagnostico'; ui.dstep='base'; render(); window.scrollTo({top:0}); return; }
+  if(act.startsWith('pes-')&&typeof pessoasClick==='function'&&pessoasClick(act,d)) return;
   if(act.startsWith('ciclo-')&&typeof cicloClick==='function'&&cicloClick(act,d)) return;
   if(act.startsWith('pz-')&&typeof prazoClick==='function'&&prazoClick(act,d)) return;
   if(act.startsWith('hr-')&&typeof horasClick==='function'&&horasClick(act,d)) return;
@@ -2163,7 +2171,7 @@ document.addEventListener('submit',e=>{
     sb.auth.updateUser({password:a}).then(r=>{ if(r.error) toast('Não foi possível trocar a senha: '+r.error.message); else { f.reset(); toast('Senha alterada'); } }); return; }
   if(f.id==='f-novo'){ const nm=$('#novo-nome').value.trim(); if(nm) createDiag(nm); return; }
   if(f.id==='f-novo2'){ const nm=$('#novo-nome2').value.trim(); if(nm) createDiag(nm); return; }
-  if(f.id==='f-iv-ent'&&cur&&ui.iv){ const fd=new FormData(f); const nome=String(fd.get('nome')||'').trim(); if(!nome)return; cur.entrevistas.push({id:uid(),area:ui.iv.area,nome,cargo:String(fd.get('cargo')||'').trim(),depto:nameOf(ui.iv.area),data:today(),mkt:!!fd.get('mkt')}); f.reset(); touch(true); toast('Entrevistado registrado'); return; }
+  if(f.id==='f-iv-ent'&&cur&&ui.iv){ const fd=new FormData(f); const nome=String(fd.get('nome')||'').trim(); if(!nome)return; const cg=String(fd.get('cargo')||'').trim(), mk=!!fd.get('mkt'); let pp=typeof pessoaPorNome==='function'?pessoaPorNome(nome):null; if(!pp&&typeof pNova==='function') pp=pNova({nome,cargo:cg,mkt:mk}); cur.entrevistas.push({id:uid(),area:ui.iv.area,nome,cargo:cg||(pp&&pp.cargo)||'',depto:nameOf(ui.iv.area),data:today(),mkt:pp?pp.mkt||mk:mk,pid:pp?pp.id:''}); f.reset(); touch(true); toast('Entrevistado registrado'); return; }
   if(f.id==='f-convite'){ const fd=new FormData(f); const c={email:String(fd.get('email')||'').trim().toLowerCase(),nome:String(fd.get('nome')||'').trim(),funcao:String(fd.get('funcao')||'').trim()||null,papel:fd.get('papel'),convidado_por:me.id};
     (async()=>{ const r=await sb.from('convites').upsert(c); if(r.error){ toast('Não foi possível convidar: '+r.error.message); return; } f.reset(); await loadTeam(); render(); copyText(conviteTexto(c),'Convite registrado e texto copiado'); })(); return; }
   if(!cur) return;

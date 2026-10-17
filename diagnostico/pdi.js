@@ -15,7 +15,8 @@ let pdiSt={diag:null,map:{},carregando:false,aberta:null}, pdiT={};
 
 const pdiKey=nome=>slugN(nome);
 function pdiPessoas(){ if(!cur)return [];
-  const g={}; cur.entrevistas.filter(e=>e.mkt&&(e.nome||'').trim()).forEach(e=>{ const k=pdiKey(e.nome); const p=g[k]||(g[k]={key:k,nome:e.nome.trim(),cargos:new Set(),areas:new Set()}); if(e.cargo)p.cargos.add(e.cargo); if(e.area)p.areas.add(e.area); });
+  const g={}; (cur.pessoas||[]).filter(p=>p.mkt&&(p.nome||'').trim()).forEach(p=>{ const k=pdiKey(p.nome); g[k]=g[k]||{key:k,nome:p.nome.trim(),cargos:new Set(p.cargo?[p.cargo]:[]),areas:new Set()}; });
+  cur.entrevistas.filter(e=>e.mkt&&(e.nome||'').trim()).forEach(e=>{ const k=pdiKey(e.nome); const p=g[k]||(g[k]={key:k,nome:e.nome.trim(),cargos:new Set(),areas:new Set()}); if(e.cargo)p.cargos.add(e.cargo); if(e.area)p.areas.add(e.area); });
   return Object.values(g).map(p=>({...p,cargos:[...p.cargos],areas:[...p.areas]})).sort((a,b)=>a.nome.localeCompare(b.nome)); }
 async function pdiLoad(){ if(!cur||pdiSt.carregando)return; const id=cur.id; pdiSt={diag:id,map:{},carregando:true,aberta:null};
   const r=await sb.from('avaliacoes').select('*').eq('diagnostico_id',id);
@@ -48,14 +49,14 @@ function pdiNineBox(T){
    ${T.box.map((row,i)=>row.map((cel,j)=>`<div class="nc r${i} c${j} ${i===0&&j===2?'top':i===2&&j===0?'low':''}"><small>${PDI_9[i][j]}</small><div>${cel.map(x=>`<button class="nchip" data-act="pdi-abrir" data-v="${x.key}" title="${esc(x.nome)}: desempenho ${dec(x.score)}">${esc(initials(x.nome))}</button>`).join('')}</div></div>`).join('')).join('')}
    <span class="nx">Desempenho →</span></div>`; }
 function pdiCard(x){ const ev=pdiEvid(x);
-  return `<button class="pcard" data-act="pdi-abrir" data-v="${x.key}"><div class="ph1"><span class="av">${esc(initials(x.nome))}</span><div><b>${esc(x.nome)}</b><small>${esc(x.cargos.join(' · ')||'Cargo não informado')}</small></div>${x.score!=null?`<span class="psc l${pdiFaixa(x.score)}">${dec(x.score)}</span>`:''}</div>
+  return `<button class="pcard" data-act="pdi-abrir" data-v="${x.key}"><div class="ph1">${typeof pAvatarNome==='function'?pAvatarNome(x.nome,'m'):`<span class="av">${esc(initials(x.nome))}</span>`}<div><b>${esc(x.nome)}</b><small>${esc(x.cargos.join(' · ')||'Cargo não informado')}</small></div>${x.score!=null?`<span class="psc l${pdiFaixa(x.score)}">${dec(x.score)}</span>`:''}</div>
    <div class="ktags">${ev.areas.map(a=>`<span class="tag">${esc(a.nome)}${a.lv?` · N${a.lv}`:''}</span>`).join('')}${ev.dores.length?`<span class="tag alta">${pl(ev.dores.length,'dor relatada','dores relatadas')}</span>`:''}</div>
    <div class="pf">${pdiDecPill(x.d.decisao)}${x.d.crit?`<span class="tag ${x.d.crit==='Indispensável'?'ok':x.d.crit==='Dispensável'?'alta':''}">${esc(x.d.crit)}</span>`:''}${x.custo?`<span class="muted mono" style="margin-left:auto;font-size:12px">${brl(x.custo)}/mês</span>`:''}</div></button>`; }
 function pdiDrawer(){ const k=pdiSt.aberta; if(!k)return ''; const p=pdiPessoas().find(x=>x.key===k); if(!p){ pdiSt.aberta=null; return ''; }
   const d=pdiD(k), ev=pdiEvid(p), sc=pdiScore(d), acs=d.acoes||[];
   const sel=(f,ops,ph)=>`<select data-pdi="${f}" data-k="${k}"><option value="">${ph||'—'}</option>${ops.map(o=>`<option ${d[f]===o?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
   return `<div class="drawer-back" data-act="pdi-fechar"></div><aside class="drawer pdid" role="dialog" aria-label="Avaliação de ${esc(p.nome)}"><div class="dh"><span class="eyebrow"><b>PDI Marketing</b></span><button class="xbtn" data-act="pdi-fechar" aria-label="Fechar">×</button></div>
-   <div class="ph1 big"><span class="av">${esc(initials(p.nome))}</span><div><b>${esc(p.nome)}</b><small>${esc(p.cargos.join(' · ')||'Cargo não informado')}</small></div>${sc!=null?`<span class="psc l${pdiFaixa(sc)}">${dec(sc)}</span>`:''}</div>
+   <div class="ph1 big">${typeof pAvatarNome==='function'?pAvatarNome(p.nome,'l'):`<span class="av">${esc(initials(p.nome))}</span>`}<div><b>${esc(p.nome)}</b><small>${esc(p.cargos.join(' · ')||'Cargo não informado')}</small>${(()=>{ const pp=typeof pessoaPorNome==='function'?pessoaPorNome(p.nome):null; if(!pp) return ''; const j=pJornada(pp); return `${j?`<small>${esc(j)}</small>`:''}${pp.frentes.length?`<small>Atua em ${esc(pp.frentes.map(pFrenteNome).join(', '))}</small>`:''}`; })()}</div>${sc!=null?`<span class="psc l${pdiFaixa(sc)}">${dec(sc)}</span>`:''}</div>
    <div class="dsec pev"><b>O que o diagnóstico mostra</b>
     ${ev.areas.map(a=>`<div class="pevr"><span>${esc(a.nome)}</span>${a.lv?`<span class="lv l${a.lv}">N${a.lv}</span>`:'<span class="muted">sem nota</span>'}<small>${a.pe!=null?'Pessoas '+dec(a.pe):''}</small></div>`).join('')}
     ${ev.dores.length?`<div class="pdor"><small>Dores que relatou</small>${ev.dores.slice(0,4).map(x=>`<p>${esc(x.txt)}</p>`).join('')}</div>`:'<small class="muted">Nenhuma dor registrada em nome desta pessoa.</small>'}</div>
@@ -77,7 +78,7 @@ function renderPdi(){
   $('#main').innerHTML=`<section class="panel">
    <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Operação · <b>Só equipe LORSO</b></span><h2 style="margin-top:8px">PDI Marketing</h2><p class="lead">Avaliação individual de quem trabalha no marketing do cliente, cruzada com o que apareceu no diagnóstico. Entra aqui todo entrevistado marcado com <b>MKT</b>. O cliente não vê esta tela.</p></div></header>
    ${pdiSt.carregando?'<p class="muted">Carregando avaliações…</p>':''}
-   ${!T.P.length?`<section class="block"><p class="empty">Ninguém marcado ainda. Nas Entrevistas, marque <b>MKT</b> ao lado de cada pessoa do time de marketing e ela aparece aqui.</p><button class="btn" data-act="dstep" data-v="entrevistas">Ir para Entrevistas</button></section>`:`
+   ${!T.P.length?`<section class="block"><p class="empty">Ninguém marcado ainda. Em <b>Pessoas ouvidas</b>, marque "Faz parte do time de marketing" no cadastro de cada pessoa (ou <b>MKT</b> nos Entrevistados da área) e ela aparece aqui, com foto.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="pes-ver" data-v="">Abrir Pessoas ouvidas</button><button class="btn" data-act="dstep" data-v="entrevistas">Ir para Entrevistas</button></div></section>`:`
    <div class="stats"><div class="stat"><span class="si">${ico('equipe',20)}</span><b>${T.P.length}</b><span>pessoas no time</span><small>${T.aval.length} avaliadas</small></div>
     <div class="stat"><span class="si">${ico('alvo',20)}</span><b>${T.media!=null?dec(T.media):'—'}</b><span>desempenho médio</span><small>de 1 a 4</small></div>
     <div class="stat"><span class="si">${ico('dre',20)}</span><b>${T.custo?brl(T.custo):'—'}</b><span>custo mensal do time</span>${T.custo&&T.sai?`<small>${brl(T.custoDep)} depois das decisões</small>`:''}</div>
