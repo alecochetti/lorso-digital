@@ -19,14 +19,14 @@ const podeInternas=()=>me&&me.papel!=='cliente';
 const CENTRAL_LORSO=new URLSearchParams(location.search).get('central')==='lorso';
 const eqNoCliente=()=>!CENTRAL_LORSO&&typeof cur!=='undefined'&&!!cur;
 const tCli=t=>t.diagnostico_id||(projetos.find(p=>p.id===t.projeto_id)||{}).diagnostico_id||'';
-function eqBase(){ if(eqNoCliente()) return internas.filter(t=>tCli(t)===cur.id); const c=CENTRAL_LORSO?eqUi().cli:''; return c?internas.filter(t=>c==='-'?!tCli(t):tCli(t)===c):internas; }
+function eqBase(){ const T=internas.concat(lancExt); if(eqNoCliente()) return T.filter(t=>tCli(t)===cur.id); const c=CENTRAL_LORSO?eqUi().cli:''; return c?T.filter(t=>c==='-'?!tCli(t):tCli(t)===c):T; }
 function pjBase(){ if(eqNoCliente()) return projetos.filter(p=>p.diagnostico_id===cur.id); const c=CENTRAL_LORSO?eqUi().cli:''; return c?projetos.filter(p=>c==='-'?!p.diagnostico_id:p.diagnostico_id===c):projetos; }
 /* Central LORSO: faixa de clientes. Cada botão abre só as tarefas daquele cliente. */
 const eqIniciais=n=>{ const p=String(n||'?').split(/\s+/).filter(x=>x.length>2||/^[A-Z]{2,}$/.test(x)); return (p.length>1?p.slice(0,2).map(x=>x[0]).join(''):String(p[0]||n||'?').slice(0,2)).toUpperCase(); };
 const eqModsDe=id=>{ const d=all[id]; return d&&Array.isArray(d.modulos)&&d.modulos.length?d.modulos:['diagnostico','dre','lancamento']; };
-function eqCliBar(){ const f=eqUi(); const ab=c=>internas.filter(t=>t.status!=='Concluída'&&(c==='-'?!tCli(t):tCli(t)===c)).length;
+function eqCliBar(){ const f=eqUi(); const T=internas.concat(lancExt); const ab=c=>T.filter(t=>t.status!=='Concluída'&&(c==='-'?!tCli(t):tCli(t)===c)).length;
   const bt=(id,nome,mono,n)=>{ const lg=id&&id!=='-'&&all[id]&&all[id].logo; return `<button class="eqcb ${f.cli===id?'on':''} ${lg?'comlogo':''}" data-act="eq-cli" data-v="${id}" aria-pressed="${f.cli===id}" title="${f.cli===id&&id?'Clique de novo para voltar a todos os clientes':'Ver só '+esc(nome)}">${lg?`<span class="logo-plate"><img src="${lg}" alt=""></span>`:`<span class="mono">${mono}</span>`}<span class="nm">${esc(nome)}<small>${n} ${n===1?'aberta':'abertas'}</small></span></button>`; };
-  return `<nav class="eqclibar" aria-label="Escolha o cliente">${bt('','Todos os clientes','≡',internas.filter(t=>t.status!=='Concluída').length)}${Object.values(all).sort((a,b)=>a.nome.localeCompare(b.nome)).map(d=>bt(d.id,diagNome(d.id),esc(eqIniciais(diagNome(d.id))),ab(d.id))).join('')}${bt('-','Interno LORSO','L',ab('-'))}</nav>`; }
+  return `<nav class="eqclibar" aria-label="Escolha o cliente">${bt('','Todos os clientes','≡',T.filter(t=>t.status!=='Concluída').length)}${Object.values(all).sort((a,b)=>a.nome.localeCompare(b.nome)).map(d=>bt(d.id,diagNome(d.id),esc(eqIniciais(diagNome(d.id))),ab(d.id))).join('')}${bt('-','Interno LORSO','L',ab('-'))}</nav>`; }
 /* Tarefas do Lançamento de curso do cliente escolhido: a própria aba Tarefas do módulo, só desse cliente */
 async function eqLancMontar(){ const f=eqUi(), id=f.cli, box=document.getElementById('eq-lanc'); if(!box||!id) return;
   if(!cur||cur.id!==id){ box.innerHTML='<p class="loading">Abrindo o cliente…</p>'; await openDiag(id); return; }
@@ -52,7 +52,45 @@ const itLate=t=>t.prazo&&t.status!=='Concluída'&&t.prazo<today();
 const pessoa=id=>profiles.find(p=>p.id===id);
 const diagNome=id=>id?(cur&&cur.id===id?cur.nome:(all[id]||{}).nome||'Cliente'):'';
 const pjNome=id=>{ const p=projetos.find(x=>x.id===id); return p?p.nome:''; };
-const itDono=(t,id)=>t.responsaveis.includes(id);
+const itDono=(t,id)=>t.ext?lancDono(t,id):t.responsaveis.includes(id);
+/* =====================================================================
+   Tarefas do Lançamento de curso de cada cliente, lidas do próprio módulo
+   O módulo roda invisível, só leitura (não salva nada), e devolve a lista da aba Tarefas.
+   Entram as ativas (fora do Backlog do plano e sem "Não se aplica"). Editar: dentro do cliente.
+   ===================================================================== */
+let lancExt=[], lancCarregando=false, lancT=0;
+const LANC_ST={'ENTREGUE':'Concluída','EM ANDAMENTO':'Em andamento','EM REVISÃO':'Em revisão'};
+const lancPrimeiro=n=>String(n||'').trim().split(/\s+/)[0].toLowerCase();
+function lancDono(t,id){ const p=pessoa(id); const r=t.ext.resp; if(r&&p) return lancPrimeiro(r)===lancPrimeiro(p.nome||p.email); return !r&&t.ext.quem!=='cli'&&me&&id===me.id; }
+function lancItensDe(id,dados,html){ return new Promise((res,rej)=>{
+  window.__lancDados=window.__lancDados||{}; window.__lancDados[id]=dados; window.__lancHtml=html;
+  const w=document.createElement('iframe'); w.setAttribute('aria-hidden','true'); w.tabIndex=-1; w.style.cssText='position:fixed;left:-10000px;top:0;width:1200px;height:800px;border:0;visibility:hidden;pointer-events:none';
+  const ID=JSON.stringify(id);
+  w.srcdoc=`<!doctype html><html><body><script>window.LORSO_BRIDGE={cliente:function(){return {id:${ID},nome:''};},me:function(){try{return top.me?(top.me.nome||top.me.email):'';}catch(e){return '';}},load:function(){return JSON.parse(JSON.stringify(top.__lancDados[${ID}]));},save:function(){},listen:function(){}};var f=document.createElement('iframe');f.id='m';f.srcdoc=top.__lancHtml;document.body.appendChild(f);<\/script></body></html>`;
+  let n=0; const fim=(x,e)=>{ clearInterval(tm); w.remove(); e?rej(e):res(x); };
+  const tm=setInterval(()=>{ n++; try{ const m=w.contentDocument&&w.contentDocument.getElementById('m'); const mw=m&&m.contentWindow; if(mw&&typeof mw.boardItems==='function'&&mw.document.readyState==='complete'){ fim(mw.boardItems()); return; } }catch(e){ fim(null,e); return; } if(n>80) fim(null,new Error('tempo esgotado')); },150);
+  document.body.appendChild(w); }); }
+async function lancCarregar(force){ if(lancCarregando||!podeInternas()) return; if(!force&&lancT&&Date.now()-lancT<30000) return; lancCarregando=true; lancT=Date.now();
+  try{ const r=await sb.from('modulos').select('diagnostico_id,dados').eq('modulo','lancamento'); if(r.error) throw r.error;
+    const rows=(r.data||[]).filter(x=>x.dados&&x.dados.modelos&&all[x.diagnostico_id]); const out=[];
+    if(rows.length){ const html=await modCarregar('lancamento');
+      for(const row of rows){ try{ const its=await lancItensDe(row.diagnostico_id,row.dados,html)||[];
+        its.filter(it=>!it.bl&&it.st!=='NÃO SE APLICA').forEach(it=>{ const pz=it.prazo!=null?isoLocal(new Date(it.prazo)):''; const status=LANC_ST[it.st]||'A fazer';
+          out.push({id:'lanc:'+row.diagnostico_id+':'+it.kind+':'+it.key,titulo:it.t||'Sem título',descricao:it.desc||'',responsaveis:[],diagnostico_id:row.diagnostico_id,area:'',area_eq:'',projeto_id:'',prazo:pz,inicio:'',prioridade:'Média',status,origem:'lancamento',subtarefas:(it.check||[]).map(c=>({id:'',t:c.t||'',ok:!!c.ok})),comentarios:[],concluida_em:status==='Concluída'&&pz?pz+'T12:00:00':null,
+            ext:{quem:it.quem||'',resp:it.resp||'',a:it.a||'',st:it.st,kind:it.kind,key:it.key}}); }); }
+        catch(e){ console.warn('Lançamento de',row.diagnostico_id,e); } } }
+    lancExt=out; }
+  catch(e){ console.warn('lancCarregar',e); }
+  finally{ lancCarregando=false; if(ui.view==='internas') render(); } }
+const lancQuem=t=>t.ext.quem==='lorso'?'LORSO':t.ext.quem==='cli'?'Cliente':t.ext.quem==='juntos'?'Juntos':'';
+const lancSt=t=>{ const v=String(t.ext.st||'').toLowerCase(); return `<span class="stp st-${EQ_ST.findIndex(x=>x[0]===t.status)}">${esc(v.charAt(0).toUpperCase()+v.slice(1))}</span>`; };
+const lancTag=t=>`<span class="tag lanc" title="Do Lançamento de curso. Edite dentro do cliente.">Lançamento</span>${lancQuem(t)?`<span class="tag quem q-${t.ext.quem}">${esc(lancQuem(t))}</span>`:''}`;
+function lancLinha(t){ return `<div class="eqrow ext ${t.status==='Concluída'?'done':''}"><span class="eqchk-ext ${t.status==='Concluída'?'ok':''}" aria-hidden="true">${t.status==='Concluída'?'✓':''}</span>
+   <button class="eqt" data-act="eq-lanc-abrir" data-v="${t.diagnostico_id}" title="Abrir no Lançamento de ${esc(diagNome(t.diagnostico_id))}">${esc(t.titulo)}${itLate(t)?` ${ico('alerta',13)}`:''}</button><span class="eqm">${esc(t.ext.a||'')}${t.ext.resp?' · '+esc(t.ext.resp):''}</span>
+   <span class="eqtags">${lancTag(t)}${eqProj(t)}${lancSt(t)}</span><span class="eqav"><span class="eqav-vazio">—</span></span><span class="eqper">${eqPeriodo(t)}</span></div>`; }
+function lancCard(t){ return `<div class="eqcard ext ${itLate(t)?'late':''}"><button class="eqt" data-act="eq-lanc-abrir" data-v="${t.diagnostico_id}">${esc(t.titulo)}</button>${itLate(t)?`<span class="warn">${ico('alerta',15)}</span>`:''}
+   <div class="ktags">${lancTag(t)}${eqProj(t)}</div>${t.prazo?`<div class="cd ${itLate(t)?'late':''}">${ico('relogio',13)}${t.prazo.split('-').reverse().join('/')}</div>`:''}
+   <div class="cf"><span class="muted" style="font-size:12px">${esc(t.ext.resp||t.ext.a||'')}</span><span class="muted" style="font-size:12px">Editar no cliente</span></div></div>`; }
 function minhasAbertas(){ return me?eqBase().filter(t=>itDono(t,me.id)&&t.status!=='Concluída').length:0; }
 function itStatus(t,s){ if(t.status===s)return; t.status=s; t.concluida_em=s==='Concluída'?new Date().toISOString():null; itSave(t,true); }
 
@@ -80,10 +118,10 @@ const eqStPill=t=>`<span class="stp st-${EQ_ST.findIndex(x=>x[0]===t.status)}">$
 const eqData=d=>d?d.slice(8,10)+'/'+d.slice(5,7):'';
 function eqPeriodo(t){ if(!t.prazo&&!t.inicio)return '<span class="muted">—</span>'; const l=itLate(t); return `<span class="per ${l?'late':''}">${t.inicio?eqData(t.inicio)+' → ':''}${eqData(t.prazo)||'?'}</span>`; }
 function eqMeta(t){ const st=t.subtarefas.length, ok=t.subtarefas.filter(x=>x.ok).length; return `${st?`<span class="mi" title="Subtarefas">${ico('lista',13)}${ok}/${st}</span>`:''}${t.comentarios.length?`<span class="mi" title="Comentários">${ico('chat',13)}${t.comentarios.length}</span>`:''}`; }
-function eqLinha(t){ return `<div class="eqrow ${t.status==='Concluída'?'done':''}"><input type="checkbox" data-eqchk="${t.id}" ${t.status==='Concluída'?'checked':''} aria-label="Concluir ${esc(t.titulo)}">
+function eqLinha(t){ if(t.ext) return lancLinha(t); return `<div class="eqrow ${t.status==='Concluída'?'done':''}"><input type="checkbox" data-eqchk="${t.id}" ${t.status==='Concluída'?'checked':''} aria-label="Concluir ${esc(t.titulo)}">
    <button class="eqt" data-act="eq-abrir" data-v="${t.id}">${esc(t.titulo||'Sem título')}${itLate(t)?` ${ico('alerta',13)}`:''}</button><span class="eqm">${eqMeta(t)}</span>
    <span class="eqtags">${eqArea(t.area_eq)}${eqProj(t)}${eqStPill(t)}</span><span class="eqav">${eqAvs(t.responsaveis)||'<span class="eqav-vazio" title="Sem responsável">—</span>'}</span><span class="eqper">${eqPeriodo(t)}</span></div>`; }
-function eqCard(t){ const pc=t.prioridade==='Alta'?'alta':t.prioridade==='Baixa'?'baixa':'media'; const st=t.subtarefas.length, ok=t.subtarefas.filter(x=>x.ok).length;
+function eqCard(t){ if(t.ext) return lancCard(t); const pc=t.prioridade==='Alta'?'alta':t.prioridade==='Baixa'?'baixa':'media'; const st=t.subtarefas.length, ok=t.subtarefas.filter(x=>x.ok).length;
   return `<div class="eqcard ${itLate(t)?'late':''}" draggable="true" data-it="${t.id}"><button class="eqt" data-act="eq-abrir" data-v="${t.id}">${esc(t.titulo||'Sem título')}</button>${itLate(t)?`<span class="warn">${ico('alerta',15)}</span>`:''}
    <div class="ktags">${eqArea(t.area_eq)}<span class="tag ${pc}">${esc(t.prioridade)}</span>${t.projeto_id||t.diagnostico_id?eqProj(t):''}</div>
    ${t.prazo?`<div class="cd ${itLate(t)?'late':''}">${ico('relogio',13)}${t.inicio?eqData(t.inicio)+' → ':''}${t.prazo.split('-').reverse().join('/')}</div>`:''}
@@ -96,7 +134,7 @@ function eqLista(L){ const f=eqUi();
    ${eqGrupos(L).filter(([,l])=>l.length).map(([n,l,c])=>`<section class="block eqgrp"><div class="eqgh ${c||''}"><b>${esc(n)}</b><span class="ct">${l.length}</span>${n!=='Realizadas'?`<button class="kadd2" data-act="eq-nova" data-grupo="${esc(n)}" aria-label="Nova tarefa">+</button>`:''}</div>${(c==='ok'&&!ui.open['eq-feitas']?l.slice(-5):l).map(eqLinha).join('')}${c==='ok'&&l.length>5?`<button class="eqmore" data-act="eq-feitas">${ui.open['eq-feitas']?'Mostrar menos':'Ver todas as '+l.length+' realizadas'}</button>`:''}</section>`).join('')||'<section class="block"><p class="empty">Nenhuma tarefa com esses filtros. Crie em <b>Nova tarefa</b>.</p></section>'}`; }
 function eqQuadro(L){ return `<div class="eqboard">${EQ_ST.map(([s,n],i)=>{ const it=L.filter(t=>t.status===s).sort((a,b)=>PRIO.indexOf(a.prioridade)-PRIO.indexOf(b.prioridade)||(a.prazo||'9').localeCompare(b.prazo||'9'));
    return `<section class="eqcol c${i}" data-col="${s}" data-board="it"><div class="eqch"><b>${n}</b><span class="ct">${it.length}</span><button class="kadd2" data-act="eq-nova" data-st="${s}" aria-label="Nova tarefa em ${n}">+</button></div>${it.map(eqCard).join('')}</section>`; }).join('')}</div>`; }
-function eqTabela(L){ const f=eqUi(); const key={titulo:t=>t.titulo.toLowerCase(),area:t=>t.area_eq,prio:t=>PRIO.indexOf(t.prioridade),etapa:t=>EQ_ST.findIndex(x=>x[0]===t.status),prazo:t=>t.prazo||'9999'}[f.ordem]||(t=>t.prazo||'9999');
+function eqTabela(L){ L=L.filter(t=>!t.ext); const f=eqUi(); const key={titulo:t=>t.titulo.toLowerCase(),area:t=>t.area_eq,prio:t=>PRIO.indexOf(t.prioridade),etapa:t=>EQ_ST.findIndex(x=>x[0]===t.status),prazo:t=>t.prazo||'9999'}[f.ordem]||(t=>t.prazo||'9999');
   const R=[...L].sort((a,b)=>{ const x=key(a),y=key(b); return (x<y?-1:x>y?1:0)*f.dir; });
   const th=(k,l)=>`<th><button class="thb" data-act="eq-ordem" data-v="${k}">${l}${f.ordem===k?(f.dir>0?' ↑':' ↓'):''}</button></th>`;
   return `<div class="tblw"><table class="tbl eqtab"><thead><tr>${th('titulo','Tarefa')}${th('area','Área')}<th>Responsáveis</th>${th('prio','Prioridade')}${th('etapa','Etapa')}${th('prazo','Período')}<th></th></tr></thead><tbody>
@@ -179,7 +217,7 @@ function eqDrawer(){ const f=eqUi(); if(f.aberta){ const t=internas.find(x=>x.id
    <div class="dsec"><b>Descrição</b><textarea data-pjf="descricao" data-id="${p.id}" rows="3" placeholder="Objetivo e escopo">${esc(p.descricao)}</textarea></div>
    <div class="dfoot"><button class="btn" data-act="eq-pj-tarefas" data-v="${p.id}">Ver tarefas do projeto</button><button class="btn primary" data-act="eq-fechar">Pronto</button></div></aside>`; }
   return ''; }
-function renderInternas(){ const f=eqUi();
+function renderInternas(){ const f=eqUi(); lancCarregar(false);
   if(CENTRAL_LORSO&&f.aba==='lanc'&&f.cli&&document.querySelector(`#main iframe.modframe[data-c="${f.cli}"]`)&&document.querySelector('#main .eqclibar')) return;
   if(CENTRAL_LORSO&&f.aba==='lanc'&&(!f.cli||f.cli==='-'||!eqModsDe(f.cli).includes('lancamento'))) f.aba='tarefas';
   const L=eqFiltradas(); const pessoas=profiles.filter(p=>p.ativo&&p.papel!=='cliente');
@@ -206,7 +244,8 @@ function renderInternas(){ const f=eqUi();
 
 /* ---------- eventos (chamados pelo app.js) ---------- */
 function eqClick(act,d){ const f=eqUi();
-  if(act==='eq-set'){ f[d.k]=d.v; if(d.k==='aba'){ f.aberta=null; f.pj=null; } render(); return true; }
+  if(act==='eq-set'){ if(d.k==='aba'&&f.aba==='lanc'&&d.v!=='lanc') setTimeout(()=>lancCarregar(true),1500); f[d.k]=d.v; if(d.k==='aba'){ f.aberta=null; f.pj=null; } render(); return true; }
+  if(act==='eq-lanc-abrir'){ if(eqNoCliente()){ ui.view='lancamento'; render(); return true; } f.cli=d.v; f.aba='lanc'; f.aberta=null; f.pj=null; render(); window.scrollTo({top:0}); return true; }
   if(act==='eq-cli-lanc'){ f.cli=d.v; f.aba='lanc'; f.visao='lista'; f.aberta=null; f.pj=null; render(); return true; }
   if(act==='eq-cli-ver'||act==='eq-cli'){ f.cli=act==='eq-cli'&&d.v&&f.cli===d.v?'':(d.v||''); f.projeto=''; f.aberta=null; f.pj=null; if(act==='eq-cli-ver'||(f.cli&&f.visao==='cliente')) f.visao='lista'; if(!f.cli){ f.visao='cliente'; if(f.aba==='lanc') f.aba='tarefas'; } if(f.aba==='lanc'&&(!f.cli||f.cli==='-'||!eqModsDe(f.cli).includes('lancamento'))) f.aba='tarefas'; render(); return true; }
   if(act==='eq-limpar'){ Object.assign(f,{pessoa:'',area:'',projeto:'',prazo:'',busca:''}); render(); return true; }
