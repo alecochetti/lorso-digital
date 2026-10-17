@@ -73,7 +73,7 @@ function lancItensDe(id,dados,html){ return new Promise((res,rej)=>{
   let n=0; const fim=(x,e)=>{ clearInterval(tm); w.remove(); e?rej(e):res(x); };
   const tm=setInterval(()=>{ n++; try{ const m=w.contentDocument&&w.contentDocument.getElementById('m'); const mw=m&&m.contentWindow; if(mw&&typeof mw.boardItems==='function'&&mw.document.readyState==='complete'){ fim(mw.boardItems()); return; } }catch(e){ fim(null,e); return; } if(n>80) fim(null,new Error('tempo esgotado')); },150);
   document.body.appendChild(w); }); }
-async function lancCarregar(force){ if(lancCarregando||!podeInternas()) return; if(!force&&lancT&&Date.now()-lancT<30000) return; lancCarregando=true; lancT=Date.now();
+async function lancCarregar(force){ if(lancCarregando||!podeInternas()) return; if(!force&&lancT) return; lancCarregando=true; lancT=Date.now();
   try{ const r=await sb.from('modulos').select('diagnostico_id,dados').eq('modulo','lancamento'); if(r.error) throw r.error;
     const rows=(r.data||[]).filter(x=>x.dados&&x.dados.modelos&&all[x.diagnostico_id]); const out=[];
     if(rows.length){ const html=await modCarregar('lancamento');
@@ -84,7 +84,8 @@ async function lancCarregar(force){ if(lancCarregando||!podeInternas()) return; 
         catch(e){ console.warn('Lançamento de',row.diagnostico_id,e); } } }
     lancExt=out; }
   catch(e){ console.warn('lancCarregar',e); }
-  finally{ lancCarregando=false; if(ui.view==='internas') render(); } }
+  finally{ lancCarregando=false; lancRedesenhar(); } }
+function lancRedesenhar(){ if(ui.view!=='internas') return; const f=eqUi(); if(isTyping()||f.aberta||f.pj){ clearTimeout(lancRedesenhar._t); lancRedesenhar._t=setTimeout(lancRedesenhar,1500); return; } render(); }
 const lancQuem=t=>t.ext.quem==='lorso'?'LORSO':t.ext.quem==='cli'?'Cliente':t.ext.quem==='juntos'?'Juntos':'';
 const lancSt=t=>{ const v=String(t.ext.st||'').toLowerCase(); return `<span class="stp st-${EQ_ST.findIndex(x=>x[0]===t.status)}">${esc(v.charAt(0).toUpperCase()+v.slice(1))}</span>`; };
 const lancTag=t=>`<span class="tag lanc" title="Do Lançamento de curso. Edite dentro do cliente.">Lançamento</span>${lancQuem(t)?`<span class="tag quem q-${t.ext.quem}">${esc(lancQuem(t))}</span>`:''}`;
@@ -220,7 +221,7 @@ function eqDrawer(){ const f=eqUi(); if(f.aberta){ const t=internas.find(x=>x.id
    <div class="dsec"><b>Descrição</b><textarea data-pjf="descricao" data-id="${p.id}" rows="3" placeholder="Objetivo e escopo">${esc(p.descricao)}</textarea></div>
    <div class="dfoot"><button class="btn" data-act="eq-pj-tarefas" data-v="${p.id}">Ver tarefas do projeto</button><button class="btn primary" data-act="eq-fechar">Pronto</button></div></aside>`; }
   return ''; }
-function renderInternas(){ const f=eqUi(); lancCarregar(false);
+function renderInternas(){ const f=eqUi(); if(!lancT&&!lancCarregando) setTimeout(()=>lancCarregar(false),400);
   if(CENTRAL_LORSO&&f.aba==='lanc'&&f.cli&&document.querySelector(`#main iframe.modframe[data-c="${f.cli}"]`)&&document.querySelector('#main .eqclibar')) return;
   if(CENTRAL_LORSO&&f.aba==='lanc'&&(!f.cli||f.cli==='-'||!eqModsDe(f.cli).includes('lancamento'))) f.aba='tarefas';
   const L=eqFiltradas(); const pessoas=profiles.filter(p=>p.ativo&&p.papel!=='cliente');

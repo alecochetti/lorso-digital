@@ -589,3 +589,7 @@ a.btn,a.btn:visited{color:var(--fg);text-decoration:none}
 .ac-resumo{font-size:13px;margin:0;color:var(--fg)}
 .ac-bt{display:flex;gap:8px;flex-wrap:wrap}
 @media (max-width:640px){ .ac-cli{grid-template-columns:auto minmax(0,1fr)} .ac-cli .ac-seg{grid-column:1/-1} }
+/* Painel lateral (tarefa, projeto, pessoa): nada encolhe; o painel rola */
+.drawer>*{flex-shrink:0}
+.drawer .dtit{min-height:58px}
+.ac-pess .ac-cli{grid-template-columns:auto minmax(0,1fr)}.ac-pess .ac-cli .ac-seg{grid-column:1/-1;justify-self:start}.ac-cli b{white-space:normal;overflow-wrap:anywhere}
