@@ -918,6 +918,7 @@ function renderResultados(INS){
   $('#main').innerHTML=`<section class="panel">
    <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow"><b>Fase 5</b> de 5</span><h2 style="margin-top:8px">Resultados</h2><p class="lead">Do resumo para a reitoria aos detalhes: diagnóstico, causas raiz, plano no tempo e as evidências.</p></div>
    <div class="res-actions">${OUT_BTNS()}<button class="btn" data-act="copy">Copiar resumo</button></div></header>
+   ${typeof resDataRefHtml==='function'?resDataRefHtml():''}
    ${ui.copy!=null?`<section class="block"><div class="block-h"><h3>Resumo para colar</h3><button class="btn sm" data-act="copy-close">Fechar</button></div><textarea class="copyout" id="copyout" readonly>${esc(ui.copy)}</textarea></section>`:''}
    <section class="rx-hero"><div class="gauge">${gaugeSvg(ov.score,ov.level)}<div class="gv"><b>${ov.score!=null?dec(ov.score):'—'}</b><small>de 4 · maturidade geral</small>${lvChip(ov.level)}</div></div>
     <div class="rx-sum"><h3>Resumo executivo</h3>${leit.length?`<ul class="leit">${leit.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`:'<p class="muted">O resumo aparece quando houver respostas suficientes.</p>'}</div>
@@ -935,6 +936,7 @@ function renderResultados(INS){
     ${tempoStats()?`<section class="block"><div class="block-h"><h3>Para onde vai o tempo do marketing</h3><button class="chip" data-act="goto" data-v="demandas">Editar horas</button></div>${tempoDonut()}</section>`:`<section class="block"><div class="block-h"><h3>Unidades de negócio</h3></div>${unTiles()}</section>`}
    </div>
    ${typeof operacaoRes==='function'?operacaoRes():''}
+   ${typeof volumetriaHtml==='function'?volumetriaHtml(false):''}
    ${tempoStats()?`<section class="block"><div class="block-h"><h3>Unidades de negócio</h3><p>Maturidade e receita contra a meta</p></div>${unTiles()}</section>`:''}
    <section class="block"><div class="block-h"><h3>Causas raiz</h3><p>${INS.length} incongruências agrupadas em ${pl(nB,'bloco','blocos')}, do mais pesado para o mais leve.</p></div>${blocosHtml(INS)}</section>
    ${nB?`<section class="block"><div class="block-h"><h3>Plano no tempo</h3><p>Diretrizes por horizonte para as causas raiz acima.</p></div>${planoHtml(INS)}</section>`:''}
@@ -1301,6 +1303,7 @@ function renderSide(INS){
      ${sideItem('reitoria','Reitoria','dstep','reitoria',pc(stepProgress('reitoria')))}
      ${sideItem('entrevistas','Entrevistas','dstep','entrevistas',pc(stepProgress('entrevistas')))}
      ${typeof renderPessoas==='function'?sideItem('pessoas','Pessoas ouvidas','view','pessoas',cur.pessoas.length||''):''}
+     ${typeof renderSolicitantes==='function'?sideItem('solicitantes','Áreas administrativas','view','solicitantes'):''}
      ${sideItem('visao','Diagnóstico','view','visao',g.level?'N'+g.level:'')}
      <span class="sb-g">Fases 2 a 5</span>
      ${STAGES.slice(1).map(st=>(st.id==='execucao'&&typeof renderPlano==='function'?sideItem('plano','Plano de ação','view','plano',(()=>{const n=paItens().length;return n||'';})()):'')+sideItem(st.id,st.nome,'stage',st.id,st.id==='execucao'&&cur.acoes.some(isPlano)?`${cur.acoes.filter(t=>isPlano(t)&&t.status==='Concluída').length}/${cur.acoes.filter(isPlano).length}`:st.q&&st.q.length?pc(stageProgress(st)):'',st.id==='execucao'&&hot)).join('')}
@@ -1311,7 +1314,7 @@ function renderSide(INS){
      ${temMod('diagnostico')?`<span class="sb-g">Operação</span>
      ${sideItem('dores','Dores e gargalos','view','dores',cur.dores.length||'')}
      ${sideItem('sistemas','Sistemas','view','sistemas',cur.sistemas.filter(y=>y.nome).length||'')}
-     ${podeInternas()&&typeof pdiPessoas==='function'?sideItem('pdi','PDI Marketing','view','pdi',pdiPessoas().length||''):''}
+     ${(podeInternas()||cur.pdiReitoria)&&typeof pdiPessoas==='function'?sideItem('pdi','PDI Marketing','view','pdi',pdiPessoas().length||''):''}
      <span class="sb-g">Apoio</span>
      ${sideItem('como','Método LORSO','view','como')}`:'<span class="sb-g">Apoio</span>'}
      ${typeof renderGuia==='function'?sideItem('guia','Guia de preenchimento','view','guia'):''}
@@ -1404,7 +1407,7 @@ function syncPlano(INS){
 const isPlano=t=>!(t.origem&&t.origem.startsWith('coleta:'));
 
 /* ================= TEMPO DO MARKETING: ADMINISTRATIVO x UNIDADES ================= */
-const TEMPO=[['adm','Administrativo e interno','Relatórios, reuniões internas, compras, prestação de contas, pedidos de outras áreas','var(--faint)'],['institucional','Marca institucional','Campanhas da instituição, imprensa, eventos gerais','var(--accent-2)'],['colegio','Colégio','','var(--n3)'],['graduacao','Graduação','','var(--accent)'],['pos','Pós-Graduação','','var(--n2)'],['mestrado','Mestrado','','#9b7bd4']];
+const TEMPO=[['adm','Administrativo e interno','Relatórios, reuniões internas, compras, prestação de contas, pedidos de outras áreas','var(--faint)'],['projetos','Projetos e manutenção','Projetos definidos nas reuniões quinzenais com os gestores administrativos','var(--s3)'],['institucional','Marca institucional','Campanhas da instituição, imprensa, eventos gerais','var(--accent-2)'],['colegio','Colégio','','var(--n3)'],['graduacao','Graduação','','var(--accent)'],['pos','Pós-Graduação','','var(--n2)'],['mestrado','Mestrado','','#9b7bd4']];
 function tempoStats(){
   const v={}; let tot=0; TEMPO.forEach(([k])=>{ v[k]=num(cur.campos['demandas.tempo_'+k])||0; tot+=v[k]; }); if(!tot)return null;
   const p={}; TEMPO.forEach(([k])=>p[k]=v[k]/tot);
@@ -1643,7 +1646,7 @@ function renderInner(){
     $('#main').innerHTML=`<section class="auth" style="min-height:auto"><div class="auth-box"><h2>Nenhum diagnóstico ainda</h2><p>${me&&me.papel!=='cliente'?'Crie o primeiro com o nome do cliente. Depois convide a equipe e distribua as áreas.':'Nenhum diagnóstico foi liberado para você ainda. Fale com a LORSO Digital.'}</p>${me&&me.papel!=='cliente'?`<form id="f-novo2"><label>Cliente<input id="novo-nome2" required placeholder="Nome da instituição"></label><button class="btn primary" type="submit">Criar diagnóstico</button></form>`:''}</div></section>`;
     return; }
   if(ui.view==='tarefas'){ ui.view='fases'; ui.stage='execucao'; }
-  if(!temMod('diagnostico')&&['fases','visao','dores','sistemas','como','relatorio','pessoas'].includes(ui.view)) ui.view=temMod('dre')?'dre':temMod('lancamento')?'lancamento':'perfil';
+  if(!temMod('diagnostico')&&['fases','visao','dores','sistemas','como','relatorio','pessoas','solicitantes'].includes(ui.view)) ui.view=temMod('dre')?'dre':temMod('lancamento')?'lancamento':'perfil';
   if((ui.view==='dre'&&!temMod('dre'))||(ui.view==='lancamento'&&!temMod('lancamento'))) ui.view=temMod('diagnostico')?'fases':temMod('dre')?'dre':'lancamento';
   computeAll(); const INS=runEngine();
   renderBar(); renderSide(INS);
@@ -1660,7 +1663,8 @@ function renderInner(){
   else if(ui.view==='internas'&&podeInternas()) renderInternas();
   else if(ui.view==='horas'&&typeof renderHoras==='function') renderHoras();
   else if(ui.view==='pessoas'&&typeof renderPessoas==='function') renderPessoas();
-  else if(ui.view==='pdi'&&podeInternas()&&typeof renderPdi==='function') renderPdi(INS);
+  else if(ui.view==='solicitantes'&&typeof renderSolicitantes==='function') renderSolicitantes();
+  else if(ui.view==='pdi'&&(podeInternas()||cur.pdiReitoria)&&typeof renderPdi==='function') renderPdi(INS);
   else if(ui.view==='plano'&&typeof renderPlano==='function') renderPlano(INS);
   else if(ui.view==='guia'&&typeof renderGuia==='function') renderGuia();
   else if(ui.view==='perfil') renderPerfil();
@@ -1875,6 +1879,7 @@ async function loadDiag(id){
   resA.forEach(r=>{ o.dono_area[r.area]=r.user_id; });
   fofa.forEach(r=>{ o.fofa[r.chave]=o.fofa[r.chave]||{}; (o.fofa[r.chave][r.quadrante]=o.fofa[r.chave][r.quadrante]||[]).push(r.texto); });
   Object.keys(ARR_DB).forEach((k,i)=>{ o[k]=arrs[i].map(ARR_DB[k].from); });
+  o.pdiReitoria=!!d.pdi_reitoria;
   o.prazo={inicio:d.inicio_projeto||'',fim:d.fim_previsto||'',hist:Array.isArray(d.prazo_historico)?d.prazo_historico:[]};
   o.equipe=equipeList(); o.mods={};
   try{ const mr=await sb.from('modulos').select('modulo,dados').eq('diagnostico_id',id); if(!mr.error)(mr.data||[]).forEach(r=>{ o.mods[r.modulo]=r.dados; }); }catch(e){ /* módulos opcionais */ }
@@ -2052,6 +2057,7 @@ document.addEventListener('click',e=>{
   if(act.startsWith('lt-')&&typeof leituraClick==='function'&&leituraClick(act,d)) return;
   if(act==='cap-somar'&&typeof capSomar==='function'){ capSomar(d.v||''); return; }
   if(act==='bu-tab'){ ui.baseUn=d.v; ui.view='fases'; ui.stage='diagnostico'; ui.dstep='base'; render(); window.scrollTo({top:0}); return; }
+  if(act.startsWith('sol-')&&typeof solicitantesClick==='function'&&solicitantesClick(act,d)) return;
   if(act.startsWith('pes-')&&typeof pessoasClick==='function'&&pessoasClick(act,d)) return;
   if(act.startsWith('ciclo-')&&typeof cicloClick==='function'&&cicloClick(act,d)) return;
   if(act.startsWith('pz-')&&typeof prazoClick==='function'&&prazoClick(act,d)) return;

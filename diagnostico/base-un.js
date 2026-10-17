@@ -7,6 +7,7 @@
    notas e regras: é o mesmo dado, digitado uma vez, visto em dois lugares.
    ===================================================================== */
 const BU_OUTROS='outros';
+const BU_ORIGENS=[['comercial','Comercial'],['eventos','Eventos'],['growth','Growth (mídia paga)'],['organico','Comunicação orgânica'],['feiras','Feiras de profissões'],['outros','Outras']];
 const buKey=(un,k)=>`base.${un}.${k}`;
 const buNum=k=>num(cur.campos[k]);
 
@@ -20,19 +21,23 @@ function buDados(un){
   const cs=cur.cursos.filter(c=>c.un===un&&c.status!=='Descontinuado');
   const turmas=cs.reduce((a,c)=>a+(num(c.turmas)||0),0)||null;
   const verba=buNum(`${un}.orcamento`), receita=buNum(`${un}.receita`), metaRec=buNum(`${un}.meta_rec`), metaMat=buNum(`${un}.meta_mat`);
-  const leads=buNum(buKey(un,'leads')), insc=buNum(buKey(un,'inscritos'));
+  const origens=BU_ORIGENS.map(([k,l])=>[k,l,buNum(buKey(un,'leads_'+k))]); const somaOr=origens.reduce((a,o)=>a+(o[2]||0),0);
+  const leads=somaOr||buNum(buKey(un,'leads')), insc=buNum(buKey(un,'inscritos')), inscGrowth=buNum(buKey(un,'insc_growth')), verbaMidia=buNum(buKey(un,'verba_midia'));
+  const shareGrowth=insc&&inscGrowth!=null?inscGrowth/insc:null, cpiGrowth=verbaMidia&&inscGrowth?verbaMidia/inscGrowth:null;
+  const cacMidia=verbaMidia&&captados&&shareGrowth?verbaMidia/(captados*shareGrowth):null;
+  const metaOficial=metaMat!=null?metaMat:meta;
   const meses=buNum(buKey(un,'meses_roi'))||12;
   const cac=verba&&captados?verba/captados:null, cpl=verba&&leads?verba/leads:null;
   const recCapt=captados!=null&&ticket!=null?captados*ticket*meses:null;
   const roi=verba&&recCapt!=null?(recCapt-verba)/verba:null;
   const payback=verba&&captados&&ticket?verba/(captados*ticket):null;
-  return {un,caps,alunos,meta,captados,ticket,turmas,cursos:cs.length,lanc:cs.filter(c=>c.status==='Lançamento').length,verba,receita,metaRec,metaMat,leads,insc,meses,cac,cpl,roi,payback,recCapt,
-    ocup:alunos&&captados!=null?captados/alunos:null, ating:meta&&captados!=null?captados/meta:null, atRec:metaRec&&receita!=null?receita/metaRec:null,
+  return {un,caps,alunos,meta:metaOficial,metaSoma:meta,captados,origens,inscGrowth,verbaMidia,shareGrowth,cpiGrowth,cacMidia,coord:cur.campos[`${un}.coord`]||'',cicloRef:cur.campos[`${un}.ciclo_ref`]||'',ticket,turmas,cursos:cs.length,lanc:cs.filter(c=>c.status==='Lançamento').length,verba,receita,metaRec,metaMat,leads,insc,meses,cac,cpl,roi,payback,recCapt,
+    ocup:alunos&&captados!=null?captados/alunos:null, ating:metaOficial&&captados!=null?captados/metaOficial:null, atRec:metaRec&&receita!=null?receita/metaRec:null,
     convLI:leads&&insc!=null?insc/leads:null, convIM:insc&&captados!=null?captados/insc:null};
 }
 const buN=v=>v==null?'—':Math.round(v).toLocaleString('pt-BR');
 const buX=v=>v==null?'—':(v*100).toFixed(0)+'%';
-const buRoi=v=>v==null?'—':(v>=0?'+':'')+(v*100).toFixed(0)+'%';
+const buRoi=v=>v==null?'—':v>=1?(v+1).toFixed(1).replace('.',',').replace(',0','')+'x a verba':(v>=0?'+':'')+(v*100).toFixed(0)+'%';
 
 function buTabs(){
   const t=ui.baseUn||'geral', semUn=cur.cursos.filter(c=>!c.un).length;
@@ -73,13 +78,14 @@ function buLigado(key,label,tipo,ligado){
 function buUnHtml(un,cursosTabela,pctCell){
   const u=UNS.find(x=>x.id===un), d=buDados(un), ent='Entrevistas · '+u.nome;
   const kp=(v,l,s,cls)=>`<div class="stat ${cls||''}"><b>${v}</b><span>${l}</span>${s?`<small>${s}</small>`:''}</div>`;
-  const metaDif=d.metaMat!=null&&d.meta!=null&&Math.round(d.metaMat)!==Math.round(d.meta);
+  const metaDif=d.metaMat!=null&&d.metaSoma!=null&&Math.round(d.metaMat)!==Math.round(d.metaSoma);
   return `
+   <p class="bu-ref">${d.cicloRef?`Ciclo de referência <b>${esc(d.cicloRef)}</b>`:'Ciclo de referência não informado'} · ${d.coord?`Coordenação: <b>${esc(d.coord)}</b>`:'coordenação não informada'} <span class="tag area">ligado a ${esc(ent)}</span></p>
    <div class="stats bu-k">
-    ${kp(buN(d.captados),'captados no ciclo',d.meta!=null?`meta ${buN(d.meta)} · ${buX(d.ating)}`:'',d.ating!=null&&d.ating<0.8?'bad':'')}
+    ${kp(buN(d.captados),'matriculados no ciclo',d.meta!=null?`meta ${d.metaMat!=null?'oficial ':''}${buN(d.meta)} · ${buX(d.ating)}`:'',d.ating!=null&&d.ating<0.8?'bad':'')}
     ${kp(buN(d.alunos),'alunos de capacidade',d.turmas?`${buN(d.turmas)} turmas · ocupação ${buX(d.ocup)}`:d.ocup!=null?`ocupação ${buX(d.ocup)}`:'',d.ocup!=null&&d.ocup<0.7?'warn':'')}
-    ${kp(d.verba!=null?brl(d.verba):'—','verba de marketing',d.cpl!=null?`CPL ${brl(d.cpl)}`:'')}
-    ${kp(d.cac!=null?brl(d.cac):'—','CAC por matrícula',d.ticket!=null?`mensalidade média ${brl(d.ticket)}`:'')}
+    ${kp(d.cac!=null?brl(d.cac):'—','CAC geral',d.verba!=null?`orçamento ${brl(d.verba)} ÷ matriculados`:'orçamento de marketing ÷ matriculados')}
+    ${kp(d.cpiGrowth!=null?brl(d.cpiGrowth):'—','custo por inscrito do growth',d.shareGrowth!=null?`growth traz ${buX(d.shareGrowth)} dos inscritos${d.cacMidia!=null?` · CAC de mídia ${brl(d.cacMidia)}`:''}`:'verba de mídia ÷ inscritos via growth')}
     ${kp(buRoi(d.roi),'ROI da captação',d.roi!=null?`${d.meses} meses de mensalidade${d.payback!=null?` · se paga em ${d.payback.toFixed(1).replace('.',',')} meses`:''}`:'',d.roi!=null&&d.roi<0?'bad':'')}
    </div>
    <section class="block"><div class="block-h"><h3>Captação e capacidade</h3><p>Alunos, meta e captados por turno ou modalidade.</p></div>
@@ -87,17 +93,20 @@ function buUnHtml(un,cursosTabela,pctCell){
      ${d.caps.map(r=>`<tr><td>${r.mod}</td><td>${cap$(r.k,'vagas')}</td><td>${cap$(r.k,'meta')}</td><td>${cap$(r.k,'captados')}</td><td>${cap$(r.k,'ticket','R$')}</td>${pctCell(r.ocup,0.7)}${pctCell(r.ating,0.8)}</tr>`).join('')}
      ${d.caps.length>1?`<tr><td><b>Total</b></td><td class="r"><b>${buN(d.alunos)}</b></td><td class="r"><b>${buN(d.meta)}</b></td><td class="r"><b>${buN(d.captados)}</b></td><td class="r">${d.ticket!=null?brl(d.ticket):''}</td>${pctCell(d.ocup,0.7)}${pctCell(d.ating,0.8)}</tr>`:''}
     </tbody></table></div>${typeof capCursosHtml==='function'?capCursosHtml(un):''}
-    ${metaDif?`<p class="pz-aviso"><span class="i">!</span><span>Na entrevista da UN a meta de matrículas informada é ${buN(d.metaMat)}, e a soma das metas aqui é ${buN(d.meta)}. Vale confirmar qual vale.</span></p>`:''}</section>
-   <section class="block"><div class="block-h"><h3>Verba, funil e retorno</h3><p>Base do CAC e do ROI desta UN.</p></div>
+    ${metaDif?`<p class="pz-aviso"><span class="i">!</span><span>A meta oficial da coordenação é ${buN(d.metaMat)} e a soma das metas por turno é ${buN(d.metaSoma)}. A oficial é a que vale nos cálculos.</span></p>`:''}</section>
+   <section class="block"><div class="block-h"><h3>Verba, funil e retorno</h3><p>CAC geral: orçamento de marketing ÷ matriculados. CAC do growth: verba de mídia ÷ inscritos que vieram do growth.</p></div>
     <div class="fields bu-f">
-     ${buLigado(`${un}.orcamento`,'Verba de marketing no ciclo','R$',ent)}
+     ${buLigado(`${un}.orcamento`,'Orçamento de marketing do ciclo (DRE)','R$',ent)}
+     ${buLigado(buKey(un,'verba_midia'),'Verba de mídia do growth no ciclo','R$')}
      ${buLigado(`${un}.meta_rec`,'Meta de receita','R$',ent)}
      ${buLigado(`${un}.receita`,'Receita realizada ou projetada','R$',ent)}
-     ${buLigado(buKey(un,'leads'),'Leads no ciclo','n')}
-     ${buLigado(buKey(un,'inscritos'),'Inscritos no ciclo','n')}
-     ${buLigado(buKey(un,'meses_roi'),'Meses de mensalidade por aluno (para o ROI)','m')}
+     ${buLigado(buKey(un,'inscritos'),'Inscritos no vestibular ou processo seletivo','n')}
+     ${buLigado(buKey(un,'insc_growth'),'Desses, inscritos que vieram do growth','n')}
+     ${buLigado(buKey(un,'meses_roi'),'Meses de mensalidade por aluno (para o ROI anual)','m')}
     </div>
-    ${d.leads||d.insc?`<div class="bu-funil">${[['Leads',d.leads],['Inscritos',d.insc],['Captados',d.captados]].map(([l,v],i,a)=>`<div><b>${buN(v)}</b><span>${l}</span>${i<a.length-1&&v&&a[i+1][1]!=null?`<small>${buX(a[i+1][1]/v)} seguem</small>`:''}</div>`).join('')}</div>`:''}
+    <div class="dsec"><b>Leads por origem</b><div class="fields bu-f">${BU_ORIGENS.map(([k,l])=>buLigado(buKey(un,'leads_'+k),l,'n')).join('')}</div></div>
+    ${d.leads||d.insc?`<div class="bu-funil">${[['Leads',d.leads],['Inscritos',d.insc],['Matriculados',d.captados]].map(([l,v],i,a)=>`<div><b>${buN(v)}</b><span>${l}</span>${i<a.length-1&&v&&a[i+1][1]!=null?`<small>${buX(a[i+1][1]/v)} seguem</small>`:''}</div>`).join('')}</div>`:''}
+    ${d.origens.some(o=>o[2])?`<div class="chart">${d.origens.filter(o=>o[2]).sort((a,b)=>b[2]-a[2]).map(o=>`<div class="crow"><span class="nm">${esc(o[1])}</span><div class="track"><span style="width:${(o[2]/Math.max(...d.origens.map(x=>x[2]||0))*100).toFixed(1)}%;min-width:4px;background:var(--n3)"></span></div><span class="num" style="font-size:12px">${buN(o[2])} · ${buX(o[2]/d.leads)}</span></div>`).join('')}</div>`:''}
    </section>
    ${ciclosUnHtml(un)}
    <section class="block"><div class="block-h"><h3>Cursos de ${esc(u.nome)}</h3><p>${pl(d.cursos,'curso','cursos')}${d.lanc?` · ${pl(d.lanc,'lançamento','lançamentos')}`:''}</p></div>
@@ -108,12 +117,14 @@ function buUnHtml(un,cursosTabela,pctCell){
 
 /* ---------- Calendário de captação: ciclos por UN e datas dos cursos ---------- */
 const CICLO_ETAPAS=[['camp_ini','Campanha começa'],['insc_ini','Inscrições abrem'],['mat_ini','Matrículas abrem'],['camp_fim','Campanha encerra'],['aulas','Aulas começam']];
+const CICLO_NUM=[['verba','Verba da campanha','R$'],['inscritos','Inscritos',''],['matriculados','Matriculados','']];
+function cicloRoi(c){ const d=buDados(c.un), v=num(c.verba), m=num(c.matriculados); if(!v||m==null||d.ticket==null) return null; return {roi:(m*d.ticket*d.meses-v)/v,cac:m?v/m:null}; }
 const CICLO_SUG={colegio:['Matrículas do ano letivo','Rematrícula'],graduacao:['Vestibular 1º semestre','Vestibular 2º semestre','Transferência e segunda graduação'],pos:['Turma do 1º semestre','Turma do 2º semestre'],mestrado:['Processo seletivo']};
 function ciclosTodos(){ try{ const L=JSON.parse(cur.campos['base.ciclos']||'[]'); return Array.isArray(L)?L:[]; }catch(e){ return []; } }
 function ciclosSalvar(L){ cur.campos['base.ciclos']=L.length?JSON.stringify(L):''; touch(false); }
 const cDt=s=>{ if(!s) return null; const [y,m,d]=String(s).split('-').map(Number); return y?new Date(y,m-1,d):null; };
 const cFmt=s=>{ const d=cDt(s); return d?d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}):'—'; };
-const cHoje=()=>{ const t=new Date(); return new Date(t.getFullYear(),t.getMonth(),t.getDate()); };
+const cHoje=()=>{ const f=cur&&cur.campos['res.data_ref']; if(f){ const d=cDt(f); if(d) return d; } const t=new Date(); return new Date(t.getFullYear(),t.getMonth(),t.getDate()); };
 function cicloSituacao(c){
   const h=cHoje(), ini=cDt(c.camp_ini)||cDt(c.insc_ini), fim=cDt(c.camp_fim), aulas=cDt(c.aulas), dias=(a,b)=>Math.round((b-a)/864e5);
   if(ini&&h<ini) return {k:'futuro',t:`começa em ${dias(h,ini)} dias`};
@@ -146,8 +157,8 @@ function ciclosUnHtml(un){
   const L=ciclosTodos().filter(c=>c.un===un), sug=(CICLO_SUG[un]||[]).filter(n=>!L.some(c=>c.nome===n));
   const cs=cur.cursos.filter(c=>c.un===un&&c.abertura&&c.encerramento);
   return `<section class="block"><div class="block-h"><h3>Calendário de captação</h3><p>Campanha, inscrições, matrículas e início das aulas de cada ciclo.</p></div>
-   ${L.length?`<div class="tblw"><table class="tbl tciclos"><thead><tr><th style="min-width:200px">Ciclo</th>${CICLO_ETAPAS.map(([,l])=>`<th>${l}</th>`).join('')}<th>Situação</th><th></th></tr></thead><tbody>
-    ${L.map(c=>{ const st=cicloSituacao(c); return `<tr><td><input data-ciclo="${c.id}" data-f="nome" value="${esc(c.nome||'')}" placeholder="Ex.: Vestibular 2027.1" aria-label="Nome do ciclo"></td>${CICLO_ETAPAS.map(([k,l])=>`<td><input type="date" class="dt" data-ciclo="${c.id}" data-f="${k}" value="${esc(c[k]||'')}" aria-label="${l}"></td>`).join('')}<td><span class="csit ${st.k}">${st.t}</span></td><td class="x"><button class="xbtn" data-act="ciclo-del" data-id="${c.id}" aria-label="Remover ciclo">×</button></td></tr>`; }).join('')}
+   ${L.length?`<div class="tblw"><table class="tbl tciclos"><thead><tr><th style="min-width:200px">Ciclo</th>${CICLO_ETAPAS.map(([,l])=>`<th>${l}</th>`).join('')}${CICLO_NUM.map(([,l])=>`<th>${l}</th>`).join('')}<th>ROI da campanha</th><th>Situação</th><th></th></tr></thead><tbody>
+    ${L.map(c=>{ const st=cicloSituacao(c); return `<tr><td><input data-ciclo="${c.id}" data-f="nome" value="${esc(c.nome||'')}" placeholder="Ex.: Vestibular 2027.1" aria-label="Nome do ciclo"></td>${CICLO_ETAPAS.map(([k,l])=>`<td><input type="date" class="dt" data-ciclo="${c.id}" data-f="${k}" value="${esc(c[k]||'')}" aria-label="${l}"></td>`).join('')}${CICLO_NUM.map(([k,l,u])=>`<td><input class="cnum" data-ciclo="${c.id}" data-f="${k}" value="${esc(c[k]||'')}" inputmode="decimal" placeholder="${u||'0'}" aria-label="${l}"></td>`).join('')}<td class="num">${(r=>r?`<b class="${r.roi<0?'bu-bad':''}">${buRoi(r.roi)}</b>${r.cac!=null?`<small class="curso-obs">CAC ${brl(r.cac)}</small>`:''}`:'<span class="muted">—</span>')(cicloRoi(c))}</td><td><span class="csit ${st.k}">${st.t}</span></td><td class="x"><button class="xbtn" data-act="ciclo-del" data-id="${c.id}" aria-label="Remover ciclo">×</button></td></tr>`; }).join('')}
    </tbody></table></div>`:'<p class="muted" style="margin:0">Nenhum ciclo ainda. Crie um para cada campanha de captação desta UN.</p>'}
    <div class="bu-cnt"><button class="btn sm" data-act="ciclo-add" data-v="">+ Ciclo de captação</button>${sug.map(n=>`<button class="chip" data-act="ciclo-add" data-v="${esc(n)}">+ ${esc(n)}</button>`).join('')}</div>
    ${cicloTimeline([...L.map(cicloItem),...cs.slice(0,20).map(cursoItem)])}
@@ -195,3 +206,10 @@ document.addEventListener('change',e=>{ const t=e.target; if(!t||!t.dataset||!t.
   const c=cur.cursos.find(x=>x.id===t.dataset.curso), velho=t.dataset.velho; if(!c||velho==null||velho===t.value) return;
   let n=0; cur.cursos.forEach(x=>{ if(x!==c&&x.un===c.un&&x.modalidade===c.modalidade&&(x.obs||'')===(c.obs||'')&&String(x.nome).trim().toLowerCase()===String(velho).trim().toLowerCase()){ x.nome=c.nome; n++; } });
   t.dataset.velho=t.value; if(n){ touch(true); } });
+
+/* Data de referência dos resultados: só a equipe LORSO fixa. Calendário e alertas usam essa data. */
+function resDataRefHtml(){
+  const v=cur.campos['res.data_ref']||'', eq=me&&me.papel!=='cliente';
+  if(!eq) return v?`<p class="bu-ref">Resultados com data de referência <b>${cFmt(v)}/${v.slice(0,4)}</b>.</p>`:'';
+  return `<div class="bu-ref resref"><span>Data de referência dos resultados</span><input type="date" class="dt" data-campo="res.data_ref" value="${esc(v)}" aria-label="Data de referência dos resultados"><small class="muted">${v?'Fixada: calendário e alertas usam esta data até você limpar.':'Vazia: os resultados usam a data de hoje. Fixe antes de apresentar.'}</small></div>`;
+}

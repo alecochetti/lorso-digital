@@ -24,7 +24,7 @@ async function pdiLoad(){ if(!cur||pdiSt.carregando)return; const id=cur.id; pdi
   if(r.error){ console.warn('avaliacoes',r.error.message); toast('Não foi possível carregar as avaliações'); }
   (r.data||[]).forEach(x=>pdiSt.map[x.pessoa]=x.dados||{}); render(); }
 const pdiD=k=>pdiSt.map[k]||(pdiSt.map[k]={});
-function pdiSave(k,now){ clearTimeout(pdiT[k]); const id=cur.id, dados=pdiD(k); const go=async()=>{ const r=await sb.from('avaliacoes').upsert({diagnostico_id:id,pessoa:k,dados,updated_at:new Date().toISOString()}); if(r.error) toast('Não foi possível salvar a avaliação: '+r.error.message); }; if(now) go(); else pdiT[k]=setTimeout(go,600); }
+function pdiSave(k,now){ if(pdiLeitura()) return; clearTimeout(pdiT[k]); const id=cur.id, dados=pdiD(k); const go=async()=>{ const r=await sb.from('avaliacoes').upsert({diagnostico_id:id,pessoa:k,dados,updated_at:new Date().toISOString()}); if(r.error) toast('Não foi possível salvar a avaliação: '+r.error.message); }; if(now) go(); else pdiT[k]=setTimeout(go,600); }
 
 /* ---------- cálculo ---------- */
 function pdiScore(d){ const v=PDI_COMP.map(([k])=>d.comp&&d.comp[k]).filter(Boolean); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null; }
@@ -76,7 +76,7 @@ function renderPdi(){
   const T=pdiTime();
   const decs=PDI_DEC.map(([n,c])=>{ const L=T.P.filter(x=>x.d.decisao===n); return {n,c,q:L.length,custo:L.reduce((a,x)=>a+(x.custo||0),0)}; });
   $('#main').innerHTML=`<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Operação · <b>Só equipe LORSO</b></span><h2 style="margin-top:8px">PDI Marketing</h2><p class="lead">Avaliação individual de quem trabalha no marketing do cliente, cruzada com o que apareceu no diagnóstico. Entra aqui todo entrevistado marcado com <b>MKT</b>. O cliente não vê esta tela.</p></div></header>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Operação · <b>${cur.pdiReitoria?'Equipe LORSO e reitoria':'Só equipe LORSO'}</b></span><h2 style="margin-top:8px">PDI Marketing</h2><p class="lead">Avaliação individual de quem trabalha no marketing do cliente, cruzada com o que apareceu no diagnóstico. Entra aqui todo entrevistado marcado com <b>MKT</b>. ${pdiLeitura()?'Você vê esta tela em modo leitura; a avaliação é feita pela LORSO.':cur.pdiReitoria?'A reitoria vê esta tela em modo leitura.':'O cliente não vê esta tela.'}</p></div>${!pdiLeitura()?`<div><button class="btn ${cur.pdiReitoria?'':'primary'}" data-act="pdi-reitoria">${cur.pdiReitoria?'Esconder da reitoria':'Liberar para a reitoria ver'}</button></div>`:''}</header>
    ${pdiSt.carregando?'<p class="muted">Carregando avaliações…</p>':''}
    ${!T.P.length?`<section class="block"><p class="empty">Ninguém marcado ainda. Em <b>Pessoas ouvidas</b>, marque "Faz parte do time de marketing" no cadastro de cada pessoa (ou <b>MKT</b> nos Entrevistados da área) e ela aparece aqui, com foto.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="pes-ver" data-v="">Abrir Pessoas ouvidas</button><button class="btn" data-act="dstep" data-v="entrevistas">Ir para Entrevistas</button></div></section>`:`
    <div class="stats"><div class="stat"><span class="si">${ico('equipe',20)}</span><b>${T.P.length}</b><span>pessoas no time</span><small>${T.aval.length} avaliadas</small></div>
@@ -87,10 +87,15 @@ function renderPdi(){
    <div class="rx-two"><section class="block"><div class="block-h"><h3>Desempenho x potencial</h3><p>Quem está em cada quadrante</p></div>${pdiNineBox(T)}</section>
     <section class="block"><div class="block-h"><h3>Decisões</h3><p>Quantas pessoas e quanto custam por mês</p></div><div class="pdecs">${decs.map(x=>`<div class="pdr"><span class="pdec" style="--c:${x.c}">${esc(x.n)}</span><span class="b"><i style="width:${T.P.length?x.q/T.P.length*100:0}%;background:${x.c}"></i></span><b>${x.q}</b><small class="mono">${x.custo?brl(x.custo):''}</small></div>`).join('')}<div class="pdr"><span class="pdec vazio">Sem decisão</span><span class="b"><i style="width:${T.P.length?T.P.filter(x=>!x.d.decisao).length/T.P.length*100:0}%;background:var(--line-2)"></i></span><b>${T.P.filter(x=>!x.d.decisao).length}</b><small></small></div></div></section></div>
    <section class="block"><div class="block-h"><h3>Pessoas</h3><p>Clique para avaliar</p></div><div class="pcards">${T.P.map(pdiCard).join('')}</div></section>`}
-  </section>${pdiDrawer()}`; }
+  </section>${pdiDrawer()}`;
+  if(pdiLeitura()) document.querySelectorAll('#main input,#main select,#main textarea').forEach(el=>{ el.disabled=true; }); }
 
 /* ---------- eventos ---------- */
+const pdiLeitura=()=>!(typeof podeInternas==='function'&&podeInternas());
+async function pdiReitoriaTroca(){ const v=!cur.pdiReitoria; const r=await sb.from('diagnosticos').update({pdi_reitoria:v}).eq('id',cur.id); if(r.error){ toast('Não foi possível mudar: '+r.error.message); return; } cur.pdiReitoria=v; render(); toast(v?'A reitoria agora vê o PDI, em modo leitura':'PDI escondido da reitoria'); }
 function pdiClick(act,d){
+  if(act==='pdi-reitoria'){ if(!pdiLeitura()) pdiReitoriaTroca(); return true; }
+  if(pdiLeitura()&&act!=='pdi-abrir'&&act!=='pdi-fechar'){ if(act==='pdi-fechar'){ pdiSt.aberta=null; render(); } return true; }
   if(act==='pdi-abrir'){ pdiSt.aberta=d.v; render(); return true; }
   if(act==='pdi-fechar'){ if(pdiSt.aberta) pdiSave(pdiSt.aberta,true); pdiSt.aberta=null; render(); return true; }
   if(act==='pdi-comp'){ const x=pdiD(d.k); x.comp=x.comp||{}; const n=+d.n; x.comp[d.c]=x.comp[d.c]===n?null:n; pdiSave(d.k); render(); return true; }
