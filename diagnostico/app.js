@@ -869,6 +869,17 @@ const PRI_Q=[['rapido','Ganhos rápidos','Alto impacto, pouco esforço. Começar
 const priQuad=x=>{ const i=+x.impacto, e=+x.esforco; if(!i||!e) return 'sem'; return i>=3?(e<=3?'rapido':'estrut'):(e<=3?'ajuste':'evitar'); };
 function priItem(x,L,modo){ const n=L.indexOf(x)+1, rec=x.recomendacao||'Próximo', q=priQuad(x), qn=(PRI_Q.find(z=>z[0]===q)||[,'Sem nota'])[1];
   return `<li class="pri-it"><span class="pri-n">${n}</span><span class="pri-t"><b>${esc(x.titulo||'Sem título')}</b><small>${x.impacto?`Impacto ${x.impacto}`:'Impacto —'} · ${x.esforco?`Esforço ${x.esforco}`:'Esforço —'}${x.horizonte?` · ${esc(x.horizonte)} prazo`:''}</small></span>${modo==='rec'?`<span class="pri-rec q q-${q}">${qn}</span>`:`<span class="pri-rec r${RECS.indexOf(rec)}">${esc(rec)}</span>`}</li>`; }
+function priGrafico(L){
+  /* Barras por quadrante: verde = Fazer agora, azul = Próximo (cinza só se houver Não agora) */
+  const temNao=L.some(x=>x.recomendacao==='Não agora');
+  const linhas=[...PRI_Q,['sem','Sem impacto ou esforço']].map(([id,t])=>{ const it=L.filter(x=>priQuad(x)===id); return {id,t,ag:it.filter(x=>x.recomendacao==='Fazer agora').length,px:it.filter(x=>(x.recomendacao||'Próximo')==='Próximo').length,na:it.filter(x=>x.recomendacao==='Não agora').length}; }).filter(r=>r.id!=='sem'||r.ag+r.px+r.na);
+  const mx=Math.max(1,...linhas.map(r=>Math.max(r.ag,r.px,r.na)));
+  const bar=(v,c,lab)=>`<div class="pg-bar"><span class="pg-f ${c}" style="width:${v?Math.max(2,v/mx*100):0}%" title="${lab}: ${v}"></span><b>${v}</b></div>`;
+  return `<figure class="pri-graf" aria-label="Iniciativas por quadrante e recomendação">
+    <div class="pg-leg"><span><i class="pg-ag"></i>Fazer agora</span><span><i class="pg-px"></i>Próximo</span>${temNao?'<span><i class="pg-na"></i>Não agora</span>':''}</div>
+    ${linhas.map(r=>`<div class="pg-row"><span class="pg-nm">${r.t}<small>${r.ag+r.px+r.na} no total</small></span><div class="pg-bars">${bar(r.ag,'pg-ag','Fazer agora')}${bar(r.px,'pg-px','Próximo')}${temNao?bar(r.na,'pg-na','Não agora'):''}</div></div>`).join('')}
+  </figure>`;
+}
 function priVisao(L){
   const v=ui.priVis||'quad';
   const seg=`<div class="seg pri-seg" role="group" aria-label="Como ver a priorização"><button class="${v==='quad'?'on':''}" data-act="pri-vis" data-v="quad">Por quadrante</button><button class="${v==='rec'?'on':''}" data-act="pri-vis" data-v="rec">Por recomendação</button></div>`;
@@ -877,7 +888,7 @@ function priVisao(L){
   else { const sem=L.filter(x=>priQuad(x)==='sem');
     cols=PRI_Q.map(([id,t,d])=>{ const it=L.filter(x=>priQuad(x)===id).sort((a,b)=>(priScore(b)??-99)-(priScore(a)??-99)); return `<section class="pri-col q-${id}"><header><b>${t}</b><span class="ct">${it.length}</span></header><p class="pri-d">${d}</p>${it.length?`<ol>${it.map(x=>priItem(x,L)).join('')}</ol>`:'<p class="muted">Nada aqui.</p>'}</section>`; }).join('')
       +(sem.length?`<section class="pri-col q-sem"><header><b>Sem impacto ou esforço</b><span class="ct">${sem.length}</span></header><p class="pri-d">Preencha impacto e esforço na tabela abaixo.</p><ol>${sem.map(x=>priItem(x,L)).join('')}</ol></section>`:''); }
-  return `<div class="pri-vis">${seg}<div class="pri-board ${v}">${cols}</div></div>`;
+  return `${priGrafico(L)}<div class="pri-vis">${seg}<div class="pri-board ${v}">${cols}</div></div>`;
 }
 function priorizacaoHtml(INS){
   if(!me||me.papel==='cliente') return '';

@@ -496,3 +496,17 @@ h2,h3,.block-h h3{line-height:1.22}
 .pri-rec.r0{background:#D1FAE5;color:#047857}.pri-rec.r1{background:#E0F2FE;color:#0369A1}.pri-rec.r2{background:#F1F5F9;color:#475569}
 @media (max-width:760px){ .pri-board.quad{grid-template-columns:1fr} .pri-top2 .pri-note{grid-template-columns:1fr} }
 .pri-rec.q{background:var(--surface-2);color:var(--muted)}.pri-rec.q.q-rapido{background:#D1FAE5;color:#047857}.pri-rec.q.q-estrut{background:#E0F2FE;color:#0369A1}
+/* Gráfico da priorização: barras verde (Fazer agora) e azul (Próximo) por quadrante */
+.pri-graf{margin:0 0 18px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface);display:grid;gap:12px}
+.pg-leg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted)}
+.pg-leg span{display:inline-flex;align-items:center;gap:6px}.pg-leg i{width:12px;height:12px;border-radius:3px}
+.pg-ag{background:#10B981}.pg-px{background:#0EA5E9}.pg-na{background:#94A3B8}
+.pg-row{display:grid;grid-template-columns:200px minmax(0,1fr);gap:14px;align-items:center;padding-top:10px;border-top:1px solid var(--line)}
+.pg-row:first-of-type{border-top:0}
+.pg-nm{font-size:13.5px;font-weight:600;display:grid}.pg-nm small{font-size:11.5px;font-weight:500;color:var(--muted)}
+.pg-bars{display:grid;gap:5px}
+.pg-bar{display:grid;grid-template-columns:minmax(0,1fr) 28px;align-items:center;gap:8px}
+.pg-bar{background:linear-gradient(var(--surface-2),var(--surface-2)) left center/calc(100% - 36px) 14px no-repeat}
+.pg-f{display:block;height:14px;border-radius:0 4px 4px 0}
+.pg-bar b{font-size:12.5px;text-align:right}
+@media (max-width:640px){ .pg-row{grid-template-columns:1fr;gap:6px} }
