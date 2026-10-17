@@ -476,7 +476,7 @@ function renderAreaPanel(INS, LIST, override){
 
 /* ---------- Fase 1 em 3 passos ---------- */
 const LID=AREAS.filter(a=>a.g==='Liderança e governança'), ENT=AREAS.filter(a=>a.g!=='Liderança e governança');
-const DSTEPS=[['base','Base de conhecimento','Cursos, preços, vagas e capacidade'],['reitoria','Reitoria e direcionamentos','Dores, metas, DRE, autonomia e foco'],['entrevistas','Entrevistas','Jornada 1 a 1 pelas áreas e UNs']];
+const DSTEPS=[['base','Base de conhecimento','Cursos, preços, alunos e capacidade'],['reitoria','Reitoria e direcionamentos','Dores, metas, DRE, autonomia e foco'],['entrevistas','Entrevistas','Jornada 1 a 1 pelas áreas e UNs']];
 const stepOf=id=>id==='direcionamentos'||LID.some(a=>a.id===id)?'reitoria':'entrevistas';
 const jornadaIds=()=>(cur.campos['jornada.ordem']||'').split('|').filter(id=>ENT.some(a=>a.id===id));
 const jornadaLista=()=>{ const p=jornadaIds(); return [...p.map(id=>AREA[id]), ...ENT.filter(a=>!p.includes(a.id))]; };
@@ -492,7 +492,7 @@ function renderDiagnostico(INS){
   else inner=renderAreaPanel(INS, ui.dstep==='reitoria'?LID:ENT);
   $('#main').innerHTML=inner;
 }
-function cap$(k,f,unit){ const key=`base.cap.${k}.${f}`; return `<div class="inu ${unit==='R$'?'pre':''}"><input data-campo="${key}" id="c-${key}" inputmode="decimal" value="${esc(cur.campos[key]||'')}" placeholder="0" aria-label="${f}">${unit?`<span class="u">${unit}</span>`:''}</div>`; }
+function cap$(k,f,unit){ const key=`base.cap.${k}.${f}`; return `<div class="inu ${unit==='R$'?'pre':''}"><input data-campo="${key}" id="c-${key}" inputmode="decimal" value="${esc(cur.campos[key]||'')}" placeholder="0" aria-label="${f==='vagas'?'alunos':f}">${unit?`<span class="u">${unit}</span>`:''}</div>`; }
 function baseHtml(INS){
   const rows=capRows(); const tot=k=>{const v=rows.map(r=>r[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0):null;};
   const vig=cur.cursos.filter(c=>c.status==='Vigente').length, lan=cur.cursos.filter(c=>c.status==='Lançamento').length;
@@ -501,11 +501,11 @@ function baseHtml(INS){
   const opt=(v,list)=>list.map(o=>`<option ${v===o?'selected':''}>${o}</option>`).join('');
   const pv=ui.cursoPreview;
   return `<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Passo 1 · <b>Base de conhecimento</b></span><h2 style="margin-top:8px">Base de conhecimento</h2><p class="lead">Antes das entrevistas: o que a instituição vende, por quanto, com quantas vagas e quanto já captou. Esses números entram nos cruzamentos com as expectativas da reitoria.</p></div></header>
-   <div class="stats"><div class="stat"><span class="si">${ico('base',20)}</span><b>${vig}</b><span>cursos vigentes</span></div><div class="stat"><span class="si">${ico('lancamento',20)}</span><b>${lan}</b><span>lançamentos previstos</span></div><div class="stat"><span class="si">${ico('equipe',20)}</span><b>${tv!=null?tv.toLocaleString('pt-BR'):'—'}</b><span>vagas no ciclo</span></div><div class="stat ${tv&&tc!=null&&tc/tv<0.7?'warn':''}"><span class="si">${ico('visao',20)}</span><b>${tv&&tc!=null?pct(tc/tv):'—'}</b><span>ocupação das vagas</span>${tv&&tc!=null?`<span class="sp"><i style="width:${Math.min(100,tc/tv*100)}%"></i></span>`:''}</div><div class="stat ${tm&&tc!=null&&tc/tm<0.8?'bad':''}"><span class="si">${ico('alvo',20)}</span><b>${tm&&tc!=null?pct(tc/tm):'—'}</b><span>da meta de captação</span>${tm&&tc!=null?`<span class="sp"><i style="width:${Math.min(100,tc/tm*100)}%"></i></span>`:''}</div></div>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Passo 1 · <b>Base de conhecimento</b></span><h2 style="margin-top:8px">Base de conhecimento</h2><p class="lead">Antes das entrevistas: o que a instituição vende, por quanto, com quantos alunos e quanto já captou. Esses números entram nos cruzamentos com as expectativas da reitoria.</p></div></header>
+   <div class="stats"><div class="stat"><span class="si">${ico('base',20)}</span><b>${vig}</b><span>cursos vigentes</span></div><div class="stat"><span class="si">${ico('lancamento',20)}</span><b>${lan}</b><span>lançamentos previstos</span></div><div class="stat"><span class="si">${ico('equipe',20)}</span><b>${tv!=null?tv.toLocaleString('pt-BR'):'—'}</b><span>alunos no ciclo</span></div><div class="stat ${tv&&tc!=null&&tc/tv<0.7?'warn':''}"><span class="si">${ico('visao',20)}</span><b>${tv&&tc!=null?pct(tc/tv):'—'}</b><span>ocupação da capacidade</span>${tv&&tc!=null?`<span class="sp"><i style="width:${Math.min(100,tc/tv*100)}%"></i></span>`:''}</div><div class="stat ${tm&&tc!=null&&tc/tm<0.8?'bad':''}"><span class="si">${ico('alvo',20)}</span><b>${tm&&tc!=null?pct(tc/tm):'—'}</b><span>da meta de captação</span>${tm&&tc!=null?`<span class="sp"><i style="width:${Math.min(100,tc/tm*100)}%"></i></span>`:''}</div></div>
    ${fontesHtml()}
-   <section class="block"><div class="block-h"><h3>Capacidade de captação por UN e turno</h3><p>Vagas do ciclo, meta, quantos já captou e a mensalidade média.</p></div>
-    <div class="tblw"><table class="tbl cap"><thead><tr><th>UN</th><th>Turno ou modalidade</th><th class="r">Vagas</th><th class="r">Meta de captação</th><th class="r">Captados</th><th class="r">Mensalidade média</th><th class="r">Ocupação</th><th class="r">Da meta</th></tr></thead><tbody>
+   <section class="block"><div class="block-h"><h3>Capacidade de captação por UN e turno</h3><p>Alunos do ciclo, meta, quantos já captou e a mensalidade média.</p></div>
+    <div class="tblw"><table class="tbl cap"><thead><tr><th>UN</th><th>Turno ou modalidade</th><th class="r">Alunos</th><th class="r">Meta de captação</th><th class="r">Captados</th><th class="r">Mensalidade média</th><th class="r">Ocupação</th><th class="r">Da meta</th></tr></thead><tbody>
      ${rows.map(r=>`<tr><td>${r.nm}</td><td class="muted">${r.mod}</td><td>${cap$(r.k,'vagas')}</td><td>${cap$(r.k,'meta')}</td><td>${cap$(r.k,'captados')}</td><td>${cap$(r.k,'ticket','R$')}</td>${pctCell(r.ocup,0.7)}${pctCell(r.ating,0.8)}</tr>`).join('')}
      <tr><td><b>Total</b></td><td></td><td class="r"><b>${tv!=null?tv.toLocaleString('pt-BR'):'—'}</b></td><td class="r"><b>${tm!=null?tm.toLocaleString('pt-BR'):'—'}</b></td><td class="r"><b>${tc!=null?tc.toLocaleString('pt-BR'):'—'}</b></td><td></td>${pctCell(tv&&tc!=null?tc/tv:null,0.7)}${pctCell(tm&&tc!=null?tc/tm:null,0.8)}</tr>
     </tbody></table></div></section>
@@ -1215,7 +1215,7 @@ function renderSide(INS){
   const adm=me&&me.papel==='admin', pc=x=>Math.round(x*100)+'%';
   let h=`<div class="sb-brand">${LOGO_SVG}<span class="sb-word"><b>LORSO</b><i>DIGITAL<em>.</em></i></span></div><div class="sb-prod">${FOCO?esc(MODS_TODOS.find(x=>x[0]===FOCO)[1]):'Central de Diagnóstico'}</div>`;
   if(FOCO) h+=`<nav class="sb-nav sb-top" aria-label="Área do Cliente"><a class="sn" href="/admin/painel.html"><span class="lb">‹ Trocar de módulo</span></a></nav>`;
-  if(podeInternas()&&!FOCO){ const mn=minhasAbertas(), lt=internas.filter(t=>itDono(t,me.id)&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas','Tarefas da equipe','view','internas',mn||'',lt>0)}</nav>`; }
+  if(podeInternas()&&!FOCO){ const mn=minhasAbertas(), lt=internas.filter(t=>itDono(t,me.id)&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas','Tarefas da equipe','view','internas',mn||'',lt>0)}${me.papel==='admin'&&typeof renderHoras==='function'?sideItem('horas','Horas da equipe','view','horas'):''}</nav>`; }
   if(cur){
     const x=crossTasks(INS), hot=x.late.length+x.semTarefa.length, g=overall();
     h+=`<nav class="sb-nav" aria-label="Etapas">
@@ -1252,6 +1252,8 @@ function renderSide(INS){
   $('#sb').innerHTML=h;
   document.body.classList.toggle('sb-on',!!ui.sbOpen);
 }
+function saudacao(){ const h=new Date().getHours(); const nm=me&&(me.nome||'').trim().split(/\s+/)[0]; return (h<12?'Bom dia':h<18?'Boa tarde':'Boa noite')+(nm?', '+nm:'')+'!'; }
+function saudacaoData(){ return new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'}); }
 function renderVisao(INS){
   const g=overall(), B=blocosDe(INS);
   const cnt=L=>{let t=0,a=0;L.forEach(x=>{t+=x.q.length;a+=x.q.filter(q=>cur.resp[q[0]]!=null).length;});return [a,t];};
@@ -1260,7 +1262,8 @@ function renderVisao(INS){
   const row=a=>{ const s=SC[a.id]||{}; const n=a.q.filter(q=>cur.resp[q[0]]!=null).length; const dono=member(cur.dono_area[a.id]);
     return `<button class="vrow" data-act="area" data-v="${a.id}"><span class="vn">${esc(a.nome)}</span><span class="vb" aria-hidden="true"><span style="width:${Math.round(n/a.q.length*100)}%"></span></span><span class="vc mono">${n}/${a.q.length}</span>${lvChip(s.score!=null?s.level:0)}<span class="vd muted">${dono?esc(dono.nome||''):''}</span></button>`; };
   $('#main').innerHTML=`${typeof guiaBanner==='function'?guiaBanner():''}<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Fase 1 · <b>Visão geral</b></span><h2 style="margin-top:8px">Diagnóstico</h2><label class="field" style="max-width:380px;margin-top:12px"><span class="lbl">Nome do cliente</span><input id="nome-diag" value="${esc(cur.nome)}"></label><p class="lead">Onde a coleta está, o nível de cada área e o que já aparece de incongruência. Clique numa área para abrir as perguntas.</p></div></header>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">${esc(saudacaoData())}</span><h2 style="margin-top:8px">${esc(saudacao())}</h2><label class="field" style="max-width:380px;margin-top:12px"><span class="lbl">Nome do cliente</span><input id="nome-diag" value="${esc(cur.nome)}"></label><p class="lead">Fase 1 · Visão geral do diagnóstico. Onde a coleta está, o nível de cada área e o que já aparece de incongruência. Clique numa área para abrir as perguntas.</p></div></header>
+   ${typeof prazoHtml==='function'?prazoHtml():''}
    <div class="kpis">
     <div class="kpi"><b>${g.level?'N'+g.level:'—'}</b><span>${g.level?esc(LVL[g.level]):'nível geral ainda sem nota'}${g.score!=null?' · '+dec(g.score,2):''}</span></div>
     <div class="kpi"><b>${tt?Math.round(aa/tt*100):0}%</b><span>das perguntas respondidas (${aa} de ${tt})</span></div>
@@ -1376,7 +1379,7 @@ function baseMarkdown(){
   const L=[]; const ln=s=>L.push(s);
   ln(`# Base de conhecimento · ${cur.nome}`); ln(`Exportado da Central de Diagnóstico da LORSO Digital em ${new Date().toLocaleDateString('pt-BR')}.`); ln('');
   const rows=capRows().filter(r=>r.vagas!=null||r.meta!=null||r.captados!=null);
-  if(rows.length){ ln('## Capacidade de captação por UN e turno'); ln('| UN | Turno ou modalidade | Vagas | Meta | Captados | Mensalidade média | Ocupação |'); ln('|---|---|---|---|---|---|---|');
+  if(rows.length){ ln('## Capacidade de captação por UN e turno'); ln('| UN | Turno ou modalidade | Alunos | Meta | Captados | Mensalidade média | Ocupação |'); ln('|---|---|---|---|---|---|---|');
     rows.forEach(r=>ln(`| ${r.nm} | ${r.mod} | ${r.vagas??''} | ${r.meta??''} | ${r.captados??''} | ${r.ticket!=null?brl(r.ticket):''} | ${r.ocup!=null?pct(r.ocup):''} |`)); ln(''); }
   if(cur.cursos.length){ ln('## Cursos'); ln('| UN | Curso | Modalidade | Turno | Mensalidade | Vagas | Matriculados | Status | Lançamento |'); ln('|---|---|---|---|---|---|---|---|---|');
     cur.cursos.forEach(c=>ln(`| ${(UNS.find(u=>u.id===c.un)||{}).nome||''} | ${c.nome} | ${c.modalidade} | ${c.turno} | ${c.preco} | ${c.vagas} | ${c.matriculados} | ${c.status} | ${c.lancamento} |`)); ln(''); }
@@ -1552,6 +1555,7 @@ function renderInner(){
   if(!cur){ renderBar(); renderSide([]);
     if(ui.view==='perfil'){ renderPerfil(); return; }
     if(ui.view==='internas'&&podeInternas()){ renderInternas(); return; }
+    if(ui.view==='horas'&&typeof renderHoras==='function'){ renderHoras(); return; }
     if(ui.view==='equipe'&&me&&me.papel==='admin'){ SC={}; renderEquipe(); return; }
     if(ui.view==='como'){ $('#main').innerHTML=comoHtml(); return; }
     if(ui.view==='guia'&&typeof renderGuia==='function'){ renderGuia(); return; }
@@ -1573,6 +1577,7 @@ function renderInner(){
   else if(ui.view==='dre') renderDRE();
   else if(ui.view==='lancamento') renderLancamento();
   else if(ui.view==='internas'&&podeInternas()) renderInternas();
+  else if(ui.view==='horas'&&typeof renderHoras==='function') renderHoras();
   else if(ui.view==='pdi'&&podeInternas()&&typeof renderPdi==='function') renderPdi(INS);
   else if(ui.view==='plano'&&typeof renderPlano==='function') renderPlano(INS);
   else if(ui.view==='guia'&&typeof renderGuia==='function') renderGuia();
@@ -1712,7 +1717,7 @@ function renderRelatorio(INS){
    <section><h2>3. Plano no tempo</h2>${planoHtml(INS)}</section>
    ${interno&&cur.iniciativas.length?`<section><h2>4. Priorização do marketing <span class="tag warn">Interno · reitoria</span></h2><table class="tbl"><thead><tr><th>#</th><th>Iniciativa</th><th>Horizonte</th><th>Impacto</th><th>Esforço</th><th>Risco</th><th>Recomendação</th><th>Motivo</th></tr></thead><tbody>${iniciativasOrd().map((x,k)=>`<tr><td>${k+1}</td><td>${esc(x.titulo)}</td><td>${esc(x.horizonte)}</td><td>${esc(x.impacto)}</td><td>${esc(x.esforco)}</td><td>${esc(x.risco)}</td><td>${esc(x.recomendacao)}</td><td>${esc(x.motivo)}</td></tr>`).join('')}</tbody></table></section>`:''}
    <section><h2>${interno&&cur.iniciativas.length?5:4}. Unidades de negócio</h2>${unScoreHtml()}</section>
-   <section><h2>Base de conhecimento</h2>${(()=>{const R=capRows().filter(r=>r.vagas!=null||r.captados!=null);return R.length?`<table class="tbl"><thead><tr><th>UN</th><th>Turno ou modalidade</th><th class="r">Vagas</th><th class="r">Meta</th><th class="r">Captados</th><th class="r">Ocupação</th><th class="r">Da meta</th></tr></thead><tbody>${R.map(r=>`<tr><td>${r.nm}</td><td>${r.mod}</td><td class="r">${r.vagas??'—'}</td><td class="r">${r.meta??'—'}</td><td class="r">${r.captados??'—'}</td><td class="r">${pct(r.ocup)}</td><td class="r">${pct(r.ating)}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Não preenchida.</p>';})()}
+   <section><h2>Base de conhecimento</h2>${(()=>{const R=capRows().filter(r=>r.vagas!=null||r.captados!=null);return R.length?`<table class="tbl"><thead><tr><th>UN</th><th>Turno ou modalidade</th><th class="r">Alunos</th><th class="r">Meta</th><th class="r">Captados</th><th class="r">Ocupação</th><th class="r">Da meta</th></tr></thead><tbody>${R.map(r=>`<tr><td>${r.nm}</td><td>${r.mod}</td><td class="r">${r.vagas??'—'}</td><td class="r">${r.meta??'—'}</td><td class="r">${r.captados??'—'}</td><td class="r">${pct(r.ocup)}</td><td class="r">${pct(r.ating)}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">Não preenchida.</p>';})()}
     ${cur.cursos.length?`<p class="muted">${pl(cur.cursos.length,'curso cadastrado','cursos cadastrados')}, ${pl(cur.cursos.filter(c=>c.status==='Lançamento').length,'lançamento','lançamentos')}.</p>`:''}</section>
    ${t?`<section><h2>Capacidade do marketing</h2>${trelloView(t)}</section>`:''}
    ${tempoStats()?`<section><h2>Para onde vai o tempo do marketing</h2><p><b>${pct(tempoStats().pAdm)}</b> das horas no administrativo e interno${cur.campos['demandas.tempo_fonte']?' · fonte: '+esc(cur.campos['demandas.tempo_fonte']).toLowerCase():''}.</p>${tempoView(tempoStats())}</section>`:''}
@@ -1786,6 +1791,7 @@ async function loadDiag(id){
   resA.forEach(r=>{ o.dono_area[r.area]=r.user_id; });
   fofa.forEach(r=>{ o.fofa[r.chave]=o.fofa[r.chave]||{}; (o.fofa[r.chave][r.quadrante]=o.fofa[r.chave][r.quadrante]||[]).push(r.texto); });
   Object.keys(ARR_DB).forEach((k,i)=>{ o[k]=arrs[i].map(ARR_DB[k].from); });
+  o.prazo={inicio:d.inicio_projeto||'',fim:d.fim_previsto||'',hist:Array.isArray(d.prazo_historico)?d.prazo_historico:[]};
   o.equipe=equipeList(); o.mods={};
   try{ const mr=await sb.from('modulos').select('modulo,dados').eq('diagnostico_id',id); if(!mr.error)(mr.data||[]).forEach(r=>{ o.mods[r.modulo]=r.dados; }); }catch(e){ /* módulos opcionais */ }
   return o;
@@ -1959,6 +1965,8 @@ document.addEventListener('click',e=>{
   if(act.startsWith('pdi-')&&typeof pdiClick==='function'&&pdiClick(act,d)) return;
   if(act.startsWith('pa-')&&typeof paClick==='function'&&cur&&paClick(act,d)) return;
   if(act.startsWith('guia-')&&typeof guiaClick==='function'&&guiaClick(act,d)) return;
+  if(act.startsWith('pz-')&&typeof prazoClick==='function'&&prazoClick(act,d)) return;
+  if(act.startsWith('hr-')&&typeof horasClick==='function'&&horasClick(act,d)) return;
   if(act==='sb-open'){ ui.sbOpen=true; document.body.classList.add('sb-on'); const f=document.querySelector('#sb .sn.on')||document.querySelector('#sb .sn'); f&&f.focus(); return; }
   if(act==='sb-close'){ ui.sbOpen=false; document.body.classList.remove('sb-on'); return; }
   if(act==='tema'){ setPref('theme',temaAtual()==='light'?'dark':'light'); render(); return; }
