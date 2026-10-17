@@ -373,7 +373,7 @@ function qHtml(x){
    <h4>${esc(x[5])}</h4>
    <div class="opts" role="radiogroup" aria-label="${esc(x[1])}">${x[6].map((o,i)=>`<button class="opt ${n===i+1?'on n'+(i+1):''}" role="radio" aria-checked="${n===i+1}" data-act="opt" data-q="${x[0]}" data-n="${i+1}"><span class="on-n"><span>N${i+1}</span><span>${LVL[i+1]}</span></span><span>${esc(o)}</span></button>`).join('')}<button class="opt na ${n===0?'on':''}" role="radio" aria-checked="${n===0}" data-act="opt" data-q="${x[0]}" data-n="0" title="Fica fora da nota e entra na lista do que ninguém soube responder"><span class="on-n"><span>—</span><span>Fora da nota</span></span><span>Não se aplica / não sei</span></button></div>
    ${typeof sugestaoHtml==='function'?sugestaoHtml(x[0]):''}
-   <div class="qfoot">${cur.notas[x[0]]||ui.notesOpen[x[0]]?`<textarea data-nota="${x[0]}" rows="1" placeholder="Evidências e observações da entrevista" aria-label="Observações sobre ${esc(x[1])}">${esc(cur.notas[x[0]]||'')}</textarea>`:`<button class="addnote" data-act="note" data-q="${x[0]}">+ Adicionar observação</button>`}
+   <div class="qfoot">${(cur.notas[x[0]]&&!(typeof cxNotaAuto==='function'&&cxNotaAuto(x[0])))||ui.notesOpen[x[0]]?`<textarea data-nota="${x[0]}" rows="1" placeholder="Evidências e observações da entrevista" aria-label="Observações sobre ${esc(x[1])}">${esc(cur.notas[x[0]]||'')}</textarea>`:`<button class="addnote" data-act="note" data-q="${x[0]}">${typeof cxNotaAuto==='function'&&cxNotaAuto(x[0])?'Provas do diagnóstico já anotadas na observação · ver ou editar':'+ Adicionar observação'}</button>`}
    <label class="evid"><input type="checkbox" data-evid="${x[0]}" ${cur.evid[x[0]]?'checked':''}>Comprovado com evidência</label></div>
   </article>`;
 }
@@ -864,22 +864,31 @@ function unScoreHtml(){
 const RECS=['Fazer agora','Próximo','Não agora'];
 const priScore=x=>{const i=+x.impacto||0,e=+x.esforco||0,r=+x.risco||0; return i? (i*2-e-r*0.5):null;};
 function iniciativasOrd(){ return [...cur.iniciativas].sort((a,b)=>RECS.indexOf(a.recomendacao||'Próximo')-RECS.indexOf(b.recomendacao||'Próximo')||(priScore(b)??-99)-(priScore(a)??-99)); }
-function matriz2x2(L){
-  const W=520,H=360,pad=44, X=e=>pad+(e-1)/4*(W-pad-16), Y=i=>H-pad-(i-1)/4*(H-pad-16);
-  const pts=L.filter(x=>+x.impacto&&+x.esforco);
-  const col={'Fazer agora':'var(--accent)','Próximo':'var(--n3)','Não agora':'var(--faint)'};
-  return `<svg viewBox="0 0 ${W} ${H}" class="m2x2" role="img" aria-label="Matriz impacto por esforço">
-   <rect x="${X(1)}" y="${Y(5)}" width="${X(3)-X(1)}" height="${Y(3)-Y(5)}" fill="color-mix(in srgb,var(--accent) 7%,transparent)"/>
-   <line x1="${X(3)}" y1="${Y(5)}" x2="${X(3)}" y2="${Y(1)}" stroke="var(--line-2)" stroke-dasharray="4 4"/><line x1="${X(1)}" y1="${Y(3)}" x2="${X(5)}" y2="${Y(3)}" stroke="var(--line-2)" stroke-dasharray="4 4"/>
-   <rect x="${X(1)}" y="${Y(5)}" width="${X(5)-X(1)}" height="${Y(1)-Y(5)}" fill="none" stroke="var(--line-2)"/>
-   <text x="${X(1)+8}" y="${Y(5)+18}" fill="var(--accent)" font-size="12" font-weight="600">Ganhos rápidos</text>
-   <text x="${X(5)-8}" y="${Y(5)+18}" fill="var(--muted)" font-size="12" font-weight="600" text-anchor="end">Projetos estruturantes</text>
-   <text x="${X(1)+8}" y="${Y(1)-10}" fill="var(--muted)" font-size="12">Ajustes</text>
-   <text x="${X(5)-8}" y="${Y(1)-10}" fill="var(--muted)" font-size="12" text-anchor="end">Evitar agora</text>
-   <text x="${(X(1)+X(5))/2}" y="${H-10}" fill="var(--muted)" font-size="12" text-anchor="middle">Esforço →</text>
-   <text x="14" y="${(Y(1)+Y(5))/2}" fill="var(--muted)" font-size="12" text-anchor="middle" transform="rotate(-90 14 ${(Y(1)+Y(5))/2})">Impacto →</text>
-   ${pts.map(x=>{const k=L.indexOf(x)+1; const jx=((k*37)%11-5)*1.6, jy=((k*53)%11-5)*1.6; return `<g><circle cx="${X(+x.esforco)+jx}" cy="${Y(+x.impacto)+jy}" r="11" fill="${col[x.recomendacao||'Próximo']}" fill-opacity=".9"/><text x="${X(+x.esforco)+jx}" y="${Y(+x.impacto)+jy+4}" font-size="11" font-weight="700" text-anchor="middle" fill="var(--bg)">${k}</text></g>`;}).join('')}
-  </svg>`;
+/* Priorização em duas leituras, sempre com o nome da iniciativa: por quadrante (impacto x esforço) e por recomendação */
+const PRI_Q=[['rapido','Ganhos rápidos','Alto impacto, pouco esforço. Começar por aqui.'],['estrut','Projetos estruturantes','Alto impacto, muito esforço. Planejar em etapas.'],['ajuste','Ajustes','Baixo impacto, pouco esforço. Encaixar quando sobrar fôlego.'],['evitar','Evitar agora','Baixo impacto, muito esforço. Só com motivo forte.']];
+const priQuad=x=>{ const i=+x.impacto, e=+x.esforco; if(!i||!e) return 'sem'; return i>=3?(e<=3?'rapido':'estrut'):(e<=3?'ajuste':'evitar'); };
+function priItem(x,L,modo){ const n=L.indexOf(x)+1, rec=x.recomendacao||'Próximo', q=priQuad(x), qn=(PRI_Q.find(z=>z[0]===q)||[,'Sem nota'])[1];
+  return `<li class="pri-it"><span class="pri-n">${n}</span><span class="pri-t"><b>${esc(x.titulo||'Sem título')}</b><small>${x.impacto?`Impacto ${x.impacto}`:'Impacto —'} · ${x.esforco?`Esforço ${x.esforco}`:'Esforço —'}${x.horizonte?` · ${esc(x.horizonte)} prazo`:''}</small></span>${modo==='rec'?`<span class="pri-rec q q-${q}">${qn}</span>`:`<span class="pri-rec r${RECS.indexOf(rec)}">${esc(rec)}</span>`}</li>`; }
+function priGrafico(L){
+  /* Barras por quadrante: verde = Fazer agora, azul = Próximo (cinza só se houver Não agora) */
+  const temNao=L.some(x=>x.recomendacao==='Não agora');
+  const linhas=[...PRI_Q,['sem','Sem impacto ou esforço']].map(([id,t])=>{ const it=L.filter(x=>priQuad(x)===id); return {id,t,ag:it.filter(x=>x.recomendacao==='Fazer agora').length,px:it.filter(x=>(x.recomendacao||'Próximo')==='Próximo').length,na:it.filter(x=>x.recomendacao==='Não agora').length}; }).filter(r=>r.id!=='sem'||r.ag+r.px+r.na);
+  const mx=Math.max(1,...linhas.map(r=>Math.max(r.ag,r.px,r.na)));
+  const bar=(v,c,lab)=>`<div class="pg-bar"><span class="pg-f ${c}" style="width:${v?Math.max(2,v/mx*100):0}%" title="${lab}: ${v}"></span><b>${v}</b></div>`;
+  return `<figure class="pri-graf" aria-label="Iniciativas por quadrante e recomendação">
+    <div class="pg-leg"><span><i class="pg-ag"></i>Fazer agora</span><span><i class="pg-px"></i>Próximo</span>${temNao?'<span><i class="pg-na"></i>Não agora</span>':''}</div>
+    ${linhas.map(r=>`<div class="pg-row"><span class="pg-nm">${r.t}<small>${r.ag+r.px+r.na} no total</small></span><div class="pg-bars">${bar(r.ag,'pg-ag','Fazer agora')}${bar(r.px,'pg-px','Próximo')}${temNao?bar(r.na,'pg-na','Não agora'):''}</div></div>`).join('')}
+  </figure>`;
+}
+function priVisao(L){
+  const v=ui.priVis||'quad';
+  const seg=`<div class="seg pri-seg" role="group" aria-label="Como ver a priorização"><button class="${v==='quad'?'on':''}" data-act="pri-vis" data-v="quad">Por quadrante</button><button class="${v==='rec'?'on':''}" data-act="pri-vis" data-v="rec">Por recomendação</button></div>`;
+  let cols;
+  if(v==='rec') cols=RECS.map((r,k)=>{ const it=L.filter(x=>(x.recomendacao||'Próximo')===r); return `<section class="pri-col c${k}"><header><b>${r}</b><span class="ct">${it.length}</span></header>${it.length?`<ol>${it.map(x=>priItem(x,L,'rec')).join('')}</ol>`:'<p class="muted">Nada aqui.</p>'}</section>`; }).join('');
+  else { const sem=L.filter(x=>priQuad(x)==='sem');
+    cols=PRI_Q.map(([id,t,d])=>{ const it=L.filter(x=>priQuad(x)===id).sort((a,b)=>(priScore(b)??-99)-(priScore(a)??-99)); return `<section class="pri-col q-${id}"><header><b>${t}</b><span class="ct">${it.length}</span></header><p class="pri-d">${d}</p>${it.length?`<ol>${it.map(x=>priItem(x,L)).join('')}</ol>`:'<p class="muted">Nada aqui.</p>'}</section>`; }).join('')
+      +(sem.length?`<section class="pri-col q-sem"><header><b>Sem impacto ou esforço</b><span class="ct">${sem.length}</span></header><p class="pri-d">Preencha impacto e esforço na tabela abaixo.</p><ol>${sem.map(x=>priItem(x,L)).join('')}</ol></section>`:''); }
+  return `${priGrafico(L)}<div class="pri-vis">${seg}<div class="pri-board ${v}">${cols}</div></div>`;
 }
 function priorizacaoHtml(INS){
   if(!me||me.papel==='cliente') return '';
@@ -887,9 +896,9 @@ function priorizacaoHtml(INS){
   const sel=(id,f,v,opts)=>`<select data-ini="${id}" data-f="${f}" aria-label="${f}">${opts.map(o=>Array.isArray(o)?`<option value="${o[0]}" ${String(v)===String(o[0])?'selected':''}>${o[1]}</option>`:`<option ${v===o?'selected':''}>${o}</option>`).join('')}</select>`;
   const n15=[['','—'],['1','1'],['2','2'],['3','3'],['4','4'],['5','5']];
   return `<section class="block pri"><div class="block-h"><h3>Priorização do marketing <span class="tag warn" style="vertical-align:middle">Interno · só LORSO e reitoria</span></h3><p>O que o marketing faz primeiro, o que fica para depois e por quê.</p></div>
-   ${L.length?`<div class="two pri-top"><div>${matriz2x2(L)}<div class="legend"><span class="lg"><i style="background:var(--accent)"></i>Fazer agora</span><span class="lg"><i style="background:var(--n3)"></i>Próximo</span><span class="lg"><i style="background:var(--faint)"></i>Não agora</span></div></div>
+   ${L.length?`<div class="pri-top2">
     <div class="pri-note"><div class="stat ${agora>4?'warn':''}"><b>${agora}</b><span>iniciativas em "Fazer agora"${agora>4?'. Acima de 4 ao mesmo tempo, o time não dá conta: mova algumas para Próximo.':''}</span></div>
-     <p class="muted" style="font-size:13.5px">Regras de sequência: primeiro o que destrava (regras, mandato, ferramenta), depois o que acelera. Para cada "Não agora", escreva o motivo e a condição para reabrir: é esse texto que sustenta o não para coordenadores e UNs.</p></div></div>
+     <p class="muted" style="font-size:13.5px">Regras de sequência: primeiro o que destrava (regras, mandato, ferramenta), depois o que acelera. Para cada "Não agora", escreva o motivo e a condição para reabrir: é esse texto que sustenta o não para coordenadores e UNs.</p></div></div>${priVisao(L)}
     <div class="tblw"><table class="tbl"><thead><tr><th>#</th><th style="min-width:240px">Iniciativa</th><th>Horizonte</th><th>Impacto</th><th>Esforço</th><th>Risco</th><th style="min-width:160px">Depende de</th><th>Recomendação</th><th style="min-width:220px">Motivo (e quando reabrir)</th><th style="min-width:160px">Indicador</th><th></th></tr></thead><tbody>
     ${L.map((x,k)=>`<tr><td class="mono">${k+1}</td><td><input data-ini="${x.id}" data-f="titulo" value="${esc(x.titulo)}" aria-label="Iniciativa"><small class="muted">${esc((BLOCOS.find(b=>b.id===x.bloco)||{}).t||'')}</small></td>
      <td>${sel(x.id,'horizonte',x.horizonte,['Curto','Médio','Longo'])}</td><td>${sel(x.id,'impacto',x.impacto,n15)}</td><td>${sel(x.id,'esforco',x.esforco,n15)}</td><td>${sel(x.id,'risco',x.risco,n15)}</td>
@@ -1115,7 +1124,7 @@ function unExpHtml(){
   return `<section class="block"><div class="block-h"><h3>Expectativas por UN</h3><p>Toque nas opções durante a conversa com a reitoria. Elas entram nos cruzamentos de cada UN.</p></div>
    <div class="unx">${UNS.map(u=>`<div class="unx-card"><b>${esc(u.nome)}</b>
     ${UN_EXP.map(g=>{const val=unxGet(u.id,g.k); const sel=g.multi?val.split('|').filter(Boolean):[val];
-      return `<div class="unx-g"><span class="lbl">${g.label}</span><div class="seg">${g.opts.map(o=>`<button class="segb ${sel.includes(o)?'on':''}" data-act="unx" data-un="${u.id}" data-k="${g.k}" data-v="${esc(o)}" ${g.multi?`data-multi="${g.multi}"`:''} aria-pressed="${sel.includes(o)}">${esc(o)}</button>`).join('')}</div></div>`;}).join('')}
+      return `<div class="unx-g"><span class="lbl">${g.label}${g.multi?` <small class="unx-ct">${sel.filter(Boolean).length} de ${g.multi}</small>`:''}</span><div class="seg ${g.multi?'multi':'uno'}" style="--n:${g.opts.length===4?2:g.opts.length}">${g.opts.map(o=>`<button class="segb ${sel.includes(o)?'on':''}" data-act="unx" data-un="${u.id}" data-k="${g.k}" data-v="${esc(o)}" ${g.multi?`data-multi="${g.multi}"`:''} aria-pressed="${sel.includes(o)}">${esc(o)}</button>`).join('')}</div></div>`;}).join('')}
     <div class="unx-row">${fieldHtml(unxKey(u.id,'crescimento'),'Crescimento esperado em matrículas','%')}</div>
     ${fieldHtml(unxKey(u.id,'obs'),'Observação da reitoria sobre esta UN','t')}
    </div>`).join('')}</div></section>`;
@@ -1160,6 +1169,7 @@ function ivHtml(){
   const main = done ? `<div class="iv-done"><span class="eyebrow">Área concluída</span><h2>${esc(a.nome)}</h2>
       <div class="iv-score">${lvChip(s.score!=null?s.level:0)}<b>${s.score!=null?dec(s.score):'—'}</b><small>/ 4 · ${ans} de ${qs.length} respondidas</small></div>
       ${nums.length?`<div class="fields">${nums.map(v=>fieldHtml(a.id+'.'+v[0],v[1],v[2])).join('')}</div>`:''}
+      ${typeof kpiAreaHtml==='function'?kpiAreaHtml(a.id):''}
       <div class="iv-nav"><button class="btn" data-act="iv-go" data-v="${qs.length-1}">← Revisar</button>${nextA?`<button class="btn primary big" data-act="iv-area" data-v="${nextA.id}">Próxima: ${esc(nextA.nome)} →</button>`:''}<button class="btn ghost" data-act="iv-exit">Sair do modo entrevista</button></div></div>`
    : `<div class="iv-prog"><span>${esc(a.nome)} · pergunta ${i+1} de ${qs.length}</span><span class="iv-dots">${qs.map((q,k)=>`<button class="iv-dot ${k===i?'on':''} ${cur.resp[q[0]]?'ok':''}" data-act="iv-go" data-v="${k}" aria-label="Pergunta ${k+1}"></button>`).join('')}</span></div>
       <div class="iv-tags"><span class="tag">${PIL[x[2]]}</span><span class="tag">${IMP[x[3]]}</span>${x[4]?'<span class="tag warn">Eliminatória</span>':''}</div>
@@ -2110,6 +2120,7 @@ document.addEventListener('click',e=>{
   else if(act==='ini-gerar'){ computeAll(); const B=blocosDe(runEngine()); const have=new Set(cur.iniciativas.map(x=>x.titulo)); let n=0;
     B.forEach((b,bi)=>HZ.forEach(([k])=>(b.h[k]||[]).forEach(t=>{ if(have.has(t))return; const hz={c:'Curto',m:'Médio',l:'Longo'}[k]; cur.iniciativas.push({id:uid(),titulo:t,bloco:b.id,area:b.areas[0]||'',horizonte:hz,impacto:String(Math.max(2,5-Math.floor(bi/2))),esforco:String({c:2,m:3,l:4}[k]),risco:'2',dependencias:'',alinhamento:b.t,recomendacao:k==='c'?'Fazer agora':'Próximo',motivo:'',indicador:b.kpi,ordem:0}); n++; })));
     touch(true); toast(n?`${n} iniciativas criadas`:'As iniciativas das causas raiz já estão na matriz'); }
+  else if(act==='pri-vis'){ ui.priVis=d.v; render(); }
   else if(act==='ini-add'){ cur.iniciativas.push({id:uid(),titulo:'',bloco:'',area:'',horizonte:'Curto',impacto:'',esforco:'',risco:'',dependencias:'',alinhamento:'',recomendacao:'Próximo',motivo:'',indicador:'',ordem:0}); touch(true); }
   else if(act==='ini-del'){ cur.iniciativas=cur.iniciativas.filter(x=>x.id!==d.id); touch(true); }
   else if(act==='dstep'){ ui.view='fases'; ui.stage='diagnostico'; ui.dstep=d.v; if(d.v==='reitoria'&&!LID.some(a=>a.id===ui.area)&&ui.area!=='direcionamentos')ui.area='reitoria'; if(d.v==='entrevistas'&&!ENT.some(a=>a.id===ui.area))ui.area=jornadaLista()[0].id; saveUi(); render(); window.scrollTo({top:0}); }

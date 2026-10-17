@@ -67,6 +67,7 @@ function sugestaoHtml(qid){
    ${r.falta.length?`<small>Falta responder nas entrevistas: ${r.falta.map(p=>`${esc(p.a.nome)} · ${esc(p.q[1])}`).join('; ')}</small>`:''}</div>`;
 }
 
+function cxNotaAuto(qid){ const n=String(cur.notas[qid]||''); return !!n&&n.startsWith('Do diagnóstico:')&&n===cxTexto(qid); }
 function cxAnotar(qid){ const t=cxTexto(qid); if(!t) return; const atual=String(cur.notas[qid]||''); const sem=atual.replace(/Do diagnóstico:\n(- .*\n?)*/,'').trim(); cur.notas[qid]=(sem?sem+'\n\n':'')+t; ui.notesOpen[qid]=true; }
 function conexoesClick(act,d){
   if(act==='cx-aplicar'){ cur.resp[d.q]=+d.n; cxAnotar(d.q); touch(true); toast(`N${d.n} aplicado e provas anotadas`); return true; }
