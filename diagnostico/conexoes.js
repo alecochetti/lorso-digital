@@ -71,6 +71,7 @@ function cxAnotar(qid){ const t=cxTexto(qid); if(!t) return; const atual=String(
 function conexoesClick(act,d){
   if(act==='cx-aplicar'){ cur.resp[d.q]=+d.n; cxAnotar(d.q); touch(true); toast(`N${d.n} aplicado e provas anotadas`); return true; }
   if(act==='cx-anotar'){ cxAnotar(d.q); touch(true); toast('Provas copiadas para a observação'); return true; }
+  if(act==='cx-meta-auto'){ delete cur.campos['meta.'+d.v]; touch(true); toast('Meta da área voltou para o automático'); return true; }
   if(act==='cx-auto'){ cxSetManual(d.q,false); const n=String(cur.notas[d.q]||''); if(!n.trim()) cur.notas[d.q]=''; touch(true); toast('Voltou para o automático'); return true; }
   if(act==='cx-preencher'){ cxPreencher(d.v); return true; }
   return false;

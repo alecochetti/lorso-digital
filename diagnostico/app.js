@@ -50,7 +50,10 @@ function scoreOf(qs){
 }
 function mediaSem(areaId,qid){ const a=AREA[areaId]; if(!a)return null; let s=0,w=0; a.q.forEach(x=>{ if(x[0]===qid)return; const n=cur.resp[x[0]]; if(n){ s+=n*x[3]; w+=x[3]; } }); return w?s/w:null; }
 const META_T={2:1.75,3:2.5,4:3.25};
-const metaDe=id=>{ const m=num(cur.campos['meta.'+id]); return [2,3,4].includes(m)?m:3; };
+/* Meta da área: automática pelo diagnóstico (um nível acima do atual, entre N2 e N4). Só vira manual se a LORSO ajustar. */
+const metaManual=id=>{ const m=num(cur.campos['meta.'+id]); return [2,3,4].includes(m)?m:null; };
+const metaAuto=id=>{ const s=SC[id]; if(!s||s.score==null) return 3; return Math.min(4,Math.max(2,(s.level||1)+1)); };
+const metaDe=id=>metaManual(id)||metaAuto(id);
 const faltaMeta=id=>{ const s=SC[id]; if(!s||s.score==null)return null; return Math.max(0,META_T[metaDe(id)]-s.score); };
 const naoSei=qs=>qs.filter(x=>cur.resp[x[0]]===0);
 function confianca(){ let resp=0,comp=0,ns=0; AREAS.forEach(a=>a.q.forEach(x=>{ const n=cur.resp[x[0]]; if(n===0){ns++;return;} if(n){ resp++; if(cur.evid[x[0]])comp++; } })); return {resp,comp,ns,p:resp?comp/resp:null}; }
@@ -381,7 +384,9 @@ function confiancaHtml(){ const c=confianca(); if(!c.resp&&!c.ns)return '';
     <div class="cfl"><div class="cfs"><span class="sw ev"></span><b>${c.comp}</b> comprovadas: alguém mostrou o dado, o processo ou a ferramenta</div><div class="cfs"><span class="sw dc"></span><b>${c.resp-c.comp}</b> declaradas: o que o entrevistado disse</div><div class="cfs"><span class="sw ns"></span><b>${c.ns}</b> sem resposta conhecida: ninguém soube responder</div>
      ${NS.length?`<details class="cfd" data-keep="cf-ns" ${ui.open['cf-ns']?'open':''}><summary>O que ninguém soube responder</summary>${NS.map(x=>`<div class="cfa"><button class="chip" data-act="goto" data-v="${x.a.id}">${esc(x.a.nome)}</button><ul>${x.q.map(q=>`<li>${esc(q[1])}</li>`).join('')}</ul></div>`).join('')}</details>`:''}</div></div></section>`; }
 function metaHtml(id,s){ const m=metaDe(id), f=faltaMeta(id), qs=AREA[id].q, ns=naoSei(qs).length, ev=qs.filter(x=>cur.resp[x[0]]&&cur.evid[x[0]]).length, rs=qs.filter(x=>cur.resp[x[0]]).length;
-  return `<div class="metaline"><label>Meta da área<select data-campo="meta.${id}" aria-label="Meta da área">${[2,3,4].map(n=>`<option value="${n}" ${m===n?'selected':''}>N${n} · ${LVL[n]}</option>`).join('')}</select></label>
+  const man=metaManual(id)!=null, sc=s&&s.score!=null;
+  return `<div class="metaline"><span class="mt-meta"><b>Meta da área: N${m} · ${LVL[m]}</b> <small>${man?'ajustada por você':sc?'automática, um nível acima do atual':'automática; ajusta quando as respostas entrarem'}</small></span>
+   ${man?`<button class="btn sm" data-act="cx-meta-auto" data-v="${id}">Voltar ao automático</button>`:`<details class="mt-aj"><summary>Ajustar</summary><select data-campo="meta.${id}" aria-label="Ajustar meta da área"><option value="">Escolha</option>${[2,3,4].map(n=>`<option value="${n}">N${n} · ${LVL[n]}</option>`).join('')}</select></details>`}
    <span class="mt-gap ${f==null?'':f>0?'falta':'ok'}">${f==null?'Sem nota ainda':f>0?`Faltam <b>${dec(f)}</b> pontos para N${m}`:`Meta N${m} atingida`}</span>
    ${rs?`<span class="mt-ev">${ev} de ${rs} respostas comprovadas</span>`:''}${ns?`<span class="mt-ns">${ns} sem resposta conhecida</span>`:''}</div>`; }
 function pillarsHtml(s){
@@ -2200,7 +2205,7 @@ document.addEventListener('input',e=>{
   if(d.mem!=null){ const p=profiles.find(x=>x.id===d.mem); if(p){ const f={nome:'nome',papel:'funcao',contato:'contato'}[d.f]; p[f]=t.value; if(cur)cur.equipe=equipeList(); saveProfile(p.id); } return; }
   if(!cur) return;
   if(d.nota!=null){ if(t.value)cur.notas[d.nota]=t.value; else delete cur.notas[d.nota]; autoGrow(t); touch(false); }
-  else if(d.campo!=null){ mdSoltarCampo(d.campo); if(t.value)cur.campos[d.campo]=t.value; else delete cur.campos[d.campo]; if(t.tagName==='TEXTAREA')autoGrow(t); touch(false); }
+  else if(d.campo!=null){ mdSoltarCampo(d.campo); if(t.value)cur.campos[d.campo]=t.value; else delete cur.campos[d.campo]; if(t.tagName==='TEXTAREA')autoGrow(t); touch(t.tagName==='SELECT'&&/^meta\.[^.]+$/.test(d.campo)); }
   else if(t.id==='nome-diag'){ cur.nome=t.value||'Sem nome'; touch(false); }
   else if(d.ent!=null&&t.type!=='date'&&t.type!=='checkbox'){ cur.entrevistas[+d.ent][d.f]=t.value; touch(false); }
   else if(d.taskF==='txt'){ const x=cur.acoes.find(a=>a.id===d.id); if(x){ x.txt=t.value; autoGrow(t); touch(false); } }

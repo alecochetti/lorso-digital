@@ -349,3 +349,6 @@ body.so-leitura #main input:disabled,body.so-leitura #main select:disabled,body.
 .cx small{color:var(--muted)}
 .cx-ir{all:unset;cursor:pointer;font-size:12px;font-weight:700;color:var(--accent-2);margin-left:4px} .cx-ir:hover{text-decoration:underline}
 .cx-fill{margin:0 0 12px}
+/* Meta da área automática */
+.mt-meta b{color:var(--fg);font-weight:700}.mt-meta small{color:var(--muted);font-weight:500;margin-left:4px}
+.mt-aj{display:inline-flex;align-items:center;gap:8px}.mt-aj summary{cursor:pointer;color:var(--muted);font-weight:600;font-size:12.5px;list-style:none;text-decoration:underline;text-underline-offset:3px}.mt-aj summary::-webkit-details-marker{display:none}.mt-aj[open]{gap:8px}.mt-aj select{margin-left:8px}
