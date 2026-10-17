@@ -1324,7 +1324,7 @@ async function setMods(lista){ if(!cur)return; const r=await sb.from('diagnostic
 function renderSide(INS){
   const adm=me&&me.papel==='admin', pc=x=>Math.round(x*100)+'%';
   let h=`<div class="sb-brand">${LOGO_SVG}<span class="sb-word"><b>LORSO</b><i>DIGITAL<em>.</em></i></span></div><div class="sb-prod">${CENTRAL_LORSO?'Central LORSO':FOCO?esc(MODS_TODOS.find(x=>x[0]===FOCO)[1]):'Central de Diagnóstico'}</div>`;
-  if(podeInternas()&&!FOCO){ const mn=minhasAbertas(), lt=eqBase().filter(t=>itDono(t,me.id)&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas',CENTRAL_LORSO?'Tarefas LORSO':'Tarefas da equipe','view','internas',mn||'',lt>0)}${me.papel==='admin'&&typeof renderHoras==='function'?sideItem('horas','Horas da equipe','view','horas'):''}</nav>`; }
+  if(podeInternas()&&!FOCO){ const mn=minhasAbertas(), lt=eqBase().filter(t=>itDono(t,me.id)&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas',CENTRAL_LORSO?'Tarefas LORSO':'Tarefas da equipe','view','internas',mn||'',lt>0)}${me.papel==='admin'&&typeof renderHoras==='function'?sideItem('horas','Horas da equipe','view','horas'):''}${me.papel==='admin'&&typeof renderAcessos==='function'?sideItem('acessos','Equipe e acessos','view','acessos'):''}</nav>`; }
   if(cur&&!CENTRAL_LORSO){
     const x=crossTasks(INS), hot=x.late.length+x.semTarefa.length, g=overall();
     h+=`<nav class="sb-nav" aria-label="Etapas">
@@ -1414,7 +1414,7 @@ function renderPerfil(){
      <div class="kpis k3"><div class="kpi"><b>${profiles.length}</b><span>${profiles.length===1?'pessoa com acesso':'pessoas com acesso'}</span></div><div class="kpi"><b>${nConv}</b><span>${nConv===1?'convite aguardando':'convites aguardando'}</span></div><div class="kpi"><b>${Object.keys(all).length}</b><span>${Object.keys(all).length===1?'diagnóstico':'diagnósticos'}</span></div></div>
      ${cur?`<div class="prow" style="border-top:0;padding-top:0"><span><b>Módulos de ${esc(cur.nome)}</b><small>O que este cliente vê. Quem entra como cliente só enxerga os módulos ligados.</small></span><div class="seg" role="group">${MODS_TODOS.map(([k,l])=>`<button class="${modsCliente().includes(k)?'on':''}" data-act="mod-toggle" data-v="${k}" aria-pressed="${modsCliente().includes(k)}">${l}</button>`).join('')}</div></div>`:''}
      ${cur?(()=>{ const lg=(all[cur.id]||{}).logo||(typeof logoArquivo==='function'?logoArquivo(cur.id):''); return `<div class="prow"><span><b>Logo de ${esc(cur.nome)}</b><small>Aparece no painel inicial e no Tarefas LORSO, sempre sobre fundo escuro. PNG com fundo transparente fica melhor.</small></span><div class="logo-up"><span class="logo-plate">${lg?`<img src="${lg}" alt="Logo de ${esc(cur.nome)}" data-ini="">`:'<i>sem logo</i>'}</span><label class="btn" for="logo-file">${lg?'Trocar logo':'Enviar logo'}</label><input type="file" id="logo-file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>${(all[cur.id]||{}).logo?'<button class="btn ghost" data-act="logo-del">Remover</button>':''}</div></div>`; })():''}
-     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="view" data-v="equipe">Equipe e convites</button><button class="btn" data-act="view" data-v="como">Método LORSO (proposta)</button>${FERRAMENTAS.map(([k,l,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">${l} (versão avulsa) ↗</a>`).join('')}${me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo diagnóstico</button>`:''}</div></section>`:''}
+     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="view" data-v="acessos">Equipe e acessos</button><button class="btn" data-act="view" data-v="como">Método LORSO (proposta)</button>${FERRAMENTAS.map(([k,l,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">${l} (versão avulsa) ↗</a>`).join('')}${me.papel!=='cliente'?`<button class="btn" data-act="novo">+ Novo diagnóstico</button>`:''}</div></section>`:''}
    </div></section>`;
 }
 /* coleta: conclui sozinha quando a área fica completa */
@@ -1682,12 +1682,13 @@ function render(){
   if(fk){ const el=document.querySelector(fk); if(el&&el!==document.activeElement){ el.focus({preventScroll:true}); try{ if(selS!=null) el.setSelectionRange(selS,selE);}catch(e){} } }
 }
 function renderInner(){
-  if(CENTRAL_LORSO&&podeInternas()){ if(!['internas','horas','perfil'].includes(ui.view)) ui.view='internas'; renderBar(); renderSide([]);
-    if(ui.view==='horas'&&typeof renderHoras==='function') renderHoras(); else if(ui.view==='perfil') renderPerfil(); else renderInternas(); return; }
+  if(CENTRAL_LORSO&&podeInternas()){ if(!['internas','horas','perfil','acessos'].includes(ui.view)) ui.view='internas'; renderBar(); renderSide([]);
+    if(ui.view==='horas'&&typeof renderHoras==='function') renderHoras(); else if(ui.view==='perfil') renderPerfil(); else if(ui.view==='acessos'&&typeof renderAcessos==='function') renderAcessos(); else renderInternas(); return; }
   if(!cur){ renderBar(); renderSide([]);
     if(ui.view==='perfil'){ renderPerfil(); return; }
     if(ui.view==='internas'&&podeInternas()){ renderInternas(); return; }
     if(ui.view==='horas'&&typeof renderHoras==='function'){ renderHoras(); return; }
+    if(ui.view==='acessos'&&typeof renderAcessos==='function'){ renderAcessos(); return; }
     if(ui.view==='equipe'&&me&&me.papel==='admin'){ SC={}; renderEquipe(); return; }
     if(ui.view==='como'){ $('#main').innerHTML=comoHtml(); return; }
     if(ui.view==='guia'&&typeof renderGuia==='function'){ renderGuia(); return; }
@@ -1710,6 +1711,7 @@ function renderInner(){
   else if(ui.view==='lancamento') renderLancamento();
   else if(ui.view==='internas'&&podeInternas()) renderInternas();
   else if(ui.view==='horas'&&typeof renderHoras==='function') renderHoras();
+  else if(ui.view==='acessos'&&typeof renderAcessos==='function') renderAcessos();
   else if(ui.view==='pessoas'&&typeof renderPessoas==='function') renderPessoas();
   else if(ui.view==='solicitantes'&&typeof renderSolicitantes==='function') renderSolicitantes();
   else if(ui.view==='pdi'&&(podeInternas()||cur.pdiReitoria)&&typeof renderPdi==='function') renderPdi(INS);
@@ -1916,7 +1918,7 @@ async function loadTeam(){
   const p=ok(await sb.from('profiles').select('*').order('nome'));
   profiles=p||[];
   if(me&&me.papel!=='cliente'){ const c=ok(await sb.from('convites').select('*').order('created_at')); convites=(c||[]).filter(x=>!profiles.some(pp=>pp.email===x.email)); } else convites=[];
-  if(me&&me.papel!=='cliente'){ const m=ok(await sb.from('membros_diagnostico').select('diagnostico_id,user_id')); membros=m||[]; } else membros=[];
+  if(me&&me.papel!=='cliente'){ let m=ok(await sb.from('membros_diagnostico').select('diagnostico_id,user_id,nivel')); if(!m) m=ok(await sb.from('membros_diagnostico').select('diagnostico_id,user_id')); membros=m||[]; } else membros=[];
   if(cur) cur.equipe=equipeList();
 }
 async function loadDiag(id){
@@ -1932,6 +1934,7 @@ async function loadDiag(id){
   o.pdiReitoria=!!d.pdi_reitoria; o.clienteLeitura=!!d.cliente_leitura;
   o.prazo={inicio:d.inicio_projeto||'',fim:d.fim_previsto||'',hist:Array.isArray(d.prazo_historico)?d.prazo_historico:[]};
   o.equipe=equipeList(id); o.mods={};
+  o.meuNivel=me&&me.papel==='equipe'?((membros.find(m=>m.user_id===me.id&&m.diagnostico_id===id)||{}).nivel||''):'';
   try{ const mr=await sb.from('modulos').select('modulo,dados').eq('diagnostico_id',id); if(!mr.error)(mr.data||[]).forEach(r=>{ o.mods[r.modulo]=r.dados; }); }catch(e){ /* módulos opcionais */ }
   return o;
 }
@@ -2074,6 +2077,7 @@ async function start(session){
     if(!p||!p.ativo){ started=false; await sb.auth.signOut(); authMode='entrar'; authMsg={t:'Seu acesso não está ativo. Fale com a LORSO Digital.'}; showAuth(); return; }
     me=p; await Promise.all([loadList(),loadTeam()]); await loadInternas();
     const ok1=x=>all[x]&&(!FOCO||focoTem(all[x]));
+    if(CENTRAL_LORSO&&new URLSearchParams(location.search).get('tela')==='acessos') ui.view='acessos';
     const pedido=new URLSearchParams(location.search).get('cliente');
     let id=pedido&&all[pedido]?pedido:lsGet('cd.last'); if(!ok1(id)) id=Object.keys(all).find(ok1)||Object.keys(all)[0];
     if(id) await openDiag(id); else { cur=null; render(); }
@@ -2109,6 +2113,7 @@ document.addEventListener('click',e=>{
   if(act==='cap-somar'&&typeof capSomar==='function'){ capSomar(d.v||''); return; }
   if(act==='bu-tab'){ ui.baseUn=d.v; ui.view='fases'; ui.stage='diagnostico'; ui.dstep='base'; render(); window.scrollTo({top:0}); return; }
   if(act.startsWith('cx-')&&typeof conexoesClick==='function'&&conexoesClick(act,d)) return;
+  if(act.startsWith('ac-')&&typeof acessosClick==='function'&&acessosClick(act,d)) return;
   if(act.startsWith('sol-')&&typeof solicitantesClick==='function'&&solicitantesClick(act,d)) return;
   if(act.startsWith('pes-')&&typeof pessoasClick==='function'&&pessoasClick(act,d)) return;
   if(act.startsWith('ciclo-')&&typeof cicloClick==='function'&&cicloClick(act,d)) return;

@@ -29,7 +29,7 @@
   }
 
   /* Cliente em modo leitura (ex.: reitoria): vê tudo, não altera nada. O banco também bloqueia. */
-  const soLeitura=()=>typeof me!=='undefined'&&me&&me.papel==='cliente'&&typeof cur!=='undefined'&&cur&&cur.clienteLeitura;
+  const soLeitura=()=>typeof me!=='undefined'&&me&&typeof cur!=='undefined'&&cur&&((me.papel==='cliente'&&cur.clienteLeitura)||(me.papel==='equipe'&&cur.meuNivel==='leitura'));
   if(typeof touch==='function'){ const _touch=touch; touch=function(full){ if(soLeitura()){ try{ if(typeof snap!=='undefined'&&snap) cur=clone(snap); }catch(e){} if(typeof toast==='function') toast('Modo leitura: a LORSO mantém estes dados'); if(full&&typeof render==='function') render(); return; } return _touch(full); }; }
   function travarLeitura(main){ document.body.classList.toggle('so-leitura',!!soLeitura()); if(!soLeitura()) return;
     main.querySelectorAll('input,select,textarea').forEach(el=>{ if(['pes-busca','hr-pessoa','hr-de','hr-ate'].includes(el.id)||el.closest('.hr-filtros')) return; el.disabled=true; });
