@@ -504,26 +504,28 @@ function baseHtml(INS){
    <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Passo 1 · <b>Base de conhecimento</b></span><h2 style="margin-top:8px">Base de conhecimento</h2><p class="lead">Antes das entrevistas: o que a instituição vende, por quanto, com quantos alunos e quanto já captou. Esses números entram nos cruzamentos com as expectativas da reitoria.</p></div></header>
    <div class="stats"><div class="stat"><span class="si">${ico('base',20)}</span><b>${vig}</b><span>cursos vigentes</span></div><div class="stat"><span class="si">${ico('lancamento',20)}</span><b>${lan}</b><span>lançamentos previstos</span></div><div class="stat"><span class="si">${ico('equipe',20)}</span><b>${tv!=null?tv.toLocaleString('pt-BR'):'—'}</b><span>alunos no ciclo</span></div><div class="stat ${tv&&tc!=null&&tc/tv<0.7?'warn':''}"><span class="si">${ico('visao',20)}</span><b>${tv&&tc!=null?pct(tc/tv):'—'}</b><span>ocupação da capacidade</span>${tv&&tc!=null?`<span class="sp"><i style="width:${Math.min(100,tc/tv*100)}%"></i></span>`:''}</div><div class="stat ${tm&&tc!=null&&tc/tm<0.8?'bad':''}"><span class="si">${ico('alvo',20)}</span><b>${tm&&tc!=null?pct(tc/tm):'—'}</b><span>da meta de captação</span>${tm&&tc!=null?`<span class="sp"><i style="width:${Math.min(100,tc/tm*100)}%"></i></span>`:''}</div></div>
    ${fontesHtml()}
-   <section class="block"><div class="block-h"><h3>Capacidade de captação por UN e turno</h3><p>Alunos do ciclo, meta, quantos já captou e a mensalidade média.</p></div>
+   <section class="block"><div class="block-h"><h3>Capacidade de captação por UN e turno</h3><p>Alunos do ciclo, meta, quantos já captou e a mensalidade média. Digite aqui ou some a partir dos cursos.</p></div>
     <div class="tblw"><table class="tbl cap"><thead><tr><th>UN</th><th>Turno ou modalidade</th><th class="r">Alunos</th><th class="r">Meta de captação</th><th class="r">Captados</th><th class="r">Mensalidade média</th><th class="r">Ocupação</th><th class="r">Da meta</th></tr></thead><tbody>
      ${rows.map(r=>`<tr><td>${r.nm}</td><td class="muted">${r.mod}</td><td>${cap$(r.k,'vagas')}</td><td>${cap$(r.k,'meta')}</td><td>${cap$(r.k,'captados')}</td><td>${cap$(r.k,'ticket','R$')}</td>${pctCell(r.ocup,0.7)}${pctCell(r.ating,0.8)}</tr>`).join('')}
      <tr><td><b>Total</b></td><td></td><td class="r"><b>${tv!=null?tv.toLocaleString('pt-BR'):'—'}</b></td><td class="r"><b>${tm!=null?tm.toLocaleString('pt-BR'):'—'}</b></td><td class="r"><b>${tc!=null?tc.toLocaleString('pt-BR'):'—'}</b></td><td></td>${pctCell(tv&&tc!=null?tc/tv:null,0.7)}${pctCell(tm&&tc!=null?tc/tm:null,0.8)}</tr>
-    </tbody></table></div></section>
+    </tbody></table></div>${typeof capCursosHtml==='function'?capCursosHtml():''}</section>
    <section class="block"><div class="block-h"><h3>Cursos vigentes e lançamentos</h3><p>${cur.cursos.length} cursos cadastrados</p></div>
-    ${cur.cursos.length?`<div class="tblw"><table class="tbl"><thead><tr><th>UN</th><th style="min-width:200px">Curso</th><th>Modalidade</th><th>Turno</th><th>Mensalidade</th><th>Vagas</th><th>Matriculados</th><th>Status</th><th>Lançamento</th><th></th></tr></thead><tbody>${cur.cursos.map(c=>`<tr>
+    ${cur.cursos.length?`<div class="tblw"><table class="tbl tcursos"><thead><tr><th>UN</th><th style="min-width:220px">Curso</th><th>Modalidade</th><th>Turno</th><th>Mensalidade</th><th>Turmas</th><th>Alunos</th><th>Meta</th><th>Matriculados</th><th>Status</th><th>Lançamento</th><th></th></tr></thead><tbody>${cur.cursos.map(c=>`<tr>
       <td><select data-curso="${c.id}" data-f="un" aria-label="UN"><option value=""></option>${UNS.map(u=>`<option value="${u.id}" ${c.un===u.id?'selected':''}>${u.nome}</option>`).join('')}</select></td>
       <td><input data-curso="${c.id}" data-f="nome" value="${esc(c.nome)}" aria-label="Curso">${c.obs?`<small class="curso-obs">${esc(c.obs)}</small>`:''}</td>
       <td><select data-curso="${c.id}" data-f="modalidade" aria-label="Modalidade"><option value=""></option>${opt(c.modalidade,['Presencial','EAD','Híbrido'])}</select></td>
       <td><select data-curso="${c.id}" data-f="turno" aria-label="Turno"><option value=""></option>${opt(c.turno,['Diurno','Noturno','Integral','Flexível'])}</select></td>
       <td><input data-curso="${c.id}" data-f="preco" value="${esc(c.preco)}" inputmode="decimal" aria-label="Mensalidade" style="width:110px"></td>
-      <td><input data-curso="${c.id}" data-f="vagas" value="${esc(c.vagas)}" inputmode="decimal" aria-label="Vagas" style="width:80px"></td>
+      <td><input data-curso="${c.id}" data-f="turmas" value="${esc(c.turmas||'')}" inputmode="decimal" aria-label="Turmas" style="width:70px"></td>
+      <td><input data-curso="${c.id}" data-f="vagas" value="${esc(c.vagas)}" inputmode="decimal" aria-label="Alunos (capacidade)" style="width:80px"></td>
+      <td><input data-curso="${c.id}" data-f="meta" value="${esc(c.meta||'')}" inputmode="decimal" aria-label="Meta de captação" style="width:80px"></td>
       <td><input data-curso="${c.id}" data-f="matriculados" value="${esc(c.matriculados)}" inputmode="decimal" aria-label="Matriculados" style="width:90px"></td>
       <td><select data-curso="${c.id}" data-f="status" aria-label="Status">${opt(c.status,['Vigente','Lançamento','Descontinuado'])}</select></td>
       <td><input data-curso="${c.id}" data-f="lancamento" value="${esc(c.lancamento)}" placeholder="mês/ano" aria-label="Lançamento" style="width:90px"></td>
       <td class="x"><button class="xbtn" data-act="curso-del" data-id="${c.id}" aria-label="Remover curso">×</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Nenhum curso ainda. Adicione um por um ou cole a lista da planilha da instituição.</p>'}
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="curso-add">+ Curso</button></div>
     <details class="paste" data-keep="curso-paste" ${pv||ui.open['curso-paste']?'open':''}><summary>Colar lista de cursos da planilha</summary>
-     <p class="muted" style="font-size:13px">Cole a lista do site como ela vem: o nome da UN numa linha e, embaixo, um curso por linha, como "Presencial - Administração". Também aceita a tabela do Excel com as colunas UN · Curso · Modalidade · Turno · Mensalidade · Vagas · Matriculados · Status · Lançamento.</p>
+     <p class="muted" style="font-size:13px">Cole a lista do site como ela vem: o nome da UN numa linha e, embaixo, um curso por linha, como "Presencial - Administração". Também aceita a tabela copiada do Excel: com a linha de títulos (Curso, UN, Modalidade, Turno, Mensalidade, Turmas, Alunos, Meta, Matriculados), cada coluna vai para o lugar certo, em qualquer ordem. Curso que já existe só recebe os números.</p>
      <textarea id="curso-txt" rows="5" style="width:100%;font-family:var(--mono);font-size:13px" placeholder="Graduação	Administração	Presencial	Noturno	1.290	120	96	Vigente">${esc(ui.cursoTxt||'')}</textarea>
      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="curso-ler">Ler lista</button>${pv&&pv.length?`<button class="btn sm primary" data-act="curso-aplicar">Adicionar ${pv.length} cursos</button>`:''}</div>
      ${pv?`<p class="muted" style="font-size:13px">${pv.length} cursos reconhecidos${pv.length?': '+[...UNS.map(u=>[u.nome,pv.filter(c=>c.un===u.id).length]),['sem UN',pv.filter(c=>!c.un).length]].filter(x=>x[1]).map(x=>`${x[0]} ${x[1]}`).join(' · '):''}${pv.filter(c=>!c.un).length?'. Os sem UN (como curta duração e educação executiva) entram com o grupo escrito abaixo do nome; ajuste a UN na tabela se quiser':''}.</p>`:''}
@@ -536,15 +538,34 @@ const UN_ALIAS=[['pos',/p[oó]s|mba|especializa/i],['mestrado',/mestrado|doutora
 const MOD_ALIAS=[['Híbrido',/semi ?presencial|h[ií]brid|flex|blended/i],['EAD',/\bead\b|dist[aâ]ncia|online|on-line|live|ao vivo|remoto/i],['Presencial',/presencial/i]];
 const modDe=t=>(MOD_ALIAS.find(([,re])=>re.test(t||''))||[])[0]||'';
 const ehSoModalidade=t=>/^(presencial|semi ?presencial|ead|a dist[aâ]ncia|h[ií]brido|flex|live|online|ao vivo|blended)$/i.test((t||'').trim());
-function cursoParseTabela(txt){
-  return txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{ const c=l.split(/\t|;/).map(x=>x.trim());
-    if(/^un$|^unidade/i.test(c[0]||''))return null;
-    const un=(UN_ALIAS.find(([,re])=>re.test(c[0]||''))||[])[0]||'';
-    const st=/lan[cç]/i.test(c[7]||'')?'Lançamento':/descon/i.test(c[7]||'')?'Descontinuado':'Vigente';
-    const mod=/ead|dist/i.test(c[2]||'')?'EAD':/h[ií]br/i.test(c[2]||'')?'Híbrido':(c[2]?'Presencial':'');
-    const tur=/not/i.test(c[3]||'')?'Noturno':/diur|manh|tarde/i.test(c[3]||'')?'Diurno':/integ/i.test(c[3]||'')?'Integral':(c[3]?'Flexível':'');
-    return {id:uid(),un,nome:c[1]||'',modalidade:mod,turno:tur,preco:c[4]||'',vagas:c[5]||'',matriculados:c[6]||'',status:st,lancamento:c[8]||'',obs:''};
-  }).filter(x=>x&&x.nome);
+const CURSO_COLS=[['matriculados',/matricul|captad|inscrit|ativos|realizado/i],['turmas',/turma/i],['meta',/meta/i],['vagas',/vaga|capacidade|alunos|lota[cç]/i],['preco',/mensalidade|pre[cç]o|valor|ticket/i],['modalidade',/modalidade|formato/i],['turno',/turno|per[ií]odo/i],['status',/status|situa[cç]/i],['lancamento',/lan[cç]amento|in[ií]cio/i],['un',/^un$|unidade|n[ií]vel|segmento|[aá]rea de neg/i],['nome',/curso|programa|nome|produto/i]];
+function sepDe(txt){ const L=txt.split(/\r?\n/).filter(l=>l.trim()).slice(0,20); const c=ch=>L.filter(l=>l.split(ch).length>=3).length; return c('\t')>=L.length/2?'\t':c(';')>=L.length/2?';':c(',')>=L.length/2?',':null; }
+function linhaCsv(l,sep){ if(sep!==','&&sep!==';') return l.split(sep).map(x=>x.trim()); const out=[]; let a='',q=false; for(let i=0;i<l.length;i++){ const ch=l[i]; if(ch==='"'){ if(q&&l[i+1]==='"'){a+='"';i++;} else q=!q; } else if(ch===sep&&!q){ out.push(a.trim()); a=''; } else a+=ch; } out.push(a.trim()); return out; }
+const unDeTexto=t=>/mestrado|doutorado|stricto/i.test(t||'')?'mestrado':(UN_ALIAS.find(([,re])=>re.test(t||''))||[])[0]||'';
+function cursoParseTabela(txt,exigeCabecalho){
+  const sep=sepDe(txt)||'\t'; const linhas=txt.split(/\r?\n/).filter(l=>l.trim()&&!/^## Aba:/.test(l)).map(l=>linhaCsv(l,sep));
+  let mapa=null, ini=0;
+  for(let i=0;i<Math.min(6,linhas.length);i++){ const h=linhas[i]; const m={}; h.forEach((cel,ci)=>{ const c=(CURSO_COLS.find(([f,re])=>re.test(cel)&&m[f]==null)||[])[0]; if(c&&cel.length<60) m[c]=ci; }); if(m.nome!=null&&Object.keys(m).length>=2){ mapa=m; ini=i+1; break; } }
+  if(!mapa&&exigeCabecalho) return [];
+  if(!mapa){ mapa={un:0,nome:1,modalidade:2,turno:3,preco:4,vagas:5,matriculados:6,status:7,lancamento:8}; ini=/^un$|^unidade/i.test((linhas[0]||[])[0]||'')?1:0; }
+  let unAtual='';
+  return linhas.slice(ini).map(c=>{ const g=f=>mapa[f]!=null?String(c[mapa[f]]||'').trim():'';
+    const nome=g('nome'); const unTxt=g('un'); if(unTxt) unAtual=unDeTexto(unTxt)||unAtual;
+    if(!nome||/^total/i.test(nome)) return null;
+    const st=/lan[cç]/i.test(g('status'))?'Lançamento':/descon/i.test(g('status'))?'Descontinuado':'Vigente';
+    const md=g('modalidade'), mod=typeof modDe==='function'&&modDe(md)?modDe(md):(md?'Presencial':'');
+    const tr=g('turno'), tur=/not/i.test(tr)?'Noturno':/diur|manh|tarde|vesp|matut/i.test(tr)?'Diurno':/integ/i.test(tr)?'Integral':(tr?'Flexível':'');
+    return {id:uid(),un:mapa.un!=null?unDeTexto(unTxt):unAtual,nome,modalidade:mod,turno:tur,preco:g('preco').replace(/r\$\s*/i,''),turmas:g('turmas'),vagas:g('vagas'),meta:g('meta'),matriculados:g('matriculados'),status:st,lancamento:g('lancamento'),obs:''};
+  }).filter(Boolean);
+}
+/* Junta cursos novos com a tabela: o que já existe (mesmo nome e UN) só ganha os números que faltam ou mudaram. */
+function cursosMesclar(lista,simular){
+  const chN=c=>String(c.nome||'').toLowerCase().replace(/\s+/g,' ').trim(); let novos=0, atual=0; const vistos=new Set();
+  lista.forEach(c=>{ const k=[c.un,chN(c),c.modalidade,c.obs||''].join('|'); if(vistos.has(k)) return; vistos.add(k);
+    const ex=cur.cursos.find(x=>chN(x)===chN(c)&&(x.un===c.un||!x.un||!c.un)&&(!c.modalidade||!x.modalidade||x.modalidade===c.modalidade));
+    if(ex){ let mud=false; ['un','modalidade','turno','preco','turmas','vagas','meta','matriculados','lancamento'].forEach(f=>{ if(c[f]&&c[f]!==ex[f]){ if(!simular) ex[f]=c[f]; mud=true; } }); if(mud) atual++; }
+    else { if(!simular) cur.cursos.push({turmas:'',meta:'',...c}); novos++; } });
+  if(!simular) touch(true); return {novos,atual};
 }
 /* Lista simples, como vem do site: o título da UN numa linha e, embaixo, "Modalidade - Curso" ou "Categoria - Curso". */
 function cursoParseLista(txt){
@@ -565,8 +586,7 @@ function cursoParseLista(txt){
 }
 function cursoParse(txt){
   const L=txt.split(/\r?\n/).filter(l=>l.trim());
-  const tab=L.filter(l=>l.split(/\t|;/).length>=3).length;
-  return tab>=Math.max(1,L.length/2)?cursoParseTabela(txt):cursoParseLista(txt);
+  return sepDe(txt)?cursoParseTabela(txt):cursoParseLista(txt);
 }
 function direcHtml(){
   const pri=jornadaIds();
@@ -1385,17 +1405,17 @@ function fontesHtml(){
   return `<section class="block" id="fontes"><div class="block-h"><h3>Fontes de conhecimento</h3><p>Traga o que já existe sobre o cliente. Tudo fica guardado aqui e entra na exportação.</p></div>
    <div class="fsrc">
     <button class="fbtn ${ab==='nb'?'on':''}" data-act="fonte-aba" data-v="nb">${ico('entrevistas',20)}<span><b>Colar do NotebookLM</b><small>Resumo, notas ou guia de estudo</small></span></button>
-    <button class="fbtn ${ab==='arq'?'on':''}" data-act="fonte-aba" data-v="arq">${ico('base',20)}<span><b>Subir arquivo</b><small>PDF, Word, texto, planilha CSV</small></span></button>
+    <button class="fbtn ${ab==='arq'?'on':''}" data-act="fonte-aba" data-v="arq">${ico('base',20)}<span><b>Subir arquivo</b><small>PDF, Word, Excel, texto ou CSV</small></span></button>
     <button class="fbtn ${ab==='site'?'on':''}" data-act="fonte-aba" data-v="site">${ico('site',20)}<span><b>Ler o site do cliente</b><small>Cursos, preços e institucional</small></span></button>
    </div>
    ${ab==='nb'?`<form id="f-fonte-nb" class="fform"><label>Título<input name="titulo" placeholder="Ex.: NotebookLM · resumo da instituição" required></label><label>Conteúdo<textarea name="conteudo" rows="8" placeholder="No NotebookLM, copie o resumo, as notas ou o guia gerado e cole aqui." required></textarea></label><div><button class="btn primary" type="submit">Guardar fonte</button> <button class="btn ghost" type="button" data-act="fonte-aba" data-v="">Cancelar</button></div></form>`:''}
-   ${ab==='arq'?`<div class="fform"><label class="drop"><input type="file" id="fonte-file" accept=".txt,.md,.csv,.json,.html,.htm,.pdf,.docx" multiple><span>Clique para escolher ou arraste arquivos aqui</span><small>Do NotebookLM, use "Exportar para o Documentos Google" e baixe como .docx ou .pdf. Até 15 MB por arquivo.</small></label>${ui.fonteLendo?`<p class="muted">Lendo ${esc(ui.fonteLendo)}…</p>`:''}</div>`:''}
+   ${ab==='arq'?`<div class="fform"><label class="drop"><input type="file" id="fonte-file" accept=".txt,.md,.csv,.json,.html,.htm,.pdf,.docx,.xlsx,.xls" multiple><span>Clique para escolher ou arraste arquivos aqui</span><small>Do NotebookLM, use "Exportar para o Documentos Google" e baixe como .docx ou .pdf. Até 15 MB por arquivo.</small></label>${ui.fonteLendo?`<p class="muted">Lendo ${esc(ui.fonteLendo)}…</p>`:''}</div>`:''}
    ${ab==='site'?`<form id="f-fonte-site" class="fform"><label>Endereço do site<input name="url" inputmode="url" autocomplete="url" placeholder="https://www.instituicao.edu.br" value="${esc(ui.fonteUrl||'')}" required></label><label>Páginas para ler<select name="paginas"><option value="4">Até 4 (rápido)</option><option value="8" selected>Até 8</option><option value="12">Até 12 (mais completo)</option></select></label><div><button class="btn primary" type="submit" ${ui.lendoSite?'disabled':''}>${ui.lendoSite?'Lendo o site…':'Ler site'}</button></div><p class="muted" style="font-size:13px">Lê a página inicial e as páginas de cursos, inscrição e mensalidades que ela linka. Pode levar até 1 minuto.</p></form>`:''}
    ${F.length?`<div class="flist">${F.map(f=>{ const [tn,ic]=FONTE_TIPO[f.tipo]||FONTE_TIPO.texto; const d=f.dados||{}; const ia=d.ia&&!d.ia.erro?d.ia:null; const cs=ia&&Array.isArray(ia.cursos)?ia.cursos.filter(c=>c&&c.nome&&!cur.cursos.some(x=>x.nome===c.nome&&x.un===(c.un||''))):[];
      return `<article class="fitem"><div class="fh">${ico(ic,18)}<div class="ft"><b>${esc(f.titulo||'Sem título')}</b><small>${tn} · ${palavras(f.conteudo).toLocaleString('pt-BR')} palavras${f.url?` · <a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.url.replace(/^https?:\/\//,'').slice(0,48))}</a>`:''}${f.created_at?` · ${new Date(f.created_at).toLocaleDateString('pt-BR')}`:''}</small></div><button class="xbtn" data-act="fonte-del" data-id="${f.id}" aria-label="Excluir fonte">×</button></div>
       ${ia&&ia.resumo?`<p class="fres">${esc(ia.resumo)}</p>`:''}
       ${d.precos&&d.precos.length?`<p class="muted" style="font-size:13px;margin:6px 0 0">${pl(d.precos.length,'valor em R$ encontrado','valores em R$ encontrados')} no site.</p>`:''}
-      ${cs.length?`<div style="margin-top:8px"><button class="btn sm primary" data-act="fonte-cursos" data-id="${f.id}">Adicionar ${pl(cs.length,'curso encontrado','cursos encontrados')} à tabela</button></div>`:''}
+      ${typeof leituraHtml==='function'?leituraHtml(f):cs.length?`<div style="margin-top:8px"><button class="btn sm primary" data-act="fonte-cursos" data-id="${f.id}">Adicionar ${pl(cs.length,'curso encontrado','cursos encontrados')} à tabela</button></div>`:''}
       <details data-keep="fonte-${f.id}" ${ui.open['fonte-'+f.id]?'open':''}><summary>Ver conteúdo</summary><pre class="fpre">${esc(String(f.conteudo||'').slice(0,12000))}${String(f.conteudo||'').length>12000?'\n\n[… continua na exportação]':''}</pre></details></article>`; }).join('')}</div>`:''}
    <div class="fexp"><button class="btn" data-act="base-md">Exportar para o NotebookLM (.md)</button><button class="btn" data-act="base-json">Exportar dados (.json)</button><span class="muted" style="font-size:13px">Leva capacidade, cursos, contexto, respostas da reitoria e todas as fontes.</span></div>
   </section>`;
@@ -1426,6 +1446,8 @@ async function lerArquivo(file){
   if(file.size>15*1024*1024) throw new Error('arquivo maior que 15 MB');
   if(n.endsWith('.pdf')){ await loadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js'); const lib=window.pdfjsLib; lib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
     const doc=await lib.getDocument({data:await file.arrayBuffer()}).promise; const out=[]; for(let i=1;i<=Math.min(doc.numPages,300);i++){ const p=await doc.getPage(i); const c=await p.getTextContent(); out.push(c.items.map(x=>x.str).join(' ').replace(/\s+/g,' ').trim()); } return out.filter(Boolean).join('\n\n'); }
+  if(/\.xlsx?$/.test(n)){ await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'); const wb=window.XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
+    return wb.SheetNames.map(nm=>{ const csv=window.XLSX.utils.sheet_to_csv(wb.Sheets[nm],{FS:'\t',blankrows:false,dateNF:'dd/mm/yyyy'}).split('\n').filter(l=>l.replace(/\t/g,'').trim()).join('\n'); return csv?`## Aba: ${nm}\n${csv.replace(/\b(\d{4})-(\d{2})-(\d{2})(?:[T ][\d:.]+Z?)?\b/g,'$3/$2/$1')}`:''; }).filter(Boolean).join('\n\n'); }
   if(n.endsWith('.docx')){ await loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js'); const r=await window.mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()}); return r.value; }
   const t=await file.text();
   if(/\.html?$/.test(n)){ const d=new DOMParser().parseFromString(t,'text/html'); d.querySelectorAll('script,style,noscript').forEach(x=>x.remove()); return (d.body?d.body.innerText||d.body.textContent:'').replace(/\n{3,}/g,'\n\n').trim(); }
@@ -1792,7 +1814,7 @@ const ARR_DB={
  kpis:{t:'indicadores',to:x=>({id:x.id,nome:nz(x.nome),un:nz(x.un),meta:nz(x.meta),realizado:nz(x.real)}),from:r=>({id:r.id,nome:r.nome||'',un:r.un||'',meta:r.meta||'',real:r.realizado||''})},
  dores:{t:'dores',to:x=>({id:x.id,descricao:x.txt,area:nz(x.area),etapa:nz(x.etapa),tipo:nz(x.tipo),gravidade:toInt(x.sev),frequencia:nz(x.freq),relatado_por:nz(x.quem),sistema:nz(x.sistema),data:nz(x.data)}),from:r=>({id:r.id,txt:r.descricao,area:r.area||'',etapa:r.etapa||'',tipo:r.tipo||'',sev:String(r.gravidade||2),freq:r.frequencia||'',quem:r.relatado_por||'',sistema:r.sistema||'',data:r.data||''})},
  fontes:{t:'fontes',to:x=>({id:x.id,tipo:x.tipo||'texto',titulo:nz(x.titulo),url:nz(x.url),conteudo:nz(x.conteudo),dados:x.dados||null}),from:r=>({id:r.id,tipo:r.tipo||'texto',titulo:r.titulo||'',url:r.url||'',conteudo:r.conteudo||'',dados:r.dados||null,created_at:r.created_at})},
- cursos:{t:'cursos',to:x=>({id:x.id,un:nz(x.un),nome:nz(x.nome),modalidade:nz(x.modalidade),turno:nz(x.turno),preco:nz(x.preco),vagas:nz(x.vagas),matriculados:nz(x.matriculados),status:x.status||'Vigente',lancamento:nz(x.lancamento),obs:nz(x.obs)}),from:r=>({id:r.id,un:r.un||'',nome:r.nome||'',modalidade:r.modalidade||'',turno:r.turno||'',preco:r.preco||'',vagas:r.vagas||'',matriculados:r.matriculados||'',status:r.status||'Vigente',lancamento:r.lancamento||'',obs:r.obs||''})},
+ cursos:{t:'cursos',to:x=>({id:x.id,un:nz(x.un),nome:nz(x.nome),modalidade:nz(x.modalidade),turno:nz(x.turno),preco:nz(x.preco),turmas:nz(x.turmas),vagas:nz(x.vagas),meta:nz(x.meta),matriculados:nz(x.matriculados),status:x.status||'Vigente',lancamento:nz(x.lancamento),obs:nz(x.obs)}),from:r=>({id:r.id,un:r.un||'',nome:r.nome||'',modalidade:r.modalidade||'',turno:r.turno||'',preco:r.preco||'',turmas:r.turmas||'',vagas:r.vagas||'',meta:r.meta||'',matriculados:r.matriculados||'',status:r.status||'Vigente',lancamento:r.lancamento||'',obs:r.obs||''})},
  iniciativas:{t:'iniciativas',to:x=>({id:x.id,titulo:nz(x.titulo),bloco:nz(x.bloco),area:nz(x.area),horizonte:nz(x.horizonte),impacto:toInt(x.impacto),esforco:toInt(x.esforco),risco:toInt(x.risco),dependencias:nz(x.dependencias),alinhamento:nz(x.alinhamento),recomendacao:nz(x.recomendacao),motivo:nz(x.motivo),indicador:nz(x.indicador),ordem:toInt(x.ordem)??0}),from:r=>({id:r.id,titulo:r.titulo||'',bloco:r.bloco||'',area:r.area||'',horizonte:r.horizonte||'',impacto:r.impacto??'',esforco:r.esforco??'',risco:r.risco??'',dependencias:r.dependencias||'',alinhamento:r.alinhamento||'',recomendacao:r.recomendacao||'',motivo:r.motivo||'',indicador:r.indicador||'',ordem:r.ordem||0})},
  sistemas:{t:'sistemas',to:x=>({id:x.id,nome:nz(x.nome),uso:nz(x.uso),usuarios:nz(x.quem),satisfacao:toInt(x.satisf),integra:nz(x.integra),custo_mensal:nz(x.custo),problemas:nz(x.prob)}),from:r=>({id:r.id,nome:r.nome||'',uso:r.uso||'',quem:r.usuarios||'',satisf:r.satisfacao!=null?String(r.satisfacao):'',integra:r.integra||'',custo:r.custo_mensal||'',prob:r.problemas||''})},
 };
@@ -1990,6 +2012,8 @@ document.addEventListener('click',e=>{
   if(act.startsWith('pdi-')&&typeof pdiClick==='function'&&pdiClick(act,d)) return;
   if(act.startsWith('pa-')&&typeof paClick==='function'&&cur&&paClick(act,d)) return;
   if(act.startsWith('guia-')&&typeof guiaClick==='function'&&guiaClick(act,d)) return;
+  if(act.startsWith('lt-')&&typeof leituraClick==='function'&&leituraClick(act,d)) return;
+  if(act==='cap-somar'&&typeof capSomar==='function'){ capSomar(); return; }
   if(act.startsWith('pz-')&&typeof prazoClick==='function'&&prazoClick(act,d)) return;
   if(act.startsWith('hr-')&&typeof horasClick==='function'&&horasClick(act,d)) return;
   if(act==='sb-open'){ ui.sbOpen=true; document.body.classList.add('sb-on'); const f=document.querySelector('#sb .sn.on')||document.querySelector('#sb .sn'); f&&f.focus(); return; }
@@ -2037,7 +2061,7 @@ document.addEventListener('click',e=>{
   else if(act==='curso-add'){ cur.cursos.push({id:uid(),un:'',nome:'',modalidade:'',turno:'',preco:'',vagas:'',matriculados:'',status:'Vigente',lancamento:'',obs:''}); touch(true); const els=document.querySelectorAll('[data-curso][data-f="nome"]'); els.length&&els[els.length-1].focus(); }
   else if(act==='curso-del'){ cur.cursos=cur.cursos.filter(c=>c.id!==d.id); touch(true); }
   else if(act==='curso-ler'){ ui.cursoTxt=($('#curso-txt')||{}).value||''; ui.cursoPreview=cursoParse(ui.cursoTxt); render(); }
-  else if(act==='curso-aplicar'){ const ch=c=>[c.un,c.nome,c.modalidade,c.obs||''].join('|').toLowerCase(); const ja=new Set(cur.cursos.map(ch)); const pv=(ui.cursoPreview||[]).filter(c=>{ const k=ch(c); if(ja.has(k)) return false; ja.add(k); return true; }); const rep=(ui.cursoPreview||[]).length-pv.length; cur.cursos.push(...pv); ui.cursoPreview=null; ui.cursoTxt=''; touch(true); toast(`${pv.length} cursos adicionados${rep?` (${rep} já estavam na lista)`:''}`); }
+  else if(act==='curso-aplicar'){ const r=cursosMesclar(ui.cursoPreview||[]); ui.cursoPreview=null; ui.cursoTxt=''; toast(`${pl(r.novos,'curso novo','cursos novos')}${r.atual?` e ${pl(r.atual,'curso atualizado','cursos atualizados')}`:''}`); render(); }
   else if(act==='jornada-toggle'){ let L=jornadaIds(); L=L.includes(d.v)?L.filter(x=>x!==d.v):[...L,d.v]; if(L.length)cur.campos['jornada.ordem']=L.join('|'); else delete cur.campos['jornada.ordem']; touch(true); }
   else if(act==='jornada-up'){ const L=jornadaIds(); const i=L.indexOf(d.v); if(i>0){ [L[i-1],L[i]]=[L[i],L[i-1]]; cur.campos['jornada.ordem']=L.join('|'); touch(true);} }
   else if(act==='jornada-tarefas'){ let n=0; jornadaIds().forEach(id=>{ if(internas.some(t=>t.diagnostico_id===cur.id&&t.origem==='coleta:'+id))return; const quem=cur.campos['jornada.'+id+'.quem']; itNew({titulo:`Entrevistar ${quem||'responsável'} · ${AREA[id].nome}`,diagnostico_id:cur.id,area:id,origem:'coleta:'+id,prazo:cur.campos['jornada.'+id+'.data']||'',responsavel:cur.dono_area[id]||''}); n++; }); render(); toast(n?`${n} entrevistas criadas em Tarefas da equipe`:'As entrevistas já estão em Tarefas da equipe'); }

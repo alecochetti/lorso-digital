@@ -229,3 +229,25 @@ input:focus,select:focus,textarea:focus{border-color:var(--l-verde-escuro)!impor
 .hr-filtros .seg{flex-wrap:wrap;max-width:100%}
 @media (max-width:640px){ .hr-filtros .field{min-width:0;width:100%} .hr-k .kpi b{font-size:24px} }
 .curso-obs{display:block;margin-top:4px;font-size:11.5px;color:var(--muted);line-height:1.3;max-width:260px}
+
+/* ---------- 16. Leitura inteligente das fontes ---------- */
+.lt{margin-top:12px;background:var(--l-grad-suave);border:1px solid rgba(6,182,212,.18);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+:root:not([data-theme="light"]) .lt{background:color-mix(in srgb,var(--l-ciano) 8%,var(--surface));border-color:color-mix(in srgb,var(--l-ciano) 26%,transparent)}
+.lt-h{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap}
+.lt-h b{font-size:14px;color:#0E7490}
+:root:not([data-theme="light"]) .lt-h b{color:#67E8F9}
+.lt-h .muted{font-size:13px;flex:1;min-width:200px}
+.lt-b{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--surface);border-radius:12px;padding:10px 12px;box-shadow:var(--elev-1)}
+.lt-b>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.lt-b b{font-size:14px} .lt-b small{font-size:12.5px;color:var(--muted)}
+.lt-b .btn{flex:none}
+.lt-ex{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;align-items:center}
+.lt-l{margin:4px 0 0;padding-left:18px;font-size:13px;color:var(--fg);display:flex;flex-direction:column;gap:2px}
+.lt-aviso{display:flex;gap:8px;align-items:flex-start;margin:0;font-size:13px;color:#164E63}
+.lt-aviso .i{flex:0 0 18px;height:18px;border-radius:50%;background:var(--l-ciano);color:#fff;display:grid;place-items:center;font-weight:800;font-size:11px}
+:root:not([data-theme="light"]) .lt-aviso{color:var(--fg)}
+.lt-cap{margin-top:14px}
+@media (max-width:640px){ .lt-b{flex-direction:column;align-items:stretch} }
+.tcursos{min-width:1480px}
+.tcursos select[data-f="un"]{min-width:140px} .tcursos select[data-f="modalidade"]{min-width:120px} .tcursos select[data-f="turno"]{min-width:110px} .tcursos select[data-f="status"]{min-width:130px}
+.tcursos input[data-f="nome"]{min-width:220px}
