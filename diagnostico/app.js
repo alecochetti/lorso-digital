@@ -1215,7 +1215,7 @@ function renderSide(INS){
   const adm=me&&me.papel==='admin', pc=x=>Math.round(x*100)+'%';
   let h=`<div class="sb-brand">${LOGO_SVG}<span class="sb-word"><b>LORSO</b><i>DIGITAL<em>.</em></i></span></div><div class="sb-prod">${FOCO?esc(MODS_TODOS.find(x=>x[0]===FOCO)[1]):'Central de Diagnóstico'}</div>`;
   if(FOCO) h+=`<nav class="sb-nav sb-top" aria-label="Área do Cliente"><a class="sn" href="/admin/painel.html"><span class="lb">‹ Trocar de módulo</span></a></nav>`;
-  if(podeInternas()&&!FOCO){ const mn=minhasAbertas(), lt=internas.filter(t=>itDono(t,me.id)&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas','Tarefas da equipe','view','internas',mn||'',lt>0)}</nav>`; }
+  if(podeInternas()&&!FOCO){ const mn=minhasAbertas(), lt=internas.filter(t=>itDono(t,me.id)&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas','Tarefas da equipe','view','internas',mn||'',lt>0)}${me.papel==='admin'&&typeof renderHoras==='function'?sideItem('horas','Horas da equipe','view','horas'):''}</nav>`; }
   if(cur){
     const x=crossTasks(INS), hot=x.late.length+x.semTarefa.length, g=overall();
     h+=`<nav class="sb-nav" aria-label="Etapas">
@@ -1263,6 +1263,7 @@ function renderVisao(INS){
     return `<button class="vrow" data-act="area" data-v="${a.id}"><span class="vn">${esc(a.nome)}</span><span class="vb" aria-hidden="true"><span style="width:${Math.round(n/a.q.length*100)}%"></span></span><span class="vc mono">${n}/${a.q.length}</span>${lvChip(s.score!=null?s.level:0)}<span class="vd muted">${dono?esc(dono.nome||''):''}</span></button>`; };
   $('#main').innerHTML=`${typeof guiaBanner==='function'?guiaBanner():''}<section class="panel">
    <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">${esc(saudacaoData())}</span><h2 style="margin-top:8px">${esc(saudacao())}</h2><label class="field" style="max-width:380px;margin-top:12px"><span class="lbl">Nome do cliente</span><input id="nome-diag" value="${esc(cur.nome)}"></label><p class="lead">Fase 1 · Visão geral do diagnóstico. Onde a coleta está, o nível de cada área e o que já aparece de incongruência. Clique numa área para abrir as perguntas.</p></div></header>
+   ${typeof prazoHtml==='function'?prazoHtml():''}
    <div class="kpis">
     <div class="kpi"><b>${g.level?'N'+g.level:'—'}</b><span>${g.level?esc(LVL[g.level]):'nível geral ainda sem nota'}${g.score!=null?' · '+dec(g.score,2):''}</span></div>
     <div class="kpi"><b>${tt?Math.round(aa/tt*100):0}%</b><span>das perguntas respondidas (${aa} de ${tt})</span></div>
@@ -1554,6 +1555,7 @@ function renderInner(){
   if(!cur){ renderBar(); renderSide([]);
     if(ui.view==='perfil'){ renderPerfil(); return; }
     if(ui.view==='internas'&&podeInternas()){ renderInternas(); return; }
+    if(ui.view==='horas'&&typeof renderHoras==='function'){ renderHoras(); return; }
     if(ui.view==='equipe'&&me&&me.papel==='admin'){ SC={}; renderEquipe(); return; }
     if(ui.view==='como'){ $('#main').innerHTML=comoHtml(); return; }
     if(ui.view==='guia'&&typeof renderGuia==='function'){ renderGuia(); return; }
@@ -1575,6 +1577,7 @@ function renderInner(){
   else if(ui.view==='dre') renderDRE();
   else if(ui.view==='lancamento') renderLancamento();
   else if(ui.view==='internas'&&podeInternas()) renderInternas();
+  else if(ui.view==='horas'&&typeof renderHoras==='function') renderHoras();
   else if(ui.view==='pdi'&&podeInternas()&&typeof renderPdi==='function') renderPdi(INS);
   else if(ui.view==='plano'&&typeof renderPlano==='function') renderPlano(INS);
   else if(ui.view==='guia'&&typeof renderGuia==='function') renderGuia();
@@ -1788,6 +1791,7 @@ async function loadDiag(id){
   resA.forEach(r=>{ o.dono_area[r.area]=r.user_id; });
   fofa.forEach(r=>{ o.fofa[r.chave]=o.fofa[r.chave]||{}; (o.fofa[r.chave][r.quadrante]=o.fofa[r.chave][r.quadrante]||[]).push(r.texto); });
   Object.keys(ARR_DB).forEach((k,i)=>{ o[k]=arrs[i].map(ARR_DB[k].from); });
+  o.prazo={inicio:d.inicio_projeto||'',fim:d.fim_previsto||'',hist:Array.isArray(d.prazo_historico)?d.prazo_historico:[]};
   o.equipe=equipeList(); o.mods={};
   try{ const mr=await sb.from('modulos').select('modulo,dados').eq('diagnostico_id',id); if(!mr.error)(mr.data||[]).forEach(r=>{ o.mods[r.modulo]=r.dados; }); }catch(e){ /* módulos opcionais */ }
   return o;
@@ -1961,6 +1965,8 @@ document.addEventListener('click',e=>{
   if(act.startsWith('pdi-')&&typeof pdiClick==='function'&&pdiClick(act,d)) return;
   if(act.startsWith('pa-')&&typeof paClick==='function'&&cur&&paClick(act,d)) return;
   if(act.startsWith('guia-')&&typeof guiaClick==='function'&&guiaClick(act,d)) return;
+  if(act.startsWith('pz-')&&typeof prazoClick==='function'&&prazoClick(act,d)) return;
+  if(act.startsWith('hr-')&&typeof horasClick==='function'&&horasClick(act,d)) return;
   if(act==='sb-open'){ ui.sbOpen=true; document.body.classList.add('sb-on'); const f=document.querySelector('#sb .sn.on')||document.querySelector('#sb .sn'); f&&f.focus(); return; }
   if(act==='sb-close'){ ui.sbOpen=false; document.body.classList.remove('sb-on'); return; }
   if(act==='tema'){ setPref('theme',temaAtual()==='light'?'dark':'light'); render(); return; }

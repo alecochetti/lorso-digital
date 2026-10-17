@@ -183,3 +183,48 @@ input:focus,select:focus,textarea:focus{border-color:var(--l-verde-escuro)!impor
 /* ---------- 13. Colunas do quadro com as cores de status ---------- */
 .kcol[data-col="A fazer"]{--dot:var(--st-pendente)} .kcol[data-col="Em andamento"]{--dot:var(--st-andamento)} .kcol[data-col="Em revisão"]{--dot:var(--st-revisao)} .kcol[data-col="Concluída"]{--dot:var(--st-ok)}
 :root[data-theme="light"] .ph input,:root[data-theme="light"] .ph select,:root[data-theme="light"] .topbar select{background:#fff;border-color:var(--line-2)}
+
+/* ---------- 14. Prazo do projeto ---------- */
+.pz-grid{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:18px;align-items:stretch}
+.pz-linha{display:flex;flex-direction:column;gap:12px;min-width:0}
+.pz-tempo{position:relative;height:10px;border-radius:999px;background:#E6E9F0;margin:26px 0 2px}
+:root:not([data-theme="light"]) .pz-tempo{background:var(--surface-2)}
+.pz-fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--l-grad-linha)}
+.pz-hoje{position:absolute;top:-26px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:3px}
+.pz-hoje b{font-size:11.5px;font-weight:800;color:var(--fg);order:-1}
+.pz-hoje i{width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--l-ciano);box-shadow:var(--elev-1);margin-top:2px}
+.pz-marcos{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.pz-marcos small{display:block;font-size:12px;font-weight:600;color:var(--muted)}
+.pz-marcos b{font-size:15px}
+.pz-sit{font-size:13px;font-weight:700;color:var(--accent-2);text-align:center}
+.pz-barras{display:flex;flex-direction:column;gap:8px;padding-top:4px}
+.pz-barras>div{display:grid;grid-template-columns:170px minmax(0,1fr) 46px;gap:12px;align-items:center;font-size:13.5px;color:var(--muted)}
+.pz-barras b{text-align:right;color:var(--fg);font-variant-numeric:tabular-nums}
+.pz-b{height:8px;border-radius:999px;background:#E6E9F0;overflow:hidden}
+:root:not([data-theme="light"]) .pz-b{background:var(--surface-2)}
+.pz-b i{display:block;height:100%;border-radius:999px;background:var(--st-definir)}
+.pz-b2 i{background:var(--l-grad-linha)}
+.pz-aviso{display:flex;gap:10px;align-items:flex-start;margin:0;background:#ECFEFF;border:1px solid #A5F3FC;color:#164E63;border-radius:12px;padding:10px 14px;font-size:13.5px}
+.pz-aviso .i{flex:0 0 20px;height:20px;border-radius:50%;background:var(--l-ciano);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px}
+:root:not([data-theme="light"]) .pz-aviso{background:color-mix(in srgb,var(--l-ciano) 10%,var(--surface));color:var(--fg);border-color:color-mix(in srgb,var(--l-ciano) 35%,transparent)}
+.pz-cont{background:var(--l-preto);border-radius:16px;padding:16px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;box-shadow:var(--elev-2)}
+.pz-cont b{font-size:44px;line-height:1;font-weight:800;letter-spacing:-.03em;background:var(--l-grad-neon);-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums}
+.pz-cont span{margin-top:6px;font-size:12.5px;color:rgba(255,255,255,.75)}
+.pz-hist{border-top:1px solid var(--line);padding-top:12px}
+.pz-hist summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--fg)}
+.pz-hist ol{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.pz-hist li{display:flex;flex-direction:column;gap:2px;background:var(--surface-2);border-radius:12px;padding:10px 14px;font-size:13.5px}
+.pz-hist li small{color:var(--muted);font-size:12px}
+.pz-form{display:grid;grid-template-columns:200px 200px minmax(0,1fr);gap:12px}
+@media (max-width:760px){ .pz-grid{grid-template-columns:1fr} .pz-form{grid-template-columns:1fr 1fr} .pz-mot{grid-column:1/-1} .pz-barras>div{grid-template-columns:120px minmax(0,1fr) 40px} }
+
+/* ---------- 15. Horas da equipe ---------- */
+.hr-filtros{flex-direction:row;flex-wrap:wrap;align-items:flex-end;gap:12px}
+.hr-filtros .field{min-width:170px}
+.hr-tbl td:first-child{min-width:180px}
+.hr-bar{display:block;height:5px;border-radius:999px;background:#EEF1F6;margin-top:6px;overflow:hidden;max-width:180px}
+.hr-bar i{display:block;height:100%;background:var(--l-grad-linha);border-radius:999px}
+.hr-chips{display:flex;flex-wrap:wrap;gap:4px}
+.hr-como ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
+.hr-filtros .seg{flex-wrap:wrap;max-width:100%}
+@media (max-width:640px){ .hr-filtros .field{min-width:0;width:100%} .hr-k .kpi b{font-size:24px} }
