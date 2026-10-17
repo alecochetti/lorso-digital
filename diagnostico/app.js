@@ -470,6 +470,7 @@ function renderAreaPanel(INS, LIST, override){
      ${a.id==='fluxo'&&typeof etapaHtml==='function'?etapaHtml():''}
      ${a.id==='growth'&&typeof grpHtml==='function'?grpHtml():''}
      ${a.q.map(qHtml).join('')}
+     ${typeof kpiAreaHtml==='function'?kpiAreaHtml(a.id):''}
      <section class="block"><div class="block-h"><h3>Dores relatadas nesta área</h3><p>${cur.dores.filter(d=>d.area===a.id).length} registradas · alimentam o mapa de gargalos</p></div>
       ${cur.dores.some(d=>d.area===a.id)?`<div class="tblw"><table class="tbl"><thead><tr><th>Dor</th><th>Etapa</th><th>Tipo</th><th>Gravidade</th><th>Frequência</th><th>Relatado por</th><th></th></tr></thead><tbody>${cur.dores.filter(d=>d.area===a.id).map(d=>dorRow(d,true)).join('')}</tbody></table></div>`:''}
       ${dorFormHtml(a.id)}</section>
@@ -953,6 +954,7 @@ function renderResultados(INS){
    ${dreHtml()}
    <section class="block"><div class="block-h"><h3>Cruzamento financeiro das UNs</h3><p>${anyFin?'Preenchido na Reitoria (Orçamento e DRE) e em cada UN.':'Preencha meta, receita, folha e orçamento em cada UN.'}</p></div>${finTbl}</section>
    ${fofaHtml('geral',cons,'FOFA consolidada','Os 8 itens de maior impacto de cada quadrante, de todas as áreas. Inclua a leitura estratégica abaixo.')}
+   ${typeof kpiPainelHtml==='function'?kpiPainelHtml():''}
    <section class="block"><div class="block-h"><h3>Indicadores: meta x realizado</h3><p>Digite os números do período.</p></div>${kpiTbl}</section>
    <section class="block"><details class="allins" data-keep="allins" ${ui.open.allins?'open':''}><summary><h3 style="display:inline">Todas as incongruências (${INS.length})</h3></summary>${INS.length?`<div class="ins" style="margin-top:12px">${INS.map(i=>insightHtml(i,true)).join('')}</div>`:'<p class="empty">Nenhuma incongruência ainda.</p>'}</details></section>
    ${stageQs(st)}
