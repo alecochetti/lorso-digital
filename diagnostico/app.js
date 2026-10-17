@@ -1626,6 +1626,19 @@ async function modCarregar(nome){
   const txt=await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
   return (modHtml[nome]=txt);
 }
+/* Alinhamento dos campos dentro do módulo (aplicado pela Central, sem mudar o código do módulo) */
+const MOD_ALINHA=`<script id="central-alinha">(function(){
+ /* Central LORSO: em grades de campos, iguala a altura dos rótulos da mesma linha para os campos ficarem alinhados */
+ function alinhar(){ document.querySelectorAll('.fields').forEach(function(g){
+   var ls=[].slice.call(g.children).map(function(k){ var l=k.querySelector(':scope > label'); if(l) l.style.minHeight=''; return l; });
+   var rows={}; [].slice.call(g.children).forEach(function(k,i){ if(!ls[i]||!k.offsetParent) return; var t=Math.round(k.getBoundingClientRect().top); var key=Object.keys(rows).find(function(r){return Math.abs(r-t)<=3;})||t; (rows[key]=rows[key]||[]).push(ls[i]); });
+   Object.keys(rows).forEach(function(r){ var L=rows[r]; if(L.length<2) return; var h=Math.max.apply(null,L.map(function(l){return l.getBoundingClientRect().height;})); L.forEach(function(l){ if(l.getBoundingClientRect().height<h-1){ l.style.minHeight=h+'px'; l.style.display='flex'; l.style.alignItems='flex-end'; } }); });
+ }); }
+ var ag=0; function agenda(){ if(ag) return; ag=requestAnimationFrame(function(){ ag=0; alinhar(); }); }
+ new MutationObserver(agenda).observe(document.documentElement,{childList:true,subtree:true});
+ addEventListener('resize',agenda); addEventListener('load',agenda); document.addEventListener('DOMContentLoaded',agenda);
+})();</script>`;
+const modComAlinha=h=>h.includes('id="central-alinha"')?h:(h.includes('</body>')?h.replace('</body>',MOD_ALINHA+'</body>'):h+MOD_ALINHA);
 function renderLancamento(){
   const fr=document.querySelector('#main iframe.modframe');
   if(fr&&fr.dataset.c===cur.id) return;
@@ -1633,7 +1646,7 @@ function renderLancamento(){
   Object.keys(modOuv).forEach(k=>{ modOuv[k]=[]; });
   const id=cur.id;
   $('#main').innerHTML=`<div class="modload" data-c="${id}"><p class="loading">Abrindo o lançamento de curso…</p></div>`;
-  modCarregar('lancamento').then(html=>{ if(!cur||cur.id!==id||ui.view!=='lancamento')return; const f=document.createElement('iframe'); f.className='modframe'; f.dataset.c=id; f.title='Lançamento de curso'; f.srcdoc=html; $('#main').innerHTML=''; $('#main').appendChild(f); })
+  modCarregar('lancamento').then(html=>{ if(!cur||cur.id!==id||ui.view!=='lancamento')return; const f=document.createElement('iframe'); f.className='modframe'; f.dataset.c=id; f.title='Lançamento de curso'; f.srcdoc=modComAlinha(html); $('#main').innerHTML=''; $('#main').appendChild(f); })
    .catch(e=>{ console.error(e); if(ui.view==='lancamento') $('#main').innerHTML=`<section class="block"><p class="empty">Não foi possível abrir o módulo: ${esc(e.message||String(e))}. Recarregue a página.</p></section>`; });
 }
 

@@ -531,3 +531,5 @@ h2,h3,.block-h h3{line-height:1.22}
 .eqcli-prox li .eqt{flex:1 1 auto}
 .eqcli-prox li>:last-child{flex:0 0 auto}
 .eqcli{grid-template-columns:minmax(0,1fr)}.eqcli-prox li{min-width:0}
+/* FOFA: campo de incluir item no rodapé de cada quadrante, na mesma linha dos vizinhos */
+.fq>ul{margin-bottom:auto}
