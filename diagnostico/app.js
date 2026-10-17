@@ -1303,15 +1303,17 @@ function sideItem(k,label,act,v,meta,hot){
   const on=navOn(k);
   return `<button class="sn ${on?'on':''}" data-act="${act}" data-v="${v}" ${on?'aria-current="page"':''}>${ico(k)}<span class="lb">${label}</span>${meta!=null&&meta!==''?`<span class="mt ${hot?'hot':''}">${meta}</span>`:''}</button>`;
 }
-const MODS_TODOS=[['diagnostico','Diagnóstico de maturidade'],['dre','DRE e orçamento'],['lancamento','Lançamento de curso'],['ptc','Plano tático de comunicação']];
+const MODS_TODOS=[['diagnostico','Diagnóstico de maturidade'],['dre','DRE e orçamento'],['lancamento','Lançamento de curso']];
 // Modo foco: /diagnostico/?modulo=lancamento ou ?modulo=dre (vem do painel do /admin) mostra só aquele módulo.
-const FOCO=(()=>{ const m=new URLSearchParams(location.search).get('modulo'); return m==='dre'||m==='lancamento'||m==='ptc'?m:null; })();
-const FOCO_VIEW={dre:'dre',lancamento:'lancamento',ptc:'ptc'};
+const FOCO=(()=>{ const m=new URLSearchParams(location.search).get('modulo'); return m==='dre'||m==='lancamento'?m:null; })();
+const FOCO_VIEW={dre:'dre',lancamento:'lancamento'};
 let focoIni=false;
 const focoTem=d=>!Array.isArray(d.modulos)||!d.modulos.length||d.modulos.includes(FOCO);
 function modsCliente(){ const m=cur&&all[cur.id]&&Array.isArray(all[cur.id].modulos)?all[cur.id].modulos:null; return m&&m.length?m:['diagnostico','dre','lancamento']; }
 function modsAtivos(){ const b=modsCliente(); return FOCO&&b.includes(FOCO)?[FOCO]:b; }
 const temMod=k=>modsAtivos().includes(k);
+// PTC faz parte do Lançamento de curso: aparece só para quem tem esse módulo
+const temPTC=()=>temMod('lancamento')&&typeof renderPTC==='function';
 /* Logo do cliente: reduzido no navegador (até 300x84) e guardado no cadastro do cliente */
 async function logoSalvar(url){ if(!cur) return; const r=await sb.from('diagnosticos').update({logo:url}).eq('id',cur.id); if(r.error){ toast('Não foi possível salvar o logo: '+r.error.message); return; } all[cur.id]=Object.assign(all[cur.id]||{},{logo:url}); render(); toast(url?'Logo salvo':'Logo removido'); }
 /* Recorta a margem vazia: transparente ou da mesma cor do canto */
@@ -1340,10 +1342,10 @@ function renderSide(INS){
      <span class="sb-g">Fases 2 a 5</span>
      ${STAGES.slice(1).map(st=>(st.id==='execucao'&&typeof renderPlano==='function'?sideItem('plano','Plano de ação','view','plano',(()=>{const n=paItens().length;return n||'';})()):'')+sideItem(st.id,st.nome,'stage',st.id,st.id==='execucao'&&cur.acoes.some(isPlano)?`${cur.acoes.filter(t=>isPlano(t)&&t.status==='Concluída').length}/${cur.acoes.filter(isPlano).length}`:st.q&&st.q.length?pc(stageProgress(st)):'',st.id==='execucao'&&hot)).join('')}
 `:''}
-     ${temMod('dre')||temMod('lancamento')||temMod('ptc')?'<span class="sb-g">Módulos</span>':''}
+     ${temMod('dre')||temMod('lancamento')?'<span class="sb-g">Módulos</span>':''}
      ${temMod('dre')?sideItem('dre','DRE e orçamento','view','dre',cur.mods&&cur.mods.dre&&cur.mods.dre.meses?cur.mods.dre.meses.filter(M=>M.lancado).length+'/12':''):''}
      ${temMod('lancamento')?sideItem('lancamento','Lançamento de curso','view','lancamento'):''}
-     ${temMod('ptc')&&typeof renderPTC==='function'?sideItem('ptc','Plano tático (PTC)','view','ptc',(()=>{ const P=cur.mods&&cur.mods.ptc; const n=P&&Array.isArray(P.pecas)?P.pecas.filter(p=>p.status!=='publicado'&&p.data&&p.data>=today()&&p.data<=isoLocal(new Date(Date.now()+7*864e5))).length:0; return n||''; })()):''}
+     ${temPTC()?sideItem('ptc','Plano tático (PTC)','view','ptc',(()=>{ const P=cur.mods&&cur.mods.ptc; const n=P&&Array.isArray(P.pecas)?P.pecas.filter(p=>p.status!=='publicado'&&p.data&&p.data>=today()&&p.data<=isoLocal(new Date(Date.now()+7*864e5))).length:0; return n||''; })()):''}
      ${temMod('diagnostico')?`<span class="sb-g">Operação</span>
      ${sideItem('dores','Dores e gargalos','view','dores',cur.dores.length||'')}
      ${sideItem('sistemas','Sistemas','view','sistemas',cur.sistemas.filter(y=>y.nome).length||'')}
@@ -1698,8 +1700,8 @@ function renderInner(){
     $('#main').innerHTML=`<section class="auth" style="min-height:auto"><div class="auth-box"><h2>Nenhum diagnóstico ainda</h2><p>${me&&me.papel!=='cliente'?'Crie o primeiro com o nome do cliente. Depois convide a equipe e distribua as áreas.':'Nenhum diagnóstico foi liberado para você ainda. Fale com a LORSO Digital.'}</p>${me&&me.papel!=='cliente'?`<form id="f-novo2"><label>Cliente<input id="novo-nome2" required placeholder="Nome da instituição"></label><button class="btn primary" type="submit">Criar diagnóstico</button></form>`:''}</div></section>`;
     return; }
   if(ui.view==='tarefas'){ ui.view='fases'; ui.stage='execucao'; }
-  if(!temMod('diagnostico')&&['fases','visao','dores','sistemas','como','relatorio','pessoas','solicitantes'].includes(ui.view)) ui.view=temMod('dre')?'dre':temMod('lancamento')?'lancamento':temMod('ptc')?'ptc':'perfil';
-  if((ui.view==='dre'&&!temMod('dre'))||(ui.view==='lancamento'&&!temMod('lancamento'))||(ui.view==='ptc'&&!temMod('ptc'))) ui.view=temMod('diagnostico')?'fases':temMod('dre')?'dre':temMod('lancamento')?'lancamento':temMod('ptc')?'ptc':'perfil';
+  if(!temMod('diagnostico')&&['fases','visao','dores','sistemas','como','relatorio','pessoas','solicitantes'].includes(ui.view)) ui.view=temMod('dre')?'dre':temMod('lancamento')?'lancamento':'perfil';
+  if((ui.view==='dre'&&!temMod('dre'))||(ui.view==='lancamento'&&!temMod('lancamento'))||(ui.view==='ptc'&&!temPTC())) ui.view=temMod('diagnostico')?'fases':temMod('dre')?'dre':temMod('lancamento')?'lancamento':'perfil';
   computeAll(); const INS=runEngine();
   renderBar(); renderSide(INS);
   document.body.classList.toggle('rp-mode', ui.view==='relatorio');
@@ -1712,7 +1714,7 @@ function renderInner(){
   else if(ui.view==='visao') renderVisao(INS);
   else if(ui.view==='dre') renderDRE();
   else if(ui.view==='lancamento') renderLancamento();
-  else if(ui.view==='ptc'&&typeof renderPTC==='function') renderPTC();
+  else if(ui.view==='ptc'&&temPTC()) renderPTC();
   else if(ui.view==='internas'&&podeInternas()) renderInternas();
   else if(ui.view==='horas'&&typeof renderHoras==='function') renderHoras();
   else if(ui.view==='acessos'&&typeof renderAcessos==='function') renderAcessos();

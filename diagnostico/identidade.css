@@ -742,3 +742,6 @@ a.btn,a.btn:visited{color:var(--fg);text-decoration:none}
 }
 .pt-wprev .pt-wh{justify-content:space-between}.pt-wprev .pt-wh b{margin-right:auto}
 .pt-wcta{font-size:11px;color:var(--accent-2);font-weight:600}
+/* PTC é parte do Lançamento de curso: item recuado logo abaixo dele */
+.sn[data-v="ptc"]{margin-left:18px;width:calc(100% - 18px);position:relative}
+.sn[data-v="ptc"]::before{content:"";position:absolute;left:-9px;top:-4px;bottom:50%;width:8px;border-left:1.5px solid rgba(255,255,255,.22);border-bottom:1.5px solid rgba(255,255,255,.22);border-bottom-left-radius:6px}

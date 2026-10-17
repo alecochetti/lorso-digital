@@ -181,7 +181,7 @@ function renderPTC(){ const S=ptDoc(), f=ptUi(), tab=f.tab;
   const corpo={calendario:ptCalendario,pecas:ptPecas,estrategias:ptEstrategias,midia:ptMidia}[tab]||ptCalendario;
   const pAb=f.aberta&&S.pecas.find(p=>p.id===f.aberta), eAb=f.est&&S.estrategias.find(e=>e.id===f.est);
   $('#main').innerHTML=`<section class="panel pt">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">Módulo · <b>PTC</b></span><h2 style="margin-top:8px">Plano tático de comunicação</h2><p class="lead">Estratégias que se repetem, o calendário de posts de ${esc(cur.nome)} e as artes de cada peça num lugar só. A LORSO e o cliente preenchem juntos.</p></div><div class="pt-hact">${acao}</div></header>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">Lançamento de curso · <b>PTC</b></span><h2 style="margin-top:8px">Plano tático de comunicação</h2><p class="lead">A comunicação do lançamento de ${esc(cur.nome)}: estratégias que se repetem, o calendário de posts e as artes de cada peça num lugar só. A LORSO e o cliente preenchem juntos.</p></div><div class="pt-hact">${acao}</div></header>
    <div class="pt-top"><nav class="subtabs" aria-label="Seções do PTC">${PT_TABS.map(([k,l])=>`<button class="${tab===k?'on':''}" data-act="pt-tab" data-v="${k}" ${tab===k?'aria-current="page"':''}>${l}</button>`).join('')}</nav>${filtros}</div>
    ${corpo(S)}</section>${pAb?ptDrawerPeca(S,pAb):eAb?ptDrawerEst(S,eAb):''}`;
   ptCarregarThumbs(); }
