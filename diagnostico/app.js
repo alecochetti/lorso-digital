@@ -500,17 +500,8 @@ function baseHtml(INS){
   const pctCell=(x,warn)=>x==null?'<td class="r muted">—</td>':`<td class="r" style="${x<warn?'color:var(--n1);font-weight:600':''}">${pct(x)}</td>`;
   const opt=(v,list)=>list.map(o=>`<option ${v===o?'selected':''}>${o}</option>`).join('');
   const pv=ui.cursoPreview;
-  return `<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Passo 1 · <b>Base de conhecimento</b></span><h2 style="margin-top:8px">Base de conhecimento</h2><p class="lead">Antes das entrevistas: o que a instituição vende, por quanto, com quantos alunos e quanto já captou. Esses números entram nos cruzamentos com as expectativas da reitoria.</p></div></header>
-   <div class="stats"><div class="stat"><span class="si">${ico('base',20)}</span><b>${vig}</b><span>cursos vigentes</span></div><div class="stat"><span class="si">${ico('lancamento',20)}</span><b>${lan}</b><span>lançamentos previstos</span></div><div class="stat"><span class="si">${ico('equipe',20)}</span><b>${tv!=null?tv.toLocaleString('pt-BR'):'—'}</b><span>alunos no ciclo</span></div><div class="stat ${tv&&tc!=null&&tc/tv<0.7?'warn':''}"><span class="si">${ico('visao',20)}</span><b>${tv&&tc!=null?pct(tc/tv):'—'}</b><span>ocupação da capacidade</span>${tv&&tc!=null?`<span class="sp"><i style="width:${Math.min(100,tc/tv*100)}%"></i></span>`:''}</div><div class="stat ${tm&&tc!=null&&tc/tm<0.8?'bad':''}"><span class="si">${ico('alvo',20)}</span><b>${tm&&tc!=null?pct(tc/tm):'—'}</b><span>da meta de captação</span>${tm&&tc!=null?`<span class="sp"><i style="width:${Math.min(100,tc/tm*100)}%"></i></span>`:''}</div></div>
-   ${fontesHtml()}
-   <section class="block"><div class="block-h"><h3>Capacidade de captação por UN e turno</h3><p>Alunos do ciclo, meta, quantos já captou e a mensalidade média. Digite aqui ou some a partir dos cursos.</p></div>
-    <div class="tblw"><table class="tbl cap"><thead><tr><th>UN</th><th>Turno ou modalidade</th><th class="r">Alunos</th><th class="r">Meta de captação</th><th class="r">Captados</th><th class="r">Mensalidade média</th><th class="r">Ocupação</th><th class="r">Da meta</th></tr></thead><tbody>
-     ${rows.map(r=>`<tr><td>${r.nm}</td><td class="muted">${r.mod}</td><td>${cap$(r.k,'vagas')}</td><td>${cap$(r.k,'meta')}</td><td>${cap$(r.k,'captados')}</td><td>${cap$(r.k,'ticket','R$')}</td>${pctCell(r.ocup,0.7)}${pctCell(r.ating,0.8)}</tr>`).join('')}
-     <tr><td><b>Total</b></td><td></td><td class="r"><b>${tv!=null?tv.toLocaleString('pt-BR'):'—'}</b></td><td class="r"><b>${tm!=null?tm.toLocaleString('pt-BR'):'—'}</b></td><td class="r"><b>${tc!=null?tc.toLocaleString('pt-BR'):'—'}</b></td><td></td>${pctCell(tv&&tc!=null?tc/tv:null,0.7)}${pctCell(tm&&tc!=null?tc/tm:null,0.8)}</tr>
-    </tbody></table></div>${typeof capCursosHtml==='function'?capCursosHtml():''}</section>
-   <section class="block"><div class="block-h"><h3>Cursos vigentes e lançamentos</h3><p>${cur.cursos.length} cursos cadastrados</p></div>
-    ${cur.cursos.length?`<div class="tblw"><table class="tbl tcursos"><thead><tr><th>UN</th><th style="min-width:220px">Curso</th><th>Modalidade</th><th>Turno</th><th>Mensalidade</th><th>Turmas</th><th>Alunos</th><th>Meta</th><th>Matriculados</th><th>Status</th><th>Lançamento</th><th></th></tr></thead><tbody>${cur.cursos.map(c=>`<tr>
+  const tab=ui.baseUn&&(ui.baseUn==='geral'||ui.baseUn===BU_OUTROS||UNS.some(u=>u.id===ui.baseUn))?ui.baseUn:'geral';
+  const cursosTabela=L=>`${L.length?`<div class="tblw"><table class="tbl tcursos"><thead><tr><th>UN</th><th style="min-width:220px">Curso</th><th>Modalidade</th><th>Turno</th><th>Mensalidade</th><th>Turmas</th><th>Alunos</th><th>Meta</th><th>Matriculados</th><th>Status</th><th>Lançamento</th><th></th></tr></thead><tbody>${L.map(c=>`<tr>
       <td><select data-curso="${c.id}" data-f="un" aria-label="UN"><option value=""></option>${UNS.map(u=>`<option value="${u.id}" ${c.un===u.id?'selected':''}>${u.nome}</option>`).join('')}</select></td>
       <td><input data-curso="${c.id}" data-f="nome" value="${esc(c.nome)}" aria-label="Curso">${c.obs?`<small class="curso-obs">${esc(c.obs)}</small>`:''}</td>
       <td><select data-curso="${c.id}" data-f="modalidade" aria-label="Modalidade"><option value=""></option>${opt(c.modalidade,['Presencial','EAD','Híbrido'])}</select></td>
@@ -523,14 +514,28 @@ function baseHtml(INS){
       <td><select data-curso="${c.id}" data-f="status" aria-label="Status">${opt(c.status,['Vigente','Lançamento','Descontinuado'])}</select></td>
       <td><input data-curso="${c.id}" data-f="lancamento" value="${esc(c.lancamento)}" placeholder="mês/ano" aria-label="Lançamento" style="width:90px"></td>
       <td class="x"><button class="xbtn" data-act="curso-del" data-id="${c.id}" aria-label="Remover curso">×</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Nenhum curso ainda. Adicione um por um ou cole a lista da planilha da instituição.</p>'}
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="curso-add">+ Curso</button></div>
-    <details class="paste" data-keep="curso-paste" ${pv||ui.open['curso-paste']?'open':''}><summary>Colar lista de cursos da planilha</summary>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="curso-add">+ Curso</button></div>`;
+  const colar=`    <details class="paste" data-keep="curso-paste" ${pv||ui.open['curso-paste']?'open':''}><summary>Colar lista de cursos da planilha</summary>
      <p class="muted" style="font-size:13px">Cole a lista do site como ela vem: o nome da UN numa linha e, embaixo, um curso por linha, como "Presencial - Administração". Também aceita a tabela copiada do Excel: com a linha de títulos (Curso, UN, Modalidade, Turno, Mensalidade, Turmas, Alunos, Meta, Matriculados), cada coluna vai para o lugar certo, em qualquer ordem. Curso que já existe só recebe os números.</p>
      <textarea id="curso-txt" rows="5" style="width:100%;font-family:var(--mono);font-size:13px" placeholder="Graduação	Administração	Presencial	Noturno	1.290	120	96	Vigente">${esc(ui.cursoTxt||'')}</textarea>
      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="curso-ler">Ler lista</button>${pv&&pv.length?`<button class="btn sm primary" data-act="curso-aplicar">Adicionar ${pv.length} cursos</button>`:''}</div>
      ${pv?`<p class="muted" style="font-size:13px">${pv.length} cursos reconhecidos${pv.length?': '+[...UNS.map(u=>[u.nome,pv.filter(c=>c.un===u.id).length]),['sem UN',pv.filter(c=>!c.un).length]].filter(x=>x[1]).map(x=>`${x[0]} ${x[1]}`).join(' · '):''}${pv.filter(c=>!c.un).length?'. Os sem UN (como curta duração e educação executiva) entram com o grupo escrito abaixo do nome; ajuste a UN na tabela se quiser':''}.</p>`:''}
-    </details></section>
-   <section class="block"><div class="block-h"><h3>Contexto do mercado</h3></div><div class="fields">${fieldHtml('base.calendario','Calendário de captação: períodos, vestibulares, editais e marcos do ano','t')}${fieldHtml('base.concorrentes','Principais concorrentes por UN e como se posicionam','t')}${fieldHtml('base.diferenciais','Diferenciais da instituição por UN (o que ela tem e o concorrente não)','t')}</div></section>
+    </details>`;
+  let corpo='';
+  if(tab==='geral') corpo=`
+   <div class="stats"><div class="stat"><span class="si">${ico('base',20)}</span><b>${vig}</b><span>cursos vigentes</span></div><div class="stat"><span class="si">${ico('lancamento',20)}</span><b>${lan}</b><span>lançamentos previstos</span></div><div class="stat"><span class="si">${ico('equipe',20)}</span><b>${tv!=null?tv.toLocaleString('pt-BR'):'—'}</b><span>alunos no ciclo</span></div><div class="stat ${tv&&tc!=null&&tc/tv<0.7?'warn':''}"><span class="si">${ico('visao',20)}</span><b>${tv&&tc!=null?pct(tc/tv):'—'}</b><span>ocupação da capacidade</span>${tv&&tc!=null?`<span class="sp"><i style="width:${Math.min(100,tc/tv*100)}%"></i></span>`:''}</div><div class="stat ${tm&&tc!=null&&tc/tm<0.8?'bad':''}"><span class="si">${ico('alvo',20)}</span><b>${tm&&tc!=null?pct(tc/tm):'—'}</b><span>da meta de captação</span>${tm&&tc!=null?`<span class="sp"><i style="width:${Math.min(100,tc/tm*100)}%"></i></span>`:''}</div></div>
+   ${buGeralHtml()}
+   ${fontesHtml()}
+   <section class="block"><div class="block-h"><h3>Cursos</h3><p>${pl(cur.cursos.length,'curso cadastrado','cursos cadastrados')}. A tabela de cada UN fica na aba dela.</p></div>
+    ${cur.cursos.length?`<div class="bu-cnt">${[...UNS.map(u=>[u.id,u.nome,cur.cursos.filter(c=>c.un===u.id).length]),[BU_OUTROS,'Sem UN',cur.cursos.filter(c=>!c.un).length]].filter(x=>x[2]).map(([id,nm,n])=>`<button class="chip" data-act="bu-tab" data-v="${id}">${esc(nm)} · ${n}</button>`).join('')}</div>`:'<p class="empty">Nenhum curso ainda. Cole a lista do site, suba a planilha nas fontes ou adicione um por um.</p>'}
+    ${colar}${cur.cursos.length?'':'<div><button class="btn sm" data-act="curso-add">+ Curso</button></div>'}</section>
+   <section class="block"><div class="block-h"><h3>Contexto da instituição</h3><p>O que vale para todas as UNs. O que é de uma UN fica na aba dela.</p></div><div class="fields">${fieldHtml('base.calendario','Calendário de captação: períodos, vestibulares, editais e marcos do ano','t')}${fieldHtml('base.concorrentes','Principais concorrentes e como se posicionam','t')}${fieldHtml('base.diferenciais','Diferenciais da instituição (o que ela tem e o concorrente não)','t')}</div></section>`;
+  else if(tab===BU_OUTROS) corpo=`<section class="block"><div class="block-h"><h3>Outros cursos</h3><p>Curta duração, extensão, educação executiva e cursos sem UN. Escolha a UN na primeira coluna para levar o curso para a aba dela.</p></div>${cursosTabela(cur.cursos.filter(c=>!c.un))}</section>`;
+  else corpo=buUnHtml(tab,cursosTabela,pctCell);
+  return `<section class="panel">
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Passo 1 · <b>Base de conhecimento</b></span><h2 style="margin-top:8px">Base de conhecimento</h2><p class="lead">Antes das entrevistas: o que a instituição vende, por quanto, com quantos alunos, quanto investe e quanto já captou, por unidade de negócio. Esses números entram nos cruzamentos com as expectativas da reitoria.</p></div></header>
+   ${buTabs()}
+   ${corpo}
    <div class="pager"><span></span><button class="btn primary" data-act="dstep" data-v="reitoria">Ir para Reitoria →</button></div>
   </section>`;
 }
@@ -2016,7 +2021,8 @@ document.addEventListener('click',e=>{
   if(act.startsWith('pa-')&&typeof paClick==='function'&&cur&&paClick(act,d)) return;
   if(act.startsWith('guia-')&&typeof guiaClick==='function'&&guiaClick(act,d)) return;
   if(act.startsWith('lt-')&&typeof leituraClick==='function'&&leituraClick(act,d)) return;
-  if(act==='cap-somar'&&typeof capSomar==='function'){ capSomar(); return; }
+  if(act==='cap-somar'&&typeof capSomar==='function'){ capSomar(d.v||''); return; }
+  if(act==='bu-tab'){ ui.baseUn=d.v; ui.view='fases'; ui.stage='diagnostico'; ui.dstep='base'; render(); window.scrollTo({top:0}); return; }
   if(act.startsWith('pz-')&&typeof prazoClick==='function'&&prazoClick(act,d)) return;
   if(act.startsWith('hr-')&&typeof horasClick==='function'&&horasClick(act,d)) return;
   if(act==='sb-open'){ ui.sbOpen=true; document.body.classList.add('sb-on'); const f=document.querySelector('#sb .sn.on')||document.querySelector('#sb .sn'); f&&f.focus(); return; }
@@ -2061,7 +2067,7 @@ document.addEventListener('click',e=>{
   else if(act==='ini-add'){ cur.iniciativas.push({id:uid(),titulo:'',bloco:'',area:'',horizonte:'Curto',impacto:'',esforco:'',risco:'',dependencias:'',alinhamento:'',recomendacao:'Próximo',motivo:'',indicador:'',ordem:0}); touch(true); }
   else if(act==='ini-del'){ cur.iniciativas=cur.iniciativas.filter(x=>x.id!==d.id); touch(true); }
   else if(act==='dstep'){ ui.view='fases'; ui.stage='diagnostico'; ui.dstep=d.v; if(d.v==='reitoria'&&!LID.some(a=>a.id===ui.area)&&ui.area!=='direcionamentos')ui.area='reitoria'; if(d.v==='entrevistas'&&!ENT.some(a=>a.id===ui.area))ui.area=jornadaLista()[0].id; saveUi(); render(); window.scrollTo({top:0}); }
-  else if(act==='curso-add'){ cur.cursos.push({id:uid(),un:'',nome:'',modalidade:'',turno:'',preco:'',vagas:'',matriculados:'',status:'Vigente',lancamento:'',obs:''}); touch(true); const els=document.querySelectorAll('[data-curso][data-f="nome"]'); els.length&&els[els.length-1].focus(); }
+  else if(act==='curso-add'){ cur.cursos.push({id:uid(),un:UNS.some(u=>u.id===ui.baseUn)?ui.baseUn:'',turmas:'',meta:'',nome:'',modalidade:'',turno:'',preco:'',vagas:'',matriculados:'',status:'Vigente',lancamento:'',obs:''}); touch(true); const els=document.querySelectorAll('[data-curso][data-f="nome"]'); els.length&&els[els.length-1].focus(); }
   else if(act==='curso-del'){ cur.cursos=cur.cursos.filter(c=>c.id!==d.id); touch(true); }
   else if(act==='curso-ler'){ ui.cursoTxt=($('#curso-txt')||{}).value||''; ui.cursoPreview=cursoParse(ui.cursoTxt); render(); }
   else if(act==='curso-aplicar'){ const r=cursosMesclar(ui.cursoPreview||[]); ui.cursoPreview=null; ui.cursoTxt=''; toast(`${pl(r.novos,'curso novo','cursos novos')}${r.atual?` e ${pl(r.atual,'curso atualizado','cursos atualizados')}`:''}`); render(); }

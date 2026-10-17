@@ -160,9 +160,9 @@ function capLinhaDoCurso(c){
   if(c.un==='pos'){ if(m==='EAD') return 'pos_ead'; if(m==='Híbrido') return 'pos_hibrido'; if(m==='Presencial') return 'pos_noturno'; return ''; }
   return '';
 }
-function capDosCursos(){
+function capDosCursos(un){
   const L={}; let semLinha=0, comNum=0;
-  cur.cursos.filter(c=>c.status!=='Descontinuado').forEach(c=>{
+  cur.cursos.filter(c=>c.status!=='Descontinuado'&&(!un||c.un===un)).forEach(c=>{
     const v=num(c.vagas), mt=num(c.meta), mat=num(c.matriculados), tu=num(c.turmas), pr=num(c.preco);
     if(v==null&&mt==null&&mat==null&&tu==null) return; comNum++;
     const k=capLinhaDoCurso(c); if(!k){ semLinha++; return; }
@@ -173,15 +173,15 @@ function capDosCursos(){
   Object.values(L).forEach(x=>{ x.ticket=x.pPeso?Math.round(x.pSoma/x.pPeso*100)/100:null; });
   return {L,semLinha,comNum};
 }
-function capCursosHtml(){
-  const {L,semLinha,comNum}=capDosCursos(); const ks=Object.keys(L); if(!ks.length) return '';
+function capCursosHtml(un){
+  const {L,semLinha,comNum}=capDosCursos(un); const ks=Object.keys(L); if(!ks.length) return '';
   const tot=f=>ks.reduce((s,k)=>s+(L[k][f]||0),0);
   const dif=ks.some(k=>['vagas','meta','captados'].some(f=>L[k][f]!=null&&num(cur.campos[`base.cap.${k}.${f}`])!==L[k][f]));
-  return `<div class="lt lt-cap"><div class="lt-h"><b>Somando os cursos</b><span class="muted">${pl(comNum,'curso tem','cursos têm')} números: ${tot('vagas').toLocaleString('pt-BR')} alunos de capacidade${tot('turmas')?` em ${tot('turmas').toLocaleString('pt-BR')} turmas`:''}, meta de ${tot('meta').toLocaleString('pt-BR')} e ${tot('captados').toLocaleString('pt-BR')} matriculados.${semLinha?` ${pl(semLinha,'curso ficou','cursos ficaram')} fora da soma por falta de UN, modalidade ou turno.`:''}</span>
-    ${dif?`<button class="btn sm primary" data-act="cap-somar">Preencher a tabela com a soma</button>`:'<span class="tag ok">Tabela igual à soma dos cursos</span>'}</div></div>`;
+  return `<div class="lt lt-cap"><div class="lt-h"><b>Somando os cursos</b><span class="muted">${pl(comNum,'curso tem','cursos têm')} números: ${[tot('vagas')?`${tot('vagas').toLocaleString('pt-BR')} alunos de capacidade${tot('turmas')?` em ${tot('turmas').toLocaleString('pt-BR')} turmas`:''}`:tot('turmas')?`${tot('turmas').toLocaleString('pt-BR')} turmas`:'',tot('meta')?`meta de ${tot('meta').toLocaleString('pt-BR')}`:'',tot('captados')?`${tot('captados').toLocaleString('pt-BR')} matriculados`:''].filter(Boolean).join(', ')}.${semLinha?` ${pl(semLinha,'curso ficou','cursos ficaram')} fora da soma por falta de UN, modalidade ou turno.`:''}</span>
+    ${dif?`<button class="btn sm primary" data-act="cap-somar" data-v="${un||''}">Preencher a tabela com a soma</button>`:'<span class="tag ok">Tabela igual à soma dos cursos</span>'}</div></div>`;
 }
-function capSomar(){
-  const {L}=capDosCursos(); let n=0;
+function capSomar(un){
+  const {L}=capDosCursos(un); let n=0;
   Object.entries(L).forEach(([k,x])=>{ [['vagas','vagas'],['meta','meta'],['captados','captados'],['ticket','ticket']].forEach(([a,b])=>{ if(x[a]!=null){ cur.campos[`base.cap.${k}.${b}`]=String(x[a]).replace('.',','); n++; } }); });
   touch(true); toast(`Capacidade preenchida com a soma dos cursos (${n} números)`);
 }

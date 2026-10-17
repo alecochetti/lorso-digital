@@ -251,3 +251,21 @@ input:focus,select:focus,textarea:focus{border-color:var(--l-verde-escuro)!impor
 .tcursos{min-width:1480px}
 .tcursos select[data-f="un"]{min-width:140px} .tcursos select[data-f="modalidade"]{min-width:120px} .tcursos select[data-f="turno"]{min-width:110px} .tcursos select[data-f="status"]{min-width:130px}
 .tcursos input[data-f="nome"]{min-width:220px}
+
+/* ---------- 17. Base por unidade de negócio ---------- */
+.bu-tabs{position:sticky;top:64px;z-index:4}
+.bu-n{display:inline-block;min-width:20px;padding:0 6px;margin-left:4px;border-radius:999px;font-size:11px;font-weight:700;background:var(--surface-2);color:var(--muted)}
+.bu-tabs button.on .bu-n{background:rgba(255,255,255,.25);color:#fff}
+.bu-comp td,.bu-comp th{white-space:nowrap}
+.bu-comp .bu-bad{color:var(--n1i);font-weight:700}
+.bu-comp tr.bu-tot td{border-top:2px solid var(--line-2);font-weight:700}
+.bu-share{margin-top:14px}
+.bu-k .stat small{display:block;margin-top:6px;font-size:12px;color:var(--faint)}
+.bu-k .stat b{font-size:28px}
+.bu-f{grid-template-columns:repeat(3,minmax(0,1fr))}
+.bu-funil{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:6px}
+.bu-funil>div{background:var(--surface-2);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.bu-funil b{font-size:22px} .bu-funil span{font-size:13px;color:var(--muted)} .bu-funil small{font-size:12px;color:var(--accent-2);font-weight:700}
+.bu-cnt{display:flex;flex-wrap:wrap;gap:6px}
+@media (max-width:760px){ .bu-f{grid-template-columns:1fr} .bu-tabs{top:56px} }
+.bu-tabs{flex-wrap:nowrap;scrollbar-width:none}
