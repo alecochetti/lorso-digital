@@ -369,6 +369,7 @@ function qHtml(x){
    <div class="qmeta"><span class="tag">${PIL[x[2]]}</span><span class="tag">${IMP[x[3]]}</span>${x[4]?'<span class="tag warn">Eliminatória</span>':''}<span class="code">${x.code}</span></div>
    <h4>${esc(x[5])}</h4>
    <div class="opts" role="radiogroup" aria-label="${esc(x[1])}">${x[6].map((o,i)=>`<button class="opt ${n===i+1?'on n'+(i+1):''}" role="radio" aria-checked="${n===i+1}" data-act="opt" data-q="${x[0]}" data-n="${i+1}"><span class="on-n"><span>N${i+1}</span><span>${LVL[i+1]}</span></span><span>${esc(o)}</span></button>`).join('')}<button class="opt na ${n===0?'on':''}" role="radio" aria-checked="${n===0}" data-act="opt" data-q="${x[0]}" data-n="0" title="Fica fora da nota e entra na lista do que ninguém soube responder"><span class="on-n"><span>—</span><span>Fora da nota</span></span><span>Não se aplica / não sei</span></button></div>
+   ${typeof sugestaoHtml==='function'?sugestaoHtml(x[0]):''}
    <div class="qfoot">${cur.notas[x[0]]||ui.notesOpen[x[0]]?`<textarea data-nota="${x[0]}" rows="1" placeholder="Evidências e observações da entrevista" aria-label="Observações sobre ${esc(x[1])}">${esc(cur.notas[x[0]]||'')}</textarea>`:`<button class="addnote" data-act="note" data-q="${x[0]}">+ Adicionar observação</button>`}
    <label class="evid"><input type="checkbox" data-evid="${x[0]}" ${cur.evid[x[0]]?'checked':''}>Comprovado com evidência</label></div>
   </article>`;
@@ -635,7 +636,7 @@ function direcHtml(){
    ${fieldHtml('jornada.notas','Direcionamentos da reitoria para a consultoria (o que olhar com mais atenção, quem ouvir, o que evitar)','t')}`;
 }
 function stageHead(st){return headHtml(`<b>Fase ${st.n}</b> de 5`,st.nome,st.intro,SC[st.id]);}
-function stageQs(st){return `${st.q.map(qHtml).join('')}${st.vol&&st.vol.length?`<section class="block"><div class="block-h"><h3>Campos abertos</h3><p>Anotações e números desta fase.</p></div><div class="fields">${st.vol.map(v=>fieldHtml(st.id+'.'+v[0],v[1],v[2])).join('')}</div></section>`:''}`;}
+function stageQs(st){return `${st.q.map(qHtml).join('')}${st.vol&&st.vol.length?`<section class="block"><div class="block-h"><h3>Campos abertos</h3><p>Anotações e números desta fase.</p></div>${typeof cxPreencherHtml==='function'?cxPreencherHtml(st.id):''}<div class="fields">${st.vol.map(v=>fieldHtml(st.id+'.'+v[0],v[1],v[2])).join('')}</div></section>`:''}`;}
 function nextBtn(st){const n=STAGES[st.n]; return n?`<div class="pager"><button class="btn" data-act="stage" data-v="${STAGES[st.n-2].id}">← ${STAGES[st.n-2].nome}</button><button class="btn primary" data-act="stage" data-v="${n.id}">${n.nome} →</button></div>`:'';}
 
 function renderEstrategia(INS){
@@ -2057,6 +2058,7 @@ document.addEventListener('click',e=>{
   if(act.startsWith('lt-')&&typeof leituraClick==='function'&&leituraClick(act,d)) return;
   if(act==='cap-somar'&&typeof capSomar==='function'){ capSomar(d.v||''); return; }
   if(act==='bu-tab'){ ui.baseUn=d.v; ui.view='fases'; ui.stage='diagnostico'; ui.dstep='base'; render(); window.scrollTo({top:0}); return; }
+  if(act.startsWith('cx-')&&typeof conexoesClick==='function'&&conexoesClick(act,d)) return;
   if(act.startsWith('sol-')&&typeof solicitantesClick==='function'&&solicitantesClick(act,d)) return;
   if(act.startsWith('pes-')&&typeof pessoasClick==='function'&&pessoasClick(act,d)) return;
   if(act.startsWith('ciclo-')&&typeof cicloClick==='function'&&cicloClick(act,d)) return;

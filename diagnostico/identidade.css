@@ -336,3 +336,16 @@ td.pav-c{width:44px}
 .tciclos{min-width:1500px}
 .tciclos input.cnum{width:100px;min-height:38px}
 body.so-leitura #main input:disabled,body.so-leitura #main select:disabled,body.so-leitura #main textarea:disabled{opacity:1;cursor:default;color:var(--fg);background:var(--surface-2)}
+
+/* ---------- 21. Conexões: provas do diagnóstico nas fases ---------- */
+.cx{margin-top:12px;background:var(--l-grad-suave);border:1px solid rgba(6,182,212,.2);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
+:root:not([data-theme="light"]) .cx{background:color-mix(in srgb,var(--l-ciano) 8%,var(--surface));border-color:color-mix(in srgb,var(--l-ciano) 26%,transparent)}
+.cx.vazio{background:var(--surface-2);border-style:dashed;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px}
+.cx-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.cx-h b{color:#0E7490} :root:not([data-theme="light"]) .cx-h b{color:#67E8F9}
+.cx-acts{display:flex;gap:6px;flex-wrap:wrap}
+.cx ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.cx li.base{color:var(--fg)}
+.cx small{color:var(--muted)}
+.cx-ir{all:unset;cursor:pointer;font-size:12px;font-weight:700;color:var(--accent-2);margin-left:4px} .cx-ir:hover{text-decoration:underline}
+.cx-fill{margin:0 0 12px}
