@@ -1252,6 +1252,8 @@ function renderSide(INS){
   $('#sb').innerHTML=h;
   document.body.classList.toggle('sb-on',!!ui.sbOpen);
 }
+function saudacao(){ const h=new Date().getHours(); const nm=me&&(me.nome||'').trim().split(/\s+/)[0]; return (h<12?'Bom dia':h<18?'Boa tarde':'Boa noite')+(nm?', '+nm:'')+'!'; }
+function saudacaoData(){ return new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'}); }
 function renderVisao(INS){
   const g=overall(), B=blocosDe(INS);
   const cnt=L=>{let t=0,a=0;L.forEach(x=>{t+=x.q.length;a+=x.q.filter(q=>cur.resp[q[0]]!=null).length;});return [a,t];};
@@ -1260,7 +1262,7 @@ function renderVisao(INS){
   const row=a=>{ const s=SC[a.id]||{}; const n=a.q.filter(q=>cur.resp[q[0]]!=null).length; const dono=member(cur.dono_area[a.id]);
     return `<button class="vrow" data-act="area" data-v="${a.id}"><span class="vn">${esc(a.nome)}</span><span class="vb" aria-hidden="true"><span style="width:${Math.round(n/a.q.length*100)}%"></span></span><span class="vc mono">${n}/${a.q.length}</span>${lvChip(s.score!=null?s.level:0)}<span class="vd muted">${dono?esc(dono.nome||''):''}</span></button>`; };
   $('#main').innerHTML=`${typeof guiaBanner==='function'?guiaBanner():''}<section class="panel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Fase 1 · <b>Visão geral</b></span><h2 style="margin-top:8px">Diagnóstico</h2><label class="field" style="max-width:380px;margin-top:12px"><span class="lbl">Nome do cliente</span><input id="nome-diag" value="${esc(cur.nome)}"></label><p class="lead">Onde a coleta está, o nível de cada área e o que já aparece de incongruência. Clique numa área para abrir as perguntas.</p></div></header>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">${esc(saudacaoData())}</span><h2 style="margin-top:8px">${esc(saudacao())}</h2><label class="field" style="max-width:380px;margin-top:12px"><span class="lbl">Nome do cliente</span><input id="nome-diag" value="${esc(cur.nome)}"></label><p class="lead">Fase 1 · Visão geral do diagnóstico. Onde a coleta está, o nível de cada área e o que já aparece de incongruência. Clique numa área para abrir as perguntas.</p></div></header>
    <div class="kpis">
     <div class="kpi"><b>${g.level?'N'+g.level:'—'}</b><span>${g.level?esc(LVL[g.level]):'nível geral ainda sem nota'}${g.score!=null?' · '+dec(g.score,2):''}</span></div>
     <div class="kpi"><b>${tt?Math.round(aa/tt*100):0}%</b><span>das perguntas respondidas (${aa} de ${tt})</span></div>
