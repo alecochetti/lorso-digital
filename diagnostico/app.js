@@ -397,8 +397,8 @@ function interviewsHtml(areaId){
   return `<section class="block"><div class="block-h"><h3>Entrevistados</h3><p>Quem você ouviu nesta área, 1 a 1.</p></div>
    ${rows.length?`<div class="tblw"><table class="tbl"><thead><tr><th></th><th>Nome</th><th>Cargo</th><th>Departamento</th><th>Data</th><th title="Entra na avaliação individual (PDI Marketing)">Marketing</th><th></th></tr></thead><tbody>${rows.map(({e,i})=>{ const pp=typeof pessoaDe==='function'?pessoaDe(e):null; return `<tr>
      <td class="pav-c">${typeof pAvatar==='function'?`<button class="pav-b" data-act="pes-ver" data-v="${pp?pp.id:''}" title="${pp?'Abrir cadastro':'Sem cadastro: abra Pessoas ouvidas'}">${pAvatar(pp||{nome:e.nome},'s')}</button>`:''}</td>
-     <td><input data-ent="${i}" data-f="nome" value="${esc(e.nome)}" placeholder="Nome" aria-label="Nome" list="dl-pessoas"></td>
-     <td><input data-ent="${i}" data-f="cargo" value="${esc(e.cargo)}" placeholder="Cargo" aria-label="Cargo"></td>
+     <td><input data-ent="${i}" data-f="nome" value="${esc(e.nome)}" placeholder="Nome" aria-label="Nome" list="dl-pessoas" ${pp&&e.pid?'readonly title="Nome e cargo vêm do cadastro em Pessoas ouvidas"':''}></td>
+     <td><input data-ent="${i}" data-f="cargo" value="${esc(e.cargo)}" placeholder="Cargo" aria-label="Cargo" ${pp&&e.pid?'readonly title="Nome e cargo vêm do cadastro em Pessoas ouvidas"':''}></td>
      <td><input data-ent="${i}" data-f="depto" value="${esc(e.depto)}" placeholder="Departamento" aria-label="Departamento"></td>
      <td><input type="date" data-ent="${i}" data-f="data" value="${esc(e.data)}" aria-label="Data"></td>
      <td><label class="mktag ${e.mkt?'on':''}"><input type="checkbox" data-ent="${i}" data-f="mkt" ${e.mkt?'checked':''}> MKT</label></td>

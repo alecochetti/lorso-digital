@@ -188,3 +188,10 @@ if(typeof RULES!=='undefined'){
     rec:['Antes de abrir a campanha: briefing, peças e página de inscrição prontas e aprovadas','Fila do marketing reservada para a campanha nas próximas 4 semanas','Ponto de controle semanal com a coordenação da UN até o fim da captação']});
   const _blCap=typeof BLOCOS!=='undefined'&&BLOCOS.find(b=>b.id==='capacidade'); if(_blCap) _blCap.rules.push('CRZ-66');
 }
+
+/* Renomear um curso leva o novo nome para as linhas dos outros turnos dele */
+document.addEventListener('focusin',e=>{ const t=e.target; if(t&&t.dataset&&t.dataset.curso&&t.dataset.f==='nome') t.dataset.velho=t.value; });
+document.addEventListener('change',e=>{ const t=e.target; if(!t||!t.dataset||!t.dataset.curso||t.dataset.f!=='nome'||!cur) return;
+  const c=cur.cursos.find(x=>x.id===t.dataset.curso), velho=t.dataset.velho; if(!c||velho==null||velho===t.value) return;
+  let n=0; cur.cursos.forEach(x=>{ if(x!==c&&x.un===c.un&&x.modalidade===c.modalidade&&(x.obs||'')===(c.obs||'')&&String(x.nome).trim().toLowerCase()===String(velho).trim().toLowerCase()){ x.nome=c.nome; n++; } });
+  t.dataset.velho=t.value; if(n){ touch(true); } });

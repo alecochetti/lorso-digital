@@ -13,7 +13,7 @@
       if(ui.stage==='execucao') return 'execucao';
       return null;
     }
-    return {visao:'tela',plano:'plano',dores:'dores',sistemas:'sistemas',dre:'dre'}[ui.view]||null;
+    return {visao:'tela',plano:'plano',dores:'dores',sistemas:'sistemas',dre:'dre',pessoas:'entrevistas'}[ui.view]||null;
   };
   const chave=k=>'cd.iv.como.'+k;
   const lerOculto=k=>{ try{ return localStorage.getItem(chave(k))==='1'; }catch(e){ return false; } };
