@@ -14,7 +14,7 @@
       if(ui.stage==='estrategia'||ui.stage==='otimizacao') return 'fases_auto';
       return null;
     }
-    return {visao:'tela',plano:'plano',dores:'dores',sistemas:'sistemas',dre:'dre',pessoas:'pessoas'}[ui.view]||null;
+    return {visao:'tela',plano:'plano',dores:'dores',sistemas:'sistemas',dre:'dre',pessoas:'pessoas',ptc:'ptc'}[ui.view]||null;
   };
   const chave=k=>'cd.iv.como.'+k;
   const lerOculto=k=>{ let v=null; try{ v=localStorage.getItem(chave(k)); }catch(e){} if(v==='1') return true; if(v==='0') return false; return window.innerWidth<640; };
