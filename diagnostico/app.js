@@ -335,6 +335,7 @@ function statusHtml(){
   return `<span class="status"><i></i>Salvo</span>`;
 }
 function renderBar(){
+  if(CENTRAL_LORSO){ $('#diagbar').innerHTML=`<span class="lbl">Central LORSO</span><span class="muted" style="font-size:13px">Todos os clientes que você atende</span>`; return; }
   let list=Object.values(all).sort((a,b)=>(b.updated_at||'').localeCompare(a.updated_at||''));
   if(FOCO&&list.some(focoTem)) list=list.filter(d=>focoTem(d)||(cur&&d.id===cur.id));
   const who='';
@@ -758,7 +759,8 @@ function renderEquipe(){
      <label>Nome<input name="nome" required placeholder="Nome completo"></label>
      <label>E-mail<input name="email" type="email" required placeholder="pessoa@empresa.com"></label>
      <label>Função<input name="funcao" placeholder="Ex.: analista de marketing"></label>
-     <label>Acesso<select name="papel"><option value="equipe">Equipe LORSO (vê todos os diagnósticos)</option><option value="admin">Administrador (também convida pessoas)</option><option value="cliente">Cliente (só diagnósticos liberados)</option></select></label>
+     <label>Acesso<select name="papel"><option value="equipe">Equipe LORSO (só os clientes vinculados)</option><option value="admin">Administrador (vê todos os clientes e convida pessoas)</option><option value="cliente">Cliente (só o diagnóstico dele)</option></select></label>
+     <label>Cliente que vai atender<select name="diag"><option value="">Nenhum por enquanto</option>${Object.values(all).map(d=>`<option value="${esc(d.id)}" ${cur&&d.id===cur.id?'selected':''}>${esc(d.nome)}</option>`).join('')}</select></label>
      <button class="btn primary" type="submit">Convidar</button>
     </form></section>`:''}
    ${convites.length?`<section class="block"><div class="block-h"><h3>Convites pendentes</h3><p>${convites.length} pessoa(s) ainda não criaram a senha</p></div><div class="xlist">${convites.map(c=>`<div class="xitem media"><span class="t">${esc(c.nome||c.email)}<small>${esc(c.email)} · ${PAPEIS[c.papel]||c.papel}${c.funcao?' · '+esc(c.funcao):''}</small></span><span style="display:flex;gap:6px;flex-wrap:wrap"><button class="chip" data-act="conv-copy" data-email="${esc(c.email)}">Copiar convite</button>${isAdm?`<button class="chip" data-act="conv-del" data-email="${esc(c.email)}">Cancelar</button>`:''}</span></div>`).join('')}</div></section>`:''}
@@ -773,6 +775,7 @@ function renderEquipe(){
       ${cur?`<div class="mstats"><span><b>${mine.length}</b> áreas</span><span><b>${tot?Math.round(ans/tot*100):0}%</b> coletado</span><span><b>${tasks.length}</b> tarefas abertas</span>${tasks.filter(isLate).length?`<span style="color:var(--n1)"><b style="color:inherit">${tasks.filter(isLate).length}</b> atrasadas</span>`:''}</div>
       <div><span class="lbl">Áreas sob responsabilidade neste diagnóstico</span><div class="areachips" style="margin-top:6px">${AREAS.map(a=>{const owner=cur.dono_area[a.id];return `<button class="achip ${owner===m.id?'on':owner?'taken':''}" data-act="mem-area" data-id="${m.id}" data-v="${a.id}" title="${owner&&owner!==m.id?'Hoje com '+esc((member(owner)||{}).nome||''):''}">${esc(a.nome)}</button>`;}).join('')}</div></div>
       ${tasks.length?`<button class="chip" data-act="tasks-mem" data-id="${m.id}" style="align-self:flex-start">Ver tarefas de ${esc((m.nome||'').split(' ')[0]||'')}</button>`:''}`:''}
+      ${isAdm&&m.role==='equipe'?`<div><span class="lbl">Clientes que atende · só vê o que estiver marcado</span><div class="areachips" style="margin-top:6px">${Object.values(all).map(dg=>{ const on=membros.some(x=>x.user_id===m.id&&x.diagnostico_id===dg.id); return `<button class="achip ${on?'on':''}" data-act="mem-cli" data-id="${m.id}" data-v="${dg.id}" aria-pressed="${on}">${esc(dg.nome)}</button>`; }).join('')}</div></div>`:''}
      </article>`;}).join('')}</div>`:'<p class="empty">Ninguém com acesso ainda.</p>'}
   </section>`;
 }
@@ -1310,10 +1313,10 @@ const temMod=k=>modsAtivos().includes(k);
 async function setMods(lista){ if(!cur)return; const r=await sb.from('diagnosticos').update({modulos:lista}).eq('id',cur.id); if(r.error){ toast('Não foi possível mudar os módulos: '+r.error.message); return; } all[cur.id]=Object.assign(all[cur.id]||{},{modulos:lista}); render(); toast('Módulos do cliente atualizados'); }
 function renderSide(INS){
   const adm=me&&me.papel==='admin', pc=x=>Math.round(x*100)+'%';
-  let h=`<div class="sb-brand">${LOGO_SVG}<span class="sb-word"><b>LORSO</b><i>DIGITAL<em>.</em></i></span></div><div class="sb-prod">${FOCO?esc(MODS_TODOS.find(x=>x[0]===FOCO)[1]):'Central de Diagnóstico'}</div>`;
-  if(FOCO) h+=`<nav class="sb-nav sb-top" aria-label="Área do Cliente"><a class="sn" href="/admin/painel.html"><span class="lb">‹ Trocar de módulo</span></a></nav>`;
-  if(podeInternas()&&!FOCO){ const mn=minhasAbertas(), lt=internas.filter(t=>itDono(t,me.id)&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas','Tarefas da equipe','view','internas',mn||'',lt>0)}${me.papel==='admin'&&typeof renderHoras==='function'?sideItem('horas','Horas da equipe','view','horas'):''}</nav>`; }
-  if(cur){
+  let h=`<div class="sb-brand">${LOGO_SVG}<span class="sb-word"><b>LORSO</b><i>DIGITAL<em>.</em></i></span></div><div class="sb-prod">${CENTRAL_LORSO?'Central LORSO':FOCO?esc(MODS_TODOS.find(x=>x[0]===FOCO)[1]):'Central de Diagnóstico'}</div>`;
+  if(FOCO||CENTRAL_LORSO) h+=`<nav class="sb-nav sb-top" aria-label="Área do Cliente"><a class="sn" href="/admin/painel.html"><span class="lb">‹ Trocar de módulo</span></a></nav>`;
+  if(podeInternas()&&!FOCO){ const mn=minhasAbertas(), lt=eqBase().filter(t=>itDono(t,me.id)&&itLate(t)).length; h+=`<nav class="sb-nav sb-top" aria-label="Equipe LORSO"><span class="sb-g">LORSO · equipe</span>${sideItem('internas',CENTRAL_LORSO?'Tarefas LORSO':'Tarefas da equipe','view','internas',mn||'',lt>0)}${me.papel==='admin'&&typeof renderHoras==='function'?sideItem('horas','Horas da equipe','view','horas'):''}</nav>`; }
+  if(cur&&!CENTRAL_LORSO){
     const x=crossTasks(INS), hot=x.late.length+x.semTarefa.length, g=overall();
     h+=`<nav class="sb-nav" aria-label="Etapas">
      ${temMod('diagnostico')?`<span class="sb-g">Fase 1 · Diagnóstico</span>
@@ -1338,6 +1341,7 @@ function renderSide(INS){
      ${typeof renderGuia==='function'?sideItem('guia','Guia de preenchimento','view','guia'):''}
      ${FOCO?'':sideItem('equipe','Equipe','view','equipe',cur.equipe.length||'')}
     </nav>`;
+  } else if(CENTRAL_LORSO){ h+=`<nav class="sb-nav" aria-label="Menu"><a class="sn" href="/diagnostico/"><span class="lb">Abrir a Central de um cliente</span></a></nav>`;
   } else {
     h+=`<nav class="sb-nav" aria-label="Menu">${sideItem('fases','Diagnósticos','view','fases')}${sideItem('como','Método LORSO','view','como')}${typeof renderGuia==='function'?sideItem('guia','Guia de preenchimento','view','guia'):''}${adm?sideItem('equipe','Equipe','view','equipe'):''}</nav>`;
   }
@@ -1622,6 +1626,19 @@ async function modCarregar(nome){
   const txt=await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
   return (modHtml[nome]=txt);
 }
+/* Alinhamento dos campos dentro do módulo (aplicado pela Central, sem mudar o código do módulo) */
+const MOD_ALINHA=`<script id="central-alinha">(function(){
+ /* Central LORSO: em grades de campos, iguala a altura dos rótulos da mesma linha para os campos ficarem alinhados */
+ function alinhar(){ document.querySelectorAll('.fields').forEach(function(g){
+   var ls=[].slice.call(g.children).map(function(k){ var l=k.querySelector(':scope > label'); if(l) l.style.minHeight=''; return l; });
+   var rows={}; [].slice.call(g.children).forEach(function(k,i){ if(!ls[i]||!k.offsetParent) return; var t=Math.round(k.getBoundingClientRect().top); var key=Object.keys(rows).find(function(r){return Math.abs(r-t)<=3;})||t; (rows[key]=rows[key]||[]).push(ls[i]); });
+   Object.keys(rows).forEach(function(r){ var L=rows[r]; if(L.length<2) return; var h=Math.max.apply(null,L.map(function(l){return l.getBoundingClientRect().height;})); L.forEach(function(l){ if(l.getBoundingClientRect().height<h-1){ l.style.minHeight=h+'px'; l.style.display='flex'; l.style.alignItems='flex-end'; } }); });
+ }); }
+ var ag=0; function agenda(){ if(ag) return; ag=requestAnimationFrame(function(){ ag=0; alinhar(); }); }
+ new MutationObserver(agenda).observe(document.documentElement,{childList:true,subtree:true});
+ addEventListener('resize',agenda); addEventListener('load',agenda); document.addEventListener('DOMContentLoaded',agenda);
+})();</script>`;
+const modComAlinha=h=>h.includes('id="central-alinha"')?h:(h.includes('</body>')?h.replace('</body>',MOD_ALINHA+'</body>'):h+MOD_ALINHA);
 function renderLancamento(){
   const fr=document.querySelector('#main iframe.modframe');
   if(fr&&fr.dataset.c===cur.id) return;
@@ -1629,7 +1646,7 @@ function renderLancamento(){
   Object.keys(modOuv).forEach(k=>{ modOuv[k]=[]; });
   const id=cur.id;
   $('#main').innerHTML=`<div class="modload" data-c="${id}"><p class="loading">Abrindo o lançamento de curso…</p></div>`;
-  modCarregar('lancamento').then(html=>{ if(!cur||cur.id!==id||ui.view!=='lancamento')return; const f=document.createElement('iframe'); f.className='modframe'; f.dataset.c=id; f.title='Lançamento de curso'; f.srcdoc=html; $('#main').innerHTML=''; $('#main').appendChild(f); })
+  modCarregar('lancamento').then(html=>{ if(!cur||cur.id!==id||ui.view!=='lancamento')return; const f=document.createElement('iframe'); f.className='modframe'; f.dataset.c=id; f.title='Lançamento de curso'; f.srcdoc=modComAlinha(html); $('#main').innerHTML=''; $('#main').appendChild(f); })
    .catch(e=>{ console.error(e); if(ui.view==='lancamento') $('#main').innerHTML=`<section class="block"><p class="empty">Não foi possível abrir o módulo: ${esc(e.message||String(e))}. Recarregue a página.</p></section>`; });
 }
 
@@ -1654,6 +1671,8 @@ function render(){
   if(fk){ const el=document.querySelector(fk); if(el&&el!==document.activeElement){ el.focus({preventScroll:true}); try{ if(selS!=null) el.setSelectionRange(selS,selE);}catch(e){} } }
 }
 function renderInner(){
+  if(CENTRAL_LORSO&&podeInternas()){ if(!['internas','horas','perfil'].includes(ui.view)) ui.view='internas'; renderBar(); renderSide([]);
+    if(ui.view==='horas'&&typeof renderHoras==='function') renderHoras(); else if(ui.view==='perfil') renderPerfil(); else renderInternas(); return; }
   if(!cur){ renderBar(); renderSide([]);
     if(ui.view==='perfil'){ renderPerfil(); return; }
     if(ui.view==='internas'&&podeInternas()){ renderInternas(); return; }
@@ -1859,7 +1878,7 @@ function summary(){
 // Link de convite (#...type=invite): lido antes do cliente limpar o endereço, para pedir a criação da senha.
 const CONVITE=/(^|[#&])type=invite(&|$)/.test(location.hash);
 const sb = window.supabase.createClient(window.CD_CONFIG.url, window.CD_CONFIG.key, {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-let me=null, profiles=[], convites=[], snap=null, channel=null, pendingData=null;
+let me=null, profiles=[], convites=[], membros=[], snap=null, channel=null, pendingData=null;
 let ver=0, savedVer=0, saving=false, timer=null, saveErr=null, pendingRemote=false;
 const clone=v=>v===undefined?null:JSON.parse(JSON.stringify(v));
 function mark(){}   // o sincronizador compara o estado inteiro com o último salvo
@@ -1879,12 +1898,13 @@ const ARR_DB={
 };
 const DIAG_TABLES=['respostas','campos','responsaveis_area','fofa_itens','modulos',...Object.values(ARR_DB).map(m=>m.t)];
 const ok=r=>{ if(r&&r.error) throw r.error; return r?r.data:null; };
-function equipeList(){ return profiles.filter(p=>p.ativo).map(p=>({id:p.id,nome:p.nome||p.email,papel:p.funcao||'',contato:p.contato||'',email:p.email,role:p.papel})); }
+function equipeList(){ return profiles.filter(p=>p.ativo&&(p.papel!=='cliente'||!cur||(me&&me.papel!=='admin')||membros.some(x=>x.user_id===p.id&&x.diagnostico_id===cur.id))).map(p=>({id:p.id,nome:p.nome||p.email,papel:p.funcao||'',contato:p.contato||'',email:p.email,role:p.papel})); }
 async function loadList(){ let r=await sb.from('diagnosticos').select('id,nome,updated_at,modulos').order('updated_at',{ascending:false}); if(r.error) r=await sb.from('diagnosticos').select('id,nome,updated_at').order('updated_at',{ascending:false}); const d=ok(r); all=Object.fromEntries((d||[]).map(x=>[x.id,x])); }
 async function loadTeam(){
   const p=ok(await sb.from('profiles').select('*').order('nome'));
   profiles=p||[];
   if(me&&me.papel!=='cliente'){ const c=ok(await sb.from('convites').select('*').order('created_at')); convites=(c||[]).filter(x=>!profiles.some(pp=>pp.email===x.email)); } else convites=[];
+  if(me&&me.papel==='admin'){ const m=ok(await sb.from('membros_diagnostico').select('diagnostico_id,user_id')); membros=m||[]; } else membros=[];
   if(cur) cur.equipe=equipeList();
 }
 async function loadDiag(id){
@@ -2108,6 +2128,7 @@ document.addEventListener('click',e=>{
   if(act==='novo-cancel'){ ui.novo=false; renderBar(); return; }
   if(act==='conv-copy'){ const c=convites.find(x=>x.email===d.email); if(c) copyText(conviteTexto(c),'Convite copiado'); return; }
   if(act==='conv-del'){ (async()=>{ const r=await sb.from('convites').delete().eq('email',d.email); if(r.error){toast('Não foi possível cancelar');return;} await loadTeam(); render(); toast('Convite cancelado'); })(); return; }
+  if(act==='mem-cli'){ (async()=>{ const on=membros.some(x=>x.user_id===d.id&&x.diagnostico_id===d.v); const r=on?await sb.from('membros_diagnostico').delete().eq('user_id',d.id).eq('diagnostico_id',d.v):await sb.from('membros_diagnostico').insert({user_id:d.id,diagnostico_id:d.v}); if(r.error){ toast('Não foi possível mudar o acesso: '+r.error.message); return; } await loadTeam(); render(); toast(on?'Acesso ao cliente removido':'Acesso ao cliente liberado'); })(); return; }
   if(act==='mem-off'){ (async()=>{ const r=await sb.from('profiles').update({ativo:false}).eq('id',d.id); if(r.error){toast('Não foi possível desativar');return;} await loadTeam(); render(); toast('Acesso desativado'); })(); return; }
   if(!cur) return;
   if(act==='stage'){ ui.view='fases'; ui.stage=d.v; ui.copy=null; saveUi(); render(); window.scrollTo({top:0}); }
@@ -2198,7 +2219,7 @@ document.addEventListener('submit',e=>{
   if(f.id==='f-novo'){ const nm=$('#novo-nome').value.trim(); if(nm) createDiag(nm); return; }
   if(f.id==='f-novo2'){ const nm=$('#novo-nome2').value.trim(); if(nm) createDiag(nm); return; }
   if(f.id==='f-iv-ent'&&cur&&ui.iv){ const fd=new FormData(f); const nome=String(fd.get('nome')||'').trim(); if(!nome)return; const cg=String(fd.get('cargo')||'').trim(), mk=!!fd.get('mkt'); let pp=typeof pessoaPorNome==='function'?pessoaPorNome(nome):null; if(!pp&&typeof pNova==='function') pp=pNova({nome,cargo:cg,mkt:mk}); cur.entrevistas.push({id:uid(),area:ui.iv.area,nome,cargo:cg||(pp&&pp.cargo)||'',depto:nameOf(ui.iv.area),data:today(),mkt:pp?pp.mkt||mk:mk,pid:pp?pp.id:''}); f.reset(); touch(true); toast('Entrevistado registrado'); return; }
-  if(f.id==='f-convite'){ const fd=new FormData(f); const c={email:String(fd.get('email')||'').trim().toLowerCase(),nome:String(fd.get('nome')||'').trim(),funcao:String(fd.get('funcao')||'').trim()||null,papel:fd.get('papel'),convidado_por:me.id};
+  if(f.id==='f-convite'){ const fd=new FormData(f); const c={email:String(fd.get('email')||'').trim().toLowerCase(),nome:String(fd.get('nome')||'').trim(),funcao:String(fd.get('funcao')||'').trim()||null,papel:fd.get('papel'),convidado_por:me.id,diagnostico_id:fd.get('papel')==='admin'?null:(fd.get('diag')||null)};
     (async()=>{ const r=await sb.from('convites').upsert(c); if(r.error){ toast('Não foi possível convidar: '+r.error.message); return; } f.reset(); await loadTeam(); render(); copyText(conviteTexto(c),'Convite registrado e texto copiado'); })(); return; }
   if(!cur) return;
   if(f.dataset.dorform){ const fd=new FormData(f); const txt=String(fd.get('txt')||'').trim(); if(!txt)return; const preset=f.dataset.area;

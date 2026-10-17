@@ -15,6 +15,12 @@ const itTo=t=>({id:t.id,titulo:nz(t.titulo),descricao:nz(t.descricao),responsave
 const pjFrom=r=>({id:r.id,nome:r.nome||'',descricao:r.descricao||'',area:r.area||'',diagnostico_id:r.diagnostico_id||'',responsavel:r.responsavel||'',inicio:r.inicio||'',fim:r.fim||'',status:r.status||'Em andamento',created_at:r.created_at});
 const pjTo=p=>({id:p.id,nome:p.nome||'Projeto sem nome',descricao:nz(p.descricao),area:nz(p.area),diagnostico_id:nz(p.diagnostico_id),responsavel:nz(p.responsavel),inicio:nz(p.inicio),fim:nz(p.fim),status:p.status||'Em andamento'});
 const podeInternas=()=>me&&me.papel!=='cliente';
+/* Central LORSO (?central=lorso): todos os clientes que a pessoa atende. Dentro da Central de um cliente: só aquele cliente. */
+const CENTRAL_LORSO=new URLSearchParams(location.search).get('central')==='lorso';
+const eqNoCliente=()=>!CENTRAL_LORSO&&typeof cur!=='undefined'&&!!cur;
+const tCli=t=>t.diagnostico_id||(projetos.find(p=>p.id===t.projeto_id)||{}).diagnostico_id||'';
+function eqBase(){ return eqNoCliente()?internas.filter(t=>tCli(t)===cur.id):internas; }
+function pjBase(){ return eqNoCliente()?projetos.filter(p=>p.diagnostico_id===cur.id):projetos; }
 async function loadInternas(){
   if(!podeInternas()){ internas=[]; projetos=[]; return; }
   const [r,q]=await Promise.all([sb.from('tarefas_internas').select('*').order('created_at'),sb.from('projetos').select('*').order('created_at')]);
@@ -34,13 +40,13 @@ const pessoa=id=>profiles.find(p=>p.id===id);
 const diagNome=id=>id?(cur&&cur.id===id?cur.nome:(all[id]||{}).nome||'Cliente'):'';
 const pjNome=id=>{ const p=projetos.find(x=>x.id===id); return p?p.nome:''; };
 const itDono=(t,id)=>t.responsaveis.includes(id);
-function minhasAbertas(){ return me?internas.filter(t=>itDono(t,me.id)&&t.status!=='Concluída').length:0; }
+function minhasAbertas(){ return me?eqBase().filter(t=>itDono(t,me.id)&&t.status!=='Concluída').length:0; }
 function itStatus(t,s){ if(t.status===s)return; t.status=s; t.concluida_em=s==='Concluída'?new Date().toISOString():null; itSave(t,true); }
 
 /* ---------- filtros e agrupamentos ---------- */
 function eqUi(){ return ui.eq||(ui.eq={aba:'tarefas',visao:'lista',grupo:'prazo',escopo:'time',pessoa:'',area:'',projeto:'',prazo:'',busca:'',ordem:'prazo',dir:1,aberta:null,pj:null}); }
 function eqFiltradas(){ const f=eqUi(), hoje=today(), sem=new Date(); sem.setDate(sem.getDate()+7); const s7=isoLocal(sem);
-  return internas.filter(t=>(f.escopo!=='minhas'||itDono(t,me.id))&&(!f.pessoa||(f.pessoa==='-'?!t.responsaveis.length:itDono(t,f.pessoa)))&&(!f.area||t.area_eq===f.area)
+  return eqBase().filter(t=>(f.escopo!=='minhas'||itDono(t,me.id))&&(!f.pessoa||(f.pessoa==='-'?!t.responsaveis.length:itDono(t,f.pessoa)))&&(!f.area||t.area_eq===f.area)
     &&(!f.projeto||(f.projeto==='-'?!t.projeto_id&&!t.diagnostico_id:f.projeto.startsWith('c:')?t.diagnostico_id===f.projeto.slice(2):t.projeto_id===f.projeto))
     &&(!f.prazo||(f.prazo==='atrasadas'?itLate(t):f.prazo==='semana'?(t.prazo&&t.prazo>=hoje&&t.prazo<=s7):f.prazo==='sem'?!t.prazo:true))
     &&(!f.busca||(t.titulo+' '+t.descricao).toLowerCase().includes(f.busca.toLowerCase()))); }
@@ -112,8 +118,20 @@ function eqMetricas(L){ const ab=L.filter(t=>t.status!=='Concluída'), lt=ab.fil
      ${ppl.length?`<div class="eqbars">${ppl.map(x=>`<div class="eqbr"><span class="n">${esc(x.p.nome||x.p.email)}</span><span class="b">${x.v.map((v,i)=>v?`<i style="width:${v/mx*100}%;background:${cores[i]}" data-tip="${EQ_ST[i][1]}: ${v}"></i>`:'').join('')}</span><b>${x.v.reduce((a,b)=>a+b,0)}</b></div>`).join('')}</div><div class="legend">${EQ_ST.slice(0,3).map(([,n],i)=>`<span class="lg"><i style="background:${cores[i]}"></i>${n}</span>`).join('')}</div>`:'<p class="empty">Sem tarefas abertas com responsável.</p>'}</section>
     <section class="block"><div class="block-h"><h3>Por área</h3><p>Tarefas abertas</p></div>${ab.length&&typeof donutSvg==='function'?`<div class="donutw"><div class="donut">${donutSvg(areaSeg)}<div class="dv"><b>${ab.length}</b><small>abertas</small></div></div><div class="dleg">${areaSeg.filter(x=>x.v).map(x=>`<div><i style="background:${x.c}"></i><span>${x.l}</span><b>${x.v}</b></div>`).join('')}</div></div>`:'<p class="empty">Nada aberto.</p>'}</section></div>
    <section class="block"><div class="block-h"><h3>Realizadas por semana</h3><p>Últimas 8 semanas</p></div><div class="eqweeks">${sem.map(x=>`<div><span class="b"><i style="height:${x.n/ms*100}%" data-tip="Semana até ${x.l}: ${x.n}"></i></span><b>${x.n}</b><small>${x.l}</small></div>`).join('')}</div></section>`; }
+/* Painel de clientes (só na Central LORSO): um cartão por cliente, com os projetos e o botão de nova tarefa em cada um */
+function eqPorCliente(L){
+  const cli=[...Object.values(all).map(d=>({id:d.id,nome:diagNome(d.id)})),{id:'',nome:'Interno LORSO'}];
+  return `<div class="eqclis">${cli.map(c=>{ const tl=L.filter(t=>tCli(t)===c.id), ab=tl.filter(t=>t.status!=='Concluída'), lt=ab.filter(itLate), mi=ab.filter(t=>itDono(t,me.id));
+    const pjs=projetos.filter(p=>(p.diagnostico_id||'')===c.id&&p.status!=='Concluído');
+    if(!c.id&&!tl.length&&!pjs.length) return '';
+    const prox=[...ab].sort((a,b)=>(a.prazo||'9').localeCompare(b.prazo||'9')).slice(0,4);
+    return `<article class="eqcli"><header><b>${esc(c.nome)}</b><button class="chip" data-act="eq-cli-ver" data-v="${c.id||'-'}">Ver tarefas</button></header>
+     <div class="eans"><div><b>${ab.length}</b><span>abertas</span></div><div class="${lt.length?'bad':''}"><b>${lt.length}</b><span>atrasadas</span></div><div><b>${mi.length}</b><span>suas</span></div></div>
+     ${prox.length?`<ul class="eqcli-prox">${prox.map(t=>`<li><button class="eqt" data-act="eq-abrir" data-v="${t.id}">${esc(t.titulo||'Sem título')}</button>${eqPeriodo(t)}</li>`).join('')}</ul>`:'<p class="muted" style="font-size:13px">Nada aberto.</p>'}
+     <div class="eqcli-pjs"><span class="lbl">Projetos</span>${pjs.length?pjs.map(p=>{ const n=internas.filter(t=>t.projeto_id===p.id&&t.status!=='Concluída').length; return `<div class="eqcli-pj"><button class="eqt" data-act="eq-pj" data-v="${p.id}">${esc(p.nome)}</button><span class="muted">${n} abertas</span><button class="btn sm" data-act="eq-nova" data-pj="${p.id}">+ Tarefa</button></div>`; }).join(''):'<p class="muted" style="font-size:12.5px">Nenhum projeto ainda.</p>'}</div>
+     <footer><button class="btn sm" data-act="eq-nova" ${c.id?`data-cli="${c.id}"`:''}>+ Tarefa ${c.id?'do cliente':'interna'}</button><button class="btn sm ghost" data-act="eq-pj-novo" ${c.id?`data-cli="${c.id}"`:''}>+ Projeto</button></footer></article>`; }).join('')}</div>`; }
 function eqProjetos(){ const f=eqUi();
-  return `<div class="eqpjs">${projetos.map(p=>{ const tl=internas.filter(t=>t.projeto_id===p.id), ok=tl.filter(t=>t.status==='Concluída').length, ab=tl.length-ok, lt=tl.filter(itLate).length, r=pessoa(p.responsavel);
+  return `<div class="eqpjs">${pjBase().map(p=>{ const tl=internas.filter(t=>t.projeto_id===p.id), ok=tl.filter(t=>t.status==='Concluída').length, ab=tl.length-ok, lt=tl.filter(itLate).length, r=pessoa(p.responsavel);
     return `<button class="eqpj" data-act="eq-pj" data-v="${p.id}"><div class="eah"><i style="background:${eqCor(p.area)}"></i><b>${esc(p.nome)}</b><span class="stp pj-${PJ_ST.indexOf(p.status)}">${esc(p.status)}</span></div>
      ${p.descricao?`<p>${esc(p.descricao.slice(0,140))}</p>`:''}<div class="eabar"><span style="width:${tl.length?Math.round(ok/tl.length*100):0}%"></span></div>
      <small>${ok}/${tl.length} tarefas realizadas · ${ab} abertas${lt?` · <b class="late">${lt} atrasadas</b>`:''}</small>
@@ -126,8 +144,8 @@ function eqDrawer(){ const f=eqUi(); if(f.aberta){ const t=internas.find(x=>x.id
    <div class="dgrid"><label>Etapa<select data-eqst="${t.id}">${EQ_ST.map(([s,n])=>`<option value="${s}" ${t.status===s?'selected':''}>${n}</option>`).join('')}</select></label>
     <label>Prioridade<select data-eqf="prioridade" data-id="${t.id}">${PRIO.map(p=>`<option ${t.prioridade===p?'selected':''}>${p}</option>`).join('')}</select></label>
     <label>Área<select data-eqf="area_eq" data-id="${t.id}"><option value="">—</option>${EQ_AREAS.map(([a])=>`<option ${t.area_eq===a?'selected':''}>${a}</option>`).join('')}</select></label>
-    <label>Projeto<select data-eqf="projeto_id" data-id="${t.id}"><option value="">Avulsa</option>${projetos.map(p=>`<option value="${p.id}" ${t.projeto_id===p.id?'selected':''}>${esc(p.nome)}</option>`).join('')}</select></label>
-    <label>Cliente<select data-eqf="diagnostico_id" data-id="${t.id}"><option value="">Interno LORSO</option>${Object.values(all).map(d=>`<option value="${d.id}" ${t.diagnostico_id===d.id?'selected':''}>${esc(diagNome(d.id))}</option>`).join('')}</select></label>
+    <label>Projeto<select data-eqf="projeto_id" data-id="${t.id}"><option value="">${eqNoCliente()?'Sem projeto':'Avulsa'}</option>${pjBase().map(p=>`<option value="${p.id}" ${t.projeto_id===p.id?'selected':''}>${esc(p.nome)}</option>`).join('')}</select></label>
+    <label>Cliente<select data-eqf="diagnostico_id" data-id="${t.id}" ${eqNoCliente()?'disabled':''}>${eqNoCliente()?'':'<option value="">Interno LORSO</option>'}${Object.values(all).filter(d=>!eqNoCliente()||d.id===cur.id).map(d=>`<option value="${d.id}" ${t.diagnostico_id===d.id?'selected':''}>${esc(diagNome(d.id))}</option>`).join('')}</select></label>
     <label>Início<input type="date" data-eqf="inicio" data-id="${t.id}" value="${esc(t.inicio)}"></label><label>Fim<input type="date" data-eqf="prazo" data-id="${t.id}" value="${esc(t.prazo)}"></label></div>
    <div class="dsec"><b>Responsáveis</b><div class="pchips">${profiles.filter(p=>p.ativo&&p.papel!=='cliente').map(p=>`<button class="pchip ${itDono(t,p.id)?'on':''}" data-act="eq-resp" data-id="${t.id}" data-v="${p.id}" aria-pressed="${itDono(t,p.id)}"><span class="av">${esc(initials(p.nome||p.email))}</span>${esc((p.nome||p.email).split(' ')[0])}</button>`).join('')}</div></div>
    <div class="dsec"><b>Descrição</b><textarea data-eqf="descricao" data-id="${t.id}" rows="3" placeholder="Detalhes, links, combinados">${esc(t.descricao)}</textarea></div>
@@ -142,19 +160,19 @@ function eqDrawer(){ const f=eqUi(); if(f.aberta){ const t=internas.find(x=>x.id
    <textarea class="dtit" data-pjf="nome" data-id="${p.id}" rows="1" placeholder="Nome do projeto">${esc(p.nome)}</textarea>
    <div class="dgrid"><label>Status<select data-pjf="status" data-id="${p.id}">${PJ_ST.map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}</select></label>
     <label>Área<select data-pjf="area" data-id="${p.id}"><option value="">—</option>${EQ_AREAS.map(([a])=>`<option ${p.area===a?'selected':''}>${a}</option>`).join('')}</select></label>
-    <label>Cliente<select data-pjf="diagnostico_id" data-id="${p.id}"><option value="">Interno LORSO</option>${Object.values(all).map(d=>`<option value="${d.id}" ${p.diagnostico_id===d.id?'selected':''}>${esc(diagNome(d.id))}</option>`).join('')}</select></label>
+    <label>Cliente<select data-pjf="diagnostico_id" data-id="${p.id}" ${eqNoCliente()?'disabled':''}>${eqNoCliente()?'':'<option value="">Interno LORSO</option>'}${Object.values(all).filter(d=>!eqNoCliente()||d.id===cur.id).map(d=>`<option value="${d.id}" ${p.diagnostico_id===d.id?'selected':''}>${esc(diagNome(d.id))}</option>`).join('')}</select></label>
     <label>Responsável<select data-pjf="responsavel" data-id="${p.id}"><option value="">—</option>${profiles.filter(x=>x.ativo&&x.papel!=='cliente').map(x=>`<option value="${x.id}" ${p.responsavel===x.id?'selected':''}>${esc(x.nome||x.email)}</option>`).join('')}</select></label>
     <label>Início<input type="date" data-pjf="inicio" data-id="${p.id}" value="${esc(p.inicio)}"></label><label>Fim<input type="date" data-pjf="fim" data-id="${p.id}" value="${esc(p.fim)}"></label></div>
    <div class="dsec"><b>Descrição</b><textarea data-pjf="descricao" data-id="${p.id}" rows="3" placeholder="Objetivo e escopo">${esc(p.descricao)}</textarea></div>
    <div class="dfoot"><button class="btn" data-act="eq-pj-tarefas" data-v="${p.id}">Ver tarefas do projeto</button><button class="btn primary" data-act="eq-fechar">Pronto</button></div></aside>`; }
   return ''; }
 function renderInternas(){ const f=eqUi(); const L=eqFiltradas(); const pessoas=profiles.filter(p=>p.ativo&&p.papel!=='cliente');
-  const projOpts=`<option value="">Todos os projetos</option><option value="-" ${f.projeto==='-'?'selected':''}>Avulsas</option>${projetos.map(p=>`<option value="${p.id}" ${f.projeto===p.id?'selected':''}>${esc(p.nome)}</option>`).join('')}${Object.values(all).map(d=>`<option value="c:${d.id}" ${f.projeto==='c:'+d.id?'selected':''}>Cliente · ${esc(diagNome(d.id))}</option>`).join('')}`;
-  const V={lista:eqLista,quadro:eqQuadro,tabela:eqTabela,area:eqPorArea,metricas:eqMetricas};
+  const projOpts=eqNoCliente()?`<option value="">Todos os projetos de ${esc(cur.nome)}</option>${pjBase().map(p=>`<option value="${p.id}" ${f.projeto===p.id?'selected':''}>${esc(p.nome)}</option>`).join('')}`:`<option value="">Todos os projetos</option><option value="-" ${f.projeto==='-'?'selected':''}>Avulsas</option>${projetos.map(p=>`<option value="${p.id}" ${f.projeto===p.id?'selected':''}>${esc(p.nome)}</option>`).join('')}${Object.values(all).map(d=>`<option value="c:${d.id}" ${f.projeto==='c:'+d.id?'selected':''}>Cliente · ${esc(diagNome(d.id))}</option>`).join('')}`;
+  const V={cliente:eqPorCliente,lista:eqLista,quadro:eqQuadro,tabela:eqTabela,area:eqPorArea,metricas:eqMetricas}; if(f.visao==='cliente'&&eqNoCliente()) f.visao='lista';
   $('#main').innerHTML=`<section class="panel eqpanel">
-   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">LORSO · <b>Equipe</b></span><h2 style="margin-top:8px">Tarefas e projetos</h2><p class="lead">O trabalho do dia a dia e as iniciativas da equipe, no mesmo lugar. O cliente não vê este quadro.</p></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">${cur&&f.aba==='tarefas'?`<button class="btn" data-act="gen-coleta" title="Cria uma tarefa por área ainda incompleta de ${esc(cur.nome)}">Gerar tarefas de coleta</button>`:''}<button class="btn primary" data-act="${f.aba==='projetos'?'eq-pj-novo':'eq-nova'}">+ ${f.aba==='projetos'?'Novo projeto':'Nova tarefa'}</button></div></header>
-   <nav class="subtabs" aria-label="Tarefas ou projetos"><button class="${f.aba==='tarefas'?'on':''}" data-act="eq-set" data-k="aba" data-v="tarefas">${ico('internas',16)} Tarefas</button><button class="${f.aba==='projetos'?'on':''}" data-act="eq-set" data-k="aba" data-v="projetos">${ico('fases',16)} Projetos <span class="ct">${projetos.length}</span></button></nav>
+   <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">LORSO · <b>${eqNoCliente()?esc(cur.nome):'Todos os clientes'}</b></span><h2 style="margin-top:8px">${eqNoCliente()?'Tarefas da equipe':'Tarefas LORSO'}</h2><p class="lead">${eqNoCliente()?`Só o trabalho da LORSO para ${esc(cur.nome)}. Tarefas de outros clientes ficam na Central LORSO. O cliente não vê este quadro.`:'Seu painel de clientes: as tarefas e os projetos de todos os clientes que você atende, mais as tarefas internas da LORSO.'}</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${eqNoCliente()&&f.aba==='tarefas'?`<button class="btn" data-act="gen-coleta" title="Cria uma tarefa por área ainda incompleta de ${esc(cur.nome)}">Gerar tarefas de coleta</button>`:''}<button class="btn primary" data-act="${f.aba==='projetos'?'eq-pj-novo':'eq-nova'}">+ ${f.aba==='projetos'?'Novo projeto':'Nova tarefa'}</button></div></header>
+   <nav class="subtabs" aria-label="Tarefas ou projetos"><button class="${f.aba==='tarefas'?'on':''}" data-act="eq-set" data-k="aba" data-v="tarefas">${ico('internas',16)} Tarefas</button><button class="${f.aba==='projetos'?'on':''}" data-act="eq-set" data-k="aba" data-v="projetos">${ico('fases',16)} Projetos <span class="ct">${pjBase().length}</span></button></nav>
    ${f.aba==='projetos'?eqProjetos():`<div class="eqbar"><div class="seg" role="group"><button class="${f.escopo==='minhas'?'on':''}" data-act="eq-set" data-k="escopo" data-v="minhas">${ico('pessoa',14)} Minhas</button><button class="${f.escopo==='time'?'on':''}" data-act="eq-set" data-k="escopo" data-v="time">${ico('equipe',14)} Time</button></div>
      <select data-eqfil="pessoa" aria-label="Pessoa"><option value="">Todas as pessoas</option><option value="-" ${f.pessoa==='-'?'selected':''}>Sem responsável</option>${pessoas.map(p=>`<option value="${p.id}" ${f.pessoa===p.id?'selected':''}>${esc(p.nome||p.email)}</option>`).join('')}</select>
      <select data-eqfil="area" aria-label="Área"><option value="">Todas as áreas</option>${EQ_AREAS.map(([a])=>`<option ${f.area===a?'selected':''}>${a}</option>`).join('')}</select>
@@ -162,7 +180,7 @@ function renderInternas(){ const f=eqUi(); const L=eqFiltradas(); const pessoas=
      <select data-eqfil="prazo" aria-label="Prazo"><option value="">Qualquer prazo</option><option value="atrasadas" ${f.prazo==='atrasadas'?'selected':''}>Atrasadas</option><option value="semana" ${f.prazo==='semana'?'selected':''}>Próximos 7 dias</option><option value="sem" ${f.prazo==='sem'?'selected':''}>Sem data</option></select>
      <input data-eqfil="busca" placeholder="Buscar tarefa" value="${esc(f.busca)}" aria-label="Buscar">
      ${f.pessoa||f.area||f.projeto||f.prazo||f.busca?`<button class="chip" data-act="eq-limpar">Limpar</button>`:''}
-     <div class="seg vis" role="group" aria-label="Visão">${[['lista','Lista','lista'],['quadro','Quadro','tarefas'],['tabela','Tabela','sistemas'],['area','Por área','equipe'],['metricas','Métricas','resultados']].map(([k,l,i])=>`<button class="${f.visao===k?'on':''}" data-act="eq-set" data-k="visao" data-v="${k}">${ico(i,14)} ${l}</button>`).join('')}</div></div>
+     <div class="seg vis" role="group" aria-label="Visão">${[...(eqNoCliente()?[]:[['cliente','Por cliente','base']]),['lista','Lista','lista'],['quadro','Quadro','tarefas'],['tabela','Tabela','sistemas'],['area','Por área','equipe'],['metricas','Métricas','resultados']].map(([k,l,i])=>`<button class="${f.visao===k?'on':''}" data-act="eq-set" data-k="visao" data-v="${k}">${ico(i,14)} ${l}</button>`).join('')}</div></div>
    ${V[f.visao](L)}`}</section>${eqDrawer()}`;
   if(typeof bindDnD==='function') bindDnD();
   const d=document.querySelector('.drawer .dtit'); if(d&&!d.value&&ui.eqFoco){ d.focus(); ui.eqFoco=false; } }
@@ -170,11 +188,15 @@ function renderInternas(){ const f=eqUi(); const L=eqFiltradas(); const pessoas=
 /* ---------- eventos (chamados pelo app.js) ---------- */
 function eqClick(act,d){ const f=eqUi();
   if(act==='eq-set'){ f[d.k]=d.v; if(d.k==='aba'){ f.aberta=null; f.pj=null; } render(); return true; }
+  if(act==='eq-cli-ver'){ f.projeto=d.v==='-'?'-':'c:'+d.v; f.visao='lista'; render(); return true; }
   if(act==='eq-limpar'){ Object.assign(f,{pessoa:'',area:'',projeto:'',prazo:'',busca:''}); render(); return true; }
   if(act==='eq-abrir'){ f.aberta=d.v; f.pj=null; render(); return true; }
   if(act==='eq-fechar'){ const t=internas.find(x=>x.id===f.aberta); if(t)itSave(t,true); const p=projetos.find(x=>x.id===f.pj); if(p)pjSave(p,true); f.aberta=null; f.pj=null; render(); return true; }
   if(act==='eq-nova'){ const o={status:d.st||'A fazer',responsaveis:f.escopo==='minhas'||!f.pessoa?[me.id]:(f.pessoa==='-'?[]:[f.pessoa]),area_eq:f.area||''};
     if(f.projeto&&f.projeto!=='-'){ if(f.projeto.startsWith('c:'))o.diagnostico_id=f.projeto.slice(2); else o.projeto_id=f.projeto; }
+    if(d.cli) o.diagnostico_id=d.cli; if(d.pj){ o.projeto_id=d.pj; const pp=projetos.find(x=>x.id===d.pj); if(pp&&pp.diagnostico_id) o.diagnostico_id=pp.diagnostico_id; }
+    if(o.projeto_id&&!o.diagnostico_id){ const pp=projetos.find(x=>x.id===o.projeto_id); if(pp&&pp.diagnostico_id) o.diagnostico_id=pp.diagnostico_id; }
+    if(eqNoCliente()) o.diagnostico_id=cur.id;
     if(d.grupo==='Próximos 7 dias'){ const x=new Date(); x.setDate(x.getDate()+3); o.prazo=isoLocal(x); }
     const t=itNew(o); f.aberta=t.id; ui.eqFoco=true; render(); return true; }
   if(act==='eq-del'){ itDel(d.v); f.aberta=null; render(); return true; }
@@ -184,7 +206,7 @@ function eqClick(act,d){ const f=eqUi();
   if(act==='eq-area'){ f.area=d.v; f.visao='lista'; f.grupo='prazo'; render(); return true; }
   if(act==='eq-feitas'){ ui.open['eq-feitas']=!ui.open['eq-feitas']; render(); return true; }
   if(act==='eq-pj'){ f.pj=d.v; f.aberta=null; render(); return true; }
-  if(act==='eq-pj-novo'){ const p={id:uid(),nome:'',descricao:'',area:'',diagnostico_id:cur?'':'',responsavel:me.id,inicio:today(),fim:'',status:'Em andamento'}; projetos.push(p); pjSave(p,true); f.aba='projetos'; f.pj=p.id; render(); const el=document.querySelector('.drawer .dtit'); el&&el.focus(); return true; }
+  if(act==='eq-pj-novo'){ const p={id:uid(),nome:'',descricao:'',area:'',diagnostico_id:eqNoCliente()?cur.id:(d.cli||''),responsavel:me.id,inicio:today(),fim:'',status:'Em andamento'}; projetos.push(p); pjSave(p,true); f.aba='projetos'; f.pj=p.id; render(); const el=document.querySelector('.drawer .dtit'); el&&el.focus(); return true; }
   if(act==='eq-pj-tarefas'){ f.aba='tarefas'; f.projeto=d.v; f.pj=null; f.visao='lista'; render(); return true; }
   return false; }
 function eqChange(t){ const d=t.dataset; const f=eqUi();
@@ -192,7 +214,7 @@ function eqChange(t){ const d=t.dataset; const f=eqUi();
   if(d.eqst!=null){ const x=internas.find(y=>y.id===d.eqst); if(x){ itStatus(x,t.value); render(); } return true; }
   if(d.eqchk!=null){ const x=internas.find(y=>y.id===d.eqchk); if(x){ itStatus(x,t.checked?'Concluída':'A fazer'); render(); } return true; }
   if(d.eqsub!=null){ const x=internas.find(y=>y.id===d.eqsub); if(x){ const s=x.subtarefas.find(z=>z.id===d.s); if(s){ s.ok=t.checked; itSave(x); render(); } } return true; }
-  if(d.eqf!=null){ const x=internas.find(y=>y.id===d.id); if(x){ x[d.eqf]=t.value; itSave(x); if(t.tagName==='SELECT'||t.type==='date')render(); } return true; }
+  if(d.eqf!=null){ const x=internas.find(y=>y.id===d.id); if(x){ x[d.eqf]=t.value; if(d.eqf==='projeto_id'){ const pp=projetos.find(y=>y.id===t.value); if(pp&&pp.diagnostico_id) x.diagnostico_id=pp.diagnostico_id; } itSave(x); if(t.tagName==='SELECT'||t.type==='date')render(); } return true; }
   if(d.pjf!=null){ const p=projetos.find(y=>y.id===d.id); if(p){ p[d.pjf]=t.value; pjSave(p); if(t.tagName==='SELECT'||t.type==='date')render(); } return true; }
   return false; }
 function eqInput(t){ const d=t.dataset;

@@ -64,7 +64,8 @@ else {
     $("lead").textContent = app && MODULOS[app] && !liberados.includes(app)
       ? `Você ainda não tem acesso ao ${MODULOS[app].nome}. Estes são os módulos liberados para você:`
       : equipe ? "Escolha o módulo. Lançamentos e DRE abrem só com aquele módulo; Diagnóstico abre a Central completa." : "Escolha o módulo que deseja abrir.";
-    $("cards").innerHTML = liberados.map((k) => `<a class="card" href="${MODULOS[k].url}">
+    $("cards").innerHTML = (equipe ? `<a class="card" href="/diagnostico/?central=lorso">
+      <span class="n">Tarefas LORSO</span><span class="c">Seu painel de clientes: tarefas e projetos de todos os clientes que você atende.</span><span class="go">Abrir ›</span></a>` : "") + liberados.map((k) => `<a class="card" href="${MODULOS[k].url}">
       <span class="n">${esc(MODULOS[k].nome)}</span><span class="c">${esc(MODULOS[k].texto)}</span><span class="go">Abrir ›</span></a>`).join("");
   } else {
     $("lead").textContent = "";

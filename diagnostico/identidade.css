@@ -510,3 +510,26 @@ h2,h3,.block-h h3{line-height:1.22}
 .pg-f{display:block;height:14px;border-radius:0 4px 4px 0}
 .pg-bar b{font-size:12.5px;text-align:right}
 @media (max-width:640px){ .pg-row{grid-template-columns:1fr;gap:6px} }
+/* Central LORSO: painel de clientes */
+.eqclis{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr))}
+.eqcli{display:grid;gap:12px;align-content:start;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:var(--elev-1)}
+.eqcli header{display:flex;align-items:center;justify-content:space-between;gap:8px}.eqcli header b{font-size:16px}
+.eqcli .eans{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.eqcli .eans div{background:var(--surface-2);border-radius:10px;padding:8px 10px;display:grid}.eqcli .eans b{font-size:20px}.eqcli .eans span{font-size:12px;color:var(--muted)}.eqcli .eans .bad b{color:var(--n1)}
+.eqcli-prox{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.eqcli-prox li{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;align-items:center}
+.eqcli .eqt{background:none;border:0;padding:0;text-align:left;color:var(--fg);font:inherit;font-weight:600;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eqcli .eqt:hover{color:var(--l-verde-escuro)}
+.eqcli-pjs{display:grid;gap:6px;border-top:1px solid var(--line);padding-top:10px}
+.eqcli-pjs .lbl{font-size:12px;font-weight:700;color:var(--muted)}
+.eqcli-pj{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;font-size:13.5px}.eqcli-pj .muted{font-size:12px}
+.eqcli footer{display:flex;gap:8px;flex-wrap:wrap}
+.eqcli{min-width:0;overflow:hidden}
+.eqcli header b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eqcli header .chip{flex:0 0 auto;white-space:nowrap}
+.eqcli .eans{grid-template-columns:repeat(3,minmax(0,1fr))}
+.eqcli-prox li .eqt{flex:1 1 auto}
+.eqcli-prox li>:last-child{flex:0 0 auto}
+.eqcli{grid-template-columns:minmax(0,1fr)}.eqcli-prox li{min-width:0}
+/* FOFA: campo de incluir item no rodapé de cada quadrante, na mesma linha dos vizinhos */
+.fq>ul{margin-bottom:auto}
