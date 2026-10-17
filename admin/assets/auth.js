@@ -57,7 +57,8 @@ export async function carregarPerfil(usuario) {
 }
 
 export async function carregarDiagnosticos() {
-  const { data, error } = await supabase.from("diagnosticos").select("id, nome, modulos").order("created_at");
+  let { data, error } = await supabase.from("diagnosticos").select("id, nome, modulos, logo").order("created_at");
+  if (error) ({ data, error } = await supabase.from("diagnosticos").select("id, nome, modulos").order("created_at"));
   if (error) throw error;
   return data ?? [];
 }
