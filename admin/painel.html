@@ -13,7 +13,9 @@
 .cli .abre:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
 .cli .topo{display:flex;align-items:center;gap:14px}
 .cli .mono{width:52px;height:52px;flex:0 0 52px;border-radius:14px;display:grid;place-items:center;font-weight:700;font-size:19px;color:#04140D;background:linear-gradient(135deg,#00FF87 0%,#10B981 45%,#06B6D4 100%)}
-.cli .logo{height:52px;min-width:52px;max-width:150px;padding:8px 12px;border-radius:14px;background:#0A0F0D;border:1px solid var(--line);display:grid;place-items:center;flex:0 0 auto}.cli .logo img{max-height:36px;max-width:126px;object-fit:contain;display:block}
+.cli .logo{height:60px;max-width:100%;padding:10px 14px;border-radius:14px;background:#0A0F0D;border:1px solid var(--line);display:grid;place-items:center;flex:0 0 auto}.cli .logo img{max-height:40px;max-width:200px;object-fit:contain;display:block}
+.cli .topo:has(.logo){flex-direction:column;align-items:flex-start;gap:12px}
+.cli .topo>span:last-child{min-width:0}
 .cli .n{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
 .cli .c{color:var(--muted);font-size:13.5px}
 .cli .mods{display:flex;flex-wrap:wrap;gap:8px;position:relative;z-index:2}
@@ -91,13 +93,15 @@ else {
       $("cards").innerHTML = `<a class="card" href="/diagnostico/?central=lorso">
         <span class="n">Tarefas LORSO</span><span class="c">Seu painel de clientes: tarefas e projetos de todos os clientes que você atende.</span><span class="go">Abrir ›</span></a>`;
       const ordem = ["diagnostico", "lancamento", "dre"];
+      // Sem logo enviado nem arquivo do cliente: volta para as iniciais
+      document.addEventListener("error", (e) => { const im = e.target; if (im && im.tagName === "IMG" && im.dataset.ini) { const s = document.createElement("span"); s.className = "mono"; s.setAttribute("aria-hidden", "true"); s.textContent = im.dataset.ini; im.parentNode.replaceWith(s); } }, true);
       const urlDe = (k, id) => k === "diagnostico" ? `/diagnostico/?cliente=${encodeURIComponent(id)}` : `/diagnostico/?modulo=${k}&cliente=${encodeURIComponent(id)}`;
       const iniciais = (n) => String(n || "?").split(/\s+/).filter((p) => p.length > 2 || /^[A-Z]{2,}$/.test(p)).slice(0, 2).map((p) => p[0]).join("").toUpperCase() || String(n || "?").slice(0, 2).toUpperCase();
       $("cli-cards").innerHTML = diags.length ? diags.map((d) => {
         const mods = (Array.isArray(d.modulos) && d.modulos.length ? d.modulos : ordem).filter((k) => MODULOS[k]).sort((a, b) => ordem.indexOf(a) - ordem.indexOf(b));
         const principal = mods[0] || "diagnostico";
         return `<article class="cli"><a class="abre" href="${urlDe(principal, d.id)}" aria-label="Abrir ${esc(d.nome)} em ${esc(MODULOS[principal].nome)}"></a>
-          <div class="topo">${d.logo ? `<span class="logo" aria-hidden="true"><img src="${esc(d.logo)}" alt=""></span>` : `<span class="mono" aria-hidden="true">${esc(iniciais(d.nome))}</span>`}<span><span class="n">${esc(d.nome)}</span><br><span class="c">Abre em ${esc(MODULOS[principal].nome)}</span></span></div>
+          <div class="topo"><span class="logo" aria-hidden="true"><img src="${esc(d.logo || `/diagnostico/img/clientes/${encodeURIComponent(d.id)}.png`)}" alt="" data-ini="${esc(iniciais(d.nome))}"></span><span><span class="n">${esc(d.nome)}</span><br><span class="c">Abre em ${esc(MODULOS[principal].nome)}</span></span></div>
           <div class="mods">${mods.map((k) => `<a href="${urlDe(k, d.id)}">${esc(MODULOS[k].nome)}</a>`).join("")}</div>
           <span class="go">Abrir ›</span></article>`;
       }).join("") : `<p class="c">Nenhum cliente vinculado a você ainda. Peça ao administrador para liberar.</p>`;
