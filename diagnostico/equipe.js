@@ -63,7 +63,7 @@ function eqPeriodo(t){ if(!t.prazo&&!t.inicio)return '<span class="muted">—</s
 function eqMeta(t){ const st=t.subtarefas.length, ok=t.subtarefas.filter(x=>x.ok).length; return `${st?`<span class="mi" title="Subtarefas">${ico('lista',13)}${ok}/${st}</span>`:''}${t.comentarios.length?`<span class="mi" title="Comentários">${ico('chat',13)}${t.comentarios.length}</span>`:''}`; }
 function eqLinha(t){ return `<div class="eqrow ${t.status==='Concluída'?'done':''}"><input type="checkbox" data-eqchk="${t.id}" ${t.status==='Concluída'?'checked':''} aria-label="Concluir ${esc(t.titulo)}">
    <button class="eqt" data-act="eq-abrir" data-v="${t.id}">${esc(t.titulo||'Sem título')}${itLate(t)?` ${ico('alerta',13)}`:''}</button><span class="eqm">${eqMeta(t)}</span>
-   <span class="eqtags">${eqArea(t.area_eq)}${eqProj(t)}${eqStPill(t)}</span>${eqAvs(t.responsaveis)}${eqPeriodo(t)}</div>`; }
+   <span class="eqtags">${eqArea(t.area_eq)}${eqProj(t)}${eqStPill(t)}</span><span class="eqav">${eqAvs(t.responsaveis)||'<span class="eqav-vazio" title="Sem responsável">—</span>'}</span><span class="eqper">${eqPeriodo(t)}</span></div>`; }
 function eqCard(t){ const pc=t.prioridade==='Alta'?'alta':t.prioridade==='Baixa'?'baixa':'media'; const st=t.subtarefas.length, ok=t.subtarefas.filter(x=>x.ok).length;
   return `<div class="eqcard ${itLate(t)?'late':''}" draggable="true" data-it="${t.id}"><button class="eqt" data-act="eq-abrir" data-v="${t.id}">${esc(t.titulo||'Sem título')}</button>${itLate(t)?`<span class="warn">${ico('alerta',15)}</span>`:''}
    <div class="ktags">${eqArea(t.area_eq)}<span class="tag ${pc}">${esc(t.prioridade)}</span>${t.projeto_id||t.diagnostico_id?eqProj(t):''}</div>

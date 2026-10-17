@@ -865,21 +865,30 @@ const RECS=['Fazer agora','Próximo','Não agora'];
 const priScore=x=>{const i=+x.impacto||0,e=+x.esforco||0,r=+x.risco||0; return i? (i*2-e-r*0.5):null;};
 function iniciativasOrd(){ return [...cur.iniciativas].sort((a,b)=>RECS.indexOf(a.recomendacao||'Próximo')-RECS.indexOf(b.recomendacao||'Próximo')||(priScore(b)??-99)-(priScore(a)??-99)); }
 function matriz2x2(L){
-  const W=520,H=360,pad=44, X=e=>pad+(e-1)/4*(W-pad-16), Y=i=>H-pad-(i-1)/4*(H-pad-16);
+  /* Pontos do mesmo cruzamento impacto x esforço ficam lado a lado, sem se sobrepor; rótulos dos quadrantes fora do quadro */
+  const W=560,H=440,mL=46,mR=18,mT=34,mB=50, X=e=>mL+(e-0.5)/5*(W-mL-mR), Y=i=>H-mB-(i-0.5)/5*(H-mT-mB);
   const pts=L.filter(x=>+x.impacto&&+x.esforco);
   const col={'Fazer agora':'var(--accent)','Próximo':'var(--n3)','Não agora':'var(--faint)'};
-  return `<svg viewBox="0 0 ${W} ${H}" class="m2x2" role="img" aria-label="Matriz impacto por esforço">
-   <rect x="${X(1)}" y="${Y(5)}" width="${X(3)-X(1)}" height="${Y(3)-Y(5)}" fill="color-mix(in srgb,var(--accent) 7%,transparent)"/>
-   <line x1="${X(3)}" y1="${Y(5)}" x2="${X(3)}" y2="${Y(1)}" stroke="var(--line-2)" stroke-dasharray="4 4"/><line x1="${X(1)}" y1="${Y(3)}" x2="${X(5)}" y2="${Y(3)}" stroke="var(--line-2)" stroke-dasharray="4 4"/>
-   <rect x="${X(1)}" y="${Y(5)}" width="${X(5)-X(1)}" height="${Y(1)-Y(5)}" fill="none" stroke="var(--line-2)"/>
-   <text x="${X(1)+8}" y="${Y(5)+18}" fill="var(--accent)" font-size="12" font-weight="600">Ganhos rápidos</text>
-   <text x="${X(5)-8}" y="${Y(5)+18}" fill="var(--muted)" font-size="12" font-weight="600" text-anchor="end">Projetos estruturantes</text>
-   <text x="${X(1)+8}" y="${Y(1)-10}" fill="var(--muted)" font-size="12">Ajustes</text>
-   <text x="${X(5)-8}" y="${Y(1)-10}" fill="var(--muted)" font-size="12" text-anchor="end">Evitar agora</text>
-   <text x="${(X(1)+X(5))/2}" y="${H-10}" fill="var(--muted)" font-size="12" text-anchor="middle">Esforço →</text>
-   <text x="14" y="${(Y(1)+Y(5))/2}" fill="var(--muted)" font-size="12" text-anchor="middle" transform="rotate(-90 14 ${(Y(1)+Y(5))/2})">Impacto →</text>
-   ${pts.map(x=>{const k=L.indexOf(x)+1; const jx=((k*37)%11-5)*1.6, jy=((k*53)%11-5)*1.6; return `<g><circle cx="${X(+x.esforco)+jx}" cy="${Y(+x.impacto)+jy}" r="11" fill="${col[x.recomendacao||'Próximo']}" fill-opacity=".9"/><text x="${X(+x.esforco)+jx}" y="${Y(+x.impacto)+jy+4}" font-size="11" font-weight="700" text-anchor="middle" fill="var(--bg)">${k}</text></g>`;}).join('')}
-  </svg>`;
+  const grupos={}; pts.forEach(x=>{ const k=x.esforco+'_'+x.impacto; (grupos[k]=grupos[k]||[]).push(x); });
+  const R=10, G=23, MAX=9;
+  const marcas=Object.values(grupos).map(g=>{ const cx=X(+g[0].esforco), cy=Y(+g[0].impacto); const mostra=g.length>MAX?g.slice(0,MAX-1):g; const n=mostra.length+(g.length>MAX?1:0);
+    const cols=Math.min(n,n<=4?n:n<=6?3:3), rows=Math.ceil(n/cols);
+    const pos=k=>{ const r=Math.floor(k/cols), c=k%cols, nr=Math.min(cols,n-r*cols); return [cx+(c-(nr-1)/2)*G, cy+(r-(rows-1)/2)*G]; };
+    let h=mostra.map((x,k)=>{ const [px,py]=pos(k), num=L.indexOf(x)+1; return `<g><title>${num}. ${esc(x.titulo||x.t||'')}</title><circle cx="${px}" cy="${py}" r="${R}" fill="${col[x.recomendacao||'Próximo']}" stroke="var(--surface)" stroke-width="2"/><text x="${px}" y="${py+4}" font-size="11" font-weight="700" text-anchor="middle" fill="#fff">${num}</text></g>`; }).join('');
+    if(g.length>MAX){ const [px,py]=pos(n-1); h+=`<g><title>Mais ${g.length-MAX+1}: ${g.slice(MAX-1).map(x=>L.indexOf(x)+1).join(', ')}</title><circle cx="${px}" cy="${py}" r="${R}" fill="var(--surface-2)" stroke="var(--line-2)"/><text x="${px}" y="${py+4}" font-size="10" font-weight="700" text-anchor="middle" fill="var(--fg)">+${g.length-MAX+1}</text></g>`; }
+    return h; }).join('');
+  return `<div class="m2x2-w"><svg viewBox="0 0 ${W} ${H}" class="m2x2" role="img" aria-label="Matriz impacto por esforço">
+   <rect x="${mL}" y="${mT}" width="${X(3)-mL}" height="${Y(3)-mT}" fill="color-mix(in srgb,var(--accent) 7%,transparent)"/>
+   <line x1="${X(3)}" y1="${mT}" x2="${X(3)}" y2="${H-mB}" stroke="var(--line-2)" stroke-dasharray="4 4"/><line x1="${mL}" y1="${Y(3)}" x2="${W-mR}" y2="${Y(3)}" stroke="var(--line-2)" stroke-dasharray="4 4"/>
+   <rect x="${mL}" y="${mT}" width="${W-mL-mR}" height="${H-mT-mB}" fill="none" stroke="var(--line-2)"/>
+   <text x="${mL}" y="${mT-12}" fill="var(--accent)" font-size="12.5" font-weight="700">Ganhos rápidos</text>
+   <text x="${W-mR}" y="${mT-12}" fill="var(--muted)" font-size="12.5" font-weight="700" text-anchor="end">Projetos estruturantes</text>
+   <text x="${mL}" y="${H-12}" fill="var(--muted)" font-size="12.5" font-weight="600">Ajustes</text>
+   <text x="${W-mR}" y="${H-12}" fill="var(--muted)" font-size="12.5" font-weight="600" text-anchor="end">Evitar agora</text>
+   <text x="${(mL+W-mR)/2}" y="${H-12}" fill="var(--muted)" font-size="12" text-anchor="middle">Esforço →</text>
+   <text x="16" y="${(mT+H-mB)/2}" fill="var(--muted)" font-size="12" text-anchor="middle" transform="rotate(-90 16 ${(mT+H-mB)/2})">Impacto →</text>
+   ${marcas}
+  </svg></div>`;
 }
 function priorizacaoHtml(INS){
   if(!me||me.papel==='cliente') return '';
@@ -1115,7 +1124,7 @@ function unExpHtml(){
   return `<section class="block"><div class="block-h"><h3>Expectativas por UN</h3><p>Toque nas opções durante a conversa com a reitoria. Elas entram nos cruzamentos de cada UN.</p></div>
    <div class="unx">${UNS.map(u=>`<div class="unx-card"><b>${esc(u.nome)}</b>
     ${UN_EXP.map(g=>{const val=unxGet(u.id,g.k); const sel=g.multi?val.split('|').filter(Boolean):[val];
-      return `<div class="unx-g"><span class="lbl">${g.label}</span><div class="seg">${g.opts.map(o=>`<button class="segb ${sel.includes(o)?'on':''}" data-act="unx" data-un="${u.id}" data-k="${g.k}" data-v="${esc(o)}" ${g.multi?`data-multi="${g.multi}"`:''} aria-pressed="${sel.includes(o)}">${esc(o)}</button>`).join('')}</div></div>`;}).join('')}
+      return `<div class="unx-g"><span class="lbl">${g.label}${g.multi?` <small class="unx-ct">${sel.filter(Boolean).length} de ${g.multi}</small>`:''}</span><div class="seg ${g.multi?'multi':'uno'}" style="--n:${g.opts.length===4?2:g.opts.length}">${g.opts.map(o=>`<button class="segb ${sel.includes(o)?'on':''}" data-act="unx" data-un="${u.id}" data-k="${g.k}" data-v="${esc(o)}" ${g.multi?`data-multi="${g.multi}"`:''} aria-pressed="${sel.includes(o)}">${esc(o)}</button>`).join('')}</div></div>`;}).join('')}
     <div class="unx-row">${fieldHtml(unxKey(u.id,'crescimento'),'Crescimento esperado em matrículas','%')}</div>
     ${fieldHtml(unxKey(u.id,'obs'),'Observação da reitoria sobre esta UN','t')}
    </div>`).join('')}</div></section>`;

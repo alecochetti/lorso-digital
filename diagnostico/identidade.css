@@ -440,3 +440,36 @@ h2,h3,.block-h h3{line-height:1.22}
 .stat:not(:has(.si)) b,.stat:not(:has(.si))>span{padding-right:0}
 @media (max-width:640px){ .stat b,.kpi b{white-space:nowrap;font-size:clamp(19px,5.6vw,24px)} }
 .pri .tbl td:nth-child(2) input{min-width:300px}
+
+/* ===== Revisão estrutural, rodada 2 ===== */
+/* Matriz de priorização: no celular rola para o lado em vez de encolher o texto */
+.m2x2-w{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.m2x2-w .m2x2{display:block;width:100%;min-width:480px;height:auto}
+
+/* DRE: gráfico sem dados vira aviso com ação */
+.md-vazio{display:grid;justify-items:start;gap:6px;padding:28px 22px;border:1px dashed var(--line-2);border-radius:14px;background:var(--surface-2);min-height:150px;align-content:center}
+.md-vazio b{font-size:15px}.md-vazio span{color:var(--muted);font-size:13.5px}.md-vazio .btn{margin-top:6px}
+
+/* Expectativas por UN: escolha única em grade de 2, prioridades como etiquetas que quebram linha */
+.unx-g .seg{flex-wrap:wrap!important;overflow:visible!important}
+.unx-g .seg.uno{display:grid;grid-template-columns:repeat(var(--n,2),minmax(0,1fr));gap:6px}
+.unx-g .seg.multi{display:flex;gap:6px;background:none;padding:0}
+.unx-g .seg button{white-space:normal;text-align:center;min-height:38px;line-height:1.25}
+.unx-g .seg.multi button{border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:6px 12px}
+.unx-g .seg.multi button.on{background:color-mix(in srgb,var(--l-verde) 12%,var(--surface));border-color:var(--l-verde);color:var(--fg);box-shadow:none}
+.unx-g .seg.multi button.on::before{content:"✓ ";font-weight:800;color:var(--l-verde-escuro)}
+.unx-ct{font-weight:600;color:var(--muted);margin-left:4px}
+/* Tarefas da equipe (lista): colunas fixas, mesma posição em todas as linhas */
+.eqrow{grid-template-columns:20px minmax(0,1fr) auto minmax(0,460px) 40px 104px}
+.eqrow .eqtags{display:flex;flex-wrap:nowrap;overflow:hidden;justify-content:flex-end;gap:6px;min-width:0}
+.eqrow .eqtags>*{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eqrow .eqav{display:flex;justify-content:flex-start;min-width:0}
+.eqrow .eqper{display:flex;justify-content:flex-end;min-width:0}
+.eqav-vazio{color:var(--faint)}
+@media (max-width:760px){
+  .eqrow{grid-template-columns:20px minmax(0,1fr) auto}
+  .eqrow .eqtags{grid-column:2/-1;justify-content:flex-start}
+  .eqrow .eqav{grid-column:2}
+  .eqrow .eqper{grid-column:3;grid-row:1}
+  .eqrow .eqav:has(.eqav-vazio){display:none}
+}

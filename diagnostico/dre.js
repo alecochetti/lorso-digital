@@ -118,11 +118,12 @@ function mdIn(S,path,kind,ph,extra){ const v=mdGet(S,path); let shown='';
   if(typeof v==='number')shown=kind==='pct'?mdFin.format(v*100):mdFin.format(v); else if(kind==='text'&&v!=null)shown=v;
   return `<input class="mdin ${kind==='text'?'txt':''}" data-md="${path}" data-mk="${kind}" value="${esc(shown)}" ${ph!=null?`placeholder="${esc(ph)}"`:''} inputmode="${kind==='text'?'text':'decimal'}" ${extra||''}>`; }
 function mdBars(series){ const W=760,H=220,all=series.flatMap(s=>s.v.map(mdN)),mx=Math.max(1,...all.map(Math.abs)),neg=all.some(v=>v<0);
+  if(!all.some(v=>v)) return `<div class="md-vazio"><b>Sem números para mostrar ainda</b><span>O gráfico aparece quando houver meses lançados${series.some(x=>x.n==='Previsto')?' ou metas no Orçamento':''}.</span><button class="btn sm" data-act="md-tab" data-v="lancar">Lançar o mês</button></div>`;
   const zero=neg?H/2:H-28,sc=(neg?H/2-16:H-44)/mx,bw=(W-48)/12,w=bw*0.74/series.length;
   let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(series.map(x=>x.n).join(' e '))} por mês"><line x1="40" x2="${W}" y1="${zero}" y2="${zero}" stroke="var(--line-2)"/>`;
   for(let m=0;m<12;m++){ const x=44+m*bw; series.forEach((se,j)=>{ const v=mdN(se.v[m]),h=Math.abs(v)*sc,y=v>=0?zero-h:zero; if(h<=.3)return; const out=se.c==='none';
       s+=`<rect x="${(x+j*w).toFixed(1)}" y="${y.toFixed(1)}" width="${Math.max(2,w-3).toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${out?'none':(v<0?'var(--n1)':se.c)}" ${out?'stroke="var(--accent-2)" stroke-width="1.5" stroke-dasharray="3 2"':''} data-tip="${MD_MESES[m]} · ${esc(se.n)}: ${mdRS(v)}"/>`; });
-    s+=`<text x="${(x+bw*0.37).toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="12" fill="var(--faint)">${MD_MESES[m]}</text>`; }
+    s+=`<text x="${(x+bw*0.37).toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="14" fill="var(--faint)">${MD_MESES[m]}</text>`; }
   return `<div class="chart">${s}</svg><div class="legend">${series.map(se=>`<span class="lg"><i style="${se.c==='none'?'background:transparent;border:1.5px dashed var(--accent-2)':'background:'+se.c}"></i>${esc(se.n)}</span>`).join('')}</div></div>`; }
 const MD_COR=['var(--s1)','var(--s2)','var(--s3)','var(--s4)','var(--s5)','var(--s6)'];
 
