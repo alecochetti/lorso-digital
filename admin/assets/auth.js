@@ -19,6 +19,7 @@ export const MODULOS = {
   diagnostico: { nome: "Diagnóstico", url: "/diagnostico/", texto: "Diagnóstico completo da operação, com Lançamentos e DRE." },
   lancamento: { nome: "Lançamentos", url: "/diagnostico/?modulo=lancamento", texto: "Planejamento e acompanhamento dos seus lançamentos." },
   dre: { nome: "DRE", url: "/diagnostico/?modulo=dre", texto: "Demonstrativo de resultado mês a mês." },
+  ptc: { nome: "Plano tático (PTC)", url: "/diagnostico/?modulo=ptc", texto: "Calendário de posts, estratégias recorrentes e artes de cada peça." },
 };
 
 // Chama uma Edge Function pública (POST JSON). Devolve {ok, mensagem} ou lança Error com a mensagem do servidor.

@@ -33,7 +33,7 @@ function norm(d){
 let cur = null;          // diagnóstico aberto
 let all = {};            // lista de diagnósticos: id -> {id, nome, updated_at}
 let ui = {view:'fases', stage:'diagnostico', area:'reitoria', dorF:{etapa:'',area:''}, dorDef:{area:'',etapa:'Produção',tipo:'Processo',sev:'2',freq:'Semanal',quem:'',sistema:''}, novo:false, copy:null, openTask:null, notesOpen:{}, kf:{dono:'',area:''}, fofaSug:{}, drePreview:null, dreTxt:'', dstep:'base', cursoPreview:null, open:{}};
-try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(['base','reitoria','entrevistas'].includes(u.dstep))ui.dstep=u.dstep; if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','equipe','como','visao','perfil','internas','dre','lancamento'].includes(u.view))ui.view=u.view;}catch(e){}
+try{const u=JSON.parse(lsGet('cd.ui')||'{}'); if(['base','reitoria','entrevistas'].includes(u.dstep))ui.dstep=u.dstep; if(u.stage&&STG[u.stage])ui.stage=u.stage; if(u.area&&AREA[u.area])ui.area=u.area; if(['fases','dores','sistemas','equipe','como','visao','perfil','internas','dre','lancamento','ptc'].includes(u.view))ui.view=u.view;}catch(e){}
 const saveUi=()=>lsSet('cd.ui',JSON.stringify({stage:ui.stage,area:ui.area,view:ui.view,dstep:ui.dstep}));
 const member=id=>cur.equipe.find(m=>m.id===id);
 const initials=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(p=>p[0]||'').join('').toUpperCase()||'?';
@@ -1281,7 +1281,9 @@ const ICO={
  fases:'M4 5h16v4H4zM4 11h16v4H4zM4 17h10v3H4z',
  dre:'M12 3v18M16.5 7.5c0-1.9-2-3-4.5-3s-4.5 1.2-4.5 3.2c0 4.5 9 2.3 9 6.8 0 2-2 3.3-4.5 3.3s-4.5-1.2-4.5-3.1',
  lancamento:'M5 15c-1.5 1.5-2 5-2 5s3.5-.5 5-2M14 4c3-1 6-1 6-1s0 3-1 6l-7 7-5-5zM9.5 9.5 5 9l-2 2 4 1M14.5 14.5 15 19l-2 2-1-4',
- internas:'M9 4h6v3H9zM6 6H5v15h14V6h-1M9 12h6M9 16h4'
+ internas:'M9 4h6v3H9zM6 6H5v15h14V6h-1M9 12h6M9 16h4',
+ ptc:'M4 10v4h3l6 4V6L7 10zM16.5 9a3.5 3.5 0 0 1 0 6M19 6.5a7 7 0 0 1 0 11',
+ imagem:'M4 5h16v14H4zM4 16l4.5-4.5 4 4 2.5-2.5L20 18M15.5 9.5h.01'
 };
 const LOGO_SVG=`<svg class="sb-mark" viewBox="70 92 372 326" aria-hidden="true"><path d="M95 100H167Q185 100 185 118V302H390Q435 302 435 350V410H77V118Q77 100 95 100Z" fill="#00FF87"/><path d="M262 100H398L292 256H208Z" fill="#00E5FF"/><circle cx="345" cy="165" r="36" fill="#FFFFFF"/></svg>`;
 /* outras ferramentas da LORSO no menu (abrem em outra aba; só equipe e administradores) */
@@ -1301,10 +1303,10 @@ function sideItem(k,label,act,v,meta,hot){
   const on=navOn(k);
   return `<button class="sn ${on?'on':''}" data-act="${act}" data-v="${v}" ${on?'aria-current="page"':''}>${ico(k)}<span class="lb">${label}</span>${meta!=null&&meta!==''?`<span class="mt ${hot?'hot':''}">${meta}</span>`:''}</button>`;
 }
-const MODS_TODOS=[['diagnostico','Diagnóstico de maturidade'],['dre','DRE e orçamento'],['lancamento','Lançamento de curso']];
+const MODS_TODOS=[['diagnostico','Diagnóstico de maturidade'],['dre','DRE e orçamento'],['lancamento','Lançamento de curso'],['ptc','Plano tático de comunicação']];
 // Modo foco: /diagnostico/?modulo=lancamento ou ?modulo=dre (vem do painel do /admin) mostra só aquele módulo.
-const FOCO=(()=>{ const m=new URLSearchParams(location.search).get('modulo'); return m==='dre'||m==='lancamento'?m:null; })();
-const FOCO_VIEW={dre:'dre',lancamento:'lancamento'};
+const FOCO=(()=>{ const m=new URLSearchParams(location.search).get('modulo'); return m==='dre'||m==='lancamento'||m==='ptc'?m:null; })();
+const FOCO_VIEW={dre:'dre',lancamento:'lancamento',ptc:'ptc'};
 let focoIni=false;
 const focoTem=d=>!Array.isArray(d.modulos)||!d.modulos.length||d.modulos.includes(FOCO);
 function modsCliente(){ const m=cur&&all[cur.id]&&Array.isArray(all[cur.id].modulos)?all[cur.id].modulos:null; return m&&m.length?m:['diagnostico','dre','lancamento']; }
@@ -1338,9 +1340,10 @@ function renderSide(INS){
      <span class="sb-g">Fases 2 a 5</span>
      ${STAGES.slice(1).map(st=>(st.id==='execucao'&&typeof renderPlano==='function'?sideItem('plano','Plano de ação','view','plano',(()=>{const n=paItens().length;return n||'';})()):'')+sideItem(st.id,st.nome,'stage',st.id,st.id==='execucao'&&cur.acoes.some(isPlano)?`${cur.acoes.filter(t=>isPlano(t)&&t.status==='Concluída').length}/${cur.acoes.filter(isPlano).length}`:st.q&&st.q.length?pc(stageProgress(st)):'',st.id==='execucao'&&hot)).join('')}
 `:''}
-     ${temMod('dre')||temMod('lancamento')?'<span class="sb-g">Módulos</span>':''}
+     ${temMod('dre')||temMod('lancamento')||temMod('ptc')?'<span class="sb-g">Módulos</span>':''}
      ${temMod('dre')?sideItem('dre','DRE e orçamento','view','dre',cur.mods&&cur.mods.dre&&cur.mods.dre.meses?cur.mods.dre.meses.filter(M=>M.lancado).length+'/12':''):''}
      ${temMod('lancamento')?sideItem('lancamento','Lançamento de curso','view','lancamento'):''}
+     ${temMod('ptc')&&typeof renderPTC==='function'?sideItem('ptc','Plano tático (PTC)','view','ptc',(()=>{ const P=cur.mods&&cur.mods.ptc; const n=P&&Array.isArray(P.pecas)?P.pecas.filter(p=>p.status!=='publicado'&&p.data&&p.data>=today()&&p.data<=isoLocal(new Date(Date.now()+7*864e5))).length:0; return n||''; })()):''}
      ${temMod('diagnostico')?`<span class="sb-g">Operação</span>
      ${sideItem('dores','Dores e gargalos','view','dores',cur.dores.length||'')}
      ${sideItem('sistemas','Sistemas','view','sistemas',cur.sistemas.filter(y=>y.nome).length||'')}
@@ -1695,8 +1698,8 @@ function renderInner(){
     $('#main').innerHTML=`<section class="auth" style="min-height:auto"><div class="auth-box"><h2>Nenhum diagnóstico ainda</h2><p>${me&&me.papel!=='cliente'?'Crie o primeiro com o nome do cliente. Depois convide a equipe e distribua as áreas.':'Nenhum diagnóstico foi liberado para você ainda. Fale com a LORSO Digital.'}</p>${me&&me.papel!=='cliente'?`<form id="f-novo2"><label>Cliente<input id="novo-nome2" required placeholder="Nome da instituição"></label><button class="btn primary" type="submit">Criar diagnóstico</button></form>`:''}</div></section>`;
     return; }
   if(ui.view==='tarefas'){ ui.view='fases'; ui.stage='execucao'; }
-  if(!temMod('diagnostico')&&['fases','visao','dores','sistemas','como','relatorio','pessoas','solicitantes'].includes(ui.view)) ui.view=temMod('dre')?'dre':temMod('lancamento')?'lancamento':'perfil';
-  if((ui.view==='dre'&&!temMod('dre'))||(ui.view==='lancamento'&&!temMod('lancamento'))) ui.view=temMod('diagnostico')?'fases':temMod('dre')?'dre':'lancamento';
+  if(!temMod('diagnostico')&&['fases','visao','dores','sistemas','como','relatorio','pessoas','solicitantes'].includes(ui.view)) ui.view=temMod('dre')?'dre':temMod('lancamento')?'lancamento':temMod('ptc')?'ptc':'perfil';
+  if((ui.view==='dre'&&!temMod('dre'))||(ui.view==='lancamento'&&!temMod('lancamento'))||(ui.view==='ptc'&&!temMod('ptc'))) ui.view=temMod('diagnostico')?'fases':temMod('dre')?'dre':temMod('lancamento')?'lancamento':temMod('ptc')?'ptc':'perfil';
   computeAll(); const INS=runEngine();
   renderBar(); renderSide(INS);
   document.body.classList.toggle('rp-mode', ui.view==='relatorio');
@@ -1709,6 +1712,7 @@ function renderInner(){
   else if(ui.view==='visao') renderVisao(INS);
   else if(ui.view==='dre') renderDRE();
   else if(ui.view==='lancamento') renderLancamento();
+  else if(ui.view==='ptc'&&typeof renderPTC==='function') renderPTC();
   else if(ui.view==='internas'&&podeInternas()) renderInternas();
   else if(ui.view==='horas'&&typeof renderHoras==='function') renderHoras();
   else if(ui.view==='acessos'&&typeof renderAcessos==='function') renderAcessos();
@@ -2080,6 +2084,7 @@ async function start(session){
     if(CENTRAL_LORSO&&new URLSearchParams(location.search).get('tela')==='acessos') ui.view='acessos';
     const pedido=new URLSearchParams(location.search).get('cliente');
     let id=pedido&&all[pedido]?pedido:lsGet('cd.last'); if(!ok1(id)) id=Object.keys(all).find(ok1)||Object.keys(all)[0];
+    const peca=new URLSearchParams(location.search).get('peca'); if(peca&&pedido&&id===pedido&&typeof ptUi==='function'){ ui.view='ptc'; Object.assign(ptUi(),{tab:'calendario',aberta:peca,est:null}); }
     if(id) await openDiag(id); else { cur=null; render(); }
   }catch(e){ console.error(e); $('#main').innerHTML='<p class="loading">Não foi possível carregar. Recarregue a página.</p>'; started=false; }
 }
@@ -2105,6 +2110,7 @@ document.addEventListener('click',e=>{
   if(act==='sair'){ flush(); sb.auth.signOut(); return; }
   if(b.closest('#sb')&&act!=='tema') ui.sbOpen=false;
   if(act.startsWith('md-')&&cur){ mdClick(act,d); return; }
+  if(act.startsWith('pt-')&&cur&&typeof ptcClick==='function'&&ptcClick(act,d)) return;
   if(act.startsWith('eq-')&&eqClick(act,d)) return;
   if(act.startsWith('pdi-')&&typeof pdiClick==='function'&&pdiClick(act,d)) return;
   if(act.startsWith('pa-')&&typeof paClick==='function'&&cur&&paClick(act,d)) return;

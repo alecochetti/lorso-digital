@@ -73,7 +73,17 @@ function lancItensDe(id,dados,html){ return new Promise((res,rej)=>{
   let n=0; const fim=(x,e)=>{ clearInterval(tm); w.remove(); e?rej(e):res(x); };
   const tm=setInterval(()=>{ n++; try{ const m=w.contentDocument&&w.contentDocument.getElementById('m'); const mw=m&&m.contentWindow; if(mw&&typeof mw.boardItems==='function'&&mw.document.readyState==='complete'){ fim(mw.boardItems()); return; } }catch(e){ fim(null,e); return; } if(n>80) fim(null,new Error('tempo esgotado')); },150);
   document.body.appendChild(w); }); }
+/* Peças do PTC que a LORSO produz (Quem faz: LORSO ou Juntos) entram como tarefas do cliente. Editar: dentro do PTC. */
+const PTC_EQ={ideia:'A fazer',producao:'Em andamento',aprovacao:'Em revisão',agendado:'Concluída'};
+async function ptcItens(){ const r=await sb.from('modulos').select('diagnostico_id,dados').eq('modulo','ptc'); if(r.error) throw r.error; const out=[];
+  (r.data||[]).filter(x=>x.dados&&Array.isArray(x.dados.pecas)&&all[x.diagnostico_id]).forEach(row=>row.dados.pecas.forEach(p=>{
+    if(!PTC_EQ[p.status]||p.quem==='cliente') return; const fm=(p.formatos||[]).map(k=>typeof ptFmtNome==='function'?ptFmtNome(k):k).filter(Boolean).join(', ');
+    out.push({id:'ptc:'+row.diagnostico_id+':'+p.id,titulo:p.titulo||('Peça '+(fm||'sem tema')),descricao:p.legenda||'',responsaveis:[],diagnostico_id:row.diagnostico_id,area:'',area_eq:'',projeto_id:'',prazo:p.data||'',inicio:'',prioridade:'Média',status:PTC_EQ[p.status],origem:'ptc',subtarefas:[],comentarios:[],concluida_em:p.status==='agendado'&&p.data?p.data+'T12:00:00':null,
+      ext:{mod:'ptc',peca:p.id,quem:p.quem==='juntos'?'juntos':'lorso',resp:p.resp||'',a:fm,st:typeof ptStNome==='function'?ptStNome(p.status):p.status}}); }));
+  return out; }
 async function lancCarregar(force){ if(lancCarregando||!podeInternas()) return; if(!force&&lancT) return; lancCarregando=true; lancT=Date.now();
+  let ptcOut=[]; try{ ptcOut=await ptcItens(); }catch(e){ console.warn('PTC nas tarefas',e); }
+  lancExt=ptcOut;
   try{ const r=await sb.from('modulos').select('diagnostico_id,dados').eq('modulo','lancamento'); if(r.error) throw r.error;
     const rows=(r.data||[]).filter(x=>x.dados&&x.dados.modelos&&all[x.diagnostico_id]); const out=[];
     if(rows.length){ const html=await modCarregar('lancamento');
@@ -82,17 +92,17 @@ async function lancCarregar(force){ if(lancCarregando||!podeInternas()) return; 
           out.push({id:'lanc:'+row.diagnostico_id+':'+it.kind+':'+it.key,titulo:it.t||'Sem título',descricao:it.desc||'',responsaveis:[],diagnostico_id:row.diagnostico_id,area:'',area_eq:'',projeto_id:'',prazo:pz,inicio:'',prioridade:'Média',status,origem:'lancamento',subtarefas:(it.check||[]).map(c=>({id:'',t:c.t||'',ok:!!c.ok})),comentarios:[],concluida_em:status==='Concluída'&&pz?pz+'T12:00:00':null,
             ext:{quem:it.quem||'',resp:it.resp||'',a:it.a||'',st:it.st,kind:it.kind,key:it.key}}); }); }
         catch(e){ console.warn('Lançamento de',row.diagnostico_id,e); } } }
-    lancExt=out; }
+    lancExt=out.concat(ptcOut); }
   catch(e){ console.warn('lancCarregar',e); }
   finally{ lancCarregando=false; lancRedesenhar(); } }
 function lancRedesenhar(){ if(ui.view!=='internas') return; const f=eqUi(); if(isTyping()||f.aberta||f.pj){ clearTimeout(lancRedesenhar._t); lancRedesenhar._t=setTimeout(lancRedesenhar,1500); return; } render(); }
 const lancQuem=t=>t.ext.quem==='lorso'?'LORSO':t.ext.quem==='cli'?'Cliente':t.ext.quem==='juntos'?'Juntos':'';
 const lancSt=t=>{ const v=String(t.ext.st||'').toLowerCase(); return `<span class="stp st-${EQ_ST.findIndex(x=>x[0]===t.status)}">${esc(v.charAt(0).toUpperCase()+v.slice(1))}</span>`; };
-const lancTag=t=>`<span class="tag lanc" title="Do Lançamento de curso. Edite dentro do cliente.">Lançamento</span>${lancQuem(t)?`<span class="tag quem q-${t.ext.quem}">${esc(lancQuem(t))}</span>`:''}`;
+const lancTag=t=>`${t.ext.mod==='ptc'?'<span class="tag lanc" title="Peça do plano tático. Edite dentro do PTC do cliente.">PTC</span>':'<span class="tag lanc" title="Do Lançamento de curso. Edite dentro do cliente.">Lançamento</span>'}${lancQuem(t)?`<span class="tag quem q-${t.ext.quem}">${esc(lancQuem(t))}</span>`:''}`;
 function lancLinha(t){ return `<div class="eqrow ext ${t.status==='Concluída'?'done':''}"><span class="eqchk-ext ${t.status==='Concluída'?'ok':''}" aria-hidden="true">${t.status==='Concluída'?'✓':''}</span>
-   <button class="eqt" data-act="eq-lanc-abrir" data-v="${t.diagnostico_id}" title="Abrir no Lançamento de ${esc(diagNome(t.diagnostico_id))}">${esc(t.titulo)}${itLate(t)?` ${ico('alerta',13)}`:''}</button><span class="eqm">${esc(t.ext.a||'')}${t.ext.resp?' · '+esc(t.ext.resp):''}</span>
+   <button class="eqt" data-act="eq-lanc-abrir" data-v="${t.diagnostico_id}" data-p="${t.ext.mod==='ptc'?esc(t.ext.peca):''}" title="Abrir no ${t.ext.mod==='ptc'?'PTC':'Lançamento'} de ${esc(diagNome(t.diagnostico_id))}">${esc(t.titulo)}${itLate(t)?` ${ico('alerta',13)}`:''}</button><span class="eqm">${esc(t.ext.a||'')}${t.ext.resp?' · '+esc(t.ext.resp):''}</span>
    <span class="eqtags">${lancTag(t)}${eqProj(t)}${lancSt(t)}</span><span class="eqav"><span class="eqav-vazio">—</span></span><span class="eqper">${eqPeriodo(t)}</span></div>`; }
-function lancCard(t){ return `<div class="eqcard ext ${itLate(t)?'late':''}"><button class="eqt" data-act="eq-lanc-abrir" data-v="${t.diagnostico_id}">${esc(t.titulo)}</button>${itLate(t)?`<span class="warn">${ico('alerta',15)}</span>`:''}
+function lancCard(t){ return `<div class="eqcard ext ${itLate(t)?'late':''}"><button class="eqt" data-act="eq-lanc-abrir" data-v="${t.diagnostico_id}" data-p="${t.ext.mod==='ptc'?esc(t.ext.peca):''}">${esc(t.titulo)}</button>${itLate(t)?`<span class="warn">${ico('alerta',15)}</span>`:''}
    <div class="ktags">${lancTag(t)}${eqProj(t)}</div>${t.prazo?`<div class="cd ${itLate(t)?'late':''}">${ico('relogio',13)}${t.prazo.split('-').reverse().join('/')}</div>`:''}
    <div class="cf"><span class="muted" style="font-size:12px">${esc(t.ext.resp||t.ext.a||'')}</span><span class="muted" style="font-size:12px">Editar no cliente</span></div></div>`; }
 function minhasAbertas(){ return me?eqBase().filter(t=>itDono(t,me.id)&&t.status!=='Concluída').length:0; }
@@ -249,6 +259,7 @@ function renderInternas(){ const f=eqUi(); if(!lancT&&!lancCarregando) setTimeou
 /* ---------- eventos (chamados pelo app.js) ---------- */
 function eqClick(act,d){ const f=eqUi();
   if(act==='eq-set'){ if(d.k==='aba'&&f.aba==='lanc'&&d.v!=='lanc') setTimeout(()=>lancCarregar(true),1500); f[d.k]=d.v; if(d.k==='aba'){ f.aberta=null; f.pj=null; } render(); return true; }
+  if(act==='eq-lanc-abrir'&&d.p){ if(eqNoCliente()){ ui.view='ptc'; const u=typeof ptUi==='function'?ptUi():null; if(u){ u.aberta=d.p; u.est=null; } render(); return true; } location.href='/diagnostico/?cliente='+encodeURIComponent(d.v)+'&peca='+encodeURIComponent(d.p); return true; }
   if(act==='eq-lanc-abrir'){ if(eqNoCliente()){ ui.view='lancamento'; render(); return true; } f.cli=d.v; f.aba='lanc'; f.aberta=null; f.pj=null; render(); window.scrollTo({top:0}); return true; }
   if(act==='eq-cli-lanc'){ f.cli=d.v; f.aba='lanc'; f.visao='lista'; f.aberta=null; f.pj=null; render(); return true; }
   if(act==='eq-cli-ver'||act==='eq-cli'){ f.cli=act==='eq-cli'&&d.v&&f.cli===d.v?'':(d.v||''); f.projeto=''; f.aberta=null; f.pj=null; if(act==='eq-cli-ver'||(f.cli&&f.visao==='cliente')) f.visao='lista'; if(!f.cli){ f.visao='cliente'; if(f.aba==='lanc') f.aba='tarefas'; } if(f.aba==='lanc'&&(!f.cli||f.cli==='-'||!eqModsDe(f.cli).includes('lancamento'))) f.aba='tarefas'; render(); return true; }
