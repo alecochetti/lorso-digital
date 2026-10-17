@@ -6,6 +6,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/admin/assets/admin.css">
+<style>
+.cli{position:relative;display:grid;gap:14px;align-content:start;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px;transition:border-color .15s,transform .15s}
+.cli:hover{border-color:var(--neon);transform:translateY(-2px)}
+.cli .abre{position:absolute;inset:0;border-radius:22px;z-index:1}
+.cli .abre:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
+.cli .topo{display:flex;align-items:center;gap:14px}
+.cli .mono{width:52px;height:52px;flex:0 0 52px;border-radius:14px;display:grid;place-items:center;font-weight:700;font-size:19px;color:#04140D;background:linear-gradient(135deg,#00FF87 0%,#10B981 45%,#06B6D4 100%)}
+.cli .n{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.cli .c{color:var(--muted);font-size:13.5px}
+.cli .mods{display:flex;flex-wrap:wrap;gap:8px;position:relative;z-index:2}
+.cli .mods a{font-size:13px;font-weight:700;text-decoration:none;color:var(--text);border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+.cli .mods a:hover{border-color:var(--neon);color:var(--neon)}
+.cli .go{font-weight:700;color:var(--neon);font-size:14px}
+</style>
 </head><body>
 <main class="wrap">
   <div class="top">
@@ -16,6 +30,12 @@
   <h1 class="titulo" id="ola">Área do Cliente</h1>
   <p class="lead" id="lead">Carregando seus módulos…</p>
   <div class="cards" id="cards"></div>
+
+  <section class="sec" id="clientes" hidden>
+    <h2>Clientes</h2>
+    <p>Clique no cliente para abrir o que ele usa. Os atalhos abaixo do nome abrem cada módulo liberado.</p>
+    <div class="cards" id="cli-cards"></div>
+  </section>
 
   <section class="sec" id="demos" hidden>
     <h2>Demonstrações</h2>
@@ -64,9 +84,27 @@ else {
     $("lead").textContent = app && MODULOS[app] && !liberados.includes(app)
       ? `Você ainda não tem acesso ao ${MODULOS[app].nome}. Estes são os módulos liberados para você:`
       : equipe ? "Escolha o módulo. Lançamentos e DRE abrem só com aquele módulo; Diagnóstico abre a Central completa." : "Escolha o módulo que deseja abrir.";
-    $("cards").innerHTML = (equipe ? `<a class="card" href="/diagnostico/?central=lorso">
-      <span class="n">Tarefas LORSO</span><span class="c">Seu painel de clientes: tarefas e projetos de todos os clientes que você atende.</span><span class="go">Abrir ›</span></a>` : "") + liberados.map((k) => `<a class="card" href="${MODULOS[k].url}">
-      <span class="n">${esc(MODULOS[k].nome)}</span><span class="c">${esc(MODULOS[k].texto)}</span><span class="go">Abrir ›</span></a>`).join("");
+    if (equipe) {
+      // Equipe: entra pelo cliente. O clique abre o módulo que o cliente usa; os atalhos abrem cada módulo liberado.
+      $("lead").textContent = "Abra suas tarefas ou escolha o cliente para entrar no que ele usa.";
+      $("cards").innerHTML = `<a class="card" href="/diagnostico/?central=lorso">
+        <span class="n">Tarefas LORSO</span><span class="c">Seu painel de clientes: tarefas e projetos de todos os clientes que você atende.</span><span class="go">Abrir ›</span></a>`;
+      const ordem = ["diagnostico", "lancamento", "dre"];
+      const urlDe = (k, id) => k === "diagnostico" ? `/diagnostico/?cliente=${encodeURIComponent(id)}` : `/diagnostico/?modulo=${k}&cliente=${encodeURIComponent(id)}`;
+      const iniciais = (n) => String(n || "?").split(/\s+/).filter((p) => p.length > 2 || /^[A-Z]{2,}$/.test(p)).slice(0, 2).map((p) => p[0]).join("").toUpperCase() || String(n || "?").slice(0, 2).toUpperCase();
+      $("cli-cards").innerHTML = diags.length ? diags.map((d) => {
+        const mods = (Array.isArray(d.modulos) && d.modulos.length ? d.modulos : ordem).filter((k) => MODULOS[k]).sort((a, b) => ordem.indexOf(a) - ordem.indexOf(b));
+        const principal = mods[0] || "diagnostico";
+        return `<article class="cli"><a class="abre" href="${urlDe(principal, d.id)}" aria-label="Abrir ${esc(d.nome)} em ${esc(MODULOS[principal].nome)}"></a>
+          <div class="topo"><span class="mono" aria-hidden="true">${esc(iniciais(d.nome))}</span><span><span class="n">${esc(d.nome)}</span><br><span class="c">Abre em ${esc(MODULOS[principal].nome)}</span></span></div>
+          <div class="mods">${mods.map((k) => `<a href="${urlDe(k, d.id)}">${esc(MODULOS[k].nome)}</a>`).join("")}</div>
+          <span class="go">Abrir ›</span></article>`;
+      }).join("") : `<p class="c">Nenhum cliente vinculado a você ainda. Peça ao administrador para liberar.</p>`;
+      $("clientes").hidden = false;
+    } else {
+      $("cards").innerHTML = liberados.map((k) => `<a class="card" href="${MODULOS[k].url}">
+        <span class="n">${esc(MODULOS[k].nome)}</span><span class="c">${esc(MODULOS[k].texto)}</span><span class="go">Abrir ›</span></a>`).join("");
+    }
   } else {
     $("lead").textContent = "";
     $("cards").outerHTML = `<div class="vazio"><b>Nenhum módulo liberado ainda.</b>
