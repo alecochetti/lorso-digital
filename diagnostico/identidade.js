@@ -27,8 +27,15 @@
       <ol>${c.passos.slice(0,3).map(p=>`<li><span>${p}</span></li>`).join('')}</ol></section>`;
   }
 
+  /* Cliente em modo leitura (ex.: reitoria): vê tudo, não altera nada. O banco também bloqueia. */
+  const soLeitura=()=>typeof me!=='undefined'&&me&&me.papel==='cliente'&&typeof cur!=='undefined'&&cur&&cur.clienteLeitura;
+  if(typeof touch==='function'){ const _touch=touch; touch=function(full){ if(soLeitura()){ try{ if(typeof snap!=='undefined'&&snap) cur=clone(snap); }catch(e){} if(typeof toast==='function') toast('Modo leitura: a LORSO mantém estes dados'); if(full&&typeof render==='function') render(); return; } return _touch(full); }; }
+  function travarLeitura(main){ document.body.classList.toggle('so-leitura',!!soLeitura()); if(!soLeitura()) return;
+    main.querySelectorAll('input,select,textarea').forEach(el=>{ if(['pes-busca','hr-pessoa','hr-de','hr-ate'].includes(el.id)||el.closest('.hr-filtros')) return; el.disabled=true; });
+    if(!main.querySelector('.iv-leitura')){ main.insertAdjacentHTML('afterbegin','<p class="pz-aviso iv-leitura"><span class="i">!</span><span>Modo leitura. Os dados são mantidos pela equipe LORSO.</span></p>'); } }
   function enfeitar(){
     const main=document.getElementById('main'); if(!main) return;
+    travarLeitura(main);
     const ph=main.querySelector('.ph'); if(!ph||ph.dataset.iv) return;
     ph.dataset.iv='1';
     const ic=document.querySelector('.sb .sn.on svg');

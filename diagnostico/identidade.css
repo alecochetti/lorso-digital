@@ -335,3 +335,4 @@ td.pav-c{width:44px}
 .resref span{font-weight:700;color:var(--fg)}
 .tciclos{min-width:1500px}
 .tciclos input.cnum{width:100px;min-height:38px}
+body.so-leitura #main input:disabled,body.so-leitura #main select:disabled,body.so-leitura #main textarea:disabled{opacity:1;cursor:default;color:var(--fg);background:var(--surface-2)}

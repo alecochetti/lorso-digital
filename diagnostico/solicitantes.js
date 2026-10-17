@@ -14,6 +14,8 @@ const SOL_AREAS=[
   extra:[['lib_dias','Tempo médio para liberar uma verba ou pedido','d'],['lib_fluxo','Como a verba é liberada hoje (passo a passo)','t']]},
  {id:'rh',nome:'RH',foco:'Pedidos de comunicação interna, eventos e endomarketing.',
   extra:[['endo_mes','Pedidos de endomarketing e eventos internos por mês','n']]},
+ {id:'biblioteca',nome:'Biblioteca',foco:'Pedidos de artes e de divulgação de eventos, acervo e serviços da biblioteca.',
+  extra:[['artes_mes','Pedidos de arte por mês','n'],['eventos_ano','Eventos da biblioteca por ano que pedem divulgação','n']]},
  {id:'ti',nome:'Tecnologia',foco:'Pedidos de comunicação e de site que passam pelo marketing.',
   extra:[['site_dias','Tempo para publicar uma página ou mudança no site','d']]},
  {id:'compras',nome:'Compras',foco:'Se o processo de compras é respeitado e quanto tempo leva.',
