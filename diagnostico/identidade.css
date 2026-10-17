@@ -77,7 +77,7 @@ h3{font-size:19px;font-weight:700;letter-spacing:-.02em}
 .xitem.crit{--c:var(--st-alerta)} .xitem.alta{--c:var(--st-andamento)} .xitem.media{--c:var(--st-definir)}
 .xitem .t{flex:1;min-width:0}
 .insight.crit{--c:var(--st-alerta)} .insight.alta{--c:var(--st-andamento)} .insight.media{--c:var(--st-definir)}
-.insight{grid-template-columns:0 minmax(0,1fr);padding-left:16px;background:var(--surface);box-shadow:var(--elev-1);border-radius:16px}
+.insight{display:block;padding:16px 18px;background:var(--surface);box-shadow:var(--elev-1);border-radius:16px}
 .insight .stripe{display:none}
 .insight .sev{font-family:var(--display);text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:7px}
 .insight .sev::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--c)}
@@ -366,3 +366,77 @@ body.so-leitura #main input:disabled,body.so-leitura #main select:disabled,body.
 .kx-mais{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:14px}.kx-mais .muted{font-size:12.5px}
 @media (max-width:900px){.kx-row{grid-template-columns:1fr 1fr}}
 .kx-st.st-sis{background:#F1F5F9;color:#475569}
+/* Revisão estrutural: itens de lista quebram linha em vez de espremer o texto */
+.xitem{flex-wrap:wrap}.xitem .t{flex:1 1 200px}.xitem .t small{overflow-wrap:anywhere}
+@media (max-width:640px){.xitem>.chip,.xitem>.btn,.xitem>select{margin-left:21px}}
+
+/* =====================================================================
+   Revisão estrutural de UX e UI (17/10/2026)
+   ===================================================================== */
+/* Resposta escolhida: um só estilo em todos os níveis; a cor do nível fica só no selo N# */
+.opt.on,.opt.on.n1,.opt.on.n2,.opt.on.n3,.opt.on.n4{border:2px solid var(--l-verde);background:color-mix(in srgb,var(--l-verde) 8%,var(--surface));box-shadow:0 0 0 3px color-mix(in srgb,var(--l-verde) 14%,transparent)}
+.opt.on::after{content:"✓";position:absolute;top:8px;right:10px;width:20px;height:20px;border-radius:50%;background:var(--l-verde);color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center}
+.opt.na.on::after{display:none}
+.opt.on .on-n{padding-right:24px}
+
+/* Tabelas: indicam que rolam para o lado e dão espaço aos campos */
+.tblw{-webkit-overflow-scrolling:touch;background:linear-gradient(90deg,var(--surface) 30%,transparent) left/28px 100% no-repeat local,linear-gradient(270deg,var(--surface) 30%,transparent) right/28px 100% no-repeat local,radial-gradient(farthest-side at 0 50%,rgba(15,23,42,.14),transparent) left/12px 100% no-repeat scroll,radial-gradient(farthest-side at 100% 50%,rgba(15,23,42,.14),transparent) right/12px 100% no-repeat scroll}
+.tblw .tbl td input:not([type=checkbox]):not([type=radio]):not([type=date]){min-width:8.5em}
+.tblw .tbl td select{min-width:9em}
+.tblw .tbl td .chip,.tbl td .lv{white-space:nowrap}
+@media (max-width:640px){
+  .tblw:has(input,select) .tbl{min-width:680px}
+  .tblw .tbl th,.tblw .tbl td{padding:8px 10px}
+}
+
+/* Execução: cada coluna rola por dentro, a página não vira um rolo infinito */
+.kcol{max-height:78vh;overflow-y:auto;overscroll-behavior:contain}
+.kcol-h{position:sticky;top:-12px;z-index:2;background:inherit;margin:-12px -12px 0;padding:12px 16px 8px}
+@media (max-width:760px){ .kanban{grid-template-columns:repeat(4,minmax(78vw,1fr));scroll-snap-type:x mandatory} .kcol{scroll-snap-align:start;max-height:70vh} }
+
+/* Barras de abas e filtros no celular: uma linha que rola, sem cortar nem empilhar */
+@media (max-width:640px){
+  .seg,.bu-tabs,.hr-filtros .seg{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;max-width:100%}
+  .seg::-webkit-scrollbar,.bu-tabs::-webkit-scrollbar{display:none}
+  .seg button,.bu-tabs button{flex:0 0 auto;white-space:nowrap}
+}
+
+/* Cartões de número no celular: ícone não encosta no valor, sobra não fica sozinha */
+@media (max-width:640px){
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stats>.stat:last-child:nth-child(odd){grid-column:1/-1}
+  .stat .si,.kpi .si{width:30px;height:30px;top:10px;right:10px}
+  .stat .si svg{width:16px;height:16px}
+  .stat b,.kpi b{font-size:clamp(20px,6.4vw,26px);padding-right:34px}
+  .stat>span:not(.si){overflow-wrap:anywhere}
+}
+
+/* Formulários em grade: campos alinhados pela base mesmo com rótulo de duas linhas */
+.fields,.dorform{align-items:end}
+
+/* Toque no celular: alvos de pelo menos 40px */
+@media (max-width:640px){
+  .chip,.btn.sm,.addnote,.iv-como .btn{min-height:40px;padding-inline:12px}
+  .xbtn{min-width:40px;min-height:40px}
+  input[type=checkbox],input[type=radio]{width:20px;height:20px}
+}
+
+/* Títulos que quebram linha no celular */
+h2,h3,.block-h h3{line-height:1.22}
+
+/* Seletor de cliente: mostra o nome inteiro sempre que couber */
+#sel-diag{min-width:min(320px,52vw);text-overflow:ellipsis}
+
+/* KPIs: aviso de número no sistema vira selo no título, campos ficam alinhados */
+.kx-row label span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kx-tag.sis{background:#F1F5F9;color:#475569}
+/* Barras com rótulo (gargalos, quem mais sente): no celular o nome vai para cima da barra */
+@media (max-width:640px){
+  .chart .crow{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"nm v" "bar bar";row-gap:4px}
+  .chart .crow>.nm,.chart .crow>:first-child{grid-area:nm;white-space:normal;text-align:left;overflow:visible}
+  .chart .crow>.track{grid-area:bar}
+  .chart .crow>:last-child{grid-area:v;white-space:nowrap}
+}
+.stat:not(:has(.si)) b,.stat:not(:has(.si))>span{padding-right:0}
+@media (max-width:640px){ .stat b,.kpi b{white-space:nowrap;font-size:clamp(19px,5.6vw,24px)} }
+.pri .tbl td:nth-child(2) input{min-width:300px}

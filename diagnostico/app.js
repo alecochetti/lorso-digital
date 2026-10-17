@@ -373,7 +373,7 @@ function qHtml(x){
    <h4>${esc(x[5])}</h4>
    <div class="opts" role="radiogroup" aria-label="${esc(x[1])}">${x[6].map((o,i)=>`<button class="opt ${n===i+1?'on n'+(i+1):''}" role="radio" aria-checked="${n===i+1}" data-act="opt" data-q="${x[0]}" data-n="${i+1}"><span class="on-n"><span>N${i+1}</span><span>${LVL[i+1]}</span></span><span>${esc(o)}</span></button>`).join('')}<button class="opt na ${n===0?'on':''}" role="radio" aria-checked="${n===0}" data-act="opt" data-q="${x[0]}" data-n="0" title="Fica fora da nota e entra na lista do que ninguém soube responder"><span class="on-n"><span>—</span><span>Fora da nota</span></span><span>Não se aplica / não sei</span></button></div>
    ${typeof sugestaoHtml==='function'?sugestaoHtml(x[0]):''}
-   <div class="qfoot">${cur.notas[x[0]]||ui.notesOpen[x[0]]?`<textarea data-nota="${x[0]}" rows="1" placeholder="Evidências e observações da entrevista" aria-label="Observações sobre ${esc(x[1])}">${esc(cur.notas[x[0]]||'')}</textarea>`:`<button class="addnote" data-act="note" data-q="${x[0]}">+ Adicionar observação</button>`}
+   <div class="qfoot">${(cur.notas[x[0]]&&!(typeof cxNotaAuto==='function'&&cxNotaAuto(x[0])))||ui.notesOpen[x[0]]?`<textarea data-nota="${x[0]}" rows="1" placeholder="Evidências e observações da entrevista" aria-label="Observações sobre ${esc(x[1])}">${esc(cur.notas[x[0]]||'')}</textarea>`:`<button class="addnote" data-act="note" data-q="${x[0]}">${typeof cxNotaAuto==='function'&&cxNotaAuto(x[0])?'Provas do diagnóstico já anotadas na observação · ver ou editar':'+ Adicionar observação'}</button>`}
    <label class="evid"><input type="checkbox" data-evid="${x[0]}" ${cur.evid[x[0]]?'checked':''}>Comprovado com evidência</label></div>
   </article>`;
 }
@@ -1160,6 +1160,7 @@ function ivHtml(){
   const main = done ? `<div class="iv-done"><span class="eyebrow">Área concluída</span><h2>${esc(a.nome)}</h2>
       <div class="iv-score">${lvChip(s.score!=null?s.level:0)}<b>${s.score!=null?dec(s.score):'—'}</b><small>/ 4 · ${ans} de ${qs.length} respondidas</small></div>
       ${nums.length?`<div class="fields">${nums.map(v=>fieldHtml(a.id+'.'+v[0],v[1],v[2])).join('')}</div>`:''}
+      ${typeof kpiAreaHtml==='function'?kpiAreaHtml(a.id):''}
       <div class="iv-nav"><button class="btn" data-act="iv-go" data-v="${qs.length-1}">← Revisar</button>${nextA?`<button class="btn primary big" data-act="iv-area" data-v="${nextA.id}">Próxima: ${esc(nextA.nome)} →</button>`:''}<button class="btn ghost" data-act="iv-exit">Sair do modo entrevista</button></div></div>`
    : `<div class="iv-prog"><span>${esc(a.nome)} · pergunta ${i+1} de ${qs.length}</span><span class="iv-dots">${qs.map((q,k)=>`<button class="iv-dot ${k===i?'on':''} ${cur.resp[q[0]]?'ok':''}" data-act="iv-go" data-v="${k}" aria-label="Pergunta ${k+1}"></button>`).join('')}</span></div>
       <div class="iv-tags"><span class="tag">${PIL[x[2]]}</span><span class="tag">${IMP[x[3]]}</span>${x[4]?'<span class="tag warn">Eliminatória</span>':''}</div>
