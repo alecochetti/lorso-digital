@@ -25,7 +25,7 @@ function pjBase(){ if(eqNoCliente()) return projetos.filter(p=>p.diagnostico_id=
 const eqIniciais=n=>{ const p=String(n||'?').split(/\s+/).filter(x=>x.length>2||/^[A-Z]{2,}$/.test(x)); return (p.length>1?p.slice(0,2).map(x=>x[0]).join(''):String(p[0]||n||'?').slice(0,2)).toUpperCase(); };
 const eqModsDe=id=>{ const d=all[id]; return d&&Array.isArray(d.modulos)&&d.modulos.length?d.modulos:['diagnostico','dre','lancamento']; };
 function eqCliBar(){ const f=eqUi(); const ab=c=>internas.filter(t=>t.status!=='Concluída'&&(c==='-'?!tCli(t):tCli(t)===c)).length;
-  const bt=(id,nome,mono,n)=>{ const lg=id&&id!=='-'&&all[id]&&all[id].logo; return `<button class="eqcb ${f.cli===id?'on':''} ${lg?'comlogo':''}" data-act="eq-cli" data-v="${id}" aria-pressed="${f.cli===id}">${lg?`<span class="logo-plate"><img src="${lg}" alt=""></span>`:`<span class="mono">${mono}</span>`}<span class="nm">${esc(nome)}<small>${n} ${n===1?'aberta':'abertas'}</small></span></button>`; };
+  const bt=(id,nome,mono,n)=>{ const lg=id&&id!=='-'&&all[id]&&all[id].logo; return `<button class="eqcb ${f.cli===id?'on':''} ${lg?'comlogo':''}" data-act="eq-cli" data-v="${id}" aria-pressed="${f.cli===id}" title="${f.cli===id&&id?'Clique de novo para voltar a todos os clientes':'Ver só '+esc(nome)}">${lg?`<span class="logo-plate"><img src="${lg}" alt=""></span>`:`<span class="mono">${mono}</span>`}<span class="nm">${esc(nome)}<small>${n} ${n===1?'aberta':'abertas'}</small></span></button>`; };
   return `<nav class="eqclibar" aria-label="Escolha o cliente">${bt('','Todos os clientes','≡',internas.filter(t=>t.status!=='Concluída').length)}${Object.values(all).sort((a,b)=>a.nome.localeCompare(b.nome)).map(d=>bt(d.id,diagNome(d.id),esc(eqIniciais(diagNome(d.id))),ab(d.id))).join('')}${bt('-','Interno LORSO','L',ab('-'))}</nav>`; }
 /* Tarefas do Lançamento de curso do cliente escolhido: a própria aba Tarefas do módulo, só desse cliente */
 async function eqLancMontar(){ const f=eqUi(), id=f.cli, box=document.getElementById('eq-lanc'); if(!box||!id) return;
@@ -208,7 +208,7 @@ function renderInternas(){ const f=eqUi();
 function eqClick(act,d){ const f=eqUi();
   if(act==='eq-set'){ f[d.k]=d.v; if(d.k==='aba'){ f.aberta=null; f.pj=null; } render(); return true; }
   if(act==='eq-cli-lanc'){ f.cli=d.v; f.aba='lanc'; f.visao='lista'; f.aberta=null; f.pj=null; render(); return true; }
-  if(act==='eq-cli-ver'||act==='eq-cli'){ f.cli=d.v||''; f.projeto=''; f.aberta=null; f.pj=null; if(act==='eq-cli-ver'||(f.cli&&f.visao==='cliente')) f.visao='lista'; if(!f.cli){ f.visao='cliente'; if(f.aba==='lanc') f.aba='tarefas'; } if(f.aba==='lanc'&&(!f.cli||f.cli==='-'||!eqModsDe(f.cli).includes('lancamento'))) f.aba='tarefas'; render(); return true; }
+  if(act==='eq-cli-ver'||act==='eq-cli'){ f.cli=act==='eq-cli'&&d.v&&f.cli===d.v?'':(d.v||''); f.projeto=''; f.aberta=null; f.pj=null; if(act==='eq-cli-ver'||(f.cli&&f.visao==='cliente')) f.visao='lista'; if(!f.cli){ f.visao='cliente'; if(f.aba==='lanc') f.aba='tarefas'; } if(f.aba==='lanc'&&(!f.cli||f.cli==='-'||!eqModsDe(f.cli).includes('lancamento'))) f.aba='tarefas'; render(); return true; }
   if(act==='eq-limpar'){ Object.assign(f,{pessoa:'',area:'',projeto:'',prazo:'',busca:''}); render(); return true; }
   if(act==='eq-abrir'){ f.aberta=d.v; f.pj=null; render(); return true; }
   if(act==='eq-fechar'){ const t=internas.find(x=>x.id===f.aberta); if(t)itSave(t,true); const p=projetos.find(x=>x.id===f.pj); if(p)pjSave(p,true); f.aberta=null; f.pj=null; render(); return true; }
