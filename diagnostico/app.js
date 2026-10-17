@@ -864,31 +864,20 @@ function unScoreHtml(){
 const RECS=['Fazer agora','Próximo','Não agora'];
 const priScore=x=>{const i=+x.impacto||0,e=+x.esforco||0,r=+x.risco||0; return i? (i*2-e-r*0.5):null;};
 function iniciativasOrd(){ return [...cur.iniciativas].sort((a,b)=>RECS.indexOf(a.recomendacao||'Próximo')-RECS.indexOf(b.recomendacao||'Próximo')||(priScore(b)??-99)-(priScore(a)??-99)); }
-function matriz2x2(L){
-  /* Pontos do mesmo cruzamento impacto x esforço ficam lado a lado, sem se sobrepor; rótulos dos quadrantes fora do quadro */
-  const W=560,H=440,mL=46,mR=18,mT=34,mB=50, X=e=>mL+(e-0.5)/5*(W-mL-mR), Y=i=>H-mB-(i-0.5)/5*(H-mT-mB);
-  const pts=L.filter(x=>+x.impacto&&+x.esforco);
-  const col={'Fazer agora':'var(--accent)','Próximo':'var(--n3)','Não agora':'var(--faint)'};
-  const grupos={}; pts.forEach(x=>{ const k=x.esforco+'_'+x.impacto; (grupos[k]=grupos[k]||[]).push(x); });
-  const R=10, G=23, MAX=9;
-  const marcas=Object.values(grupos).map(g=>{ const cx=X(+g[0].esforco), cy=Y(+g[0].impacto); const mostra=g.length>MAX?g.slice(0,MAX-1):g; const n=mostra.length+(g.length>MAX?1:0);
-    const cols=Math.min(n,n<=4?n:n<=6?3:3), rows=Math.ceil(n/cols);
-    const pos=k=>{ const r=Math.floor(k/cols), c=k%cols, nr=Math.min(cols,n-r*cols); return [cx+(c-(nr-1)/2)*G, cy+(r-(rows-1)/2)*G]; };
-    let h=mostra.map((x,k)=>{ const [px,py]=pos(k), num=L.indexOf(x)+1; return `<g><title>${num}. ${esc(x.titulo||x.t||'')}</title><circle cx="${px}" cy="${py}" r="${R}" fill="${col[x.recomendacao||'Próximo']}" stroke="var(--surface)" stroke-width="2"/><text x="${px}" y="${py+4}" font-size="11" font-weight="700" text-anchor="middle" fill="#fff">${num}</text></g>`; }).join('');
-    if(g.length>MAX){ const [px,py]=pos(n-1); h+=`<g><title>Mais ${g.length-MAX+1}: ${g.slice(MAX-1).map(x=>L.indexOf(x)+1).join(', ')}</title><circle cx="${px}" cy="${py}" r="${R}" fill="var(--surface-2)" stroke="var(--line-2)"/><text x="${px}" y="${py+4}" font-size="10" font-weight="700" text-anchor="middle" fill="var(--fg)">+${g.length-MAX+1}</text></g>`; }
-    return h; }).join('');
-  return `<div class="m2x2-w"><svg viewBox="0 0 ${W} ${H}" class="m2x2" role="img" aria-label="Matriz impacto por esforço">
-   <rect x="${mL}" y="${mT}" width="${X(3)-mL}" height="${Y(3)-mT}" fill="color-mix(in srgb,var(--accent) 7%,transparent)"/>
-   <line x1="${X(3)}" y1="${mT}" x2="${X(3)}" y2="${H-mB}" stroke="var(--line-2)" stroke-dasharray="4 4"/><line x1="${mL}" y1="${Y(3)}" x2="${W-mR}" y2="${Y(3)}" stroke="var(--line-2)" stroke-dasharray="4 4"/>
-   <rect x="${mL}" y="${mT}" width="${W-mL-mR}" height="${H-mT-mB}" fill="none" stroke="var(--line-2)"/>
-   <text x="${mL}" y="${mT-12}" fill="var(--accent)" font-size="12.5" font-weight="700">Ganhos rápidos</text>
-   <text x="${W-mR}" y="${mT-12}" fill="var(--muted)" font-size="12.5" font-weight="700" text-anchor="end">Projetos estruturantes</text>
-   <text x="${mL}" y="${H-12}" fill="var(--muted)" font-size="12.5" font-weight="600">Ajustes</text>
-   <text x="${W-mR}" y="${H-12}" fill="var(--muted)" font-size="12.5" font-weight="600" text-anchor="end">Evitar agora</text>
-   <text x="${(mL+W-mR)/2}" y="${H-12}" fill="var(--muted)" font-size="12" text-anchor="middle">Esforço →</text>
-   <text x="16" y="${(mT+H-mB)/2}" fill="var(--muted)" font-size="12" text-anchor="middle" transform="rotate(-90 16 ${(mT+H-mB)/2})">Impacto →</text>
-   ${marcas}
-  </svg></div>`;
+/* Priorização em duas leituras, sempre com o nome da iniciativa: por quadrante (impacto x esforço) e por recomendação */
+const PRI_Q=[['rapido','Ganhos rápidos','Alto impacto, pouco esforço. Começar por aqui.'],['estrut','Projetos estruturantes','Alto impacto, muito esforço. Planejar em etapas.'],['ajuste','Ajustes','Baixo impacto, pouco esforço. Encaixar quando sobrar fôlego.'],['evitar','Evitar agora','Baixo impacto, muito esforço. Só com motivo forte.']];
+const priQuad=x=>{ const i=+x.impacto, e=+x.esforco; if(!i||!e) return 'sem'; return i>=3?(e<=3?'rapido':'estrut'):(e<=3?'ajuste':'evitar'); };
+function priItem(x,L,modo){ const n=L.indexOf(x)+1, rec=x.recomendacao||'Próximo', q=priQuad(x), qn=(PRI_Q.find(z=>z[0]===q)||[,'Sem nota'])[1];
+  return `<li class="pri-it"><span class="pri-n">${n}</span><span class="pri-t"><b>${esc(x.titulo||'Sem título')}</b><small>${x.impacto?`Impacto ${x.impacto}`:'Impacto —'} · ${x.esforco?`Esforço ${x.esforco}`:'Esforço —'}${x.horizonte?` · ${esc(x.horizonte)} prazo`:''}</small></span>${modo==='rec'?`<span class="pri-rec q q-${q}">${qn}</span>`:`<span class="pri-rec r${RECS.indexOf(rec)}">${esc(rec)}</span>`}</li>`; }
+function priVisao(L){
+  const v=ui.priVis||'quad';
+  const seg=`<div class="seg pri-seg" role="group" aria-label="Como ver a priorização"><button class="${v==='quad'?'on':''}" data-act="pri-vis" data-v="quad">Por quadrante</button><button class="${v==='rec'?'on':''}" data-act="pri-vis" data-v="rec">Por recomendação</button></div>`;
+  let cols;
+  if(v==='rec') cols=RECS.map((r,k)=>{ const it=L.filter(x=>(x.recomendacao||'Próximo')===r); return `<section class="pri-col c${k}"><header><b>${r}</b><span class="ct">${it.length}</span></header>${it.length?`<ol>${it.map(x=>priItem(x,L,'rec')).join('')}</ol>`:'<p class="muted">Nada aqui.</p>'}</section>`; }).join('');
+  else { const sem=L.filter(x=>priQuad(x)==='sem');
+    cols=PRI_Q.map(([id,t,d])=>{ const it=L.filter(x=>priQuad(x)===id).sort((a,b)=>(priScore(b)??-99)-(priScore(a)??-99)); return `<section class="pri-col q-${id}"><header><b>${t}</b><span class="ct">${it.length}</span></header><p class="pri-d">${d}</p>${it.length?`<ol>${it.map(x=>priItem(x,L)).join('')}</ol>`:'<p class="muted">Nada aqui.</p>'}</section>`; }).join('')
+      +(sem.length?`<section class="pri-col q-sem"><header><b>Sem impacto ou esforço</b><span class="ct">${sem.length}</span></header><p class="pri-d">Preencha impacto e esforço na tabela abaixo.</p><ol>${sem.map(x=>priItem(x,L)).join('')}</ol></section>`:''); }
+  return `<div class="pri-vis">${seg}<div class="pri-board ${v}">${cols}</div></div>`;
 }
 function priorizacaoHtml(INS){
   if(!me||me.papel==='cliente') return '';
@@ -896,9 +885,9 @@ function priorizacaoHtml(INS){
   const sel=(id,f,v,opts)=>`<select data-ini="${id}" data-f="${f}" aria-label="${f}">${opts.map(o=>Array.isArray(o)?`<option value="${o[0]}" ${String(v)===String(o[0])?'selected':''}>${o[1]}</option>`:`<option ${v===o?'selected':''}>${o}</option>`).join('')}</select>`;
   const n15=[['','—'],['1','1'],['2','2'],['3','3'],['4','4'],['5','5']];
   return `<section class="block pri"><div class="block-h"><h3>Priorização do marketing <span class="tag warn" style="vertical-align:middle">Interno · só LORSO e reitoria</span></h3><p>O que o marketing faz primeiro, o que fica para depois e por quê.</p></div>
-   ${L.length?`<div class="two pri-top"><div>${matriz2x2(L)}<div class="legend"><span class="lg"><i style="background:var(--accent)"></i>Fazer agora</span><span class="lg"><i style="background:var(--n3)"></i>Próximo</span><span class="lg"><i style="background:var(--faint)"></i>Não agora</span></div></div>
+   ${L.length?`<div class="pri-top2">
     <div class="pri-note"><div class="stat ${agora>4?'warn':''}"><b>${agora}</b><span>iniciativas em "Fazer agora"${agora>4?'. Acima de 4 ao mesmo tempo, o time não dá conta: mova algumas para Próximo.':''}</span></div>
-     <p class="muted" style="font-size:13.5px">Regras de sequência: primeiro o que destrava (regras, mandato, ferramenta), depois o que acelera. Para cada "Não agora", escreva o motivo e a condição para reabrir: é esse texto que sustenta o não para coordenadores e UNs.</p></div></div>
+     <p class="muted" style="font-size:13.5px">Regras de sequência: primeiro o que destrava (regras, mandato, ferramenta), depois o que acelera. Para cada "Não agora", escreva o motivo e a condição para reabrir: é esse texto que sustenta o não para coordenadores e UNs.</p></div></div>${priVisao(L)}
     <div class="tblw"><table class="tbl"><thead><tr><th>#</th><th style="min-width:240px">Iniciativa</th><th>Horizonte</th><th>Impacto</th><th>Esforço</th><th>Risco</th><th style="min-width:160px">Depende de</th><th>Recomendação</th><th style="min-width:220px">Motivo (e quando reabrir)</th><th style="min-width:160px">Indicador</th><th></th></tr></thead><tbody>
     ${L.map((x,k)=>`<tr><td class="mono">${k+1}</td><td><input data-ini="${x.id}" data-f="titulo" value="${esc(x.titulo)}" aria-label="Iniciativa"><small class="muted">${esc((BLOCOS.find(b=>b.id===x.bloco)||{}).t||'')}</small></td>
      <td>${sel(x.id,'horizonte',x.horizonte,['Curto','Médio','Longo'])}</td><td>${sel(x.id,'impacto',x.impacto,n15)}</td><td>${sel(x.id,'esforco',x.esforco,n15)}</td><td>${sel(x.id,'risco',x.risco,n15)}</td>
@@ -2120,6 +2109,7 @@ document.addEventListener('click',e=>{
   else if(act==='ini-gerar'){ computeAll(); const B=blocosDe(runEngine()); const have=new Set(cur.iniciativas.map(x=>x.titulo)); let n=0;
     B.forEach((b,bi)=>HZ.forEach(([k])=>(b.h[k]||[]).forEach(t=>{ if(have.has(t))return; const hz={c:'Curto',m:'Médio',l:'Longo'}[k]; cur.iniciativas.push({id:uid(),titulo:t,bloco:b.id,area:b.areas[0]||'',horizonte:hz,impacto:String(Math.max(2,5-Math.floor(bi/2))),esforco:String({c:2,m:3,l:4}[k]),risco:'2',dependencias:'',alinhamento:b.t,recomendacao:k==='c'?'Fazer agora':'Próximo',motivo:'',indicador:b.kpi,ordem:0}); n++; })));
     touch(true); toast(n?`${n} iniciativas criadas`:'As iniciativas das causas raiz já estão na matriz'); }
+  else if(act==='pri-vis'){ ui.priVis=d.v; render(); }
   else if(act==='ini-add'){ cur.iniciativas.push({id:uid(),titulo:'',bloco:'',area:'',horizonte:'Curto',impacto:'',esforco:'',risco:'',dependencias:'',alinhamento:'',recomendacao:'Próximo',motivo:'',indicador:'',ordem:0}); touch(true); }
   else if(act==='ini-del'){ cur.iniciativas=cur.iniciativas.filter(x=>x.id!==d.id); touch(true); }
   else if(act==='dstep'){ ui.view='fases'; ui.stage='diagnostico'; ui.dstep=d.v; if(d.v==='reitoria'&&!LID.some(a=>a.id===ui.area)&&ui.area!=='direcionamentos')ui.area='reitoria'; if(d.v==='entrevistas'&&!ENT.some(a=>a.id===ui.area))ui.area=jornadaLista()[0].id; saveUi(); render(); window.scrollTo({top:0}); }
