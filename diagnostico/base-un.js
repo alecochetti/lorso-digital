@@ -99,8 +99,78 @@ function buUnHtml(un,cursosTabela,pctCell){
     </div>
     ${d.leads||d.insc?`<div class="bu-funil">${[['Leads',d.leads],['Inscritos',d.insc],['Captados',d.captados]].map(([l,v],i,a)=>`<div><b>${buN(v)}</b><span>${l}</span>${i<a.length-1&&v&&a[i+1][1]!=null?`<small>${buX(a[i+1][1]/v)} seguem</small>`:''}</div>`).join('')}</div>`:''}
    </section>
+   ${ciclosUnHtml(un)}
    <section class="block"><div class="block-h"><h3>Cursos de ${esc(u.nome)}</h3><p>${pl(d.cursos,'curso','cursos')}${d.lanc?` · ${pl(d.lanc,'lançamento','lançamentos')}`:''}</p></div>
     ${cursosTabela(cur.cursos.filter(c=>c.un===un))}</section>
    <section class="block"><div class="block-h"><h3>Contexto de ${esc(u.nome)}</h3><p>O que é desta UN. O que vale para toda a instituição fica na aba Geral.</p></div>
-    <div class="fields">${fieldHtml(buKey(un,'calendario'),'Calendário de captação desta UN: vestibulares, editais, matrículas','t')}${fieldHtml(buKey(un,'concorrentes'),'Concorrentes desta UN e como se posicionam','t')}${fieldHtml(buKey(un,'diferenciais'),'Diferenciais desta UN (o que ela tem e o concorrente não)','t')}</div></section>`;
+    <div class="fields">${fieldHtml(buKey(un,'calendario'),'Observações do calendário desta UN (editais, regras, exceções)','t')}${fieldHtml(buKey(un,'concorrentes'),'Concorrentes desta UN e como se posicionam','t')}${fieldHtml(buKey(un,'diferenciais'),'Diferenciais desta UN (o que ela tem e o concorrente não)','t')}</div></section>`;
 }
+
+/* ---------- Calendário de captação: ciclos por UN e datas dos cursos ---------- */
+const CICLO_ETAPAS=[['camp_ini','Campanha começa'],['insc_ini','Inscrições abrem'],['mat_ini','Matrículas abrem'],['camp_fim','Campanha encerra'],['aulas','Aulas começam']];
+const CICLO_SUG={colegio:['Matrículas do ano letivo','Rematrícula'],graduacao:['Vestibular 1º semestre','Vestibular 2º semestre','Transferência e segunda graduação'],pos:['Turma do 1º semestre','Turma do 2º semestre'],mestrado:['Processo seletivo']};
+function ciclosTodos(){ try{ const L=JSON.parse(cur.campos['base.ciclos']||'[]'); return Array.isArray(L)?L:[]; }catch(e){ return []; } }
+function ciclosSalvar(L){ cur.campos['base.ciclos']=L.length?JSON.stringify(L):''; touch(false); }
+const cDt=s=>{ if(!s) return null; const [y,m,d]=String(s).split('-').map(Number); return y?new Date(y,m-1,d):null; };
+const cFmt=s=>{ const d=cDt(s); return d?d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}):'—'; };
+const cHoje=()=>{ const t=new Date(); return new Date(t.getFullYear(),t.getMonth(),t.getDate()); };
+function cicloSituacao(c){
+  const h=cHoje(), ini=cDt(c.camp_ini)||cDt(c.insc_ini), fim=cDt(c.camp_fim), aulas=cDt(c.aulas), dias=(a,b)=>Math.round((b-a)/864e5);
+  if(ini&&h<ini) return {k:'futuro',t:`começa em ${dias(h,ini)} dias`};
+  if(fim&&h>fim) return aulas&&h<aulas?{k:'fim',t:`campanha encerrada · aulas em ${dias(h,aulas)} dias`}:{k:'fim',t:'encerrado'};
+  if(ini||fim){ const mat=cDt(c.mat_ini); return {k:'agora',t:fim?`em captação · faltam ${dias(h,fim)} dias${mat&&h>=mat?' · matrículas abertas':''}`:'em captação'}; }
+  return {k:'',t:'sem datas'};
+}
+/* Linha do tempo simples: barras por item, com marcos e o dia de hoje */
+function cicloTimeline(itens){
+  const datas=itens.flatMap(i=>[i.ini,i.fim,...(i.marcos||[]).map(m=>m.d)]).map(cDt).filter(Boolean);
+  if(!datas.length) return '';
+  let a=new Date(Math.min(...datas,cHoje())), b=new Date(Math.max(...datas,cHoje()));
+  a=new Date(a.getFullYear(),a.getMonth(),1); b=new Date(b.getFullYear(),b.getMonth()+1,1);
+  const span=b-a||1, x=s=>{ const d=cDt(s); return d?((d-a)/span*100):null; };
+  const meses=[]; for(let d=new Date(a);d<b;d=new Date(d.getFullYear(),d.getMonth()+1,1)) meses.push(d);
+  const hx=((cHoje()-a)/span*100).toFixed(2);
+  return `<div class="ctl" role="img" aria-label="Linha do tempo da captação">
+    <div class="ctl-m"><span></span><div>${meses.map(m=>`<i style="left:${((m-a)/span*100).toFixed(2)}%">${(t=>t.charAt(0).toUpperCase()+t.slice(1))(m.toLocaleDateString('pt-BR',{month:'short'}).replace('.',''))}${m.getMonth()===0?' '+String(m.getFullYear()).slice(2):''}</i>`).join('')}</div></div>
+    ${itens.map(i=>{ const l=x(i.ini), r=x(i.fim); return `<div class="ctl-r"><span class="ctl-n" title="${esc(i.label)}">${esc(i.label)}${i.sub?`<small>${esc(i.sub)}</small>`:''}</span><div class="ctl-t">
+      ${l!=null&&r!=null?`<b class="ctl-b ${i.cls||''}" style="left:${l.toFixed(2)}%;width:${Math.max(0.6,r-l).toFixed(2)}%"></b>`:''}
+      ${l!=null&&i.forte!=null&&r!=null&&x(i.forte)!=null?`<b class="ctl-b forte" style="left:${x(i.forte).toFixed(2)}%;width:${Math.max(0.6,r-x(i.forte)).toFixed(2)}%" title="Matrículas abertas"></b>`:''}
+      ${(i.marcos||[]).filter(m=>x(m.d)!=null).map(m=>`<em class="ctl-k" style="left:${x(m.d).toFixed(2)}%" title="${esc(m.l)}: ${cFmt(m.d)}"></em>`).join('')}
+      <u class="ctl-h" style="left:${hx}%"></u></div></div>`; }).join('')}
+    <div class="legend"><span class="lg"><i style="background:color-mix(in srgb,var(--l-ciano) 45%,transparent)"></i>Campanha</span><span class="lg"><i style="background:var(--l-verde-escuro)"></i>Matrículas abertas</span><span class="lg"><i class="ctl-lk"></i>Inscrições e início das aulas</span><span class="lg"><i style="background:var(--st-alerta);width:2px"></i>Hoje</span></div></div>`;
+}
+const cicloItem=c=>({label:c.nome||'Ciclo sem nome',sub:(UNS.find(u=>u.id===c.un)||{}).nome,ini:c.camp_ini||c.insc_ini,fim:c.camp_fim||c.aulas,forte:c.mat_ini,marcos:[{d:c.insc_ini,l:'Inscrições abrem'},{d:c.aulas,l:'Aulas começam'}]});
+const cursoItem=c=>({label:c.nome,sub:c.obs||'',ini:c.abertura,fim:c.encerramento,cls:'curso'});
+
+function ciclosUnHtml(un){
+  const L=ciclosTodos().filter(c=>c.un===un), sug=(CICLO_SUG[un]||[]).filter(n=>!L.some(c=>c.nome===n));
+  const cs=cur.cursos.filter(c=>c.un===un&&c.abertura&&c.encerramento);
+  return `<section class="block"><div class="block-h"><h3>Calendário de captação</h3><p>Campanha, inscrições, matrículas e início das aulas de cada ciclo.</p></div>
+   ${L.length?`<div class="tblw"><table class="tbl tciclos"><thead><tr><th style="min-width:200px">Ciclo</th>${CICLO_ETAPAS.map(([,l])=>`<th>${l}</th>`).join('')}<th>Situação</th><th></th></tr></thead><tbody>
+    ${L.map(c=>{ const st=cicloSituacao(c); return `<tr><td><input data-ciclo="${c.id}" data-f="nome" value="${esc(c.nome||'')}" placeholder="Ex.: Vestibular 2027.1" aria-label="Nome do ciclo"></td>${CICLO_ETAPAS.map(([k,l])=>`<td><input type="date" class="dt" data-ciclo="${c.id}" data-f="${k}" value="${esc(c[k]||'')}" aria-label="${l}"></td>`).join('')}<td><span class="csit ${st.k}">${st.t}</span></td><td class="x"><button class="xbtn" data-act="ciclo-del" data-id="${c.id}" aria-label="Remover ciclo">×</button></td></tr>`; }).join('')}
+   </tbody></table></div>`:'<p class="muted" style="margin:0">Nenhum ciclo ainda. Crie um para cada campanha de captação desta UN.</p>'}
+   <div class="bu-cnt"><button class="btn sm" data-act="ciclo-add" data-v="">+ Ciclo de captação</button>${sug.map(n=>`<button class="chip" data-act="ciclo-add" data-v="${esc(n)}">+ ${esc(n)}</button>`).join('')}</div>
+   ${cicloTimeline([...L.map(cicloItem),...cs.slice(0,20).map(cursoItem)])}
+  </section>`;
+}
+function ciclosGeralHtml(){
+  const L=ciclosTodos().filter(c=>c.camp_ini||c.insc_ini||c.camp_fim);
+  const cs=cur.cursos.filter(c=>c.abertura&&c.encerramento&&!c.un);
+  if(!L.length&&!cs.length) return `<section class="block"><div class="block-h"><h3>Calendário de captação</h3><p>Todas as UNs na mesma linha do tempo.</p></div><p class="empty">Cadastre os ciclos de captação na aba de cada UN (campanha, inscrições, matrículas e aulas) e as datas de abertura e encerramento dos cursos. A linha do tempo de todas as UNs aparece aqui.</p></section>`;
+  const ag=L.filter(c=>cicloSituacao(c).k==='agora');
+  return `<section class="block"><div class="block-h"><h3>Calendário de captação</h3><p>${ag.length?`${pl(ag.length,'ciclo em captação agora','ciclos em captação agora')}. `:''}Todas as UNs na mesma linha do tempo.</p></div>
+   ${cicloTimeline([...L.sort((a,b)=>String(a.camp_ini||a.insc_ini).localeCompare(String(b.camp_ini||b.insc_ini))).map(cicloItem),...cs.slice(0,25).map(cursoItem)])}
+   ${cs.length>25?`<p class="muted" style="font-size:12.5px;margin:0">Mostrando 25 de ${cs.length} cursos com datas. Todos estão na aba Outros cursos.</p>`:''}</section>`;
+}
+function ciclosAgoraHtml(){ // para a Visão geral do diagnóstico
+  const h=cHoje(), L=ciclosTodos().filter(c=>{ const st=cicloSituacao(c); if(st.k==='agora') return true; const ini=cDt(c.camp_ini||c.insc_ini); return st.k==='futuro'&&ini&&(ini-h)/864e5<=60; });
+  if(!L.length) return '';
+  return `<section class="block"><div class="block-h"><h3>Captação agora e nos próximos 60 dias</h3><button class="btn sm" data-act="bu-tab" data-v="geral">Ver calendário</button></div>
+   <div class="xlist">${L.map(c=>{ const st=cicloSituacao(c); return `<div class="xitem ${st.k==='agora'?'alta':'media'}"><span class="t">${esc(c.nome||'Ciclo')} · ${esc((UNS.find(u=>u.id===c.un)||{}).nome||'')}<small>${st.t}${c.mat_ini?` · matrículas a partir de ${cFmt(c.mat_ini)}`:''}${c.aulas?` · aulas em ${cFmt(c.aulas)}`:''}</small></span></div>`; }).join('')}</div></section>`;
+}
+function cicloClick(act,d){
+  if(act==='ciclo-add'){ const un=ui.baseUn; if(!UNS.some(u=>u.id===un)) return true; const L=ciclosTodos(); L.push({id:uid(),un,nome:d.v||'',camp_ini:'',insc_ini:'',mat_ini:'',camp_fim:'',aulas:''}); ciclosSalvar(L); render(); return true; }
+  if(act==='ciclo-del'){ ciclosSalvar(ciclosTodos().filter(c=>c.id!==d.id)); render(); return true; }
+  return false;
+}
+['change'].forEach(ev=>document.addEventListener(ev,e=>{ const t=e.target; if(!t||!t.dataset||t.dataset.ciclo==null) return; const L=ciclosTodos(), c=L.find(x=>x.id===t.dataset.ciclo); if(!c) return; c[t.dataset.f]=t.value; ciclosSalvar(L); render(); }));

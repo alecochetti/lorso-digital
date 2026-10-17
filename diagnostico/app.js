@@ -506,7 +506,7 @@ function cursoGrupos(L){
 function cursoTotHtml(G){
   const s=f=>{ const v=G.map(c=>num(c[f])).filter(x=>x!=null); return v.length?v.reduce((a,b)=>a+b,0):null; };
   const n=v=>v==null?'—':v.toLocaleString('pt-BR');
-  return `<tr class="curso-tot"><td></td><td>Total do curso · ${G.length} turnos</td><td></td><td>${G.map(c=>c.turno||'?').join(' + ')}</td><td></td><td>${n(s('turmas'))}</td><td>${n(s('vagas'))}</td><td>${n(s('meta'))}</td><td>${n(s('matriculados'))}</td><td></td><td></td><td></td></tr>`;
+  return `<tr class="curso-tot"><td></td><td>Total do curso · ${G.length} turnos</td><td></td><td>${G.map(c=>c.turno||'?').join(' + ')}</td><td></td><td>${n(s('turmas'))}</td><td>${n(s('vagas'))}</td><td>${n(s('meta'))}</td><td>${n(s('matriculados'))}</td><td></td><td></td><td></td><td></td><td></td></tr>`;
 }
 function baseHtml(INS){
   const rows=capRows(); const tot=k=>{const v=rows.map(r=>r[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0):null;};
@@ -516,7 +516,7 @@ function baseHtml(INS){
   const opt=(v,list)=>list.map(o=>`<option ${v===o?'selected':''}>${o}</option>`).join('');
   const pv=ui.cursoPreview;
   const tab=ui.baseUn&&(ui.baseUn==='geral'||ui.baseUn===BU_OUTROS||UNS.some(u=>u.id===ui.baseUn))?ui.baseUn:'geral';
-  const cursosTabela=L0=>{ const L=cursoGrupos(L0); return `${L.length?`<div class="tblw"><table class="tbl tcursos"><thead><tr><th>UN</th><th style="min-width:220px">Curso</th><th>Modalidade</th><th>Turno</th><th>Mensalidade</th><th>Turmas</th><th>Alunos</th><th>Meta</th><th>Matriculados</th><th>Status</th><th>Lançamento</th><th></th></tr></thead><tbody>${L.map(({c,irmao,ultimo,grupo})=>`<tr class="${irmao?'irmao':''}">
+  const cursosTabela=L0=>{ const L=cursoGrupos(L0); return `${L.length?`<div class="tblw"><table class="tbl tcursos"><thead><tr><th>UN</th><th style="min-width:220px">Curso</th><th>Modalidade</th><th>Turno</th><th>Mensalidade</th><th>Turmas</th><th>Alunos</th><th>Meta</th><th>Matriculados</th><th>Abertura</th><th>Encerramento</th><th>Status</th><th>Lançamento</th><th></th></tr></thead><tbody>${L.map(({c,irmao,ultimo,grupo})=>`<tr class="${irmao?'irmao':''}">
       <td><select data-curso="${c.id}" data-f="un" aria-label="UN"><option value=""></option>${UNS.map(u=>`<option value="${u.id}" ${c.un===u.id?'selected':''}>${u.nome}</option>`).join('')}</select></td>
       <td>${irmao?`<span class="curso-irm">↳ ${esc(c.nome)}</span>`:`<input data-curso="${c.id}" data-f="nome" value="${esc(c.nome)}" aria-label="Curso">${c.obs?`<small class="curso-obs">${esc(c.obs)}</small>`:''}`}</td>
       <td><select data-curso="${c.id}" data-f="modalidade" aria-label="Modalidade"><option value=""></option>${opt(c.modalidade,['Presencial','EAD','Híbrido'])}</select></td>
@@ -526,6 +526,8 @@ function baseHtml(INS){
       <td><input data-curso="${c.id}" data-f="vagas" value="${esc(c.vagas)}" inputmode="decimal" aria-label="Alunos (capacidade)" style="width:80px"></td>
       <td><input data-curso="${c.id}" data-f="meta" value="${esc(c.meta||'')}" inputmode="decimal" aria-label="Meta de captação" style="width:80px"></td>
       <td><input data-curso="${c.id}" data-f="matriculados" value="${esc(c.matriculados)}" inputmode="decimal" aria-label="Matriculados" style="width:90px"></td>
+      <td><input type="date" data-curso="${c.id}" data-f="abertura" value="${esc(c.abertura||'')}" aria-label="Abertura do curso ou turma" class="dt"></td>
+      <td><input type="date" data-curso="${c.id}" data-f="encerramento" value="${esc(c.encerramento||'')}" aria-label="Encerramento do curso ou turma" class="dt ${c.encerramento&&c.encerramento<new Date().toISOString().slice(0,10)?'passou':''}"></td>
       <td><select data-curso="${c.id}" data-f="status" aria-label="Status">${opt(c.status,['Vigente','Lançamento','Descontinuado'])}</select></td>
       <td><input data-curso="${c.id}" data-f="lancamento" value="${esc(c.lancamento)}" placeholder="mês/ano" aria-label="Lançamento" style="width:90px"></td>
       <td class="x"><button class="xbtn" data-act="curso-del" data-id="${c.id}" aria-label="Remover ${irmao?'este turno':'curso'}">×</button></td></tr>${ultimo&&grupo.length>1?cursoTotHtml(grupo):''}`).join('')}</tbody></table></div>`:'<p class="empty">Nenhum curso ainda. Adicione um por um ou cole a lista da planilha da instituição.</p>'}
@@ -540,12 +542,13 @@ function baseHtml(INS){
   if(tab==='geral') corpo=`
    <div class="stats"><div class="stat"><span class="si">${ico('base',20)}</span><b>${vig}</b><span>cursos vigentes</span></div><div class="stat"><span class="si">${ico('lancamento',20)}</span><b>${lan}</b><span>lançamentos previstos</span></div><div class="stat"><span class="si">${ico('equipe',20)}</span><b>${tv!=null?tv.toLocaleString('pt-BR'):'—'}</b><span>alunos no ciclo</span></div><div class="stat ${tv&&tc!=null&&tc/tv<0.7?'warn':''}"><span class="si">${ico('visao',20)}</span><b>${tv&&tc!=null?pct(tc/tv):'—'}</b><span>ocupação da capacidade</span>${tv&&tc!=null?`<span class="sp"><i style="width:${Math.min(100,tc/tv*100)}%"></i></span>`:''}</div><div class="stat ${tm&&tc!=null&&tc/tm<0.8?'bad':''}"><span class="si">${ico('alvo',20)}</span><b>${tm&&tc!=null?pct(tc/tm):'—'}</b><span>da meta de captação</span>${tm&&tc!=null?`<span class="sp"><i style="width:${Math.min(100,tc/tm*100)}%"></i></span>`:''}</div></div>
    ${buGeralHtml()}
+   ${ciclosGeralHtml()}
    ${fontesHtml()}
    <section class="block"><div class="block-h"><h3>Cursos</h3><p>${pl(cur.cursos.length,'curso cadastrado','cursos cadastrados')}. A tabela de cada UN fica na aba dela.</p></div>
     ${cur.cursos.length?`<div class="bu-cnt">${[...UNS.map(u=>[u.id,u.nome,cur.cursos.filter(c=>c.un===u.id).length]),[BU_OUTROS,'Sem UN',cur.cursos.filter(c=>!c.un).length]].filter(x=>x[2]).map(([id,nm,n])=>`<button class="chip" data-act="bu-tab" data-v="${id}">${esc(nm)} · ${n}</button>`).join('')}</div>`:'<p class="empty">Nenhum curso ainda. Cole a lista do site, suba a planilha nas fontes ou adicione um por um.</p>'}
     ${colar}${cur.cursos.length?'':'<div><button class="btn sm" data-act="curso-add">+ Curso</button></div>'}</section>
    <section class="block"><div class="block-h"><h3>Contexto da instituição</h3><p>O que vale para todas as UNs. O que é de uma UN fica na aba dela.</p></div><div class="fields">${fieldHtml('base.calendario','Calendário de captação: períodos, vestibulares, editais e marcos do ano','t')}${fieldHtml('base.concorrentes','Principais concorrentes e como se posicionam','t')}${fieldHtml('base.diferenciais','Diferenciais da instituição (o que ela tem e o concorrente não)','t')}</div></section>`;
-  else if(tab===BU_OUTROS) corpo=`<section class="block"><div class="block-h"><h3>Outros cursos</h3><p>Curta duração, extensão, educação executiva e cursos sem UN. Escolha a UN na primeira coluna para levar o curso para a aba dela.</p></div>${cursosTabela(cur.cursos.filter(c=>!c.un))}</section>`;
+  else if(tab===BU_OUTROS) corpo=`<section class="block"><div class="block-h"><h3>Outros cursos</h3><p>Curta duração, extensão, educação executiva e cursos sem UN. Cada um tem data de abertura e de encerramento. Escolha a UN na primeira coluna para levar o curso para a aba dela.</p></div>${(()=>{ const cs=cur.cursos.filter(c=>!c.un&&c.abertura&&c.encerramento); const h=new Date().toISOString().slice(0,10); const ab=cs.filter(c=>c.abertura<=h&&c.encerramento>=h).length, prox=cs.filter(c=>c.abertura>h).length; return cs.length?`<p class="muted" style="margin:0">${pl(ab,'curso aberto agora','cursos abertos agora')} · ${pl(prox,'abre em breve','abrem em breve')} · ${pl(cur.cursos.filter(c=>!c.un&&!(c.abertura&&c.encerramento)).length,'sem datas','sem datas')}</p>${cicloTimeline(cs.sort((a,b)=>a.abertura.localeCompare(b.abertura)).slice(0,40).map(cursoItem))}`:''; })()}${cursosTabela(cur.cursos.filter(c=>!c.un))}</section>`;
   else corpo=buUnHtml(tab,cursosTabela,pctCell);
   return `<section class="panel">
    <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">Passo 1 · <b>Base de conhecimento</b></span><h2 style="margin-top:8px">Base de conhecimento</h2><p class="lead">Antes das entrevistas: o que a instituição vende, por quanto, com quantos alunos, quanto investe e quanto já captou, por unidade de negócio. Esses números entram nos cruzamentos com as expectativas da reitoria.</p></div></header>
@@ -558,9 +561,10 @@ const UN_ALIAS=[['pos',/p[oó]s|mba|especializa/i],['mestrado',/mestrado|doutora
 const MOD_ALIAS=[['Híbrido',/semi ?presencial|h[ií]brid|flex|blended/i],['EAD',/\bead\b|dist[aâ]ncia|online|on-line|live|ao vivo|remoto/i],['Presencial',/presencial/i]];
 const modDe=t=>(MOD_ALIAS.find(([,re])=>re.test(t||''))||[])[0]||'';
 const ehSoModalidade=t=>/^(presencial|semi ?presencial|ead|a dist[aâ]ncia|h[ií]brido|flex|live|online|ao vivo|blended)$/i.test((t||'').trim());
-const CURSO_COLS=[['matriculados',/matricul|captad|inscrit|ativos|realizado/i],['turmas',/turma/i],['meta',/meta/i],['vagas',/vaga|capacidade|alunos|lota[cç]/i],['preco',/mensalidade|pre[cç]o|valor|ticket/i],['modalidade',/modalidade|formato/i],['turno',/turno|per[ií]odo/i],['status',/status|situa[cç]/i],['lancamento',/lan[cç]amento|in[ií]cio/i],['un',/^un$|unidade|n[ií]vel|segmento|[aá]rea de neg/i],['nome',/curso|programa|nome|produto/i]];
+const CURSO_COLS=[['matriculados',/matricul|captad|inscrit|ativos|realizado/i],['turmas',/turma/i],['meta',/meta/i],['vagas',/vaga|capacidade|alunos|lota[cç]/i],['preco',/mensalidade|pre[cç]o|valor|ticket/i],['modalidade',/modalidade|formato/i],['turno',/turno|per[ií]odo/i],['status',/status|situa[cç]/i],['abertura',/abertura|in[ií]cio|come[cç]o|come[cç]a/i],['encerramento',/encerra|t[eé]rmino|\bfim\b|final/i],['lancamento',/lan[cç]amento/i],['un',/^un$|unidade|n[ií]vel|segmento|[aá]rea de neg/i],['nome',/curso|programa|nome|produto/i]];
 function sepDe(txt){ const L=txt.split(/\r?\n/).filter(l=>l.trim()).slice(0,20); const c=ch=>L.filter(l=>l.split(ch).length>=3).length; return c('\t')>=L.length/2?'\t':c(';')>=L.length/2?';':c(',')>=L.length/2?',':null; }
 function linhaCsv(l,sep){ if(sep!==','&&sep!==';') return l.split(sep).map(x=>x.trim()); const out=[]; let a='',q=false; for(let i=0;i<l.length;i++){ const ch=l[i]; if(ch==='"'){ if(q&&l[i+1]==='"'){a+='"';i++;} else q=!q; } else if(ch===sep&&!q){ out.push(a.trim()); a=''; } else a+=ch; } out.push(a.trim()); return out; }
+const dataIso=t=>{ const m=String(t||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); if(m){ const y=m[3].length===2?'20'+m[3]:m[3]; return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; } const i=String(t||'').match(/\d{4}-\d{2}-\d{2}/); return i?i[0]:''; };
 const unDeTexto=t=>/mestrado|doutorado|stricto/i.test(t||'')?'mestrado':(UN_ALIAS.find(([,re])=>re.test(t||''))||[])[0]||'';
 function cursoParseTabela(txt,exigeCabecalho){
   const sep=sepDe(txt)||'\t'; const linhas=txt.split(/\r?\n/).filter(l=>l.trim()&&!/^## Aba:/.test(l)).map(l=>linhaCsv(l,sep));
@@ -575,7 +579,7 @@ function cursoParseTabela(txt,exigeCabecalho){
     const st=/lan[cç]/i.test(g('status'))?'Lançamento':/descon/i.test(g('status'))?'Descontinuado':'Vigente';
     const md=g('modalidade'), mod=typeof modDe==='function'&&modDe(md)?modDe(md):(md?'Presencial':'');
     const tur=turnoDe(g('turno'));
-    return {id:uid(),un:mapa.un!=null?unDeTexto(unTxt):unAtual,nome,modalidade:mod,turno:tur,preco:g('preco').replace(/r\$\s*/i,''),turmas:g('turmas'),vagas:g('vagas'),meta:g('meta'),matriculados:g('matriculados'),status:st,lancamento:g('lancamento'),obs:''};
+    return {id:uid(),un:mapa.un!=null?unDeTexto(unTxt):unAtual,nome,modalidade:mod,turno:tur,preco:g('preco').replace(/r\$\s*/i,''),turmas:g('turmas'),vagas:g('vagas'),meta:g('meta'),matriculados:g('matriculados'),abertura:dataIso(g('abertura')),encerramento:dataIso(g('encerramento')),status:st,lancamento:g('lancamento'),obs:''};
   }).filter(Boolean);
 }
 /* Junta cursos novos com a tabela: o que já existe (mesmo nome e UN) só ganha os números que faltam ou mudaram. */
@@ -587,7 +591,7 @@ function cursosMesclar(lista,simular){
     if(c.turno&&cands.length>1){ const mesmo=cands.filter(x=>x.turno===c.turno); cands=mesmo.length?mesmo:cands.filter(x=>!x.turno); }
     cands=c.un?cands.filter(x=>(x.un===c.un||!x.un)&&obsOk(x)):c.obs?cands.filter(x=>!x.un&&obsOk(x)):cands;
     const ex=cands.length===1||c.un?cands[0]:null;
-    if(ex){ let mud=false; ['un','modalidade','turno','preco','turmas','vagas','meta','matriculados','lancamento'].forEach(f=>{ if(c[f]&&c[f]!==ex[f]){ if(!simular) ex[f]=c[f]; mud=true; } }); if(mud) atual++; }
+    if(ex){ let mud=false; ['un','modalidade','turno','preco','turmas','vagas','meta','matriculados','abertura','encerramento','lancamento'].forEach(f=>{ if(c[f]&&c[f]!==ex[f]){ if(!simular) ex[f]=c[f]; mud=true; } }); if(mud) atual++; }
     else { if(!simular){ const sib=cur.cursos.find(x=>chN(x)===chN(c)&&x.un===c.un&&(!c.modalidade||x.modalidade===c.modalidade)); const n={turmas:'',meta:'',...c};
       if(sib){ ['modalidade','obs','preco','status'].forEach(f=>{ if(!n[f]) n[f]=sib[f]; }); cur.cursos.splice(cur.cursos.lastIndexOf(cur.cursos.filter(x=>chN(x)===chN(c)&&x.un===c.un).pop())+1,0,n); } else cur.cursos.push(n); } novos++; } });
   if(!simular) touch(true); return {novos,atual};
@@ -1334,6 +1338,7 @@ function renderVisao(INS){
   $('#main').innerHTML=`${typeof guiaBanner==='function'?guiaBanner():''}<section class="panel">
    <header class="ph" style="grid-template-columns:minmax(0,1fr)"><div><span class="eyebrow">${esc(saudacaoData())}</span><h2 style="margin-top:8px">${esc(saudacao())}</h2><label class="field" style="max-width:380px;margin-top:12px"><span class="lbl">Nome do cliente</span><input id="nome-diag" value="${esc(cur.nome)}"></label><p class="lead">Fase 1 · Visão geral do diagnóstico. Onde a coleta está, o nível de cada área e o que já aparece de incongruência. Clique numa área para abrir as perguntas.</p></div></header>
    ${typeof prazoHtml==='function'?prazoHtml():''}
+   ${typeof ciclosAgoraHtml==='function'?ciclosAgoraHtml():''}
    <div class="kpis">
     <div class="kpi"><b>${g.level?'N'+g.level:'—'}</b><span>${g.level?esc(LVL[g.level]):'nível geral ainda sem nota'}${g.score!=null?' · '+dec(g.score,2):''}</span></div>
     <div class="kpi"><b>${tt?Math.round(aa/tt*100):0}%</b><span>das perguntas respondidas (${aa} de ${tt})</span></div>
@@ -1839,7 +1844,7 @@ const ARR_DB={
  kpis:{t:'indicadores',to:x=>({id:x.id,nome:nz(x.nome),un:nz(x.un),meta:nz(x.meta),realizado:nz(x.real)}),from:r=>({id:r.id,nome:r.nome||'',un:r.un||'',meta:r.meta||'',real:r.realizado||''})},
  dores:{t:'dores',to:x=>({id:x.id,descricao:x.txt,area:nz(x.area),etapa:nz(x.etapa),tipo:nz(x.tipo),gravidade:toInt(x.sev),frequencia:nz(x.freq),relatado_por:nz(x.quem),sistema:nz(x.sistema),data:nz(x.data)}),from:r=>({id:r.id,txt:r.descricao,area:r.area||'',etapa:r.etapa||'',tipo:r.tipo||'',sev:String(r.gravidade||2),freq:r.frequencia||'',quem:r.relatado_por||'',sistema:r.sistema||'',data:r.data||''})},
  fontes:{t:'fontes',to:x=>({id:x.id,tipo:x.tipo||'texto',titulo:nz(x.titulo),url:nz(x.url),conteudo:nz(x.conteudo),dados:x.dados||null}),from:r=>({id:r.id,tipo:r.tipo||'texto',titulo:r.titulo||'',url:r.url||'',conteudo:r.conteudo||'',dados:r.dados||null,created_at:r.created_at})},
- cursos:{t:'cursos',to:x=>({id:x.id,un:nz(x.un),nome:nz(x.nome),modalidade:nz(x.modalidade),turno:nz(x.turno),preco:nz(x.preco),turmas:nz(x.turmas),vagas:nz(x.vagas),meta:nz(x.meta),matriculados:nz(x.matriculados),status:x.status||'Vigente',lancamento:nz(x.lancamento),obs:nz(x.obs)}),from:r=>({id:r.id,un:r.un||'',nome:r.nome||'',modalidade:r.modalidade||'',turno:r.turno||'',preco:r.preco||'',turmas:r.turmas||'',vagas:r.vagas||'',meta:r.meta||'',matriculados:r.matriculados||'',status:r.status||'Vigente',lancamento:r.lancamento||'',obs:r.obs||''})},
+ cursos:{t:'cursos',to:x=>({id:x.id,un:nz(x.un),nome:nz(x.nome),modalidade:nz(x.modalidade),turno:nz(x.turno),preco:nz(x.preco),turmas:nz(x.turmas),vagas:nz(x.vagas),meta:nz(x.meta),matriculados:nz(x.matriculados),abertura:nz(x.abertura),encerramento:nz(x.encerramento),status:x.status||'Vigente',lancamento:nz(x.lancamento),obs:nz(x.obs)}),from:r=>({id:r.id,un:r.un||'',nome:r.nome||'',modalidade:r.modalidade||'',turno:r.turno||'',preco:r.preco||'',turmas:r.turmas||'',vagas:r.vagas||'',meta:r.meta||'',matriculados:r.matriculados||'',abertura:r.abertura||'',encerramento:r.encerramento||'',status:r.status||'Vigente',lancamento:r.lancamento||'',obs:r.obs||''})},
  iniciativas:{t:'iniciativas',to:x=>({id:x.id,titulo:nz(x.titulo),bloco:nz(x.bloco),area:nz(x.area),horizonte:nz(x.horizonte),impacto:toInt(x.impacto),esforco:toInt(x.esforco),risco:toInt(x.risco),dependencias:nz(x.dependencias),alinhamento:nz(x.alinhamento),recomendacao:nz(x.recomendacao),motivo:nz(x.motivo),indicador:nz(x.indicador),ordem:toInt(x.ordem)??0}),from:r=>({id:r.id,titulo:r.titulo||'',bloco:r.bloco||'',area:r.area||'',horizonte:r.horizonte||'',impacto:r.impacto??'',esforco:r.esforco??'',risco:r.risco??'',dependencias:r.dependencias||'',alinhamento:r.alinhamento||'',recomendacao:r.recomendacao||'',motivo:r.motivo||'',indicador:r.indicador||'',ordem:r.ordem||0})},
  sistemas:{t:'sistemas',to:x=>({id:x.id,nome:nz(x.nome),uso:nz(x.uso),usuarios:nz(x.quem),satisfacao:toInt(x.satisf),integra:nz(x.integra),custo_mensal:nz(x.custo),problemas:nz(x.prob)}),from:r=>({id:r.id,nome:r.nome||'',uso:r.uso||'',quem:r.usuarios||'',satisf:r.satisfacao!=null?String(r.satisfacao):'',integra:r.integra||'',custo:r.custo_mensal||'',prob:r.problemas||''})},
 };
@@ -2040,6 +2045,7 @@ document.addEventListener('click',e=>{
   if(act.startsWith('lt-')&&typeof leituraClick==='function'&&leituraClick(act,d)) return;
   if(act==='cap-somar'&&typeof capSomar==='function'){ capSomar(d.v||''); return; }
   if(act==='bu-tab'){ ui.baseUn=d.v; ui.view='fases'; ui.stage='diagnostico'; ui.dstep='base'; render(); window.scrollTo({top:0}); return; }
+  if(act.startsWith('ciclo-')&&typeof cicloClick==='function'&&cicloClick(act,d)) return;
   if(act.startsWith('pz-')&&typeof prazoClick==='function'&&prazoClick(act,d)) return;
   if(act.startsWith('hr-')&&typeof horasClick==='function'&&horasClick(act,d)) return;
   if(act==='sb-open'){ ui.sbOpen=true; document.body.classList.add('sb-on'); const f=document.querySelector('#sb .sn.on')||document.querySelector('#sb .sn'); f&&f.focus(); return; }
