@@ -40,12 +40,29 @@ function cxSinais(qid){
 }
 function cxTexto(qid){ const r=cxSinais(qid); return r?'Do diagnóstico:\n'+r.S.map(s=>'- '+s.t).join('\n'):''; }
 
+/* ---------- modo automático: o diagnóstico responde, a LORSO pode ajustar ---------- */
+function cxManuais(){ try{ return new Set(JSON.parse(cur.campos['cx.manual']||'[]')); }catch(e){ return new Set(); } }
+function cxSetManual(q,on){ const m=cxManuais(); on?m.add(q):m.delete(q); cur.campos['cx.manual']=m.size?JSON.stringify([...m]):''; }
+let cxRodando=false;
+function cxAuto(){
+  if(cxRodando||!cur||(typeof me!=='undefined'&&me&&me.papel==='cliente')) return;
+  cxRodando=true; let mudou=false; const man=cxManuais();
+  try{ Object.keys(CX).forEach(q=>{ if(man.has(q)) return; const r=cxSinais(q); if(!r||!r.sug) return;
+    if(cur.resp[q]!==r.sug){ cur.resp[q]=r.sug; mudou=true; }
+    const t=cxTexto(q), n=String(cur.notas[q]||''); if((!n||n.startsWith('Do diagnóstico:'))&&n!==t){ cur.notas[q]=t; mudou=true; } }); }
+  finally{ cxRodando=false; }
+  if(mudou&&typeof touch==='function') touch(false);
+}
+if(typeof computeAll==='function'){ const _ca=computeAll; computeAll=function(){ try{ cxAuto(); }catch(e){ console.warn('cxAuto',e); } return _ca.apply(this,arguments); }; }
+document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('[data-act="opt"]'); if(b&&cur&&CX[b.dataset.q]) cxSetManual(b.dataset.q,true); },true);
+
 function sugestaoHtml(qid){
   if(!cur||!CX[qid]) return '';
-  const r=cxSinais(qid), atual=cur.resp[qid];
+  const r=cxSinais(qid), atual=cur.resp[qid], manual=cxManuais().has(qid);
   if(!r.S.length) return `<div class="cx vazio"><b>Ainda sem provas do diagnóstico.</b> <span>Esta pergunta se apoia em: ${CX[qid].q.map(id=>{ const p=cxPergunta(id); return p?`<button class="chip" data-act="goto" data-v="${p.a.id}">${esc(p.a.nome)} · ${esc(p.q[1])}</button>`:''; }).join(' ')}</span></div>`;
-  return `<div class="cx"><div class="cx-h"><b>${r.sug?`Sugestão do diagnóstico: N${r.sug} · ${LVL[r.sug]}`:'Provas do diagnóstico'}</b>
-    <span class="cx-acts">${r.sug&&atual!==r.sug?`<button class="btn sm" data-act="cx-aplicar" data-q="${qid}" data-n="${r.sug}">Aplicar N${r.sug} e anotar as provas</button>`:''}<button class="btn sm" data-act="cx-anotar" data-q="${qid}">Copiar provas para a observação</button></span></div>
+  const titulo=!r.sug?'Provas do diagnóstico':manual?`Ajustado por você para ${atual?`N${atual}`:'sem nível'}. O diagnóstico indica N${r.sug} · ${LVL[r.sug]}`:`Preenchido pelo diagnóstico: N${r.sug} · ${LVL[r.sug]}`;
+  return `<div class="cx ${manual?'manual':'auto'}"><div class="cx-h"><b>${titulo}</b>
+    <span class="cx-acts">${manual&&r.sug?`<button class="btn sm" data-act="cx-auto" data-q="${qid}">Voltar ao automático</button>`:''}${!r.sug?'':manual?'':`<span class="tag ok">automático</span>`}</span></div>
    <ul>${r.S.map(s=>`<li class="${s.base?'base':''}">${esc(s.t)} <button class="cx-ir" data-act="${s.ir[0]==='area'?'goto':s.ir[0]==='bu'?'bu-tab':'view'}" data-v="${s.ir[1]}">ver</button></li>`).join('')}</ul>
    ${r.falta.length?`<small>Falta responder nas entrevistas: ${r.falta.map(p=>`${esc(p.a.nome)} · ${esc(p.q[1])}`).join('; ')}</small>`:''}</div>`;
 }
@@ -54,6 +71,7 @@ function cxAnotar(qid){ const t=cxTexto(qid); if(!t) return; const atual=String(
 function conexoesClick(act,d){
   if(act==='cx-aplicar'){ cur.resp[d.q]=+d.n; cxAnotar(d.q); touch(true); toast(`N${d.n} aplicado e provas anotadas`); return true; }
   if(act==='cx-anotar'){ cxAnotar(d.q); touch(true); toast('Provas copiadas para a observação'); return true; }
+  if(act==='cx-auto'){ cxSetManual(d.q,false); const n=String(cur.notas[d.q]||''); if(!n.trim()) cur.notas[d.q]=''; touch(true); toast('Voltou para o automático'); return true; }
   if(act==='cx-preencher'){ cxPreencher(d.v); return true; }
   return false;
 }
