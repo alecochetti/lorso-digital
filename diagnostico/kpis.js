@@ -111,7 +111,7 @@ function kpiAreaHtml(a){
   return `<section class="block kx"><div class="block-h"><h3>KPIs que esta área reporta</h3><p>Pergunte ao responsável o que ele mede, com que frequência, para quem e de onde vem o número. Os números que já estão no roteiro ou na Base aparecem sozinhos.</p></div>
    <div class="kx-res"><span><b>${rep}</b> medidos e reportados</span><span><b>${med}</b> medidos sem reporte</span><span class="${nao?'falta':''}"><b>${nao}</b> não medidos</span><span class="muted">${lista.length} indicadores no total</span></div>
    <div class="kx-list">${est.map(([k,e])=>`<div class="kx-row st-${e.st||'vazio'}">
-     <div class="kx-n"><b>${k.extra?'Indicador citado pelo responsável':esc(k.n)}${k.c?' <span class="kx-tag ess" title="Indicador essencial">essencial</span>':''}${k.ed?' <span class="kx-tag ed" title="Incluído pela LORSO para o mercado educacional">educação</span>':''}</b>${k.extra?`<input data-kx="${a}" data-kid="${k.id}" data-kf="n" value="${esc(k.n)}" aria-label="Nome do indicador">`:`<small>${esc(k.d)}</small>`}${k.ref?`<small class="kx-ref">Referência: ${esc(k.ref)}</small>`:''}${e.auto!=null?`<small class="kx-auto">No sistema: ${esc(e.auto)}</small>`:''}</div>
+     <div class="kx-n"><b>${k.extra?'Indicador citado pelo responsável':esc(k.n)}${k.c?' <span class="kx-tag ess" title="Indicador essencial">essencial</span>':''}${k.ed?' <span class="kx-tag ed" title="Incluído pela LORSO para o mercado educacional">educação</span>':''}</b>${k.extra?`<input data-kx="${a}" data-kid="${k.id}" data-kf="n" value="${esc(k.n)}" placeholder="Nome do indicador, ex.: custo por visita ao campus" aria-label="Nome do indicador">`:`<small>${esc(k.d)}</small>`}${k.ref?`<small class="kx-ref">Referência: ${esc(k.ref)}</small>`:''}${e.auto!=null?`<small class="kx-auto">No sistema: ${esc(e.auto)}</small>`:''}</div>
      <label><span>Situação${e.sis?' <i>número já no sistema</i>':''}</span><select data-kx="${a}" data-kid="${k.id}" data-kf="st"><option value="">Perguntar</option>${opt(KX_ST,e.st)}</select></label>
      <label><span>Frequência</span><select data-kx="${a}" data-kid="${k.id}" data-kf="fr"><option value=""></option>${opt(KX_FR,e.fr)}</select></label>
      <label><span>Reporta para</span><input data-kx="${a}" data-kid="${k.id}" data-kf="para" value="${esc(e.para||'')}" placeholder="Ex.: reitoria"></label>
@@ -119,7 +119,7 @@ function kpiAreaHtml(a){
      <label><span>Atual</span><input data-kx="${a}" data-kid="${k.id}" data-kf="atual" value="${esc(e.atual||'')}" placeholder="${e.auto!=null?'ver no sistema':''}"></label>
      <label><span>Meta</span><input data-kx="${a}" data-kid="${k.id}" data-kf="meta" value="${esc(e.meta||'')}"></label>
      ${k.extra?`<button class="xbtn" data-act="kx-del" data-a="${a}" data-v="${k.id}" aria-label="Remover indicador">×</button>`:''}</div>`).join('')}</div>
-   <button class="chip" data-act="kx-add" data-a="${a}">+ Indicador citado pelo responsável</button></section>`;
+   <div class="kx-mais"><button class="btn" data-act="kx-add" data-a="${a}">+ Outro indicador que a área mede</button><span class="muted">Use quando o responsável citar um KPI que não está na lista.</span></div></section>`;
 }
 
 /* compilado para Resultados */
@@ -146,7 +146,7 @@ document.addEventListener('change',e=>{ const el=e.target.closest&&e.target.clos
 document.addEventListener('input',e=>{ const el=e.target.closest&&e.target.closest('[data-kx]'); if(!el||!cur||el.tagName==='SELECT') return; e.stopPropagation(); kxSet(el); touch(false); },true);
 document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('[data-act^="kx-"]'); if(!b||!cur) return; e.stopPropagation(); e.preventDefault();
   const a=b.dataset.a, o=kxLer(a);
-  if(b.dataset.act==='kx-add'){ o.extras=o.extras||[]; o.extras.push({id:'x'+uid().slice(0,8),n:''}); kxGravar(a,o); touch(true); }
+  if(b.dataset.act==='kx-add'){ o.extras=o.extras||[]; const nid='x'+uid().slice(0,8); o.extras.push({id:nid,n:''}); kxGravar(a,o); touch(true); setTimeout(()=>{ const el=document.querySelector(`[data-kx="${a}"][data-kid="${nid}"][data-kf="n"]`); if(el){ el.scrollIntoView({block:'center'}); el.focus(); } },60); }
   if(b.dataset.act==='kx-del'){ o.extras=(o.extras||[]).filter(x=>x.id!==b.dataset.v); delete o[b.dataset.v]; kxGravar(a,o); touch(true); }
 },true);
 

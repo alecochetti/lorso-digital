@@ -363,6 +363,6 @@ body.so-leitura #main input:disabled,body.so-leitura #main select:disabled,body.
 .kx-tag{display:inline-block;font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 7px;vertical-align:1px}.kx-tag.ess{background:#E0F2FE;color:#0369A1}.kx-tag.ed{background:#D1FAE5;color:#047857}
 .kx-row .xbtn{position:absolute;top:6px;right:6px}
 .kx-st{font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;white-space:nowrap;background:var(--surface-2);color:var(--muted)}.kx-st.st-reporta{background:#D1FAE5;color:#047857}.kx-st.st-mede{background:#E0F2FE;color:#0369A1}.kx-st.st-nao{background:#FDE2E7;color:#B4233A}
-.kx>.chip{margin-top:12px}
+.kx-mais{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:14px}.kx-mais .muted{font-size:12.5px}
 @media (max-width:900px){.kx-row{grid-template-columns:1fr 1fr}}
 .kx-st.st-sis{background:#F1F5F9;color:#475569}
