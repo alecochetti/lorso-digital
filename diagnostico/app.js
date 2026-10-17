@@ -512,7 +512,7 @@ function baseHtml(INS){
    <section class="block"><div class="block-h"><h3>Cursos vigentes e lançamentos</h3><p>${cur.cursos.length} cursos cadastrados</p></div>
     ${cur.cursos.length?`<div class="tblw"><table class="tbl"><thead><tr><th>UN</th><th style="min-width:200px">Curso</th><th>Modalidade</th><th>Turno</th><th>Mensalidade</th><th>Vagas</th><th>Matriculados</th><th>Status</th><th>Lançamento</th><th></th></tr></thead><tbody>${cur.cursos.map(c=>`<tr>
       <td><select data-curso="${c.id}" data-f="un" aria-label="UN"><option value=""></option>${UNS.map(u=>`<option value="${u.id}" ${c.un===u.id?'selected':''}>${u.nome}</option>`).join('')}</select></td>
-      <td><input data-curso="${c.id}" data-f="nome" value="${esc(c.nome)}" aria-label="Curso"></td>
+      <td><input data-curso="${c.id}" data-f="nome" value="${esc(c.nome)}" aria-label="Curso">${c.obs?`<small class="curso-obs">${esc(c.obs)}</small>`:''}</td>
       <td><select data-curso="${c.id}" data-f="modalidade" aria-label="Modalidade"><option value=""></option>${opt(c.modalidade,['Presencial','EAD','Híbrido'])}</select></td>
       <td><select data-curso="${c.id}" data-f="turno" aria-label="Turno"><option value=""></option>${opt(c.turno,['Diurno','Noturno','Integral','Flexível'])}</select></td>
       <td><input data-curso="${c.id}" data-f="preco" value="${esc(c.preco)}" inputmode="decimal" aria-label="Mensalidade" style="width:110px"></td>
@@ -523,17 +523,20 @@ function baseHtml(INS){
       <td class="x"><button class="xbtn" data-act="curso-del" data-id="${c.id}" aria-label="Remover curso">×</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Nenhum curso ainda. Adicione um por um ou cole a lista da planilha da instituição.</p>'}
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="curso-add">+ Curso</button></div>
     <details class="paste" data-keep="curso-paste" ${pv||ui.open['curso-paste']?'open':''}><summary>Colar lista de cursos da planilha</summary>
-     <p class="muted" style="font-size:13px">Colunas, nesta ordem: UN · Curso · Modalidade · Turno · Mensalidade · Vagas · Matriculados · Status · Lançamento. Copie direto do Excel.</p>
+     <p class="muted" style="font-size:13px">Cole a lista do site como ela vem: o nome da UN numa linha e, embaixo, um curso por linha, como "Presencial - Administração". Também aceita a tabela do Excel com as colunas UN · Curso · Modalidade · Turno · Mensalidade · Vagas · Matriculados · Status · Lançamento.</p>
      <textarea id="curso-txt" rows="5" style="width:100%;font-family:var(--mono);font-size:13px" placeholder="Graduação	Administração	Presencial	Noturno	1.290	120	96	Vigente">${esc(ui.cursoTxt||'')}</textarea>
      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="curso-ler">Ler lista</button>${pv&&pv.length?`<button class="btn sm primary" data-act="curso-aplicar">Adicionar ${pv.length} cursos</button>`:''}</div>
-     ${pv?`<p class="muted" style="font-size:13px">${pv.length} cursos reconhecidos${pv.filter(c=>!c.un).length?`, ${pv.filter(c=>!c.un).length} sem UN reconhecida (ajuste depois na tabela)`:''}.</p>`:''}
+     ${pv?`<p class="muted" style="font-size:13px">${pv.length} cursos reconhecidos${pv.length?': '+[...UNS.map(u=>[u.nome,pv.filter(c=>c.un===u.id).length]),['sem UN',pv.filter(c=>!c.un).length]].filter(x=>x[1]).map(x=>`${x[0]} ${x[1]}`).join(' · '):''}${pv.filter(c=>!c.un).length?'. Os sem UN (como curta duração e educação executiva) entram com o grupo escrito abaixo do nome; ajuste a UN na tabela se quiser':''}.</p>`:''}
     </details></section>
    <section class="block"><div class="block-h"><h3>Contexto do mercado</h3></div><div class="fields">${fieldHtml('base.calendario','Calendário de captação: períodos, vestibulares, editais e marcos do ano','t')}${fieldHtml('base.concorrentes','Principais concorrentes por UN e como se posicionam','t')}${fieldHtml('base.diferenciais','Diferenciais da instituição por UN (o que ela tem e o concorrente não)','t')}</div></section>
    <div class="pager"><span></span><button class="btn primary" data-act="dstep" data-v="reitoria">Ir para Reitoria →</button></div>
   </section>`;
 }
 const UN_ALIAS=[['pos',/p[oó]s|mba|especializa/i],['mestrado',/mestrado|doutorado|stricto/i],['colegio',/col[eé]gio|b[aá]sica|fundamental|m[eé]dio|infantil/i],['graduacao',/gradua|bacharel|licenciatura|tecn[oó]logo/i]];
-function cursoParse(txt){
+const MOD_ALIAS=[['Híbrido',/semi ?presencial|h[ií]brid|flex|blended/i],['EAD',/\bead\b|dist[aâ]ncia|online|on-line|live|ao vivo|remoto/i],['Presencial',/presencial/i]];
+const modDe=t=>(MOD_ALIAS.find(([,re])=>re.test(t||''))||[])[0]||'';
+const ehSoModalidade=t=>/^(presencial|semi ?presencial|ead|a dist[aâ]ncia|h[ií]brido|flex|live|online|ao vivo|blended)$/i.test((t||'').trim());
+function cursoParseTabela(txt){
   return txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{ const c=l.split(/\t|;/).map(x=>x.trim());
     if(/^un$|^unidade/i.test(c[0]||''))return null;
     const un=(UN_ALIAS.find(([,re])=>re.test(c[0]||''))||[])[0]||'';
@@ -542,6 +545,28 @@ function cursoParse(txt){
     const tur=/not/i.test(c[3]||'')?'Noturno':/diur|manh|tarde/i.test(c[3]||'')?'Diurno':/integ/i.test(c[3]||'')?'Integral':(c[3]?'Flexível':'');
     return {id:uid(),un,nome:c[1]||'',modalidade:mod,turno:tur,preco:c[4]||'',vagas:c[5]||'',matriculados:c[6]||'',status:st,lancamento:c[8]||'',obs:''};
   }).filter(x=>x&&x.nome);
+}
+/* Lista simples, como vem do site: o título da UN numa linha e, embaixo, "Modalidade - Curso" ou "Categoria - Curso". */
+function cursoParseLista(txt){
+  let un='', grupo=''; const out=[];
+  txt.split(/\r?\n/).map(l=>l.replace(/^\s*(?:[•·*]+|\d+[.)]|[-–]\s)\s*/,'').trim()).filter(Boolean).forEach(l=>{
+    const m=l.match(/\s[-–—]\s/);
+    if(!m){ // título de grupo
+      if(l.length>90) return;
+      grupo=l; un=(UN_ALIAS.find(([,re])=>re.test(l))||[])[0]||''; return;
+    }
+    const pre=l.slice(0,m.index).trim(), nome=l.slice(m.index+m[0].length).trim(); if(!nome) return;
+    const soMod=ehSoModalidade(pre);
+    const unLinha=(UN_ALIAS.find(([,re])=>re.test(pre))||[])[0]||'';
+    out.push({id:uid(),un:un||unLinha,nome,modalidade:modDe(pre)||modDe(grupo),turno:'',preco:'',vagas:'',matriculados:'',status:/lan[cç]amento|em breve|novo/i.test(pre)?'Lançamento':'Vigente',lancamento:'',
+      obs:soMod&&/^(presencial|ead)$/i.test(pre)?(un?'':grupo):pre});
+  });
+  return out;
+}
+function cursoParse(txt){
+  const L=txt.split(/\r?\n/).filter(l=>l.trim());
+  const tab=L.filter(l=>l.split(/\t|;/).length>=3).length;
+  return tab>=Math.max(1,L.length/2)?cursoParseTabela(txt):cursoParseLista(txt);
 }
 function direcHtml(){
   const pri=jornadaIds();
@@ -2012,7 +2037,7 @@ document.addEventListener('click',e=>{
   else if(act==='curso-add'){ cur.cursos.push({id:uid(),un:'',nome:'',modalidade:'',turno:'',preco:'',vagas:'',matriculados:'',status:'Vigente',lancamento:'',obs:''}); touch(true); const els=document.querySelectorAll('[data-curso][data-f="nome"]'); els.length&&els[els.length-1].focus(); }
   else if(act==='curso-del'){ cur.cursos=cur.cursos.filter(c=>c.id!==d.id); touch(true); }
   else if(act==='curso-ler'){ ui.cursoTxt=($('#curso-txt')||{}).value||''; ui.cursoPreview=cursoParse(ui.cursoTxt); render(); }
-  else if(act==='curso-aplicar'){ const pv=ui.cursoPreview||[]; cur.cursos.push(...pv); ui.cursoPreview=null; ui.cursoTxt=''; touch(true); toast(`${pv.length} cursos adicionados`); }
+  else if(act==='curso-aplicar'){ const ch=c=>[c.un,c.nome,c.modalidade,c.obs||''].join('|').toLowerCase(); const ja=new Set(cur.cursos.map(ch)); const pv=(ui.cursoPreview||[]).filter(c=>{ const k=ch(c); if(ja.has(k)) return false; ja.add(k); return true; }); const rep=(ui.cursoPreview||[]).length-pv.length; cur.cursos.push(...pv); ui.cursoPreview=null; ui.cursoTxt=''; touch(true); toast(`${pv.length} cursos adicionados${rep?` (${rep} já estavam na lista)`:''}`); }
   else if(act==='jornada-toggle'){ let L=jornadaIds(); L=L.includes(d.v)?L.filter(x=>x!==d.v):[...L,d.v]; if(L.length)cur.campos['jornada.ordem']=L.join('|'); else delete cur.campos['jornada.ordem']; touch(true); }
   else if(act==='jornada-up'){ const L=jornadaIds(); const i=L.indexOf(d.v); if(i>0){ [L[i-1],L[i]]=[L[i],L[i-1]]; cur.campos['jornada.ordem']=L.join('|'); touch(true);} }
   else if(act==='jornada-tarefas'){ let n=0; jornadaIds().forEach(id=>{ if(internas.some(t=>t.diagnostico_id===cur.id&&t.origem==='coleta:'+id))return; const quem=cur.campos['jornada.'+id+'.quem']; itNew({titulo:`Entrevistar ${quem||'responsável'} · ${AREA[id].nome}`,diagnostico_id:cur.id,area:id,origem:'coleta:'+id,prazo:cur.campos['jornada.'+id+'.data']||'',responsavel:cur.dono_area[id]||''}); n++; }); render(); toast(n?`${n} entrevistas criadas em Tarefas da equipe`:'As entrevistas já estão em Tarefas da equipe'); }
