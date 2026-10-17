@@ -562,7 +562,10 @@ function cursoParseTabela(txt,exigeCabecalho){
 function cursosMesclar(lista,simular){
   const chN=c=>String(c.nome||'').toLowerCase().replace(/\s+/g,' ').trim(); let novos=0, atual=0; const vistos=new Set();
   lista.forEach(c=>{ const k=[c.un,chN(c),c.modalidade,c.obs||''].join('|'); if(vistos.has(k)) return; vistos.add(k);
-    const ex=cur.cursos.find(x=>chN(x)===chN(c)&&(x.un===c.un||!x.un||!c.un)&&(!c.modalidade||!x.modalidade||x.modalidade===c.modalidade));
+    const obsOk=x=>!c.obs||!x.obs||x.obs===c.obs;
+    let cands=cur.cursos.filter(x=>chN(x)===chN(c)&&(!c.modalidade||!x.modalidade||x.modalidade===c.modalidade));
+    cands=c.un?cands.filter(x=>(x.un===c.un||!x.un)&&obsOk(x)):c.obs?cands.filter(x=>!x.un&&obsOk(x)):cands;
+    const ex=cands.length===1||c.un?cands[0]:null;
     if(ex){ let mud=false; ['un','modalidade','turno','preco','turmas','vagas','meta','matriculados','lancamento'].forEach(f=>{ if(c[f]&&c[f]!==ex[f]){ if(!simular) ex[f]=c[f]; mud=true; } }); if(mud) atual++; }
     else { if(!simular) cur.cursos.push({turmas:'',meta:'',...c}); novos++; } });
   if(!simular) touch(true); return {novos,atual};
