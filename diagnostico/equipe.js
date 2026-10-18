@@ -74,11 +74,11 @@ function lancItensDe(id,dados,html){ return new Promise((res,rej)=>{
   const tm=setInterval(()=>{ n++; try{ const m=w.contentDocument&&w.contentDocument.getElementById('m'); const mw=m&&m.contentWindow; if(mw&&typeof mw.boardItems==='function'&&mw.document.readyState==='complete'){ fim(mw.boardItems()); return; } }catch(e){ fim(null,e); return; } if(n>80) fim(null,new Error('tempo esgotado')); },150);
   document.body.appendChild(w); }); }
 /* Peças do PTC que a LORSO produz (Quem faz: LORSO ou Juntos) entram como tarefas do cliente. Editar: dentro do PTC. */
-const PTC_EQ={ideia:'A fazer',producao:'Em andamento',aprovacao:'Em revisão',agendado:'Concluída'};
+const PTC_EQ={ideia:'A fazer',producao:'Em andamento',aprovacao:'Em revisão',aprovado:'Em andamento',agendado:'Concluída'};
 async function ptcItens(){ const r=await sb.from('modulos').select('diagnostico_id,dados').eq('modulo','ptc'); if(r.error) throw r.error; const out=[];
   (r.data||[]).filter(x=>x.dados&&Array.isArray(x.dados.pecas)&&all[x.diagnostico_id]).forEach(row=>row.dados.pecas.forEach(p=>{
     if(!PTC_EQ[p.status]||p.quem==='cliente') return; const fm=(p.formatos||[]).map(k=>typeof ptFmtNome==='function'?ptFmtNome(k):k).filter(Boolean).join(', ');
-    out.push({id:'ptc:'+row.diagnostico_id+':'+p.id,titulo:p.titulo||('Peça '+(fm||'sem tema')),descricao:p.legenda||'',responsaveis:[],diagnostico_id:row.diagnostico_id,area:'',area_eq:'',projeto_id:'',prazo:p.data||'',inicio:'',prioridade:'Média',status:PTC_EQ[p.status],origem:'ptc',subtarefas:[],comentarios:[],concluida_em:p.status==='agendado'&&p.data?p.data+'T12:00:00':null,
+    out.push({id:'ptc:'+row.diagnostico_id+':'+p.id,titulo:(p.aprov&&(p.aprov.st==='revisar'||p.aprov.st==='reprovado')&&p.status!=='aprovacao'?'Ajustar: ':'')+(p.titulo||('Peça '+(fm||'sem tema'))),descricao:(p.aprov&&p.aprov.coment&&p.status!=='aprovacao'?'Cliente: '+p.aprov.coment+'\n\n':'')+(p.legenda||''),responsaveis:[],diagnostico_id:row.diagnostico_id,area:'',area_eq:'',projeto_id:'',prazo:p.data||'',inicio:'',prioridade:p.aprov&&(p.aprov.st==='revisar'||p.aprov.st==='reprovado')&&p.status!=='aprovacao'?'Alta':'Média',status:PTC_EQ[p.status],origem:'ptc',subtarefas:[],comentarios:[],concluida_em:p.status==='agendado'&&p.data?p.data+'T12:00:00':null,
       ext:{mod:'ptc',peca:p.id,quem:p.quem==='juntos'?'juntos':'lorso',resp:p.resp||'',a:fm,st:typeof ptStNome==='function'?ptStNome(p.status):p.status}}); }));
   return out; }
 async function lancCarregar(force){ if(lancCarregando||!podeInternas()) return; if(!force&&lancT) return; lancCarregando=true; lancT=Date.now();

@@ -1345,7 +1345,7 @@ function renderSide(INS){
      ${temMod('dre')||temMod('lancamento')?'<span class="sb-g">Módulos</span>':''}
      ${temMod('dre')?sideItem('dre','DRE e orçamento','view','dre',cur.mods&&cur.mods.dre&&cur.mods.dre.meses?cur.mods.dre.meses.filter(M=>M.lancado).length+'/12':''):''}
      ${temMod('lancamento')?sideItem('lancamento','Lançamento de curso','view','lancamento'):''}
-     ${temPTC()?sideItem('ptc','Plano tático (PTC)','view','ptc',(()=>{ const P=cur.mods&&cur.mods.ptc; const n=P&&Array.isArray(P.pecas)?P.pecas.filter(p=>p.status!=='publicado'&&p.data&&p.data>=today()&&p.data<=isoLocal(new Date(Date.now()+7*864e5))).length:0; return n||''; })()):''}
+     ${temPTC()?(()=>{ const P=cur.mods&&cur.mods.ptc, L=P&&Array.isArray(P.pecas)?P.pecas:[]; const ag=L.filter(p=>p.status==='aprovacao').length; const n=ag||L.filter(p=>p.status!=='publicado'&&p.data&&p.data>=today()&&p.data<=isoLocal(new Date(Date.now()+7*864e5))).length; return sideItem('ptc','Plano tático (PTC)','view','ptc',n||'',ag>0); })():''}
      ${temMod('diagnostico')?`<span class="sb-g">Operação</span>
      ${sideItem('dores','Dores e gargalos','view','dores',cur.dores.length||'')}
      ${sideItem('sistemas','Sistemas','view','sistemas',cur.sistemas.filter(y=>y.nome).length||'')}
@@ -2087,7 +2087,9 @@ async function start(session){
     const pedido=new URLSearchParams(location.search).get('cliente');
     let id=pedido&&all[pedido]?pedido:lsGet('cd.last'); if(!ok1(id)) id=Object.keys(all).find(ok1)||Object.keys(all)[0];
     const peca=new URLSearchParams(location.search).get('peca'); if(peca&&pedido&&id===pedido&&typeof ptUi==='function'){ ui.view='ptc'; Object.assign(ptUi(),{tab:'calendario',aberta:peca,est:null}); }
+    if(new URLSearchParams(location.search).get('tela')==='ptc'&&pedido&&id===pedido&&typeof ptUi==='function'){ ui.view='ptc'; Object.assign(ptUi(),{tab:'pecas',st:'aprovacao',aberta:null,est:null}); }
     if(id) await openDiag(id); else { cur=null; render(); }
+    if(typeof ptAviso==='function') ptAviso();
   }catch(e){ console.error(e); $('#main').innerHTML='<p class="loading">Não foi possível carregar. Recarregue a página.</p>'; started=false; }
 }
 async function boot(){

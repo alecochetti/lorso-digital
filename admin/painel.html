@@ -21,6 +21,10 @@
 .cli .mods{display:flex;flex-wrap:wrap;gap:8px;position:relative;z-index:2}
 .cli .mods a{font-size:13px;font-weight:700;text-decoration:none;color:var(--text);border:1px solid var(--line);border-radius:999px;padding:6px 12px}
 .cli .mods a:hover{border-color:var(--neon);color:var(--neon)}
+.ptc-ag{position:relative;z-index:2;display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text);text-decoration:none;border:1px solid rgba(14,165,233,.5);background:rgba(14,165,233,.1);border-radius:12px;padding:8px 12px;width:max-content;max-width:100%}
+.ptc-ag::before{content:"";width:8px;height:8px;border-radius:50%;background:#0EA5E9;flex-shrink:0}
+.ptc-ag.volta{border-color:rgba(226,68,92,.5);background:rgba(226,68,92,.08)}.ptc-ag.volta::before{background:#E2445C}
+.ptc-ban{margin:0 0 18px}
 .cli .go{font-weight:700;color:var(--neon);font-size:14px}
 </style>
 </head><body>
@@ -50,7 +54,7 @@
 </main>
 
 <script type="module">
-import { exigirSessao, carregarPerfil, carregarDiagnosticos, ehEquipe, sair, MODULOS, LOGO, esc } from "/admin/assets/auth.js";
+import { exigirSessao, carregarPerfil, carregarDiagnosticos, ehEquipe, sair, MODULOS, LOGO, esc, supabase } from "/admin/assets/auth.js";
 
 // Demonstrações (páginas cifradas geradas pelo _admin-src/build.mjs)
 const DEMOS = [
@@ -73,6 +77,14 @@ try {
   throw e;
 }
 const equipe = ehEquipe(perfil);
+// PTC: peças esperando a aprovação do cliente e peças que voltaram com ajuste, por cliente
+const ptc = {};
+try { const r = await supabase.from("modulos").select("diagnostico_id,dados").eq("modulo", "ptc");
+  (r.data || []).forEach((x) => { const L = Array.isArray(x.dados?.pecas) ? x.dados.pecas : [];
+    ptc[x.diagnostico_id] = { ag: L.filter((p) => p.status === "aprovacao").length, volta: L.filter((p) => p.aprov && (p.aprov.st === "revisar" || p.aprov.st === "reprovado") && p.status !== "aprovacao").length }; });
+} catch (e) { /* aviso opcional */ }
+const pl = (n, um, varios) => `${n} ${n > 1 ? varios : um}`;
+const ptcLink = (id) => `/diagnostico/?cliente=${encodeURIComponent(id)}&tela=ptc`;
 const liberados = equipe ? Object.keys(MODULOS) : Object.keys(MODULOS).filter((k) => diags.some((d) => (d.modulos || []).includes(k)));
 
 // cliente abre direto quando há um destino claro; admin e equipe sempre escolhem no painel
@@ -104,10 +116,14 @@ else {
         return `<article class="cli"><a class="abre" href="${urlDe(principal, d.id)}" aria-label="Abrir ${esc(d.nome)} em ${esc(MODULOS[principal].nome)}"></a>
           <div class="topo"><span class="logo" aria-hidden="true"><img src="${esc(d.logo || `/diagnostico/img/clientes/${encodeURIComponent(d.id)}.png`)}" alt="" data-ini="${esc(iniciais(d.nome))}"></span><span><span class="n">${esc(d.nome)}</span><br><span class="c">Abre em ${esc(MODULOS[principal].nome)}</span></span></div>
           <div class="mods">${mods.map((k) => `<a href="${urlDe(k, d.id)}">${esc(MODULOS[k].nome)}</a>`).join("")}</div>
+          ${ptc[d.id]?.ag ? `<a class="ptc-ag" href="${ptcLink(d.id)}">${pl(ptc[d.id].ag, "peça esperando aprovação", "peças esperando aprovação")}</a>` : ""}
+          ${ptc[d.id]?.volta ? `<a class="ptc-ag volta" href="${ptcLink(d.id)}">${pl(ptc[d.id].volta, "peça voltou com ajuste", "peças voltaram com ajuste")}</a>` : ""}
           <span class="go">Abrir ›</span></article>`;
       }).join("") : `<p class="c">Nenhum cliente vinculado a você ainda. Peça ao administrador para liberar.</p>`;
       $("clientes").hidden = false;
     } else {
+      const meus = diags.filter((d) => ptc[d.id]?.ag);
+      if (meus.length) $("cards").insertAdjacentHTML("beforebegin", `<div class="ptc-ban">${meus.map((d) => `<a class="ptc-ag" href="${ptcLink(d.id)}">${pl(ptc[d.id].ag, "peça esperando a sua aprovação", "peças esperando a sua aprovação")}${diags.length > 1 ? " · " + esc(d.nome) : ""}</a>`).join(" ")}</div>`);
       $("cards").innerHTML = liberados.map((k) => `<a class="card" href="${MODULOS[k].url}">
         <span class="n">${esc(MODULOS[k].nome)}</span><span class="c">${esc(MODULOS[k].texto)}</span><span class="go">Abrir ›</span></a>`).join("");
     }

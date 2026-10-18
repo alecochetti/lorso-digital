@@ -30,7 +30,17 @@ const PT_FORMATOS=[
   ['wa_disparo','whatsapp','Disparo ou lista','Mensagem curta, com imagem 1080×1080 opcional e um link só.'],
   ['em_news','email','E-mail marketing','Peça com 600 px de largura e assunto de até 50 caracteres.'],
   ['site_artigo','site','Artigo ou página','Capa 1200×630 para quando o link for compartilhado.']];
-const PT_ST=[['ideia','Ideia'],['producao','Em produção'],['aprovacao','Em aprovação'],['agendado','Agendado'],['publicado','Publicado']];
+const PT_ST=[['ideia','Ideia'],['producao','Em produção'],['aprovacao','Aguardando aprovação'],['aprovado','Aprovada'],['agendado','Agendado'],['publicado','Publicado']];
+/* aprovação do cliente: Aprovado libera a peça; Revisar e Reprovado pedem comentário e devolvem a peça para quem produz */
+const PT_DEC=[['aprovado','Aprovado'],['revisar','Revisar'],['reprovado','Reprovado']];
+const ptVoltou=p=>p.aprov&&(p.aprov.st==='revisar'||p.aprov.st==='reprovado')&&p.status!=='aprovacao';
+const ptAguardando=S=>S.pecas.filter(p=>p.status==='aprovacao');
+const ptQuemSou=()=>me?(me.nome||me.email||''):'';
+function ptRegistrar(p,st,coment){ const r={st,por:ptQuemSou(),em:new Date().toISOString(),coment:coment||''}; p.aprov=r; (p.aprovHist=p.aprovHist||[]).push(r); }
+function ptEnviarAprov(p){ p.status='aprovacao'; ptRegistrar(p,'aguardando',''); }
+function ptDecidir(p,st,coment){ ptRegistrar(p,st,coment); p.status=st==='aprovado'?'aprovado':st==='revisar'?'producao':'ideia'; }
+const ptDataHora=iso=>{ try{ return new Date(iso).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).replace(',',' às'); }catch(e){ return ''; } };
+const PT_DEC_NOME={aguardando:'Enviada para aprovação',aprovado:'Aprovada',revisar:'Pediu revisão',reprovado:'Reprovada'};
 const PT_QUEM=[['lorso','LORSO'],['cliente','Cliente'],['juntos','Juntos']];
 const PT_MIDIA=[['fotos','Fotos'],['videos','Vídeos'],['marca','Marca e logos'],['artes','Artes prontas'],['outro','Outro']];
 const PT_DIAS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -66,7 +76,7 @@ function ptOcorrencias(S,de,ate){ const out=[];
       if(S.pecas.some(p=>p.est===e.id&&p.data===iso)) continue;
       out.push({virtual:true,id:'v:'+e.id+':'+iso,est:e.id,data:iso,titulo:e.nome,formatos:e.formatos||[],quem:e.quem||'lorso',status:'previsto'}); } });
   return out; }
-function ptFiltra(L){ const f=ptUi(); return L.filter(p=>(!f.canal||ptCanaisDe(p.formatos).includes(f.canal))&&(!f.quem||p.quem===f.quem)&&(!f.st||p.status===f.st)); }
+function ptFiltra(L){ const f=ptUi(); return L.filter(p=>(!f.canal||ptCanaisDe(p.formatos).includes(f.canal))&&(!f.quem||p.quem===f.quem)&&(!f.st||(f.st==='voltou'?ptVoltou(p):p.status===f.st))); }
 const PT_SIGLA={instagram:'IG',tiktok:'TT',youtube:'YT',linkedin:'in',facebook:'f',whatsapp:'WA',email:'@',site:'↗'};
 const ptBadges=p=>ptCanaisDe(p.formatos).slice(0,3).map(c=>{ const k=ptCanal(c); return `<span class="pt-cb" style="background:${k[2]}" title="${esc(k[1])}">${PT_SIGLA[c]||''}</span>`; }).join('');
 const ptStCls=p=>p.virtual?'prev':'st-'+p.status;
@@ -107,17 +117,32 @@ function ptCalendario(S){ const f=ptUi(), hoje=today(), sem=f.vis==='semana';
 /* ---------- peças ---------- */
 function ptThumb(a,cls){ const img=/^image\//.test(a.tipo||'')||/\.(png|jpe?g|webp|gif)$/i.test(a.nome||'');
   return img?`<img class="${cls||'pt-th'}" data-pt-arte="${esc(a.path)}" alt="${esc(a.nome||'Arte')}" loading="lazy">`:`<span class="${cls||'pt-th'} pt-doc">${/^video\//.test(a.tipo||'')?'Vídeo':/pdf/.test(a.tipo||'')?'PDF':'Arquivo'}</span>`; }
+function ptAprovCel(p){ const A=p.aprov, f=ptUi();
+  if(p.status==='aprovacao') return ptPode()?`<span class="pt-dec">${PT_DEC.map(([k,n])=>`<button class="pt-db d-${k} ${f.dec&&f.dec.id===p.id&&f.dec.st===k?'on':''}" data-act="pt-dec" data-v="${p.id}" data-st="${k}">${n}</button>`).join('')}</span>`:'<span class="pt-ap ag">Aguardando o cliente</span>';
+  if(A&&A.st==='aprovado'&&p.status!=='ideia'&&p.status!=='producao') return `<span class="pt-ap ok">Aprovada<small>${esc(A.por||'')} · ${esc(ptDataHora(A.em))}</small></span>`;
+  if(ptVoltou(p)) return `<span class="pt-ap ${A.st}" title="${esc(A.coment)}">${A.st==='revisar'?'Revisar':'Reprovada'}<small>${esc(A.coment.slice(0,60))}${A.coment.length>60?'…':''}</small></span>${ptPode()&&me&&me.papel!=='cliente'?`<button class="btn sm pt-reenv" data-act="pt-enviar" data-v="${p.id}">Reenviar para aprovação</button>`:''}`;
+  if(ptPode()&&me&&me.papel!=='cliente'&&p.quem!=='cliente'&&(p.status==='ideia'||p.status==='producao')) return `<button class="btn sm" data-act="pt-enviar" data-v="${p.id}">Enviar para aprovação</button>`;
+  return '<span class="muted">—</span>'; }
+function ptDecForm(p){ const f=ptUi(); if(!f.dec||f.dec.id!==p.id) return '';
+  const st=f.dec.st, ap=st==='aprovado';
+  return `<form class="pt-decf d-${st}" data-ptform="dec" data-id="${p.id}" data-st="${st}"><b>${ap?'Aprovar esta peça':st==='revisar'?'O que precisa mudar?':'Por que esta peça foi reprovada?'}</b>
+    ${ap?`<p class="muted">A peça fica liberada para o calendário, com o seu nome e a data de hoje.</p><input type="hidden" name="c" value="">`:`<textarea name="c" rows="3" required placeholder="${st==='revisar'?'Ex.: trocar a foto da capa e encurtar a legenda':'Ex.: o tema não combina com a fase do lançamento'}">${esc(f.dec.txt||'')}</textarea><p class="muted">O comentário é obrigatório. A peça volta para a LORSO ajustar.</p>`}
+    <div class="pt-decb"><button type="button" class="btn sm ghost" data-act="pt-dec-x">Cancelar</button><button type="submit" class="btn sm primary">${ap?'Confirmar aprovação':st==='revisar'?'Pedir revisão':'Reprovar peça'}</button></div></form>`; }
 function ptPecas(S){ const f=ptUi(); const L=ptFiltra(S.pecas.slice()).sort((a,b)=>String(a.data||'9999').localeCompare(String(b.data||'9999')));
   const futuras=L.filter(p=>p.status!=='publicado'), feitas=L.filter(p=>p.status==='publicado').reverse();
-  const linha=p=>{ const a=p.artes[0]; return `<button class="pt-linha" data-act="pt-abrir" data-v="${p.id}">
+  const nAg=ptAguardando(S).length, nV=S.pecas.filter(ptVoltou).length, nAp=S.pecas.filter(p=>p.status==='aprovado').length;
+  const chip=(v,t,n)=>`<button class="pt-fchip ${f.st===v?'on':''}" data-act="pt-st" data-v="${f.st===v?'':v}" aria-pressed="${f.st===v}">${t}<b>${n}</b></button>`;
+  const linha=p=>{ const a=p.artes[0]; return `<div class="pt-linha ${f.dec&&f.dec.id===p.id?'com-dec':''}" data-act="pt-abrir" data-v="${p.id}">
     <span class="pt-lth">${a?ptThumb(a,'pt-limg'):'<span class="pt-limg pt-doc">Sem arte</span>'}<span class="pt-lcb">${ptBadges(p)}</span>${p.artes.length>1?`<span class="pt-lnum">${p.artes.length}</span>`:''}</span>
-    <span class="pt-lt"><b>${esc(p.titulo||'Sem título')}</b><small>${p.formatos.length?p.formatos.map(k=>esc(ptFmtNome(k))).join(' · '):'Formato a definir'}${p.legenda?` · <span class="pt-leg2">${esc(p.legenda.slice(0,70))}</span>`:''}</small></span>
+    <span class="pt-lt"><button class="pt-ltb" data-act="pt-abrir" data-v="${p.id}">${esc(p.titulo||'Sem título')}</button><small>${p.formatos.length?p.formatos.map(k=>esc(ptFmtNome(k))).join(' · '):'Formato a definir'}${p.legenda?` · ${esc(p.legenda.slice(0,90))}`:''}</small></span>
     <span class="pt-ld">${p.data?`<b>${PT_DIAS[ptDiaSemana(p.data)]}, ${ptDataBR(p.data)}</b><small>${p.hora?esc(p.hora):'sem hora'}</small>`:'<small>sem data</small>'}</span>
     <span class="pt-lq"><span class="tag">${esc(ptQuemNome(p.quem))}</span>${p.resp?`<small>${esc(p.resp)}</small>`:''}</span>
-    <span class="pt-lst"><span class="pt-st st-${p.status}">${ptStNome(p.status)}</span>${p.impulsionar?`<small>Impulsionar ${p.verba?ptBRL(p.verba):''}</small>`:''}</span></button>`; };
-  const cab='<div class="pt-lcab"><span>Arte</span><span>Peça</span><span>Data</span><span>Quem faz</span><span>Etapa</span></div>';
-  return `${L.length?`<div class="pt-lista">${cab}${futuras.map(linha).join('')}</div>${feitas.length?`<h4 class="pt-sub">Publicadas</h4><div class="pt-lista">${cab}${feitas.map(linha).join('')}</div>`:''}`
-    :`<p class="empty">${S.pecas.length?'Nenhuma peça com estes filtros.':'Nenhuma peça ainda. Crie uma aqui ou clique numa peça prevista no calendário.'}</p>`}`; }
+    <span class="pt-lst"><span class="pt-st st-${p.status}">${ptStNome(p.status)}</span>${p.impulsionar?`<small>Impulsionar ${p.verba?ptBRL(p.verba):''}</small>`:''}</span>
+    <span class="pt-lap">${ptAprovCel(p)}</span></div>${ptDecForm(p)}`; };
+  const cab='<div class="pt-lcab"><span>Arte</span><span>Peça</span><span>Data</span><span>Quem faz</span><span>Etapa</span><span>Aprovação</span></div>';
+  return `<div class="pt-fchips">${chip('aprovacao','Aguardando aprovação',nAg)}${chip('voltou','Voltaram para ajuste',nV)}${chip('aprovado','Aprovadas',nAp)}</div>
+   ${L.length?`${futuras.length?`<div class="pt-lista">${cab}${futuras.map(linha).join('')}</div>`:''}${feitas.length?`<h4 class="pt-sub">Publicadas</h4><div class="pt-lista">${cab}${feitas.map(linha).join('')}</div>`:''}`
+    :`<p class="empty">${f.st==='aprovacao'?'Nenhuma peça esperando aprovação.':S.pecas.length?'Nenhuma peça com estes filtros.':'Nenhuma peça ainda. Crie uma aqui ou clique numa peça prevista no calendário.'}</p>`}`; }
 
 /* ---------- estratégias ---------- */
 function ptEstTexto(e){ const d=(e.dias||[]).slice().sort().map(i=>PT_DIAS_L[i]); if(!d.length) return 'Escolha os dias da semana';
@@ -143,6 +168,8 @@ function ptFmtPicker(sel,attr){ return `<div class="pt-fpick">${PT_CANAIS.map(([
 function ptDrawerPeca(S,p){ const e=S.estrategias.find(x=>x.id===p.est);
   return `<div class="drawer-back" data-act="pt-fechar"></div><aside class="drawer pt-drawer" role="dialog" aria-label="Peça"><div class="dh"><span class="eyebrow"><b>Peça</b>${e?` · ${esc(e.nome)}`:''}</span><button class="xbtn" data-act="pt-fechar" aria-label="Fechar">×</button></div>
    <textarea class="dtit" data-pt="titulo" rows="2" placeholder="Tema da peça (ex.: 3 erros na hora de escolher a pós)">${esc(p.titulo)}</textarea>
+   <div class="dsec pt-aprovsec"><b>Aprovação do cliente</b><div class="pt-lap">${ptAprovCel(p)}</div>${ptDecForm(p)}
+    ${(p.aprovHist||[]).length?`<ol class="pt-hist">${p.aprovHist.slice().reverse().map(h=>`<li class="h-${h.st}"><span><b>${esc(PT_DEC_NOME[h.st]||h.st)}</b> · ${esc(h.por||'')} · ${esc(ptDataHora(h.em))}</span>${h.coment?`<p>${esc(h.coment)}</p>`:''}</li>`).join('')}</ol>`:''}</div>
    <div class="dgrid"><label>Data<input type="date" data-pt="data" value="${esc(p.data||'')}"></label>
     <label>Etapa<select data-pt="status">${PT_ST.map(([k,n])=>`<option value="${k}" ${p.status===k?'selected':''}>${n}</option>`).join('')}</select></label>
     <label>Quem faz<select data-pt="quem">${PT_QUEM.map(([k,n])=>`<option value="${k}" ${p.quem===k?'selected':''}>${n}</option>`).join('')}</select></label>
@@ -176,13 +203,17 @@ function renderPTC(){ const S=ptDoc(), f=ptUi(), tab=f.tab;
   if(f.aberta&&!S.pecas.some(p=>p.id===f.aberta)) f.aberta=null; if(f.est&&!S.estrategias.some(e=>e.id===f.est)) f.est=null;
   const filtros=tab==='calendario'||tab==='pecas'?`<div class="pt-filtros"><label>Canal<select data-ptf="canal"><option value="">Todos</option>${PT_CANAIS.map(([k,n])=>`<option value="${k}" ${f.canal===k?'selected':''}>${n}</option>`).join('')}</select></label>
      <label>Quem faz<select data-ptf="quem"><option value="">Todos</option>${PT_QUEM.map(([k,n])=>`<option value="${k}" ${f.quem===k?'selected':''}>${n}</option>`).join('')}</select></label>
-     ${tab==='pecas'?`<label>Etapa<select data-ptf="st"><option value="">Todas</option>${PT_ST.map(([k,n])=>`<option value="${k}" ${f.st===k?'selected':''}>${n}</option>`).join('')}</select></label>`:''}</div>`:'';
+     ${tab==='pecas'?`<label>Etapa<select data-ptf="st"><option value="">Todas</option>${PT_ST.map(([k,n])=>`<option value="${k}" ${f.st===k?'selected':''}>${n}</option>`).join('')}<option value="voltou" ${f.st==='voltou'?'selected':''}>Voltaram para ajuste</option></select></label>`:''}</div>`:'';
   const acao=!ptPode()?'':tab==='estrategias'?'<button class="btn primary" data-act="pt-est-nova">+ Nova estratégia</button>':tab==='midia'?'':'<button class="btn primary" data-act="pt-nova">+ Nova peça</button>';
   const corpo={calendario:ptCalendario,pecas:ptPecas,estrategias:ptEstrategias,midia:ptMidia}[tab]||ptCalendario;
   const pAb=f.aberta&&S.pecas.find(p=>p.id===f.aberta), eAb=f.est&&S.estrategias.find(e=>e.id===f.est);
   $('#main').innerHTML=`<section class="panel pt">
    <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow">Lançamento de curso · <b>PTC</b></span><h2 style="margin-top:8px">Plano tático de comunicação</h2><p class="lead">A comunicação do lançamento de ${esc(cur.nome)}: estratégias que se repetem, o calendário de posts e as artes de cada peça num lugar só. A LORSO e o cliente preenchem juntos.</p></div><div class="pt-hact">${acao}</div></header>
    <div class="pt-top"><nav class="subtabs" aria-label="Seções do PTC">${PT_TABS.map(([k,l])=>`<button class="${tab===k?'on':''}" data-act="pt-tab" data-v="${k}" ${tab===k?'aria-current="page"':''}>${l}</button>`).join('')}</nav>${filtros}</div>
+   ${(()=>{ const n=ptAguardando(S).length, v=S.pecas.filter(ptVoltou).length; const cli=me&&me.papel==='cliente';
+     if(n&&!(tab==='pecas'&&f.st==='aprovacao')) return `<div class="pt-aviso"><span><b>${n} ${n>1?'peças esperando':'peça esperando'} aprovação.</b> ${cli?'Veja cada uma e escolha Aprovado, Revisar ou Reprovado.':'O cliente ainda precisa decidir.'}</span><button class="btn sm primary" data-act="pt-ver-ag">Ver ${n>1?'as peças':'a peça'}</button></div>`;
+     if(v&&!cli&&!(tab==='pecas'&&f.st==='voltou')) return `<div class="pt-aviso volta"><span><b>${v} ${v>1?'peças voltaram':'peça voltou'} do cliente</b> com pedido de ajuste.</span><button class="btn sm" data-act="pt-st" data-v="voltou" data-tab="pecas">Ver ${v>1?'as peças':'a peça'}</button></div>`;
+     return ''; })()}
    ${corpo(S)}</section>${pAb?ptDrawerPeca(S,pAb):eAb?ptDrawerEst(S,eAb):''}`;
   ptCarregarThumbs(); }
 
@@ -220,8 +251,14 @@ document.addEventListener('change',e=>{ const t=e.target; if(!t||!t.dataset||ui.
   if(t.dataset.ptf!=null){ e.stopPropagation(); ptUi()[t.dataset.ptf]=t.value; render(); return; }
   if(t.dataset.pt!=null){ const p=ptPecaAberta(); if(!p) return; e.stopPropagation();
     if(t.type==='checkbox'){ p[t.dataset.pt]=t.checked; ptMudou(true); return; }
-    if(t.tagName==='SELECT'||t.type==='date'||t.type==='time'){ p[t.dataset.pt]=t.value||(t.dataset.pt==='est'?null:''); ptMudou(true); } return; }
+    if(t.tagName==='SELECT'||t.type==='date'||t.type==='time'){ if(t.dataset.pt==='status'&&t.value==='aprovacao'&&p.status!=='aprovacao'){ ptEnviarAprov(p); ptMudou(true); return; } p[t.dataset.pt]=t.value||(t.dataset.pt==='est'?null:''); ptMudou(true); } return; }
   if(t.dataset.pte!=null&&(t.tagName==='SELECT'||t.type==='date')){ const x=ptEstAberta(); if(!x) return; e.stopPropagation(); x[t.dataset.pte]=t.value; ptMudou(true); } },true);
+document.addEventListener('submit',e=>{ const f=e.target; if(!f||f.dataset.ptform!=='dec') return; e.preventDefault(); e.stopPropagation();
+  if(!ptPode()){ toast('Modo leitura: você só visualiza este plano'); return; }
+  const p=ptDoc().pecas.find(x=>x.id===f.dataset.id), st=f.dataset.st, c=String(new FormData(f).get('c')||'').trim(); if(!p) return;
+  if(st!=='aprovado'&&c.length<3){ toast('Escreva o que precisa mudar antes de enviar'); const t=f.querySelector('textarea'); t&&t.focus(); return; }
+  ptDecidir(p,st,c); ptUi().dec=null; ptMudou(true); toast(st==='aprovado'?'Peça aprovada':st==='revisar'?'Pedido de revisão enviado':'Peça reprovada'); },true);
+document.addEventListener('input',e=>{ const t=e.target; if(t&&t.name==='c'&&t.closest&&t.closest('form[data-ptform="dec"]')){ e.stopPropagation(); const f=ptUi(); if(f.dec) f.dec.txt=t.value; } },true);
 document.addEventListener('submit',e=>{ const f=e.target; if(!f||f.dataset.ptform!=='midia') return; e.preventDefault(); e.stopPropagation();
   const fd=new FormData(f), nome=String(fd.get('nome')||'').trim(), url=String(fd.get('url')||'').trim(); if(!nome||!url) return;
   ptDoc().midia.push({id:uid(),nome,tipo:String(fd.get('tipo')||'outro'),url,em:today()}); ptMudou(true); toast('Link adicionado ao banco de mídia'); },true);
@@ -234,9 +271,15 @@ function ptcClick(act,d){ const S=ptDoc(), f=ptUi();
     else { const [y,m]=f.mes.split('-').map(Number); const x=new Date(y,m-1+Number(d.v),1,12); f.mes=isoLocal(x).slice(0,7); f.dia=f.mes+'-01'; } render(); return true; }
   if(act==='pt-vis'){ f.vis=d.v; if(d.v==='semana'&&(f.dia||'').slice(0,7)!==f.mes) f.dia=f.mes===today().slice(0,7)?today():f.mes+'-01'; render(); return true; }
   if(act==='pt-semana'){ f.vis='semana'; f.dia=d.v; render(); return true; }
+  if(act==='pt-st'){ f.st=d.v||''; if(d.tab) f.tab=d.tab; f.dec=null; render(); return true; }
+  if(act==='pt-ver-ag'){ f.tab='pecas'; f.st='aprovacao'; f.aberta=null; f.est=null; render(); window.scrollTo({top:0}); return true; }
+  if(act==='pt-dec-x'){ f.dec=null; render(); return true; }
   if(act==='pt-fechar'){ f.aberta=null; f.est=null; render(); return true; }
   if(act==='pt-abrir'){ f.aberta=d.v; f.est=null; render(); return true; }
   if(!ptPode()&&!['pt-arte-baixar'].includes(act)){ toast('Modo leitura: você só visualiza este plano'); return true; }
+  if(act==='pt-dec'){ const p=S.pecas.find(x=>x.id===d.v); if(!p) return true; f.dec=f.dec&&f.dec.id===p.id&&f.dec.st===d.st?null:{id:p.id,st:d.st,txt:''}; render();
+    const t=document.querySelector(`form[data-ptform="dec"][data-id="${p.id}"] textarea, form[data-ptform="dec"][data-id="${p.id}"] button[type=submit]`); t&&t.focus(); return true; }
+  if(act==='pt-enviar'){ const p=S.pecas.find(x=>x.id===d.v); if(!p) return true; ptEnviarAprov(p); ptMudou(true); toast('Peça enviada para aprovação'); return true; }
   if(act==='pt-nova'){ ptNovaPeca({data:d.v||''}); return true; }
   if(act==='pt-gerar'){ const [,eid,data]=String(d.v).split(':'); const e=S.estrategias.find(x=>x.id===eid); if(!e) return true;
     ptNovaPeca({data,est:e.id,titulo:'',formatos:(e.formatos||[]).slice(),quem:e.quem||'lorso',legenda:e.obs?'Orientação: '+e.obs:''}); return true; }
@@ -255,3 +298,10 @@ function ptcClick(act,d){ const S=ptDoc(), f=ptUi();
   if(act==='pt-est-del'){ if(!confirm('Excluir esta estratégia? As peças já criadas continuam no calendário.')) return true; S.estrategias=S.estrategias.filter(x=>x.id!==d.v); S.pecas.forEach(p=>{ if(p.est===d.v) p.est=null; }); f.est=null; ptMudou(true); return true; }
   if(act==='pt-midia-del'){ S.midia=S.midia.filter(x=>x.id!==d.v); ptMudou(true); return true; }
   return false; }
+
+/* Aviso ao entrar: cliente vê quantas peças esperam a decisão dele; a LORSO vê o que voltou com ajuste */
+let ptAvisado='';
+function ptAviso(){ if(!cur||typeof temPTC!=='function'||!temPTC()||ptAvisado===cur.id) return; const P=cur.mods&&cur.mods.ptc; if(!P||!Array.isArray(P.pecas)) return; ptAvisado=cur.id;
+  const n=P.pecas.filter(p=>p.status==='aprovacao').length, v=P.pecas.filter(ptVoltou).length;
+  if(me&&me.papel==='cliente'&&n) setTimeout(()=>toast(`${n} ${n>1?'peças do PTC esperando':'peça do PTC esperando'} a sua aprovação`),900);
+  else if(me&&me.papel!=='cliente'&&v) setTimeout(()=>toast(`${v} ${v>1?'peças do PTC voltaram':'peça do PTC voltou'} do cliente com ajuste`),900); }
