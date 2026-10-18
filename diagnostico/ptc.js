@@ -58,7 +58,7 @@ function ptUi(){ return ui.pt||(ui.pt={tab:'calendario',vis:'mes',dia:today(),me
 function ptNovo(){ return {v:1,estrategias:[],pecas:[],midia:[],updatedAt:0}; }
 function ptDoc(){ if(!cur.mods) cur.mods={}; const S=cur.mods.ptc&&typeof cur.mods.ptc==='object'?cur.mods.ptc:ptNovo();
   ['estrategias','pecas','midia'].forEach(k=>{ if(!Array.isArray(S[k])) S[k]=[]; });
-  S.pecas.forEach(p=>{ if(!Array.isArray(p.formatos)) p.formatos=[]; if(!Array.isArray(p.artes)) p.artes=[]; });
+  S.pecas.forEach(p=>{ if(!Array.isArray(p.formatos)) p.formatos=[]; if(!Array.isArray(p.artes)) p.artes=[]; if(p.pubq==null&&p.resp) p.pubq=/lorso|alessandro/i.test(p.resp)?'lorso':'cliente'; });
   return cur.mods.ptc=S; }
 const ptPode=()=>!!(me&&cur&&!((me.papel==='cliente'&&cur.clienteLeitura)||(me.papel==='equipe'&&cur.meuNivel==='leitura')));
 function ptMudou(full){ if(!ptPode()){ toast('Modo leitura: você só visualiza este plano'); render(); return; }
@@ -136,7 +136,7 @@ function ptPecas(S){ const f=ptUi(); const L=ptFiltra(S.pecas.slice()).sort((a,b
     <span class="pt-lth">${a?ptThumb(a,'pt-limg'):'<span class="pt-limg pt-doc">Sem arte</span>'}<span class="pt-lcb">${ptBadges(p)}</span>${p.artes.length>1?`<span class="pt-lnum">${p.artes.length}</span>`:''}</span>
     <span class="pt-lt"><button class="pt-ltb" data-act="pt-abrir" data-v="${p.id}">${esc(p.titulo||'Sem título')}</button><small>${p.formatos.length?p.formatos.map(k=>esc(ptFmtNome(k))).join(' · '):'Formato a definir'}${p.legenda?` · ${esc(p.legenda.slice(0,90))}`:''}</small></span>
     <span class="pt-ld">${p.data?`<b>${PT_DIAS[ptDiaSemana(p.data)]}, ${ptDataBR(p.data)}</b><small>${p.hora?esc(p.hora):'sem hora'}</small>`:'<small>sem data</small>'}</span>
-    <span class="pt-lq"><span class="tag">${esc(ptQuemNome(p.quem))}</span>${p.resp?`<small>${esc(p.resp)}</small>`:''}</span>
+    <span class="pt-lq"><span class="tag">${esc(ptQuemNome(p.quem))}</span>${p.pubq?`<small>Publica: ${p.pubq==='cliente'?'Cliente':'LORSO'}</small>`:''}</span>
     <span class="pt-lst"><span class="pt-st st-${p.status}">${ptStNome(p.status)}</span>${p.impulsionar?`<small>Impulsionar ${p.verba?ptBRL(p.verba):''}</small>`:''}</span>
     <span class="pt-lap">${ptAprovCel(p)}</span></div>${ptDecForm(p)}`; };
   const cab='<div class="pt-lcab"><span>Arte</span><span>Peça</span><span>Data</span><span>Quem faz</span><span>Etapa</span><span>Aprovação</span></div>';
@@ -173,7 +173,7 @@ function ptDrawerPeca(S,p){ const e=S.estrategias.find(x=>x.id===p.est);
    <div class="dgrid"><label>Data<input type="date" data-pt="data" value="${esc(p.data||'')}"></label>
     <label>Etapa<select data-pt="status">${PT_ST.map(([k,n])=>`<option value="${k}" ${p.status===k?'selected':''}>${n}</option>`).join('')}</select></label>
     <label>Quem faz<select data-pt="quem">${PT_QUEM.map(([k,n])=>`<option value="${k}" ${p.quem===k?'selected':''}>${n}</option>`).join('')}</select></label>
-    <label>Responsável<input data-pt="resp" value="${esc(p.resp||'')}" placeholder="Nome de quem produz"></label>
+    <label>Responsável pela publicação<select data-pt="pubq"><option value="" ${!p.pubq?'selected':''}>A definir</option><option value="lorso" ${p.pubq==='lorso'?'selected':''}>LORSO</option><option value="cliente" ${p.pubq==='cliente'?'selected':''}>Cliente</option></select></label>
     <label>Estratégia<select data-pt="est"><option value="">Avulsa</option>${S.estrategias.map(x=>`<option value="${x.id}" ${p.est===x.id?'selected':''}>${esc(x.nome||'Sem nome')}</option>`).join('')}</select></label>
     <label>Hora<input type="time" data-pt="hora" value="${esc(p.hora||'')}"></label></div>
    <div class="dsec"><b>Onde vai sair</b>${ptFmtPicker(p.formatos,'data-alvo="peca"')}
