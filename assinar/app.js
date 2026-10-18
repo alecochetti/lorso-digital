@@ -5,7 +5,14 @@ import { esc, renderizar } from "/admin/assets/contrato-render.js";
 const FUNCAO = "https://wloetjknoxynstzsfchp.supabase.co/functions/v1/contrato-assinar";
 const CHAVE_PUBLICA = "sb_publishable_uosX4Cwdt-U26l0v3J_r2A_Fr5mI58J";
 const app = document.getElementById("app");
-const token = new URLSearchParams(location.hash.slice(1)).get("t") || "";
+// não roda dentro de moldura de outro site (evita página falsa por cima)
+if (window.top !== window.self) { document.body.innerHTML = ""; throw new Error("emoldurado"); }
+// o token sai da barra de endereço e do histórico assim que é lido; fica só nesta aba para recarregar
+let token = "";
+try {
+  token = new URLSearchParams(location.hash.slice(1)).get("t") || sessionStorage.getItem("lorso-assinar") || "";
+  if (location.hash) { sessionStorage.setItem("lorso-assinar", token); history.replaceState(null, "", location.pathname); }
+} catch (_) { token = new URLSearchParams(location.hash.slice(1)).get("t") || ""; }
 const primeiroNome = (n) => { const p = String(n || "").trim().split(/\s+/)[0] || ""; return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(); };
 const dataHora = (iso) => iso ? new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "long", timeStyle: "short" }) : "";
 

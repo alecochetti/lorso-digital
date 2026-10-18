@@ -1,7 +1,7 @@
 // Envia um contrato para assinatura (trava a versão e manda um link único a cada signatário)
 // ou reenvia o link de um signatário. Só administrador LORSO, com sessão válida.
 import {
-  botao, cors, ehTeste, enviarEmail, esc, ipDe, json, moldura, novoToken, registrar, servico, sha256, SITE_URL, uaDe,
+  botao, cors, dominioTeste, ehTeste, enviarEmail, esc, ipDe, json, modoTeste, moldura, novoToken, registrar, servico, sha256, SITE_URL, uaDe,
 } from "./comum.ts";
 
 const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
@@ -32,9 +32,11 @@ Deno.serve(async (req) => {
     if (!c || c.status !== "assinatura") return json({ erro: "O contrato não está em assinatura." }, 400, h);
     const token = novoToken();
     const expira = new Date(Date.now() + c.prazo_dias * 864e5).toISOString();
-    await sb.from("contrato_signatarios").update({
+    const { error: et } = await sb.from("contrato_signatarios").update({
       token_hash: await sha256(token), token_expira: expira, otp_hash: null, otp_expira: null, otp_tentativas: 0,
-    }).eq("id", s.id);
+      otp_total: 0, codigos_qtd: 0, codigos_janela: null, otp_ultimo_envio: null,
+    }).eq("id", s.id).neq("status", "assinado");
+    if (et) return json({ erro: "Não foi possível gerar o novo link." }, 500, h);
     const link = `${SITE_URL}/assinar/#t=${token}`;
     try {
       await enviarEmail(s.email, `Contrato para assinatura: ${c.titulo}`, emailConvite(s.nome, c.titulo, link, expira));
@@ -54,8 +56,10 @@ Deno.serve(async (req) => {
   if (!["rascunho", "revisao"].includes(c.status)) return json({ erro: "Este contrato já foi enviado." }, 400, h);
   if (!c.conteudo || c.conteudo.trim().length < 200) return json({ erro: "O texto do contrato está vazio ou incompleto." }, 400, h);
 
-  const { data: sigs } = await sb.from("contrato_signatarios").select("id, nome, email, ordem").eq("contrato_id", c.id).order("ordem");
+  const { data: sigs } = await sb.from("contrato_signatarios").select("id, nome, email, ordem, status").eq("contrato_id", c.id).order("ordem");
   if (!sigs?.length) return json({ erro: "Inclua pelo menos um signatário." }, 400, h);
+  if (sigs.some((s) => s.status !== "pendente")) return json({ erro: "Este contrato já teve envio. Cancele e crie outro." }, 400, h);
+  if (!modoTeste() && sigs.some((s) => dominioTeste(s.email))) return json({ erro: "Há um e-mail de teste (@exemplo.test) entre os signatários." }, 400, h);
   const ruim = sigs.find((s) => !emailOk(s.email) || s.nome.trim().length < 2);
   if (ruim) return json({ erro: `Confira o nome e o e-mail de ${ruim.nome || "um signatário"}.` }, 400, h);
   const repetido = sigs.find((s, i) => sigs.findIndex((x) => x.email.toLowerCase() === s.email.toLowerCase()) !== i);
@@ -70,8 +74,8 @@ Deno.serve(async (req) => {
     .select("id").single();
   if (ev || !v) return json({ erro: "Não foi possível travar a versão do contrato." }, 500, h);
 
-  const { error: es } = await sb.from("contratos").update({ status: "assinatura" }).eq("id", c.id).in("status", ["rascunho", "revisao"]);
-  if (es) return json({ erro: "Não foi possível mudar a situação do contrato." }, 500, h);
+  const { data: mudou, error: es } = await sb.from("contratos").update({ status: "assinatura" }).eq("id", c.id).in("status", ["rascunho", "revisao"]).select("id");
+  if (es || !mudou?.length) return json({ erro: "O contrato mudou enquanto era enviado. Abra de novo e confira." }, 409, h);
   await registrar(sb, { contrato_id: c.id, tipo: "versao_travada", detalhe: { versao: numero, sha256: hash, por: perfil.email }, ip, user_agent: ua });
 
   // 2. um link único por signatário
@@ -79,11 +83,16 @@ Deno.serve(async (req) => {
   const resultado: { id: string; email: string; ok: boolean; teste_link?: string }[] = [];
   for (const s of sigs) {
     const token = novoToken();
-    await sb.from("contrato_signatarios").update({
+    const { error: et } = await sb.from("contrato_signatarios").update({
       token_hash: await sha256(token), token_expira: expira, status: "enviado", versao_id: v.id,
-      otp_hash: null, otp_expira: null, otp_tentativas: 0,
+      otp_hash: null, otp_expira: null, otp_tentativas: 0, otp_total: 0, codigos_qtd: 0, codigos_janela: null,
     }).eq("id", s.id);
     const link = `${SITE_URL}/assinar/#t=${token}`;
+    if (et) {
+      await registrar(sb, { contrato_id: c.id, signatario_id: s.id, tipo: "falha_envio", detalhe: { email: s.email, motivo: "token" }, ip, user_agent: ua });
+      resultado.push({ id: s.id, email: s.email, ok: false });
+      continue;
+    }
     try {
       await enviarEmail(s.email, `Contrato para assinatura: ${c.titulo}`, emailConvite(s.nome, c.titulo, link, expira));
       await registrar(sb, { contrato_id: c.id, signatario_id: s.id, tipo: "link_enviado", detalhe: { email: s.email }, ip, user_agent: ua });

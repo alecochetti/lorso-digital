@@ -2,7 +2,7 @@
 // O texto é guardado como texto simples (nunca HTML): "## " vira título, "**...**" vira negrito,
 // linhas "1. " viram itens. Tudo é escapado antes de virar HTML, então nada digitado executa código.
 
-import { esc, renderizar } from "/admin/assets/contrato-render.js";
+import { esc, renderizar } from "./contrato-render.js";
 export { esc, renderizar };
 
 // ---------- números por extenso (reais e inteiros) ----------
@@ -68,9 +68,9 @@ export function dadosPadrao() {
 export function signatariosDe(d) {
   const t = d.testemunhas || [];
   return [
-    { ordem: 1, nome: d.contratante?.rep_nome || "", papel: `${d.contratante?.razao ? "CONTRATANTE" : "Contratante"}${d.contratante?.rep_cargo ? " · " + d.contratante.rep_cargo : ""}`, email: d.contratante?.rep_email || "" },
-    { ordem: 2, nome: d.contratada?.rep_nome || "", papel: "CONTRATADA · L'ORSO Comunicação Ltda", email: d.contratada?.rep_email || "" },
-    ...t.map((x, i) => ({ ordem: 3 + i, nome: x.nome || "", papel: `Testemunha ${i + 1}`, email: x.email || "" })),
+    { ordem: 1, nome: d.contratante?.rep_nome || "", papel: `CONTRATANTE${d.contratante?.rep_cargo ? " · " + d.contratante.rep_cargo : ""}`, email: d.contratante?.rep_email || "", cpf: d.contratante?.rep_cpf || "" },
+    { ordem: 2, nome: d.contratada?.rep_nome || "", papel: `CONTRATADA${d.contratada?.razao ? " · " + d.contratada.razao : ""}`, email: d.contratada?.rep_email || "", cpf: d.contratada?.rep_cpf || "" },
+    ...t.map((x, i) => ({ ordem: 3 + i, nome: x.nome || "", papel: `Testemunha ${i + 1}`, email: x.email || "", cpf: x.cpf || "" })),
   ];
 }
 
@@ -189,7 +189,7 @@ export function gerarTexto(d) {
   p("**9.2.** Alterações deste contrato somente terão validade por termo aditivo assinado pelas partes.");
   p("**9.3.** A tolerância de uma parte quanto ao descumprimento de qualquer cláusula não constitui novação ou renúncia.");
   p(`**9.4.** As comunicações entre as partes serão feitas por escrito, inclusive por e-mail, aos endereços: CONTRATANTE: ${ou(ct.email_comunicacao || ct.rep_email, "e-mail")}; CONTRATADA: ${ou(cd.rep_email, "e-mail")}.`);
-  p("**9.5.** As partes admitem a assinatura deste contrato por meio eletrônico, nos termos do art. 10, § 2º, da MP nº 2.200-2/2001, e reconhecem como válida a assinatura realizada pela plataforma da CONTRATADA, com verificação de e-mail por código, confirmação de CPF e registro de data, hora, endereço IP e impressão digital (SHA-256) do documento.");
+  p("**9.5.** As partes admitem a assinatura deste contrato por meio eletrônico, nos termos do art. 10, § 2º, da MP nº 2.200-2/2001, e reconhecem como válida a assinatura realizada pela plataforma da CONTRATADA, com verificação de e-mail por código, conferência do CPF informado e registro de data, hora, endereço IP e impressão digital (SHA-256) do documento.");
   p("**9.6.** Fica eleito o foro da Comarca de São Paulo/SP para dirimir quaisquer questões oriundas deste contrato, com renúncia a qualquer outro.");
   p("E, por estarem justas e contratadas, as partes assinam eletronicamente o presente instrumento, na presença das testemunhas abaixo.");
   p("## Testemunhas");

@@ -7,7 +7,9 @@ const ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "https://www.lorsodigital.co
   .split(",").map((s) => s.trim());
 
 export function cors(origin: string | null) {
-  const ok = origin && (ORIGINS.includes(origin) || origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1"));
+  let local = false;
+  try { const u = new URL(origin ?? ""); local = u.protocol === "http:" && (u.hostname === "localhost" || u.hostname === "127.0.0.1"); } catch (_) { /* sem origem */ }
+  const ok = origin && (ORIGINS.includes(origin) || local);
   return {
     "Access-Control-Allow-Origin": ok ? origin! : ORIGINS[0],
     "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -28,9 +30,11 @@ const hex = (buf: ArrayBuffer) => Array.from(new Uint8Array(buf)).map((b) => b.t
 export async function sha256(t: string) {
   return hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)));
 }
-// HMAC com a chave de serviço (segredo do servidor): o código de 6 números nunca fica legível no banco
+// HMAC com um segredo do servidor: o código de 6 números nunca fica legível no banco.
+// Usa CONTRATOS_SEGREDO quando existir (recomendado); senão, a chave de serviço.
 export async function hmac(t: string) {
-  const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!),
+  const segredo = Deno.env.get("CONTRATOS_SEGREDO") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(segredo),
     { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   return hex(await crypto.subtle.sign("HMAC", k, new TextEncoder().encode(t)));
 }
@@ -52,8 +56,11 @@ export function novoCodigo() {
   return String(n % 1000000).padStart(6, "0");
 }
 
+// IP: prefere os cabeçalhos que o próprio proxy do Supabase grava; o x-forwarded-for bruto vai junto nas evidências
 export const ipDe = (req: Request) =>
-  (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim().slice(0, 64) || null;
+  (req.headers.get("cf-connecting-ip") ?? req.headers.get("x-real-ip") ?? (req.headers.get("x-forwarded-for") ?? "").split(",")[0])
+    .trim().slice(0, 64) || null;
+export const xffDe = (req: Request) => (req.headers.get("x-forwarded-for") ?? "").slice(0, 200) || null;
 export const uaDe = (req: Request) => (req.headers.get("user-agent") ?? "").slice(0, 300) || null;
 
 export const mascaraEmail = (e: string) => {
@@ -74,12 +81,15 @@ export function cpfValido(v: string) {
   return dv(9) === Number(c[9]) && dv(10) === Number(c[10]) ? c : null;
 }
 
-// Domínio reservado de testes: nunca recebe e-mail de verdade. Para esses endereços a função
-// não envia nada e devolve o link ou o código na resposta, para testar o fluxo de ponta a ponta.
-export const ehTeste = (email: string) => /@exemplo\.test$/i.test(String(email));
+// Modo de teste: só existe com o segredo CONTRATOS_MODO_TESTE=1. Aí, endereços do domínio reservado
+// @exemplo.test (que nunca recebem e-mail) não recebem nada e o link ou o código volta na resposta.
+// Sem o segredo, esses endereços são recusados no envio.
+export const modoTeste = () => Deno.env.get("CONTRATOS_MODO_TESTE") === "1";
+export const dominioTeste = (email: string) => /@exemplo\.test$/i.test(String(email));
+export const ehTeste = (email: string) => modoTeste() && dominioTeste(email);
 
 export async function enviarEmail(para: string | string[], assunto: string, html: string) {
-  const lista = (Array.isArray(para) ? para : [para]).filter((e) => !ehTeste(e));
+  const lista = (Array.isArray(para) ? para : [para]).filter((e) => !dominioTeste(e));
   if (!lista.length) return;
   const resend = Deno.env.get("RESEND_API_KEY");
   if (resend) {

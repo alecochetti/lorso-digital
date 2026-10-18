@@ -20,7 +20,7 @@ const EVENTO = {
   versao_travada: "Versão travada para assinatura", link_enviado: "Link enviado", link_reenviado: "Link reenviado",
   falha_envio: "Falha no envio do e-mail", documento_aberto: "Documento aberto", codigo_enviado: "Código enviado por e-mail",
   codigo_incorreto: "Código incorreto digitado", assinado: "Assinatura registrada", concluido: "Contrato concluído",
-  integridade_falhou: "Falha de integridade do documento",
+  integridade_falhou: "Falha de integridade do documento", cpf_nao_confere: "CPF informado não confere",
 };
 const dataHora = (iso) => iso ? new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "medium" }) : "";
 const emailOk = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || "").trim());
@@ -94,7 +94,7 @@ async function abrir(id) {
     supabase.from("contratos").select("*").eq("id", id).maybeSingle(),
     supabase.from("contrato_signatarios").select("id, ordem, nome, papel, email, status, cpf, assinatura_nome, assinatura_ip, assinatura_ua, assinado_em, token_expira").eq("contrato_id", id).order("ordem"),
     supabase.from("contrato_versoes").select("id, numero, conteudo, hash_sha256, travada_em").eq("contrato_id", id).order("numero", { ascending: false }),
-    supabase.from("contrato_eventos").select("id, signatario_id, tipo, detalhe, ip, user_agent, criado_em, hash").eq("contrato_id", id).order("id"),
+    supabase.from("contrato_eventos").select("id, seq, signatario_id, tipo, detalhe, ip, user_agent, criado_em, hash").eq("contrato_id", id).order("id"),
   ]);
   for (const r of [c, s, v, e]) if (r.error) throw r.error;
   if (!c.data) throw new Error("Contrato não encontrado.");
@@ -203,9 +203,10 @@ function editor() {
   $("manual-aviso").hidden = !manual;
   calc();
 
-  let tempo = null, salvando = Promise.resolve();
-  const agendar = () => { $("salvo").textContent = "Alterações não salvas…"; clearTimeout(tempo); tempo = setTimeout(() => { salvando = salvar(); }, 900); };
-  async function salvar() {
+  let tempo = null, fila = Promise.resolve(true);
+  const agendar = () => { $("salvo").textContent = "Alterações não salvas…"; clearTimeout(tempo); tempo = setTimeout(() => { salvar(); }, 900); };
+  const salvar = () => (fila = fila.catch(() => false).then(salvarAgora));
+  async function salvarAgora() {
     lerDados();
     const copia = $("f-copia").value.split(/[,;\s]+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
     const ruins = copia.filter((x) => !emailOk(x));
@@ -249,7 +250,7 @@ function editor() {
   });
   $("cancelar").addEventListener("click", () => cancelar(c));
   $("enviar").addEventListener("click", async () => {
-    clearTimeout(tempo); await salvando; if (!(await salvar())) return;
+    clearTimeout(tempo); if (!(await salvar())) return;
     confirmarEnvio(c.id, d, ta.value);
   });
 }
@@ -261,7 +262,10 @@ async function sincronizarSignatarios(contratoId, d) {
   if (e1) return e1.message;
   const validos = lista.filter((s) => emailOk(s.email));
   if (!validos.length) return null;
-  const { error: e2 } = await supabase.from("contrato_signatarios").insert(validos.map(({ contrato_id, ordem, nome, papel, email }) => ({ contrato_id, ordem, nome, papel, email })));
+  const { error: e2 } = await supabase.from("contrato_signatarios").insert(validos.map(({ contrato_id, ordem, nome, papel, email, cpf }) => {
+    const d11 = String(cpf || "").replace(/\D/g, "");
+    return { contrato_id, ordem, nome, papel, email, cpf_esperado: d11.length === 11 ? d11 : null };
+  }));
   return e2 ? e2.message : null;
 }
 
@@ -328,7 +332,7 @@ function acompanhamento() {
       <aside class="lado">
         <div class="hash"><div class="sobre" style="color:rgba(255,255,255,.7)">Impressão digital do documento</div>
           <code>${esc(v?.hash_sha256 || "")}</code><small>SHA-256 da versão travada em ${esc(dataHora(v?.travada_em))}. Qualquer alteração no texto muda este código.</small></div>
-        <div class="card" style="margin-top:16px"><p class="lead" style="font-size:14px">As evidências não podem ser editadas nem apagadas, nem por você. Cada registro guarda o código do anterior, então qualquer mexida por fora fica visível.</p></div>
+        <div class="card" style="margin-top:16px"><p class="lead" style="font-size:14px">As evidências não podem ser editadas nem apagadas pelo painel ou pela internet, nem por você. Cada registro guarda o código do anterior, e o código final vai por e-mail a todas as partes quando o contrato é concluído: é ele que permite provar, depois, que nada foi alterado.</p></div>
       </aside>
     </div>`;
   $("voltar").addEventListener("click", () => ir(null));
@@ -365,7 +369,7 @@ function imprimir(texto, titulo, ev) {
     ${ev.sigs.map((s) => `<tr><td>${esc(s.nome)}<br><small>${esc(s.papel)} · ${esc(s.email)}</small></td><td>${s.status === "assinado" ? "Assinou em " + esc(dataHora(s.assinado_em)) : esc(SIG[s.status] || s.status)}</td><td>${esc(cpfMasc(s.cpf))}</td><td>${esc(s.assinatura_ip || "")}</td></tr>`).join("")}
     </tbody></table>
     <table style="margin-top:14px"><thead><tr><th>Data e hora</th><th>Evento</th><th>Quem</th><th>IP</th><th>Código do registro</th></tr></thead><tbody>
-    ${ev.eventos.map((e) => `<tr><td>${esc(dataHora(e.criado_em))}</td><td>${esc(EVENTO[e.tipo] || e.tipo)}</td><td>${esc(ev.nomeSig[e.signatario_id] || "")}</td><td>${esc(e.ip || "")}</td><td class="mono">${esc((e.hash || "").slice(0, 16))}…</td></tr>`).join("")}
+    ${ev.eventos.map((e) => `<tr><td>${esc(dataHora(e.criado_em))}</td><td>${esc(EVENTO[e.tipo] || e.tipo)}</td><td>${esc(ev.nomeSig[e.signatario_id] || "")}</td><td>${esc(e.ip || "")}</td><td class="mono">${esc(e.hash || "")}</td></tr>`).join("")}
     </tbody></table>` : "");
   window.print();
 }
