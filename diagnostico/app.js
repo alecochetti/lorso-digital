@@ -331,6 +331,8 @@ function renderRail(){
 }
 function statusHtml(){
   if(saveErr) return `<span class="status err"><i></i>${esc(saveErr)}</span>`;
+  if(typeof modFalhou!=='undefined'&&modFalhou) return `<span class="status err" title="Uma cópia está guardada neste navegador. Não feche a página até aparecer Salvo."><i></i>Não salvou no servidor · tentando de novo</span>`;
+  if(typeof modPend!=='undefined'&&modPend) return `<span class="status busy"><i></i>Salvando…</span>`;
   if(ver!==savedVer) return `<span class="status busy"><i></i>Salvando…</span>`;
   return `<span class="status"><i></i>Salvo</span>`;
 }
@@ -1620,8 +1622,16 @@ document.addEventListener('mousemove',e=>{ const t=e.target.closest&&e.target.cl
 /* ================= MÓDULOS EMBUTIDOS (lançamento de curso) ================= */
 const modT={}; let modPend=false; const modOuv={};
 function modSave(mod){ modPend=true; clearTimeout(modT[mod]); modT[mod]=setTimeout(async()=>{ if(!cur||!cur.mods||!cur.mods[mod]){ modPend=false; return; }
-  const r=await sb.from('modulos').upsert({diagnostico_id:cur.id,modulo:mod,dados:cur.mods[mod],updated_at:new Date().toISOString()}); modPend=false;
-  if(r.error) toast('Não foi possível salvar o módulo: '+r.error.message); else renderStatus(); },600); }
+  const did=cur.id, dados=cur.mods[mod];
+  const r=await sb.from('modulos').upsert({diagnostico_id:did,modulo:mod,dados,updated_at:new Date().toISOString()}); modPend=false;
+  if(r.error){ modCopia(did,mod,dados); modFalhou=true; toast('Não foi possível salvar no servidor. Uma cópia ficou guardada neste navegador e será enviada de novo: '+r.error.message); renderStatus(); setTimeout(()=>{ if(cur&&cur.id===did&&modFalhou) modSave(mod); },15000); }
+  else { modCopiaApaga(did,mod); modFalhou=false; renderStatus(); } },600); }
+/* Rede de segurança: se o servidor recusar, o módulo fica guardado neste navegador até conseguir salvar */
+let modFalhou=false;
+const modCopiaKey=(d,m)=>'cd.modcopia.'+d+'.'+m;
+function modCopia(d,m,dados){ try{ localStorage.setItem(modCopiaKey(d,m),JSON.stringify({em:Date.now(),dados})); }catch(e){} }
+function modCopiaApaga(d,m){ try{ localStorage.removeItem(modCopiaKey(d,m)); }catch(e){} }
+function modCopiaLer(d,m){ try{ const x=JSON.parse(localStorage.getItem(modCopiaKey(d,m))||'null'); return x&&x.dados?x:null; }catch(e){ return null; } }
 function modAvisar(nome,valor){ (modOuv[nome]||[]).forEach(f=>{ try{ f(valor); }catch(e){} }); }
 window.LORSO_BRIDGE={
   cliente:()=>cur?{id:cur.id,nome:cur.nome}:{id:'',nome:''},
@@ -1942,6 +1952,9 @@ async function loadDiag(id){
   o.equipe=equipeList(id); o.mods={};
   o.meuNivel=me&&me.papel==='equipe'?((membros.find(m=>m.user_id===me.id&&m.diagnostico_id===id)||{}).nivel||''):'';
   try{ const mr=await sb.from('modulos').select('modulo,dados').eq('diagnostico_id',id); if(!mr.error)(mr.data||[]).forEach(r=>{ o.mods[r.modulo]=r.dados; }); }catch(e){ /* módulos opcionais */ }
+  /* cópia guardada neste navegador de um salvamento que o servidor recusou: volta e é reenviada */
+  ['dre','ptc'].forEach(m=>{ const c=modCopiaLer(id,m); if(!c) return; const srv=o.mods[m]; const tSrv=srv&&(srv.updatedAt||srv._u)||0;
+    if(!srv||c.em>tSrv){ o.mods[m]=c.dados; setTimeout(()=>{ if(cur&&cur.id===id){ modSave(m); toast('Recuperamos alterações que não tinham sido salvas no servidor'); } },1200); } else modCopiaApaga(id,m); });
   return o;
 }
 function diffMap(now,was){ const up=[],del=[]; new Set([...Object.keys(now),...Object.keys(was)]).forEach(k=>{ const a=now[k], b=was[k]; if(JSON.stringify(a??null)===JSON.stringify(b??null))return; if(a==null||a==='')del.push(k); else up.push(k); }); return {up,del}; }
@@ -1997,7 +2010,7 @@ function isTyping(){const a=document.activeElement;return a&&/INPUT|TEXTAREA|SEL
 /* tempo real: quando outra pessoa salva, recarrega e aplica assim que você para de digitar */
 let remoteT=null;
 function remoteSoon(){ clearTimeout(remoteT); remoteT=setTimeout(async()=>{
-  if(!cur)return; if(ver!==savedVer||saving||(typeof mdPend!=='undefined'&&mdPend)||modPend){ pendingRemote=true; return; }
+  if(!cur)return; if(ver!==savedVer||saving||(typeof mdPend!=='undefined'&&mdPend)||modPend||modFalhou){ pendingRemote=true; return; }
   try{ const o=await loadDiag(cur.id); if(ver!==savedVer||!cur||o.id!==cur.id){ pendingRemote=true; return; } pendingData=o; adoptRemote(); }catch(e){}
  },700); }
 function adoptRemote(){
