@@ -111,7 +111,8 @@ document.querySelectorAll("form.js-candidatura").forEach((form) => {
     const result = knockout ? "Não atende" : score >= 70 ? "Alto fit" : "Médio fit";
     fitScore.value = String(score);
     fitResult.value = result;
-    if (subjectInput) subjectInput.value = `${baseSubject} | ${result} | Fit ${score}`;
+    const nome = (form.querySelector('input[name="Nome"]')?.value || "").trim();
+    if (subjectInput) subjectInput.value = `${baseSubject} | ${result} | Fit ${score}${nome ? " | " + nome : ""}`;
   };
 
   form.addEventListener("submit", (event) => {

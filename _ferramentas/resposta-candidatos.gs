@@ -11,8 +11,9 @@
      o e-mail de confirmação (com topo e assinatura).
    - Vagas com perguntas de triagem também recebem o rótulo
      "Triagem/Alto fit", "Triagem/Médio fit" ou "Triagem/Não atende".
-   - Cada candidatura respondida recebe o rótulo "Candidatura respondida",
-     para não ser respondida duas vezes. Se faltar o e-mail do candidato,
+   - Cada candidatura respondida recebe o rótulo "Candidatura respondida"
+     e o ID da mensagem fica salvo, para não ser respondida duas vezes
+     (mesmo quando o Gmail junta várias candidaturas na mesma conversa). Se faltar o e-mail do candidato,
      recebe "Candidatura - verificar".
 
    Instalação (uma vez só):
@@ -38,25 +39,58 @@ const CONFIG = {
 function responderCandidaturas() {
   const rotuloOk = obterRotulo(CONFIG.ROTULO_OK);
   const rotuloErro = obterRotulo(CONFIG.ROTULO_ERRO);
-  const busca = `${CONFIG.BUSCA} -label:"${CONFIG.ROTULO_OK}" -label:"${CONFIG.ROTULO_ERRO}"`;
+  const processadas = carregarProcessadas();
 
-  GmailApp.search(busca, 0, 50).forEach((thread) => {
-    const candidatura = lerCandidatura(thread.getMessages()[0]);
+  // O Gmail junta numa mesma conversa e-mails com o mesmo assunto, então
+  // cada mensagem é tratada uma a uma e o controle é feito pelo ID dela.
+  GmailApp.search(CONFIG.BUSCA, 0, 50).forEach((thread) => {
+    thread.getMessages().forEach((mensagem) => {
+      const id = mensagem.getId();
+      if (processadas.ids[id]) return;
+      if (processadas.corte && mensagem.getDate().getTime() < processadas.corte) {
+        processadas.ids[id] = Date.now();
+        return;
+      }
 
-    if (!candidatura.email) {
-      thread.addLabel(rotuloErro);
-      console.warn('Candidatura sem e-mail: ' + thread.getFirstMessageSubject());
-      return;
-    }
+      const candidatura = lerCandidatura(mensagem);
+      processadas.ids[id] = Date.now();
 
-    GmailApp.sendEmail(candidatura.email, assunto(candidatura), textoSimples(candidatura), {
-      htmlBody: emailHtml(candidatura),
-      name: CONFIG.REMETENTE_NOME,
+      if (!candidatura.email) {
+        thread.addLabel(rotuloErro);
+        console.warn('Candidatura sem e-mail: ' + mensagem.getSubject());
+        return;
+      }
+
+      GmailApp.sendEmail(candidatura.email, assunto(candidatura), textoSimples(candidatura), {
+        htmlBody: emailHtml(candidatura),
+        name: CONFIG.REMETENTE_NOME,
+      });
+      thread.addLabel(rotuloOk);
+      if (candidatura.triagem) thread.addLabel(obterRotulo('Triagem/' + candidatura.triagem));
+      console.log(`Resposta enviada para ${candidatura.email} (${candidatura.vaga})`);
     });
-    thread.addLabel(rotuloOk);
-    if (candidatura.triagem) thread.addLabel(obterRotulo('Triagem/' + candidatura.triagem));
-    console.log(`Resposta enviada para ${candidatura.email} (${candidatura.vaga})`);
   });
+
+  salvarProcessadas(processadas);
+}
+
+// Guarda os IDs das mensagens já respondidas (últimos 30 dias).
+// Na primeira execução desta versão, ignora mensagens com mais de 1 hora,
+// que já foram respondidas pela versão anterior.
+function carregarProcessadas() {
+  const props = PropertiesService.getScriptProperties();
+  const salvo = props.getProperty('PROCESSADAS');
+  if (salvo) return { ids: JSON.parse(salvo), corte: 0 };
+  return { ids: {}, corte: Date.now() - 60 * 60 * 1000 };
+}
+
+function salvarProcessadas(processadas) {
+  const limite = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const ids = {};
+  Object.keys(processadas.ids).forEach((id) => {
+    if (processadas.ids[id] > limite) ids[id] = processadas.ids[id];
+  });
+  PropertiesService.getScriptProperties().setProperty('PROCESSADAS', JSON.stringify(ids));
 }
 
 /* -----------------------------
