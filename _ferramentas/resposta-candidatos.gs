@@ -9,6 +9,8 @@
    - A cada 5 minutos, responderCandidaturas() procura essas mensagens,
      lê nome, e-mail e vaga da tabela do FormSubmit e envia ao candidato
      o e-mail de confirmação (com topo e assinatura).
+   - Vagas com perguntas de triagem também recebem o rótulo
+     "Triagem/Alto fit", "Triagem/Médio fit" ou "Triagem/Não atende".
    - Cada candidatura respondida recebe o rótulo "Candidatura respondida",
      para não ser respondida duas vezes. Se faltar o e-mail do candidato,
      recebe "Candidatura - verificar".
@@ -52,6 +54,7 @@ function responderCandidaturas() {
       name: CONFIG.REMETENTE_NOME,
     });
     thread.addLabel(rotuloOk);
+    if (candidatura.triagem) thread.addLabel(obterRotulo('Triagem/' + candidatura.triagem));
     console.log(`Resposta enviada para ${candidatura.email} (${candidatura.vaga})`);
   });
 }
@@ -100,7 +103,9 @@ function lerCandidatura(mensagem) {
   const email = validarEmail(campos['E-mail']) || validarEmail(campoNoTexto(texto, 'E-mail')) || primeiroEmailExterno(texto);
   const vaga = campos['Vaga'] || (mensagem.getSubject().split(':')[1] || '').trim() || 'nossa vaga';
 
-  return { nome: nome, primeiroNome: primeiroNome(nome), email: email, vaga: vaga };
+  const triagem = campos['Triagem'] || '';
+
+  return { nome: nome, primeiroNome: primeiroNome(nome), email: email, vaga: vaga, triagem: triagem };
 }
 
 // Tabela do template "table" do FormSubmit: cada <tr> tem rótulo e valor.

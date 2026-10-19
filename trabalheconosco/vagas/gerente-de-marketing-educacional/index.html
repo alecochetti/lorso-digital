@@ -67,6 +67,15 @@
 
 <link rel="stylesheet" href="/css/style.css">
 <style>
+  .form-step[hidden] { display: none !important; }
+  .triagem-q { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+  .triagem-q legend { font-family: "Inter", sans-serif; font-size: 14px; line-height: 20px; color: #ffffff; margin-bottom: 0.5rem; padding: 0; }
+  .triagem-q.is-invalid legend { color: #ffb4ab; }
+  .choice { display: flex; align-items: center; gap: 0.625rem; padding: 0.625rem 0.875rem; border-radius: 0.5rem; border: 1px solid #1e2433; background-color: #090a0f; color: #c6c6cd; font-family: "Inter", sans-serif; font-size: 13.5px; line-height: 18px; cursor: pointer; transition: border-color .2s ease, background-color .2s ease, color .2s ease; }
+  .choice:hover { border-color: rgba(0, 255, 135, 0.45); }
+  .choice input { accent-color: #00ff87; width: 16px; height: 16px; flex-shrink: 0; margin: 0; cursor: pointer; }
+  .choice:has(input:checked) { border-color: #00ff87; background-color: rgba(0, 255, 135, 0.08); color: #ffffff; }
+  .triagem-q.is-invalid .choice { border-color: rgba(255, 180, 171, 0.5); }
   .file-drop {
     display: flex; align-items: center; justify-content: center; gap: 0.5rem;
     padding: 0.75rem 1rem; border-radius: 0.5rem; cursor: pointer;
@@ -295,6 +304,12 @@
               <span class="font-headline-sm text-headline-sm text-text-primary">Candidate-se a esta vaga</span>
             </div>
 
+            <input type="hidden" name="Fit (0 a 100)" value="" data-fit-score>
+            <input type="hidden" name="Triagem" value="" data-fit-result>
+
+            <div class="form-step flex flex-col gap-space-md" data-step="1">
+            <span class="font-label-technical text-label-technical text-text-muted uppercase">Etapa 1 de 2 · Seus dados</span>
+
             <div class="flex flex-col gap-space-xxs">
               <label class="font-label-technical text-label-technical uppercase text-on-surface-variant" for="cand-nome">Nome completo *</label>
               <input class="form-input" id="cand-nome" name="Nome" placeholder="Seu nome completo" required type="text" autocomplete="name">
@@ -334,6 +349,52 @@
               <input class="form-input" id="cand-pretensao" name="Pretensão salarial" placeholder="R$ 0.000,00" required type="text" inputmode="numeric" data-currency>
             </div>
 
+            <button class="group w-full inline-flex items-center justify-center gap-space-xs py-space-md rounded-lg bg-primary-container text-surface-base font-label-pill text-label-pill uppercase transition-all duration-300 hover:opacity-95 hover:scale-[1.01] cursor-pointer shadow-[0_0_24px_rgba(0,255,135,0.3)] hover:shadow-[0_0_36px_rgba(0,255,135,0.5)]" type="button" data-next>
+              <span class="font-bold text-[13px] tracking-wider">Continuar</span>
+              <span class="font-label-technical text-label-technical transition-transform duration-300 group-hover:translate-x-1">→</span>
+            </button>
+            </div>
+
+            <div class="form-step flex flex-col gap-space-md" data-step="2" hidden>
+            <div class="flex flex-col gap-space-xxs">
+              <span class="font-label-technical text-label-technical text-text-muted uppercase">Etapa 2 de 2 · Perguntas rápidas</span>
+              <span class="font-body-sm text-[13px] leading-[18px] text-text-muted">Leva menos de 1 minuto e nos ajuda a avaliar seu perfil com mais agilidade.</span>
+            </div>
+
+            <fieldset class="triagem-q">
+              <legend>Você já atuou como Gerente ou Gestor(a) de Marketing em instituição de ensino? *</legend>
+              <label class="choice"><input type="radio" name="Experiência como gestor(a) de marketing em educação" value="Sim, por mais de 3 anos" data-score="30" required><span>Sim, por mais de 3 anos</span></label>
+              <label class="choice"><input type="radio" name="Experiência como gestor(a) de marketing em educação" value="Sim, por até 3 anos" data-score="15"><span>Sim, por até 3 anos</span></label>
+              <label class="choice"><input type="radio" name="Experiência como gestor(a) de marketing em educação" value="Não" data-score="0" data-knockout><span>Não</span></label>
+            </fieldset>
+
+            <fieldset class="triagem-q">
+              <legend>Você tem disponibilidade para trabalho presencial em São Paulo, em horário comercial? *</legend>
+              <label class="choice"><input type="radio" name="Disponibilidade presencial em SP" value="Sim" data-score="0" required><span>Sim</span></label>
+              <label class="choice"><input type="radio" name="Disponibilidade presencial em SP" value="Não" data-score="0" data-knockout><span>Não</span></label>
+            </fieldset>
+
+            <fieldset class="triagem-q">
+              <legend>Você já respondeu por meta de captação ou matrícula? *</legend>
+              <label class="choice"><input type="radio" name="Meta de captação ou matrícula" value="Sim, em várias unidades" data-score="25" required><span>Sim, em várias unidades</span></label>
+              <label class="choice"><input type="radio" name="Meta de captação ou matrícula" value="Sim, em uma unidade" data-score="12"><span>Sim, em uma unidade</span></label>
+              <label class="choice"><input type="radio" name="Meta de captação ou matrícula" value="Não" data-score="0" data-knockout><span>Não</span></label>
+            </fieldset>
+
+            <fieldset class="triagem-q">
+              <legend>Qual o tamanho do maior time que você liderou? *</legend>
+              <label class="choice"><input type="radio" name="Maior time liderado" value="Até 5 pessoas" data-score="5" required><span>Até 5 pessoas</span></label>
+              <label class="choice"><input type="radio" name="Maior time liderado" value="De 6 a 15 pessoas" data-score="12"><span>De 6 a 15 pessoas</span></label>
+              <label class="choice"><input type="radio" name="Maior time liderado" value="Mais de 15 pessoas" data-score="20"><span>Mais de 15 pessoas</span></label>
+            </fieldset>
+
+            <fieldset class="triagem-q">
+              <legend>Qual o maior orçamento anual de marketing que você geriu? *</legend>
+              <label class="choice"><input type="radio" name="Maior orçamento anual de marketing" value="Até R$ 500 mil" data-score="5" required><span>Até R$ 500 mil</span></label>
+              <label class="choice"><input type="radio" name="Maior orçamento anual de marketing" value="De R$ 500 mil a R$ 2 milhões" data-score="15"><span>De R$ 500 mil a R$ 2 milhões</span></label>
+              <label class="choice"><input type="radio" name="Maior orçamento anual de marketing" value="Acima de R$ 2 milhões" data-score="25"><span>Acima de R$ 2 milhões</span></label>
+            </fieldset>
+
             <div class="flex items-start gap-space-sm">
               <input class="mt-1 w-4 h-4 rounded-sm accent-primary-container bg-surface-base cursor-pointer shrink-0" id="cand-consent" required type="checkbox">
               <label class="font-body-sm text-[13px] leading-[18px] text-text-muted cursor-pointer" for="cand-consent">Autorizo a LORSO Digital a usar meus dados para este processo seletivo.</label>
@@ -343,6 +404,9 @@
               <span class="font-bold text-[13px] tracking-wider" data-submit-label>Enviar Candidatura</span>
               <span class="font-label-technical text-label-technical transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1">↗</span>
             </button>
+
+            <button class="font-label-technical text-label-technical uppercase text-text-muted hover:text-text-primary transition-colors self-center cursor-pointer" type="button" data-back>← Voltar para seus dados</button>
+            </div>
 
             <div class="form-feedback form-feedback-error" data-feedback role="alert">
               <span class="material-symbols-outlined text-[20px]">error</span>
