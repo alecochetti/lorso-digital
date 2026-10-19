@@ -430,14 +430,91 @@
       <h2 class="font-headline-xl text-headline-lg md:text-headline-xl text-text-primary tracking-tight">LIDERANÇA SÊNIOR QUE JÁ VIVEU A ESCALA</h2>
     </div>
 
+    <!-- HUB LORSO (mesmo visual da /apresentacao) -->
+    <style>
+      #lhub{position:relative;display:grid;grid-template-columns:320px 1fr 320px;align-items:center;min-height:500px;padding:40px 44px 56px;background:#0E121A;border:1px solid #1C222D;border-radius:16px;overflow:hidden}
+      #lhub::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,#00FF87,#00E5FF)}
+      #lhubSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+      #lhubSvg path.b{fill:none;stroke:rgba(140,160,180,.16);stroke-width:1.2}
+      #lhubSvg path.hp{fill:none;stroke-width:1.6;opacity:.75;transition:opacity .25s,stroke-width .25s}
+      #lhubSvg path.hp.hot{opacity:1;stroke-width:2.6}
+      .lh-col{position:relative;z-index:1;display:flex;flex-direction:column;gap:12px}
+      .lh-card{display:flex;gap:12px;align-items:flex-start;padding:13px 15px;background:rgba(14,18,26,.92);border:1px solid #1C222D;border-radius:12px;transition:border-color .25s,box-shadow .25s,transform .25s}
+      .lh-card:hover,.lh-card.hot{border-color:rgba(0,255,135,.55);box-shadow:0 18px 40px -18px rgba(0,255,135,.4);transform:translateY(-2px)}
+      .lh-ic{width:36px;height:36px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#121B22;border:1px solid #1E2A33;color:#00FF87;overflow:hidden}
+      .lh-ic .material-symbols-outlined{font-size:19px}
+      .lh-card b{display:block;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:15px;color:#F2F5F7;letter-spacing:-.01em}
+      .lh-card p{font-size:12.5px;line-height:1.45;color:#A9B3C1;margin-top:3px}
+      .lh-mid{position:relative;display:flex;align-items:center;justify-content:center;height:100%;min-height:420px}
+      .lh-ring{position:absolute;left:50%;top:50%;border-radius:50%;transform:translate(-50%,-50%)}
+      .lh-r1{width:250px;height:250px;border:1px solid rgba(0,229,255,.18)}
+      .lh-r2{width:330px;height:330px;border:1px dashed rgba(0,255,135,.22);animation:lhspin 40s linear infinite}
+      .lh-r2::before{content:"";position:absolute;top:-4px;left:50%;width:8px;height:8px;border-radius:50%;background:#00FF87;box-shadow:0 0 12px #00FF87}
+      .lh-r3{width:410px;height:410px;border:1px solid rgba(255,255,255,.05)}
+      @keyframes lhspin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+      .lh-glow{position:absolute;left:50%;top:50%;width:520px;height:520px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(0,255,135,.12),transparent 60%);pointer-events:none}
+      #lhubCore{position:relative;z-index:1;width:180px;height:180px}
+      .lh-core{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 40%,#122019,#0A0D13 70%);border:2px solid rgba(0,255,135,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;box-shadow:0 0 60px rgba(0,255,135,.25),inset 0 0 30px rgba(0,255,135,.12);animation:lhpulse 3s ease-in-out infinite;font-family:"Space Grotesk",sans-serif;font-weight:700;color:#F2F5F7;text-align:center;line-height:1}
+      .lh-core small{display:block;font-family:Inter,sans-serif;font-size:9px;letter-spacing:.32em;color:#7D8796;margin-top:4px;font-weight:500}
+      @keyframes lhpulse{50%{box-shadow:0 0 90px rgba(0,255,135,.4),inset 0 0 40px rgba(0,255,135,.2)}}
+      .lh-tag{position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.22em;color:#7D8796;white-space:nowrap}
+      @media (max-width:1100px){
+        #lhub{display:flex;flex-direction:column;gap:14px;padding:28px 18px}
+        #lhubSvg,.lh-ring,.lh-glow{display:none}
+        .lh-mid{order:-1;min-height:0;flex-direction:column;gap:12px;padding-bottom:10px}
+        .lh-tag{position:static;transform:none}
+        #lhubCore{width:140px;height:140px}
+        .lh-col{width:100%}
+      }
+      @media (prefers-reduced-motion:reduce){.lh-r2,.lh-core{animation:none}}
+    </style>
+    <div id="lhub" aria-label="Hub LORSO Digital">
+      <svg id="lhubSvg" aria-hidden="true"><defs><linearGradient id="lgL" x1="0" x2="1"><stop offset="0" stop-color="#00E5FF"/><stop offset="1" stop-color="#00FF87"/></linearGradient><linearGradient id="lgR" x1="1" x2="0"><stop offset="0" stop-color="#8B7CFF"/><stop offset="1" stop-color="#00FF87"/></linearGradient></defs><g id="lhubG"></g></svg>
+      <div class="lh-col"><div class="lh-card" data-h="0"><div class="lh-ic"><span class="material-symbols-outlined">palette</span></div><div><b>Branding e conteúdo</b><p>Marca, RP, LinkedIn, redes sociais e vídeo com uma voz só.</p></div></div><div class="lh-card" data-h="1"><div class="lh-ic"><span class="material-symbols-outlined">campaign</span></div><div><b>Captação e mídia</b><p>Meta Ads, Google Ads e LPs que transformam clique em lead.</p></div></div><div class="lh-card" data-h="2"><div class="lh-ic"><span class="material-symbols-outlined">auto_awesome</span></div><div><b>Inteligência artificial</b><p>IA no conteúdo, no diagnóstico e na otimização das campanhas.</p></div></div><div class="lh-card" data-h="3"><div class="lh-ic"><span class="material-symbols-outlined">account_tree</span></div><div><b>Automações</b><p>CRM, WhatsApp e réguas de e-mail levando o lead até a venda.</p></div></div></div>
+      <div class="lh-mid">
+        <div class="lh-glow"></div><div class="lh-ring lh-r3"></div><div class="lh-ring lh-r2"></div><div class="lh-ring lh-r1"></div>
+        <div id="lhubCore"><div class="lh-core">
+          <svg width="52" height="52" viewBox="0 0 54 54" aria-hidden="true"><path d="M8 6h12v30h26v12H8z" fill="#00FF87"/><path d="M30 6h16l-8 22H22z" fill="#00E5FF"/><circle cx="41" cy="14" r="3.4" fill="#fff"/></svg>
+          <div>LORSO<small>DIGITAL.</small></div>
+        </div></div>
+        <div class="lh-tag">TUDO CONECTADO</div>
+      </div>
+      <div class="lh-col"><div class="lh-card" data-h="4"><div class="lh-ic"><span class="material-symbols-outlined">storefront</span></div><div><b>Operações comerciais</b><p>Varejo, atacado e e-commerce com canais organizados e DRE.</p></div></div><div class="lh-card" data-h="5"><div class="lh-ic"><span class="material-symbols-outlined">monitoring</span></div><div><b>Dados e inteligência</b><p>Diagnóstico, dashboards, avaliação de reports e metas.</p></div></div><div class="lh-card" data-h="6"><div class="lh-ic"><span class="material-symbols-outlined">rocket_launch</span></div><div><b>Produto e lançamentos</b><p>Go-to-market, ofertas e plataforma de lançamentos.</p></div></div><div class="lh-card" data-h="7"><div class="lh-ic"><span class="material-symbols-outlined">smartphone</span></div><div><b>Apps e plataformas</b><p>Sistemas e apps próprios construídos do zero.</p></div></div></div>
+    </div>
+    <script>
+    (function(){
+      var hub=document.getElementById('lhub'),g=document.getElementById('lhubG'),NS='http://www.w3.org/2000/svg';
+      function off(el){var x=0,y=0;while(el&&el!==hub){x+=el.offsetLeft;y+=el.offsetTop;el=el.offsetParent}return{x:x,y:y}}
+      function draw(){
+        g.innerHTML='';if(innerWidth<=1100)return;
+        var core=document.getElementById('lhubCore'),co=off(core),cx=co.x+core.offsetWidth/2,cy=co.y+core.offsetHeight/2,r=core.offsetWidth/2+4;
+        hub.querySelectorAll('.lh-card').forEach(function(c,i){
+          var o=off(c),left=i<4,sx=left?o.x+c.offsetWidth:o.x,sy=o.y+c.offsetHeight/2;
+          var a=Math.atan2(sy-cy,sx-cx),ex=cx+r*Math.cos(a),ey=cy+r*Math.sin(a),k=(left?1:-1)*Math.abs(ex-sx)*.55;
+          var d='M'+sx+' '+sy+' C'+(sx+k)+' '+sy+' '+(ex-k*.6)+' '+ey+' '+ex+' '+ey;
+          var b=document.createElementNS(NS,'path');b.setAttribute('d',d);b.setAttribute('class','b');g.appendChild(b);
+          var p=document.createElementNS(NS,'path');p.setAttribute('d',d);p.setAttribute('id','lhp'+i);p.setAttribute('class','hp');p.setAttribute('stroke','url(#'+(left?'lgL':'lgR')+')');g.appendChild(p);
+          var n=document.createElementNS(NS,'circle');n.setAttribute('cx',sx);n.setAttribute('cy',sy);n.setAttribute('r',3.5);n.setAttribute('fill',left?'#00E5FF':'#8B7CFF');g.appendChild(n);
+          [0,1].forEach(function(j){var dot=document.createElementNS(NS,'circle');dot.setAttribute('r',3);dot.setAttribute('fill','#00FF87');dot.setAttribute('style','filter:drop-shadow(0 0 6px #00FF87)');
+            var m=document.createElementNS(NS,'animateMotion');m.setAttribute('dur','2.6s');m.setAttribute('repeatCount','indefinite');m.setAttribute('begin',(0.4+i*.23+j*1.3)+'s');
+            var mp=document.createElementNS(NS,'mpath');mp.setAttributeNS('http://www.w3.org/1999/xlink','href','#lhp'+i);mp.setAttribute('href','#lhp'+i);m.appendChild(mp);dot.appendChild(m);g.appendChild(dot)});
+        });
+      }
+      hub.querySelectorAll('.lh-card').forEach(function(c){var i=c.dataset.h;
+        c.addEventListener('mouseenter',function(){var p=document.getElementById('lhp'+i);if(p)p.classList.add('hot')});
+        c.addEventListener('mouseleave',function(){var p=document.getElementById('lhp'+i);if(p)p.classList.remove('hot')})});
+      var t;addEventListener('resize',function(){clearTimeout(t);t=setTimeout(draw,150)});
+      addEventListener('load',draw);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(draw);draw();
+      setInterval(function(){var cs=hub.querySelectorAll('.lh-card'),k=Math.floor(Date.now()/1800)%cs.length;cs.forEach(function(c,j){c.classList.toggle('hot',j===k);var p=document.getElementById('lhp'+j);if(p)p.classList.toggle('hot',j===k)})},300);
+    })();
+    </script>
+
     <div class="bg-surface-raised rounded-xl p-space-xl lg:p-space-2xl grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop items-center">
-      <div class="lg:col-span-4 flex flex-col gap-space-md items-center lg:items-start text-center lg:text-left">
+      <div class="lg:col-span-12 flex flex-col gap-space-lg">
         <div class="flex flex-col">
           <span class="font-headline-md text-headline-md text-text-primary font-bold">Alessandro Cochetti</span>
           <span class="font-label-technical text-label-technical uppercase tracking-wide" style="color: rgb(226, 206, 185);">Founder</span>
         </div>
-      </div>
-      <div class="lg:col-span-8 flex flex-col gap-space-lg">
         <blockquote class="font-headline-md text-headline-sm md:text-headline-md text-text-primary italic leading-snug">
           "Olhamos para a sua operação como um ecossistema único. Conectamos tráfego, automação de processos e fluxos comerciais para acompanhar o lead em todas as etapas do funil até a conversão final."
         </blockquote>
