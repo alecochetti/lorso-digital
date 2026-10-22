@@ -1520,11 +1520,18 @@ function baseJson(){ return JSON.stringify({formato:'lorso-base-v1',cliente:cur.
   reitoria:Object.fromEntries(Object.entries(cur.campos).filter(([k])=>LID.some(a=>k.startsWith(a.id+'.')))),
   fontes:cur.fontes.map(f=>({tipo:f.tipo,titulo:f.titulo,url:f.url,conteudo:f.conteudo,dados:f.dados||null}))},null,1); }
 function addFonte(o){ const f={id:uid(),tipo:'texto',titulo:'',url:'',conteudo:'',dados:null,created_at:new Date().toISOString(),...o}; if(f.conteudo&&f.conteudo.length>400000)f.conteudo=f.conteudo.slice(0,400000); cur.fontes.push(f); touch(true); return f; }
+/* Texto do PDF com as linhas e colunas preservadas (tabelas e datas continuam legíveis) */
+function pdfLinhas(items){ let txt='', y=null, xFim=null;
+  items.forEach(it=>{ const s=it.str||''; const ty=it.transform?it.transform[5]:0, tx=it.transform?it.transform[4]:0, h=Math.abs(it.transform?it.transform[3]:10)||10;
+    if(y!==null&&Math.abs(ty-y)>h*0.5){ txt=txt.replace(/[ \t]+$/,'')+'\n'; xFim=null; }
+    if(s){ if(xFim!==null){ const gap=tx-xFim; txt+=gap>h*1.2?'   ':gap>h*0.15&&!/\s$/.test(txt)?' ':''; } txt+=s; xFim=tx+(it.width||0); y=ty; }
+    if(it.hasEOL){ txt=txt.replace(/[ \t]+$/,'')+'\n'; xFim=null; y=null; } });
+  return txt.split('\n').map(l=>l.replace(/[ \t]+$/,'')).filter(l=>l.trim()).join('\n').trim(); }
 async function lerArquivo(file){
   const n=file.name.toLowerCase();
   if(file.size>15*1024*1024) throw new Error('arquivo maior que 15 MB');
   if(n.endsWith('.pdf')){ await loadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js'); const lib=window.pdfjsLib; lib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-    const doc=await lib.getDocument({data:await file.arrayBuffer()}).promise; const out=[]; for(let i=1;i<=Math.min(doc.numPages,300);i++){ const p=await doc.getPage(i); const c=await p.getTextContent(); out.push(c.items.map(x=>x.str).join(' ').replace(/\s+/g,' ').trim()); } return out.filter(Boolean).join('\n\n'); }
+    const doc=await lib.getDocument({data:await file.arrayBuffer()}).promise; const out=[]; for(let i=1;i<=Math.min(doc.numPages,300);i++){ const p=await doc.getPage(i); const c=await p.getTextContent(); out.push(pdfLinhas(c.items)); } return out.filter(Boolean).join('\n\n'); }
   if(/\.xlsx?$/.test(n)){ await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'); const wb=window.XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
     return wb.SheetNames.map(nm=>{ const csv=window.XLSX.utils.sheet_to_csv(wb.Sheets[nm],{FS:'\t',blankrows:false,dateNF:'dd/mm/yyyy'}).split('\n').filter(l=>l.replace(/\t/g,'').trim()).join('\n'); return csv?`## Aba: ${nm}\n${csv.replace(/\b(\d{4})-(\d{2})-(\d{2})(?:[T ][\d:.]+Z?)?\b/g,'$3/$2/$1')}`:''; }).filter(Boolean).join('\n\n'); }
   if(n.endsWith('.docx')){ await loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js'); const r=await window.mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()}); return r.value; }
