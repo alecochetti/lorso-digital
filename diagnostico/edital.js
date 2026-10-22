@@ -134,11 +134,23 @@ function edCiclo(e){ if(!e.per||!e.un) return null; const nome=(e.turma?`${e.tur
   return ja?null:{nome,ini:e.per.ini,fim:e.per.fim,aulas:e.aulas||''}; }
 const edFmt=s=>s?s.split('-').reverse().join('/'):'';
 
+/* vagas do edital somadas por linha da capacidade (Captação e capacidade da UN) */
+function edCapLinha(un,c){ const t=String(c.turno||''), m=String(c.modalidade||'');
+  if(un==='graduacao') return m==='EAD'?'grad_ead':/noturno/i.test(t)?'grad_noturno':'grad_diurno';
+  if(un==='pos') return m==='EAD'?'pos_ead':m==='Híbrido'?'pos_hibrido':'pos_noturno';
+  if(un==='mestrado') return 'mestrado'; if(un==='colegio') return 'colegio'; return null; }
+function edCap(e){ if(!e.un||typeof CAPROWS==='undefined') return {linhas:[],ref:''};
+  const s={}; e.cursos.forEach(c=>{ const v=+c.vagas||0; const k=edCapLinha(e.un,c); if(v&&k) s[k]=(s[k]||0)+v; });
+  const linhas=CAPROWS.filter(r=>s[r[0]]).map(r=>{ const a=num(cur.campos[`base.cap.${r[0]}.vagas`]); return {k:r[0],nome:r[3],v:s[r[0]],atual:a}; });
+  const r0=String(cur.campos[`${e.un}.ciclo_ref`]||''); const ref=e.sem&&(!r0||(/^\d{4}\.\d$/.test(r0)&&e.sem>r0))?e.sem:'';
+  return {linhas,ref}; }
+
 function editalHtml(f,e){
   const mx=e.cursos.length?cursosMesclar(e.cursos,true):{novos:0,atual:0};
   const chR=e.un?`base.${e.un}.calendario`:'base.calendario', chD=e.un?`base.${e.un}.diferenciais`:'base.diferenciais';
   const R=ltNovasLinhas(chR,e.regras), Dd=ltNovasLinhas(chD,e.dif), ci=edCiclo(e);
-  const nada=!mx.novos&&!mx.atual&&!R.length&&!Dd.length&&!ci;
+  const cp=edCap(e), cpMuda=cp.linhas.filter(l=>l.atual==null||l.v>l.atual), cpMenor=cp.linhas.filter(l=>l.atual!=null&&l.v<l.atual), cpTroca=cpMuda.some(l=>l.atual);
+  const nada=!mx.novos&&!mx.atual&&!R.length&&!Dd.length&&!ci&&!cpMuda.length&&!cp.ref;
   const onde=e.un?` de ${esc(edUnNome(e.un))}`:'';
   const vt=e.vg?e.vg.turnos.map((t,j)=>`${t} ${e.vg.rows.reduce((a,r)=>a+(r.vagas[j]||0),0).toLocaleString('pt-BR')}`).join(' · '):'';
   return `<div class="lt">
@@ -150,6 +162,9 @@ function editalHtml(f,e){
       return `<div class="lt-b"><div><b>Cursos do edital</b><small>${pl(e.cursos.length,'curso','cursos')} · ${Object.entries(por).map(([k,n])=>`${esc(k)} ${n}`).join(' · ')}${mx.novos||mx.atual?` · ${[mx.novos?pl(mx.novos,'novo','novos'):'',mx.atual?pl(mx.atual,'com números novos','com números novos'):''].filter(Boolean).join(' e ')}`:' · já na tabela'}</small>
       <div class="lt-ex">${e.cursos.slice(0,8).map(c=>`<span class="chip">${esc(c.nome)} · ${esc(c.obs||c.modalidade)}${c.vagas?` · ${c.vagas} vagas`:''}</span>`).join('')}${e.cursos.length>8?`<span class="muted">+ ${e.cursos.length-8}</span>`:''}</div></div>
       ${mx.novos||mx.atual?`<button class="btn sm primary" data-act="lt-ed-cursos" data-id="${f.id}">Levar para a tabela${onde}</button>`:''}</div>`; })():''}
+    ${cpMuda.length||cp.ref||cpMenor.length?`<div class="lt-b"><div><b>Vagas na capacidade</b><small>${cpMuda.length?`Vagas do edital somadas por ${e.un==='pos'?'modalidade':'turno'}, para a coluna Alunos de Captação e capacidade${onde}. A ocupação aparece quando os captados forem preenchidos.`:''}${cpMenor.length?` Este edital soma menos vagas que a capacidade atual (${cpMenor.map(l=>`${esc(l.nome)}: ${l.v.toLocaleString('pt-BR')} aqui, ${l.atual.toLocaleString('pt-BR')} hoje`).join('; ')}); a capacidade não muda.`:''}${cp.ref?` Ciclo de referência: ${esc(cp.ref)}.`:''}</small>
+      ${cpMuda.length?`<ul class="lt-l">${cpMuda.map(l=>`<li>${esc(l.nome)}: ${l.v.toLocaleString('pt-BR')} vagas${l.atual?` <span class="muted">(hoje ${l.atual.toLocaleString('pt-BR')})</span>`:''}</li>`).join('')}</ul>`:''}</div>
+      ${cpMuda.length||cp.ref?`<button class="btn sm primary" data-act="lt-ed-cap" data-id="${f.id}">${cpTroca?'Atualizar a capacidade':'Preencher capacidade'}</button>`:''}</div>`:''}
     ${ci?`<div class="lt-b"><div><b>Ciclo de captação</b><small>${esc(ci.nome)}: inscrições de ${edFmt(ci.ini)} a ${edFmt(ci.fim)}${ci.aulas?` · aulas a partir de ${edFmt(ci.aulas)}`:''}</small></div><button class="btn sm primary" data-act="lt-ed-ciclo" data-id="${f.id}">Criar o ciclo${onde}</button></div>`:''}
     ${R.length?`<div class="lt-b"><div><b>Regras do edital</b><small>${pl(R.length,'regra','regras')} para as observações do calendário${onde}</small><ul class="lt-l">${R.slice(0,5).map(t=>`<li>${esc(t)}</li>`).join('')}${R.length>5?`<li class="muted">+ ${R.length-5}</li>`:''}</ul></div><button class="btn sm primary" data-act="lt-ed-campo" data-v="r" data-id="${f.id}">Adicionar às observações</button></div>`:''}
     ${Dd.length?`<div class="lt-b"><div><b>Reconhecimento e notas do MEC</b><small>${pl(Dd.length,'curso','cursos')} para os diferenciais${onde}</small><ul class="lt-l">${Dd.slice(0,4).map(t=>`<li>${esc(t)}</li>`).join('')}${Dd.length>4?`<li class="muted">+ ${Dd.length-4}</li>`:''}</ul></div><button class="btn sm primary" data-act="lt-ed-campo" data-v="d" data-id="${f.id}">Adicionar aos diferenciais</button></div>`:''}
@@ -161,6 +176,9 @@ if(typeof leituraClick==='function'){ const _lc=leituraClick; leituraClick=funct
   if(!act.startsWith('lt-ed-')) return _lc(act,d);
   const f=cur&&cur.fontes.find(x=>x.id===d.id); const e=f&&editalDe(f); if(!e) return true;
   if(act==='lt-ed-cursos'){ const x=cursosMesclar(e.cursos); toast(`${pl(x.novos,'linha nova','linhas novas')}${x.atual?` e ${pl(x.atual,'curso atualizado','cursos atualizados')}`:''} na tabela${e.un?' de '+edUnNome(e.un):''}`); return true; }
+  if(act==='lt-ed-cap'){ const cp=edCap(e); let n=0; cp.linhas.forEach(l=>{ if(l.atual==null||l.v>l.atual){ cur.campos[`base.cap.${l.k}.vagas`]=String(l.v); n++; } });
+    if(cp.ref) cur.campos[`${e.un}.ciclo_ref`]=cp.ref; touch(true); render();
+    toast(`${n?pl(n,'linha da capacidade preenchida','linhas da capacidade preenchidas'):'Capacidade já estava certa'}${cp.ref?' · ciclo de referência '+cp.ref:''}`); return true; }
   if(act==='lt-ed-ciclo'){ const ci=edCiclo(e); if(!ci) return true; const L=ciclosTodos(); L.push({id:uid(),un:e.un,nome:ci.nome,camp_ini:'',insc_ini:ci.ini,mat_ini:'',camp_fim:ci.fim,aulas:ci.aulas||''}); ciclosSalvar(L); render(); toast('Ciclo criado no calendário de captação'); return true; }
   if(act==='lt-ed-campo'){ const ch=d.v==='r'?(e.un?`base.${e.un}.calendario`:'base.calendario'):(e.un?`base.${e.un}.diferenciais`:'base.diferenciais');
     const L=ltNovasLinhas(ch,d.v==='r'?e.regras:e.dif); if(!L.length) return true;
