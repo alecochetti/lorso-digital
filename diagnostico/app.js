@@ -1543,6 +1543,9 @@ function importarBaseJson(j){
   let n=0; Object.entries(j.capacidade||{}).forEach(([k,v])=>{ if(k.startsWith('base.')&&v!=null&&!cur.campos[k]){ cur.campos[k]=String(v); n++; } });
   (j.cursos||[]).forEach(c=>{ if(c&&c.nome&&!cur.cursos.some(x=>x.nome===c.nome&&x.un===c.un)){ cur.cursos.push({id:uid(),un:'',modalidade:'',turno:'',preco:'',vagas:'',matriculados:'',status:'Vigente',lancamento:'',obs:'',...c}); n++; } });
   (j.fontes||[]).forEach(f=>{ if(f&&f.conteudo&&!cur.fontes.some(x=>x.titulo===f.titulo&&x.conteudo===f.conteudo)){ cur.fontes.push({id:uid(),created_at:new Date().toISOString(),...f}); n++; } });
+  /* achados prontos (ex.: gargalo levantado pela LORSO): dor e tarefas da execução, sem duplicar */
+  (j.dores||[]).forEach(x=>{ if(x&&x.txt&&!cur.dores.some(y=>y.txt===x.txt)){ cur.dores.push({id:uid(),area:'',etapa:'',tipo:'',sev:'2',freq:'',quem:'',sistema:'',data:today(),...x,id:uid()}); n++; } });
+  (j.acoes||[]).forEach(x=>{ if(x&&x.txt&&!cur.acoes.some(y=>y.txt===x.txt)){ newTask({...x,id:uid()}); n++; } });
   touch(true); toast(n?`Base importada: ${n} itens novos`:'Nada novo para importar');
 }
 async function lerSite(url,paginas){
