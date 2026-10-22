@@ -19,7 +19,7 @@ function edUn(cab){ const t=edSemAcento(cab).toLowerCase();
   if(/colegio|ensino fundamental|educacao infantil/.test(t)) return 'colegio';
   return ''; }
 function edSemestre(t){ let m=t.match(/PROCESSO SELETIVO\s+(\d{4})\s*[-./]\s*([12])/i); if(m) return `${m[1]}.${m[2]}`;
-  m=t.match(/([12])\s*[oº°]\s*semestre do ano letivo de\s+(\d{4})/i); if(m) return `${m[2]}.${m[1]}`;
+  m=t.match(/([12])\s*[oº°]\s*semestre (?:do ano letivo )?de\s+(\d{4})/i); if(m) return `${m[2]}.${m[1]}`;
   m=t.match(/\b(20\d{2})[./-]([12])\b/); return m?`${m[1]}.${m[2]}`:''; }
 
 /* nome do curso no edital → nome que já está na base, quando for o mesmo curso */
@@ -52,14 +52,18 @@ function edMec(T){ const out=[]; const re=/([A-ZÀ-Ú][\wÀ-ú.,' ]{2,90}?)\s+(P
   while((m=re.exec(T))){ const nome=edTiraCab(edPlano(m[1])); if(nome.length>=3) out.push({nome,modalidade:/dist|ead/i.test(m[2])?'EAD':m[2]==='Semipresencial'?'Híbrido':m[2],ato:m[3]==='R'?'reconhecido':'autorizado',portaria:edPlano(m[4]),cpc:m[5],enade:m[6]}); }
   return out; }
 
-function edPeriodo(T){ const m=T.match(/(?:iniciar-se-[aá]|ter[aá] in[ií]cio|ocorrer[aã]o)[^.]{0,40}?em\s+([a-zç]+)\s+de\s+(\d{4})[^.]{0,160}?at[eé]\s+([a-zç]+)\s+de\s+(\d{4})/i)||T.match(/entre\s+([a-zç]+)\s+de\s+(\d{4})\s+e\s+([a-zç]+)\s+de\s+(\d{4})/i);
+const edMes=s=>ED_MESES.findIndex(x=>edSemAcento(x)===edSemAcento(s).toLowerCase())+1;
+const edIso=(d,mes,a)=>{ const m=edMes(mes); return m?`${a}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`:''; };
+function edPeriodo(T){ const x=T.match(/(?:per[ií]odo de|entre)\s+(\d{1,2})\s+de\s+([a-zç]+)\s+(?:de\s+)?(\d{4})?\s*(?:a|at[eé]|e)\s+(\d{1,2})\s+de\s+([a-zç]+)\s+de\s+(\d{4})/i);
+  if(x){ const ini=edIso(x[1],x[2],x[3]||x[6]), fim=edIso(x[4],x[5],x[6]); if(ini&&fim) return {ini,fim,txt:`${x[1]} de ${x[2].toLowerCase()} de ${x[3]||x[6]} a ${x[4]} de ${x[5].toLowerCase()} de ${x[6]}`,exato:true}; }
+  const m=T.match(/(?:iniciar-se-[aá]|ter[aá] in[ií]cio|ocorrer[aã]o)[^.]{0,40}?em\s+([a-zç]+)\s+de\s+(\d{4})[^.]{0,160}?at[eé]\s+([a-zç]+)\s+de\s+(\d{4})/i)||T.match(/entre\s+([a-zç]+)\s+de\s+(\d{4})\s+e\s+([a-zç]+)\s+de\s+(\d{4})/i);
   if(!m) return null; const mi=ED_MESES.findIndex(x=>edSemAcento(x)===edSemAcento(m[1]).toLowerCase())+1, mf=ED_MESES.findIndex(x=>edSemAcento(x)===edSemAcento(m[3]).toLowerCase())+1; if(!mi||!mf) return null;
   const pad=n=>String(n).padStart(2,'0'), ult=new Date(+m[4],mf,0).getDate();
   return {ini:`${m[2]}-${pad(mi)}-01`,fim:`${m[4]}-${pad(mf)}-${pad(ult)}`,txt:`${m[1].toLowerCase()} de ${m[2]} a ${m[3].toLowerCase()} de ${m[4]}`}; }
 
 /* Regras que mudam a captação, em frases curtas */
 function edRegras(T,p){ const R=[]; const add=s=>s&&!R.includes(s)&&R.push(s); let m;
-  if(p) add(`Processo seletivo de ${p.txt}${/cont[ií]nua/i.test(T)?', contínuo enquanto houver vagas':''}${/prorrogad/i.test(T)?' (pode ser prorrogado pela Reitoria)':''}.`);
+  if(p) add(`${p.exato?'Inscrições':'Processo seletivo'} de ${p.txt}${/cont[ií]nua/i.test(T)?', contínuo enquanto houver vagas':''}${/prorrogad/i.test(T)?' (pode ser prorrogado pela Reitoria)':''}.`);
   if((m=T.match(/oferecendo\s+(\d{2,6})/i))) add(`${(+m[1]).toLocaleString('pt-BR')} vagas no processo seletivo.`);
   if((m=T.match(/m[ií]nimo,?\s+(?:de\s+)?(\d{1,3})\s*\(\w+\)\s*alunos/i))) add(`Turma só abre com no mínimo ${m[1]} alunos matriculados no turno${/semestres subsequentes/i.test(T)?' (vale também nos semestres seguintes)':''}.`);
   if((m=T.match(/matutino migrar[aã]o[^.]{0,80}?(\d{1,2})\s*[ºo°]/i))) add(`Cursos do matutino migram para o noturno a partir do ${m[1]}º semestre.`);
@@ -75,26 +79,59 @@ function edRegras(T,p){ const R=[]; const add=s=>s&&!R.includes(s)&&R.push(s); l
   if(/fies/i.test(T)||/prouni/i.test(T)) add(`Aceita ${[/fies/i.test(T)?'FIES':'',/prouni/i.test(T)?'ProUni':''].filter(Boolean).join(' e ')}.`);
   const wpp=T.match(/WhatsApp\s*\(?(\d{2})\)?[\s-]*([\d][\d\s-]{7,11}\d)/i);
   if(/24 horas/i.test(T)||wpp) add(`Inscrições${/24 horas/i.test(T)?' online 24h':''}${wpp?`; atendimento pelo WhatsApp (${wpp[1]}) ${wpp[2].replace(/\s+/g,'').replace(/^(\d{5})-?(\d{4})$/,'$1-$2')}`:''}.`);
+  /* Pós-graduação e MBA */
+  const ve=T.match(/Modalidade EAD:\s*(\d+)\s*vagas/i), vd=T.match(/Demais modalidades:\s*(\d+)\s*vagas/i);
+  if(ve||vd) add(`Vagas: ${[ve?`${ve[1]} por curso no EAD`:'',vd?`${vd[1]} por curso nas demais modalidades`:''].filter(Boolean).join('; ')}.`);
+  if(/n[aã]o oferecer o curso caso o n[uú]mero m[ií]nimo/i.test(T)) add('O curso pode não abrir se não atingir o número mínimo de alunos (o edital não diz qual é).');
+  if(/MBAs?,? a an[aá]lise do Curriculum Vitae e a entrevista s[aã]o obrigat/i.test(T)) add('MBA: análise de currículo e entrevista obrigatórias; nas especializações, só se o coordenador pedir.');
+  if(/portadores de diploma de ensino superior em qualquer [aá]rea/i.test(T)) add('Público: quem tem diploma de ensino superior em qualquer área.');
+  if((m=T.match(/Cancelamentos antes do in[ií]cio das aulas:\s*devolu[cç][aã]o de\s*(\d{1,3})%/i))) add(`Cancelamento antes do início das aulas devolve ${m[1]}% do valor pago; depois, sem devolução.`);
+  if((m=T.match(/parcelas vencem no dia\s*(\d{1,2})/i))) add(`1ª parcela na matrícula; as demais vencem no dia ${m[1]} de cada mês, a partir do início das aulas.`);
+  if((m=T.match(/desligamento[^.]{0,80}?menos de\s*(\d+)\s*\(\w+\)\s*anos/i))) add(`Retorno ao curso para quem saiu há menos de ${m[1]} anos, com análise de aproveitamento.`);
+  edAulas(T).forEach(a=>add(`Aulas${a.mod?` (${a.mod})`:''}: ambientação ${a.amb?`em ${edFmt(a.amb)}`:''}${a.ini?`${a.amb?', ':''}disciplinas a partir de ${edFmt(a.ini)}`:''}.`.replace('ambientação ,','')));
   return R; }
+
+/* "Modalidade EAD: Ambientação a partir de 01 de setembro de 2026 ... a partir de 18 de setembro de 2026" */
+function edAulas(T){ const out=[]; const i=T.search(/CALEND[ÁA]RIO/); if(i<0) return out; const seg=T.slice(i,i+1500).split(/RETORNO AO CURSO|ENDERE[ÇC]O DO CURSO/i)[0];
+  seg.split(/(?=Modalidades?\s)/).forEach(p=>{ const md=(p.match(/^Modalidades?\s+([^:]{2,60}):/)||[])[1]; const ds=[...p.matchAll(/(\d{1,2})\s+de\s+([a-zç]+)\s+de\s+(\d{4})/gi)].map(x=>edIso(x[1],x[2],x[3])).filter(Boolean);
+    if(ds.length) out.push({mod:md?md.trim():'',amb:/ambienta/i.test(p)?ds[0]:'',ini:ds.length>1?ds[1]:/ambienta/i.test(p)?'':ds[0]}); });
+  return out; }
+
+/* Listas numeradas por modalidade (editais de Pós): "Modalidade Flexível 1. Controladoria 2. ..." */
+const ED_MOD=[[/flex/i,'Híbrido','Flexível'],[/live/i,'EAD','Live'],[/semipresencial/i,'Híbrido','Semipresencial'],[/dist[aâ]ncia|ead|online/i,'EAD','EAD'],[/presencial/i,'Presencial','Presencial'],[/h[ií]brid/i,'Híbrido','Híbrido']];
+function edListas(T){ const ini=T.search(/Modalidade\s+(?:Flex|Live|[ÀA]\s+Dist|EAD|Presencial|H[ií]brid)|SEMIPRESENCIAL/i); if(ini<0) return [];
+  const fim=T.slice(ini).search(/P[ÚU]BLICO-ALVO|VAGAS OFERECIDAS|PROCESSO SELETIVO\s/i); const seg=T.slice(ini,fim>0?ini+fim:ini+5000);
+  const out=[]; seg.split(/(?=Modalidade\s+(?:Flex|Live|[ÀA]\s+Dist|EAD|Presencial|H[ií]brid)|\bSEMIPRESENCIAL\b|MODALIDADE\s)/i).forEach(p=>{
+    const cab=(p.match(/^(.{0,40}?)(?=\s+1\.\s)/)||[])[1]||''; const md=ED_MOD.find(([re])=>re.test(cab)); if(!md) return;
+    p.slice(cab.length).split(/\s(?=\d{1,2}\.\s)/).forEach(it=>{ let n=it.replace(/^\s*\d{1,2}\.\s+/,'').replace(/,?\s*mod\.\s*(online|presencial|h[ií]brid\w*)\s*$/i,'').replace(/[.;,\s]+$/,'').trim();
+      if(n.length>=3&&n.length<=110&&!/^\d/.test(n)) out.push({nome:n,modalidade:md[1],rotulo:md[2]}); }); });
+  return out; }
 
 function editalDe(f){
   const T=edPlano(f&&f.conteudo); const tit=String(f&&f.titulo||'');
   if(!/edital/i.test(tit+' '+T.slice(0,1500))||!/processo seletivo|vestibular|inscri[cç]/i.test(T.slice(0,4000))) return null;
   if(typeof fonteAchado==='function'&&fonteAchado(f)) return null;
   const un=edUn(tit+' '+T.slice(0,1500)), sem=edSemestre(tit+' '+T.slice(0,1500));
-  const vg=edVagas(T), mec=edMec(T), per=edPeriodo(T), regras=edRegras(T,per);
+  const T2=T.replace(/Esse documento foi assinado.{0,160}?validate\/[A-Z0-9-]+/gi,' ').replace(/\s+/g,' ');
+  const vg=edVagas(T2), mec=edMec(T2), per=edPeriodo(T2), regras=edRegras(T2,per);
   const mecDe=n=>mec.find(x=>edCore(x.nome)===edCore(n));
   const cursos=[]; if(vg) vg.rows.forEach(r=>{ const mx=mecDe(r.nome); const nome=edNomeBase(r.nome,un);
     vg.turnos.forEach((t,j)=>{ const v=r.vagas[j]; if(!v) return; const pt=r.porTurma[j];
       cursos.push({id:uid(),un,nome,modalidade:(mx&&mx.modalidade)||'Presencial',turno:t,preco:'',turmas:pt?String(Math.ceil(v/pt)):'',vagas:String(v),meta:'',matriculados:'',status:'Vigente',lancamento:'',obs:''}); }); });
+  const ls=vg?[]:edListas(T2); const ve=+((T2.match(/Modalidade EAD:\s*(\d+)\s*vagas/i)||[])[1]||0), vd=+((T2.match(/Demais modalidades:\s*(\d+)\s*vagas/i)||[])[1]||0);
+  ls.forEach(c=>{ const nome=edNomeBase(c.nome,un); const dup=ls.filter(x=>edCore(x.nome)===edCore(c.nome)&&x.modalidade===c.modalidade).length>1; const v=c.modalidade==='EAD'&&c.rotulo==='EAD'?ve:vd;
+    if(!cursos.some(x=>x.nome===nome&&x.modalidade===c.modalidade&&x.obs===(dup?c.rotulo:'')))
+      cursos.push({id:uid(),un,nome,modalidade:c.modalidade,turno:'',preco:'',turmas:'',vagas:v?String(v):'',meta:'',matriculados:'',status:'Vigente',lancamento:'',obs:dup?c.rotulo:''}); });
+  const turma=(T2.match(/TURMA DE\s+([A-ZÇa-zç]+)\s*\/\s*(\d{4})/i)||[]);
+  const aulas=edAulas(T2).map(a=>a.ini).filter(Boolean).sort()[0]||'';
   const dif=mec.map(x=>`${edNomeBase(x.nome,un)}: ${x.ato} (${x.portaria})${/^\d/.test(x.cpc)?`, CPC ${x.cpc}`:x.cpc==='SC'?', sem CPC ainda':''}${/^\d/.test(x.enade)?`, Enade ${x.enade}`:''}.`);
   if(!cursos.length&&!regras.length&&!dif.length) return null;
-  return {un,sem,vg,cursos,regras,dif,per}; }
+  return {un,sem,vg,ls,cursos,regras,dif,per,aulas,turma:turma[1]?`Turma de ${turma[1].toLowerCase()}/${turma[2]}`:''}; }
 
 const edUnNome=un=>(UNS.find(u=>u.id===un)||{}).nome||'';
-function edCiclo(e){ if(!e.per||!e.un) return null; const nome=`Processo seletivo ${e.sem||''}`.trim();
+function edCiclo(e){ if(!e.per||!e.un) return null; const nome=(e.turma?`${e.turma}${e.sem?' · '+e.sem:''}`:`Processo seletivo ${e.sem||''}`).trim();
   const ja=(typeof ciclosTodos==='function'?ciclosTodos():[]).some(c=>c.un===e.un&&(c.nome===nome||(c.insc_ini===e.per.ini&&c.camp_fim===e.per.fim)));
-  return ja?null:{nome,ini:e.per.ini,fim:e.per.fim}; }
+  return ja?null:{nome,ini:e.per.ini,fim:e.per.fim,aulas:e.aulas||''}; }
 const edFmt=s=>s?s.split('-').reverse().join('/'):'';
 
 function editalHtml(f,e){
@@ -109,7 +146,11 @@ function editalHtml(f,e){
     ${e.vg?`<div class="lt-b"><div><b>Cursos e vagas</b><small>${pl(e.vg.rows.length,'curso','cursos')} · ${e.vg.total.toLocaleString('pt-BR')} vagas${vt?' · '+vt:''}${mx.novos||mx.atual?` · ${[mx.novos?pl(mx.novos,'linha nova','linhas novas'):'',mx.atual?pl(mx.atual,'curso com números novos','cursos com números novos'):''].filter(Boolean).join(' e ')}`:' · já na tabela'}</small>
       <div class="lt-ex">${e.vg.rows.slice(0,6).map(r=>`<span class="chip">${esc(r.nome)} · ${r.vagas.map((v,j)=>v?`${e.vg.turnos[j].slice(0,3)}. ${v}`:'').filter(Boolean).join(' / ')}</span>`).join('')}${e.vg.rows.length>6?`<span class="muted">+ ${e.vg.rows.length-6}</span>`:''}</div></div>
       ${mx.novos||mx.atual?`<button class="btn sm primary" data-act="lt-ed-cursos" data-id="${f.id}">Levar para a tabela${onde}</button>`:''}</div>`:''}
-    ${ci?`<div class="lt-b"><div><b>Ciclo de captação</b><small>${esc(ci.nome)}: inscrições de ${edFmt(ci.ini)} a ${edFmt(ci.fim)}</small></div><button class="btn sm primary" data-act="lt-ed-ciclo" data-id="${f.id}">Criar o ciclo${onde}</button></div>`:''}
+    ${!e.vg&&e.cursos.length?(()=>{ const por={}; e.cursos.forEach(c=>{ const k=c.obs||c.modalidade; por[k]=(por[k]||0)+1; });
+      return `<div class="lt-b"><div><b>Cursos do edital</b><small>${pl(e.cursos.length,'curso','cursos')} · ${Object.entries(por).map(([k,n])=>`${esc(k)} ${n}`).join(' · ')}${mx.novos||mx.atual?` · ${[mx.novos?pl(mx.novos,'novo','novos'):'',mx.atual?pl(mx.atual,'com números novos','com números novos'):''].filter(Boolean).join(' e ')}`:' · já na tabela'}</small>
+      <div class="lt-ex">${e.cursos.slice(0,8).map(c=>`<span class="chip">${esc(c.nome)} · ${esc(c.obs||c.modalidade)}${c.vagas?` · ${c.vagas} vagas`:''}</span>`).join('')}${e.cursos.length>8?`<span class="muted">+ ${e.cursos.length-8}</span>`:''}</div></div>
+      ${mx.novos||mx.atual?`<button class="btn sm primary" data-act="lt-ed-cursos" data-id="${f.id}">Levar para a tabela${onde}</button>`:''}</div>`; })():''}
+    ${ci?`<div class="lt-b"><div><b>Ciclo de captação</b><small>${esc(ci.nome)}: inscrições de ${edFmt(ci.ini)} a ${edFmt(ci.fim)}${ci.aulas?` · aulas a partir de ${edFmt(ci.aulas)}`:''}</small></div><button class="btn sm primary" data-act="lt-ed-ciclo" data-id="${f.id}">Criar o ciclo${onde}</button></div>`:''}
     ${R.length?`<div class="lt-b"><div><b>Regras do edital</b><small>${pl(R.length,'regra','regras')} para as observações do calendário${onde}</small><ul class="lt-l">${R.slice(0,5).map(t=>`<li>${esc(t)}</li>`).join('')}${R.length>5?`<li class="muted">+ ${R.length-5}</li>`:''}</ul></div><button class="btn sm primary" data-act="lt-ed-campo" data-v="r" data-id="${f.id}">Adicionar às observações</button></div>`:''}
     ${Dd.length?`<div class="lt-b"><div><b>Reconhecimento e notas do MEC</b><small>${pl(Dd.length,'curso','cursos')} para os diferenciais${onde}</small><ul class="lt-l">${Dd.slice(0,4).map(t=>`<li>${esc(t)}</li>`).join('')}${Dd.length>4?`<li class="muted">+ ${Dd.length-4}</li>`:''}</ul></div><button class="btn sm primary" data-act="lt-ed-campo" data-v="d" data-id="${f.id}">Adicionar aos diferenciais</button></div>`:''}
   </div>`; }
@@ -120,7 +161,7 @@ if(typeof leituraClick==='function'){ const _lc=leituraClick; leituraClick=funct
   if(!act.startsWith('lt-ed-')) return _lc(act,d);
   const f=cur&&cur.fontes.find(x=>x.id===d.id); const e=f&&editalDe(f); if(!e) return true;
   if(act==='lt-ed-cursos'){ const x=cursosMesclar(e.cursos); toast(`${pl(x.novos,'linha nova','linhas novas')}${x.atual?` e ${pl(x.atual,'curso atualizado','cursos atualizados')}`:''} na tabela${e.un?' de '+edUnNome(e.un):''}`); return true; }
-  if(act==='lt-ed-ciclo'){ const ci=edCiclo(e); if(!ci) return true; const L=ciclosTodos(); L.push({id:uid(),un:e.un,nome:ci.nome,camp_ini:'',insc_ini:ci.ini,mat_ini:'',camp_fim:ci.fim,aulas:''}); ciclosSalvar(L); render(); toast('Ciclo criado no calendário de captação'); return true; }
+  if(act==='lt-ed-ciclo'){ const ci=edCiclo(e); if(!ci) return true; const L=ciclosTodos(); L.push({id:uid(),un:e.un,nome:ci.nome,camp_ini:'',insc_ini:ci.ini,mat_ini:'',camp_fim:ci.fim,aulas:ci.aulas||''}); ciclosSalvar(L); render(); toast('Ciclo criado no calendário de captação'); return true; }
   if(act==='lt-ed-campo'){ const ch=d.v==='r'?(e.un?`base.${e.un}.calendario`:'base.calendario'):(e.un?`base.${e.un}.diferenciais`:'base.diferenciais');
     const L=ltNovasLinhas(ch,d.v==='r'?e.regras:e.dif); if(!L.length) return true;
     const atual=String(cur.campos[ch]||'').trim(); cur.campos[ch]=(atual?atual+'\n\n':'')+`De "${f.titulo||'edital'}":\n`+L.map(t=>'- '+t).join('\n'); touch(true);
