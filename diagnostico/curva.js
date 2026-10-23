@@ -31,7 +31,7 @@ function cvAnalise(c){
   const s=cvSerie(c), last=s[s.length-1]||null, d=buDados(c.un);
   const i=cvUlt(c,'i'), a=cvUlt(c,'a'), m=cvUlt(c,'m'), l=cvUlt(c,'l');
   const t=last?cvOff(c,last.d):null, fim=c.camp_fim?cvOff(c,c.camp_fim):null;
-  const inv=cvUlt(c,'v'), verba=num(c.verba); /* investido = o que o CRM ou a mídia informam até a data; a verba do ciclo é o planejado */
+  const inv=cvUlt(c,'v'), verba=num(c.verba)||cvVerbaCiclo(c); /* investido = o que o CRM ou a mídia informam até a data; a verba do ciclo é o planejado */
   const ant=cvAnterior(c); let proj=null, comp=null, como='';
   if(m!=null&&t!=null){
     if(ant){ const pm=cvEm(ant,'m',t), pf=cvUlt(ant,'m'); if(pm) { comp={m:pm,i:cvEm(ant,'i',t),nome:ant.nome}; if(pf!=null&&fim!=null&&t<fim&&pm>=10&&m>=5){ proj=m/pm*pf; como=`no ritmo de "${ant.nome}"`; } } }
@@ -44,6 +44,20 @@ function cvAnalise(c){
     cac:inv&&m?inv/m:null, cpi:inv&&i?inv/i:null, cpa:inv&&a?inv/a:null, cpl:inv&&l?inv/l:null, li:l&&i!=null?i/l:null, cacProj:verba&&proj?verba/proj:null,
     di:dlt('i'),da:dlt('a'),dm:dlt('m')};
 }
+
+/* ---------- verba: orçamento anual fechado, distribuído mês a mês conforme a captação ---------- */
+const CV_MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function cvPlano(un){ try{ const o=JSON.parse(cur.campos[`base.${un}.plano_verba`]||'{}'); return o&&typeof o==='object'?o:{}; }catch(e){ return {}; } }
+function cvPlanoSalvar(un,o){ const k=`base.${un}.plano_verba`; const L=Object.entries(o).filter(([,v])=>v!=null&&v!==''); if(L.length) cur.campos[k]=JSON.stringify(Object.fromEntries(L)); else delete cur.campos[k]; touch(false); }
+/* verba planejada para o ciclo: soma dos meses do plano dentro da janela da campanha, proporcional aos dias */
+function cvVerbaCiclo(c){ const P=cvPlano(c.un); if(!Object.keys(P).length) return null; const a=cDt(c.camp_ini||c.insc_ini), b=cDt(c.camp_fim); if(!a||!b||b<a) return null;
+  let tot=0, d=new Date(a.getFullYear(),a.getMonth(),1);
+  while(d<=b){ const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`, v=num(P[ym]); if(v){ const fimM=new Date(d.getFullYear(),d.getMonth()+1,0), ini=a>d?a:d, fim=b<fimM?b:fimM; const dias=Math.round((fim-ini)/864e5)+1; tot+=v*dias/fimM.getDate(); } d=new Date(d.getFullYear(),d.getMonth()+1,1); }
+  return tot||null; }
+/* matriculados da UN: quem manda é o CRM (matrícula paga). Usa o ciclo de referência; sem ele, o ciclo escolhido na Captação */
+function cvCrmUn(un){ const ref=String(cur.campos[`${un}.ciclo_ref`]||'').trim(); const L=ciclosTodos().filter(c=>c.un===un&&cvSerie(c).some(p=>num(p.m)!=null));
+  if(!L.length) return null; const c=(ref&&L.find(x=>String(x.nome||'').includes(ref)))||(typeof cvEscolhido==='function'&&L.find(x=>x.id===(cvEscolhido(un)||{}).id))||L[L.length-1];
+  return {c,m:cvUlt(c,'m'),i:cvUlt(c,'i'),l:cvUlt(c,'l'),inv:cvUlt(c,'v'),verba:num(c.verba)||cvVerbaCiclo(c)}; }
 
 /* ---------- gráfico ---------- */
 function cvGrafico(c,A,o){
@@ -168,7 +182,7 @@ function cvEscolhido(un){ const L=ciclosTodos().filter(c=>c.un===un); if(!L.leng
   const e=L.find(c=>c.id===ui.cvCiclo[un]); if(e) return e;
   return L.find(c=>cicloSituacao(c).k==='agora')||L.filter(c=>cvSerie(c).length).sort((a,b)=>String(cvSerie(b).slice(-1)[0].d).localeCompare(cvSerie(a).slice(-1)[0].d))[0]||L[L.length-1]; }
 
-const CV_SUB=[['funil','Funil e matrículas'],['cursos','Cursos'],['origens','Origens e campanhas'],['atend','Call center e comercial'],['registros','Registros e importação']];
+const CV_SUB=[['funil','Funil e matrículas'],['cursos','Cursos'],['origens','Origens e campanhas'],['atend','Call center e comercial'],['verba','Verba e retorno'],['registros','Registros e importação']];
 function curvaHtml(un){
   const L=ciclosTodos().filter(c=>c.un===un); const c=cvEscolhido(un);
   if(!c) return `<section class="block"><div class="block-h"><h3>Captação</h3></div>${cvEditaisHtml(un)}<p class="empty">Ou crie o ciclo à mão no Calendário de captação, abaixo (por exemplo, Vestibular 2027.1), e depois importe os números do CRM.</p></section>`;
@@ -179,11 +193,12 @@ function curvaHtml(un){
    <p class="cv-atual">${A.last?`${em?`Atualizado em <b>${em.toLocaleDateString('pt-BR')} às ${em.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</b> · `:''}dados até <b>${cDt(A.last.d).toLocaleDateString('pt-BR')}</b>${c.cvFonte?` · da planilha "${esc(c.cvFonte)}"`:''}`:'Sem registros ainda.'}</p>
    <nav class="cv-sub-t" aria-label="Partes da captação">${CV_SUB.map(([k,l])=>`<button class="${sub===k?'on':''}" data-act="ciclo-cv-sub" data-v="${k}" ${sub===k?'aria-current="page"':''}>${l}</button>`).join('')}</nav>`;
   let corpo='';
-  if(!A.last&&sub!=='registros') corpo=`<p class="empty">${esc(c.nome||'Este ciclo')} ainda não tem registros. Em <button class="lnk" data-act="ciclo-cv-sub" data-v="registros">Registros e importação</button>, importe a planilha do CRM ou registre os números de hoje.</p>`;
+  if(!A.last&&sub!=='registros'&&sub!=='verba') corpo=`<p class="empty">${esc(c.nome||'Este ciclo')} ainda não tem registros. Em <button class="lnk" data-act="ciclo-cv-sub" data-v="registros">Registros e importação</button>, importe a planilha do CRM ou registre os números de hoje.</p>`;
   else if(sub==='funil') corpo=cvSubFunil(c,A);
   else if(sub==='cursos') corpo=cvSubQuebra(c,A,'c');
   else if(sub==='origens') corpo=cvSubQuebra(c,A,'o');
   else if(sub==='atend') corpo=cvSubAtend(c);
+  else if(sub==='verba') corpo=cvSubVerba(c);
   else corpo=cvSubRegistros(c,A);
   const pend=cvEditais(un).filter(x=>x.ci);
   return `<section class="block cv"><div class="block-h"><h3>${esc(c.nome||'Ciclo')}</h3><p>${cicloSituacao(c).t}</p></div>${pend.length?`<div class="cv-eds">${pend.map(({f,ci})=>`<div class="cv-ed"><span><b>Edital ainda sem ciclo: ${esc(f.titulo||'edital')}</b><small>${esc(ci.nome)}: inscrições de ${edFmt(ci.ini)} a ${edFmt(ci.fim)}</small></span><button class="btn sm primary" data-act="ciclo-cv-edital" data-id="${f.id}">Criar o ciclo</button></div>`).join('')}</div>`:''}${topo}${corpo}</section>`;
@@ -238,6 +253,41 @@ function cvEditais(un){ if(typeof editalDe!=='function') return []; return (cur.
 function cvEditaisHtml(un){ const L=cvEditais(un), nm=(UNS.find(u=>u.id===un)||{}).nome||'';
   if(!L.length) return `<p class="muted cv-nota">Nenhum edital de ${esc(nm)} foi lido na Base de conhecimento. Suba o edital em Base de conhecimento › Fontes e ele cria o ciclo com as datas.</p>`;
   return `<div class="cv-eds">${L.map(({f,e,ci})=>`<div class="cv-ed"><span><b>${esc(f.titulo||'Edital')}</b><small>${ci?`${esc(ci.nome)}: inscrições de ${edFmt(ci.ini)} a ${edFmt(ci.fim)}${ci.aulas?` · aulas em ${edFmt(ci.aulas)}`:''}`:e.per?'o ciclo deste edital já existe':'o edital não traz o período de inscrições'}</small></span>${ci?`<button class="btn sm primary" data-act="ciclo-cv-edital" data-id="${f.id}">Criar o ciclo</button>`:''}</div>`).join('')}</div>`; }
+
+/* ---------- verba e retorno ---------- */
+function cvMesesCapt(un,ano){ const S=new Set(); ciclosTodos().filter(c=>c.un===un).forEach(c=>{ const a=cDt(c.camp_ini||c.insc_ini), b=cDt(c.camp_fim); if(!a||!b) return; let d=new Date(a.getFullYear(),a.getMonth(),1); while(d<=b){ if(d.getFullYear()===+ano) S.add(d.getMonth()); d=new Date(d.getFullYear(),d.getMonth()+1,1); } }); return S; }
+/* investido real por mês, das séries do CRM (diferença do acumulado) */
+function cvRealMes(un,ano){ const R=Array(12).fill(null); ciclosTodos().filter(c=>c.un===un).forEach(c=>{ let ant=0; cvSerie(c).forEach(p=>{ const v=num(p.v); if(v==null) return; const d=cDt(p.d); if(d.getFullYear()===+ano){ R[d.getMonth()]=(R[d.getMonth()]||0)+(v-ant); } ant=v; }); }); return R; }
+function cvSubVerba(c){
+  const un=c.un, d=buDados(un), anoDef=(String(cur.campos[`${un}.ciclo_ref`]||'').match(/20\d\d/)||[String(new Date().getFullYear())])[0];
+  const ano=String(ui.cvAno||anoDef), P=cvPlano(un), anual=num(cur.campos[`${un}.orcamento`]), cap=cvMesesCapt(un,ano), real=cvRealMes(un,ano);
+  const v=m=>num(P[`${ano}-${String(m+1).padStart(2,'0')}`]), tot=CV_MESES.reduce((a,_,m)=>a+(v(m)||0),0), mx=Math.max(1,...CV_MESES.map((_,m)=>Math.max(v(m)||0,real[m]||0)));
+  const peso=num(ui.cvPeso)??50, dif=anual!=null&&tot?tot-anual:null;
+  /* retorno por campanha */
+  const s=cvSerie(c); let px=null, dim=''; for(let j=s.length-1;j>=0;j--){ if(s[j].x&&Object.keys(s[j].x).length){ px=s[j].x; dim='x'; break; } if(!px&&s[j].o&&Object.keys(s[j].o).length){ px=s[j].o; dim='o'; } }
+  const desc=(num(cur.campos[`base.${un}.desc_enem`])||0)/100, meses=d.meses||12, mens=num(cur.campos[`base.${un}.ticket_roi`])||d.ticket;
+  const camps=px?Object.entries(px).map(([k,q])=>{ const [camp,ingTxt]=dim==='x'?k.split('||'):[k,'']; const ing=/enem/i.test(ingTxt||camp)?'ENEM':/vestib/i.test(ingTxt||camp)||!ingTxt?'Vestibular':ingTxt;
+      return {camp,ing,v:num(q.v),m:num(q.m)||0,l:num(q.l)}; }):[];
+  /* junta as linhas da mesma campanha quando vieram separadas por ingresso */
+  const porC={}; camps.forEach(x=>{ const o=porC[x.camp]=porC[x.camp]||{camp:x.camp,v:0,m:0,mEnem:0,l:0,ings:new Set()}; o.v+=x.v||0; o.m+=x.m; if(x.ing==='ENEM') o.mEnem+=x.m; o.l+=x.l||0; o.ings.add(x.ing); });
+  const CR=Object.values(porC).map(o=>{ const rec=mens?((o.m-o.mEnem)*mens+o.mEnem*mens*(1-desc))*meses:null; return {...o,rec,roi:o.v&&rec!=null?rec/o.v:null,cac:o.v&&o.m?o.v/o.m:null}; }).sort((a,b)=>(b.roi||0)-(a.roi||0));
+  const mxR=Math.max(0.01,...CR.map(x=>x.roi||0));
+  return `<div class="cv-dois">
+   <div class="block cv-in"><h4>Orçamento e premissas de ${esc((UNS.find(u=>u.id===un)||{}).nome||'')}</h4><p class="muted cv-sub">O orçamento anual vem fechado; a distribuição por mês fica no plano ao lado.</p>
+    <div class="fields">${fieldHtml(`${un}.orcamento`,'Orçamento anual de marketing (fechado)','R$')}${fieldHtml(`base.${un}.ticket_roi`,`Mensalidade para o retorno${d.ticket?` (vazio usa ${brl(d.ticket)})`:''}`,'R$')}${fieldHtml(`base.${un}.desc_enem`,'Desconto de quem entra pelo ENEM (%)','%')}${fieldHtml(buKey(un,'meses_roi'),'Meses de mensalidade por aluno','n')}</div></div>
+   <div class="block cv-in"><h4>Plano de verba por mês · ${esc(ano)}</h4>
+    <div class="cv-ano">${[+anoDef-1,+anoDef,+anoDef+1].map(a=>`<button class="chip${String(a)===ano?' on':''}" data-act="ciclo-cv-ano" data-v="${a}">${a}</button>`).join('')}</div>
+    <p class="muted cv-sub">Meses em destaque têm captação aberta em algum ciclo desta área. ${tot?`Plano: <b>${brl(tot)}</b>`:'Sem plano ainda.'}${anual!=null?` · orçamento anual ${brl(anual)}`:''}${dif?` · <span class="${dif>0?'cv-baixo':''}">${dif>0?'passa':'sobra'} ${brl(Math.abs(dif))}</span>`:''}</p>
+    <div class="cv-plano">${CV_MESES.map((nm,m)=>`<label class="${cap.has(m)?'capt':''}"><span>${nm}</span><input class="cnum" data-cvplano="${un}" data-m="${ano}-${String(m+1).padStart(2,'0')}" value="${v(m)!=null?String(v(m)).replace('.',','):''}" inputmode="decimal" placeholder="0" aria-label="Verba de ${nm} de ${ano}"><i class="pl" style="height:${((v(m)||0)/mx*42).toFixed(0)}px" title="Planejado"></i><i class="rl" style="height:${((real[m]||0)/mx*42).toFixed(0)}px" title="Investido (CRM)"></i></label>`).join('')}</div>
+    <div class="cv-leg"><span><i style="background:var(--cv-i)"></i>planejado</span><span><i style="background:var(--cv-m)"></i>investido (CRM)</span></div>
+    <div class="cv-acoes">${anual?`<button class="btn sm" data-act="ciclo-cv-distr" data-v="${un}" data-ano="${ano}">Distribuir o orçamento igual nos 12 meses</button><span class="cv-peso">Meses de captação com <input class="cnum" data-cvpeso="1" value="${peso}" inputmode="decimal" aria-label="Peso dos meses de captação">% a mais</span><button class="btn sm primary" data-act="ciclo-cv-distr" data-v="${un}" data-ano="${ano}" data-peso="1">Distribuir com peso na captação</button>`:'<span class="muted">Preencha o orçamento anual para distribuir automaticamente, ou digite mês a mês.</span>'}</div>
+   </div></div>
+   <h4 class="cv-h">Retorno por campanha</h4>
+   <p class="muted cv-sub">Receita estimada ÷ investido realizado na campanha. Receita = matrículas × mensalidade${mens?` (${brl(mens)})`:''} × ${meses} meses; quem entra pelo ENEM paga com ${Math.round(desc*100)}% de desconto, quem entra pelo vestibular paga cheio. ${dim==='x'?'A forma de ingresso veio da planilha.':'Sem coluna de forma de ingresso, campanha com "ENEM" no nome conta como ENEM e as outras como vestibular.'}</p>
+   ${!px?`<p class="empty">Para ver o retorno de cada campanha, a planilha do CRM precisa das colunas Origem (ou Campanha), Matriculados e Investimento. Com a coluna Forma de ingresso, o ENEM entra com desconto.</p>`:!mens?`<p class="empty">Informe a mensalidade (acima ou na tabela Captação e capacidade da Base) para calcular a receita.</p>`:`
+   <div class="tblw"><table class="tbl cv-ct"><thead><tr><th>Campanha</th><th>Ingresso</th><th class="r">Investido</th><th class="r">Matrículas</th><th class="r">Receita estimada</th><th class="r">Retorno</th><th class="r">CAC</th><th class="r">CPL</th></tr></thead><tbody>
+    ${CR.map(x=>`<tr><td><b>${esc(x.camp)}</b></td><td>${[...x.ings].join(' + ')}</td><td class="num">${x.v?brl(x.v):'—'}</td><td class="num">${cvN(x.m)}${x.mEnem&&x.mEnem!==x.m?` <small class="muted">${cvN(x.mEnem)} ENEM</small>`:''}</td><td class="num">${x.rec!=null?brl(x.rec):'—'}</td><td class="num"><span class="cv-roi"><i style="width:${Math.max(2,(x.roi||0)/mxR*60).toFixed(0)}px;background:${x.roi!=null&&x.roi<1?'var(--st-alerta)':'var(--cv-m)'}"></i>${x.roi!=null?x.roi.toFixed(1).replace('.',',')+'x':'—'}</span></td><td class="num">${x.cac!=null?brl(x.cac):'—'}</td><td class="num">${x.v&&x.l?brl(x.v/x.l):'—'}</td></tr>`).join('')}
+   </tbody></table></div><p class="muted cv-nota">Retorno abaixo de 1x (em vermelho): a receita estimada não cobre o que foi investido na campanha. Sem investido informado, a campanha não tem retorno calculado.</p>`}`; }
 
 /* ---------- call center e comercial ---------- */
 const cvH=h=>h==null?'—':h<1?`${Math.round(h*60)} min`:h<48?`${String(Math.round(h*10)/10).replace('.',',')} h`:`${String(Math.round(h/24*10)/10).replace('.',',')} dias`;
@@ -354,23 +404,24 @@ function cvLerTabela(T,un){
   const avisos=()=>[nOutra?`${pl(nOutra,'linha de curso de pós ou mestrado ficou de fora','linhas de cursos de pós ou mestrado ficaram de fora')}`:'',nTot?`${pl(nTot,'linha de total ignorada','linhas de total ignoradas')}`:'',Object.values(MD).some(Boolean)?'datas lidas como mês/dia (padrão americano)':''].filter(Boolean).join(', ');
   const dI=col(/data.*(inscri|cadastr|criac|entrada)|(inscri|cadastr|criad|created).*data|^criado|^created/), dA=col(/data.*aprova|aprova.*data/), dM=col(/data.*matric|matric.*data/);
   const cC=col(/^(curso|nome do curso|programa|oferta|curso de interesse)/), cO=col(/^(origem|canal|fonte|midia|utm.?source|campanha|utm.?campaign)/);
-  const K=['l','i','a','m','v'], DIM=[['c',cC],['o',cO]].filter(x=>x[1]>=0);
+  const cF=col(/^(forma de ingresso|ingresso|tipo de ingresso|modalidade de ingresso|processo seletivo)$/);
+  const K=['l','i','a','m','v'], DIM=[['c',cC],['o',cO],['f',cF]].filter(x=>x[1]>=0); if(cO>=0&&cF>=0) DIM.push(['x',-1]); /* x = campanha × forma de ingresso, para o retorno por campanha */
   /* 1) total por data (e por curso e origem, se houver as colunas) */
   if(cD>=0&&cD!==dI&&(cI>=0||cM>=0||cL>=0)&&cS<0&&T.rows.filter(r=>/^\s*\d/.test(r[cI>=0?cI:cM>=0?cM:cL]||'')).length>=1){
     const absurdo=ci=>ci>=0&&T.rows.some(r=>(num(r[ci])||0)>5e6); [['cI',cI],['cL',cL],['cA',cA],['cM',cM]].forEach(([n,ci])=>{ if(absurdo(ci)) throw new Error('A coluna "'+T.cab[ci]+'" tem números grandes demais para ser uma contagem (parece código ou matrícula). Tire essa coluna ou renomeie.'); });
-    const linhas=doUn(T.rows).map(r=>{ const o={d:dt(r,cD),l:cL>=0?num(r[cL]):null,i:cI>=0?num(r[cI]):null,a:cA>=0?num(r[cA]):null,m:cM>=0?num(r[cM]):null,v:cV>=0?num(r[cV]):null}; DIM.forEach(([k,ci])=>o['_'+k]=String(r[ci]||'').trim()); return o; }).filter(p=>p.d&&(p.i!=null||p.m!=null||p.l!=null));
+    const linhas=doUn(T.rows).map(r=>{ const o={d:dt(r,cD),l:cL>=0?num(r[cL]):null,i:cI>=0?num(r[cI]):null,a:cA>=0?num(r[cA]):null,m:cM>=0?num(r[cM]):null,v:cV>=0?num(r[cV]):null}; DIM.forEach(([k,ci])=>o['_'+k]=ci>=0?String(r[ci]||'').trim():''); if(cO>=0&&cF>=0) o._x=`${o._o||'(sem origem)'}||${o._f||'(sem ingresso)'}`; return o; }).filter(p=>p.d&&(p.i!=null||p.m!=null||p.l!=null));
     let nDup=0; if(!DIM.length){ const ult={}; linhas.forEach((r,j)=>{ if(ult[r.d]!=null) nDup++; ult[r.d]=j; }); if(nDup){ const keep=new Set(Object.values(ult)); for(let j=linhas.length-1;j>=0;j--) if(!keep.has(j)) linhas.splice(j,1); } }
     const porD={}; linhas.forEach(r=>{ const p=porD[r.d]=porD[r.d]||{d:r.d}; K.forEach(k=>{ if(r[k]!=null) p[k]=(p[k]||0)+r[k]; });
-      DIM.forEach(([k])=>{ const nm=r['_'+k]||'(sem '+(k==='c'?'curso':'origem')+')'; p[k]=p[k]||{}; const q=p[k][nm]=p[k][nm]||{}; K.forEach(kk=>{ if(r[kk]!=null) q[kk]=(q[kk]||0)+r[kk]; }); }); });
+      DIM.forEach(([k])=>{ const nm=r['_'+k]||'(sem '+({c:'curso',o:'origem',f:'ingresso'}[k]||'dado')+')'; p[k]=p[k]||{}; const q=p[k][nm]=p[k][nm]||{}; K.forEach(kk=>{ if(r[kk]!=null) q[kk]=(q[kk]||0)+r[kk]; }); }); });
     const P=Object.values(porD).sort((a,b)=>a.d.localeCompare(b.d));
     /* diário ou acumulado: o cabeçalho decide; sem pista, só é diário se os valores sobem e descem com frequência (uma queda isolada é cancelamento) */
     const cabT=T.cab.join(' '), pistaD=/novos|no dia|diari|por dia|do dia|por semana|semanal|na semana/.test(cabT), pistaA=/acumul|total ate|ate a data|ate o dia/.test(cabT);
     const quedas=['l','i','a','m'].map(k=>{ let q=0,n=0; P.forEach((p,j)=>{ if(j&&p[k]!=null&&P[j-1][k]!=null){ n++; if(p[k]<P[j-1][k]) q++; } }); return n?q/n:0; });
     const nq=['l','i','a','m'].map(k=>P.filter((p,j)=>j&&p[k]!=null&&P[j-1][k]!=null&&p[k]<P[j-1][k]).length);
     const diario=pistaD||(!pistaA&&Math.max(...quedas)>=0.4&&Math.max(...nq)>=2);
-    if(diario){ const acc={}, accD={c:{},o:{}}; P.forEach(p=>{ K.forEach(k=>{ if(p[k]!=null){ acc[k]=(acc[k]||0)+p[k]; p[k]=acc[k]; } });
+    if(diario){ const acc={}, accD={c:{},o:{},f:{},x:{}}; P.forEach(p=>{ K.forEach(k=>{ if(p[k]!=null){ acc[k]=(acc[k]||0)+p[k]; p[k]=acc[k]; } });
       DIM.forEach(([dk])=>{ const AC=accD[dk]; Object.entries(p[dk]||{}).forEach(([nm,q])=>{ const a=AC[nm]=AC[nm]||{}; K.forEach(k=>{ if(q[k]!=null) a[k]=(a[k]||0)+q[k]; }); }); const n={}; Object.keys(AC).forEach(nm=>n[nm]={...AC[nm]}); if(Object.keys(n).length) p[dk]=n; }); }); }
-    return P.length?{temUn:cU>=0,tipo:`${diario?'números do dia, somados':'acumulado por data'}${cC>=0?', com os cursos':''}${cO>=0?', com as origens':''}${avisos()?' · '+avisos():''}${nDup?` · ${pl(nDup,'data repetida: ficou a última linha','datas repetidas: ficou a última linha de cada')}`:''}`,P}:null; }
+    return P.length?{temUn:cU>=0,tipo:`${diario?'números do dia, somados':'acumulado por data'}${cC>=0?', com os cursos':''}${cO>=0?', com as origens':''}${cF>=0?', com a forma de ingresso':''}${avisos()?' · '+avisos():''}${nDup?` · ${pl(nDup,'data repetida: ficou a última linha','datas repetidas: ficou a última linha de cada')}`:''}`,P}:null; }
   /* 2) lista de leads ou de inscritos (um por linha) */
   const dC=col(/(^criad|^created|cadastr|entrada|data do lead|data de criac|data de captac)/), dIns=col(/data.*inscri|inscri.*data/);
   const dCt=col(/primeiro contato|data.*(contato|ligac|atendimento)|(contato|ligac|atendimento).*data/), dCm=col(/data.*(encaminh|agend|visita|entrevista|comercial)/);
@@ -391,7 +442,7 @@ function cvLerTabela(T,un){
   const fase=r=>ehM(r)?6:ehA(r)?5:ehI(r)?4:ehCm(r)?3:ehCt(r)?2:1;
   const F=R.map(fase), listaLeads=F.some(f=>f<4)&&(cS>=0||dIns>=0);
   const semA=cA<0&&dA<0&&!R.some(r=>/\baprova|classific/.test(st(r)));
-  const quebra=ci=>{ const o={}; R.forEach((r,j)=>{ const nm=String(r[ci]||'').trim()||'(não informado)'; const q=o[nm]=o[nm]||{l:listaLeads?0:null,i:0,a:semA?null:0,m:0}; if(listaLeads) q.l++; if(!listaLeads||F[j]>=4) q.i++; if(!semA&&F[j]>=5) q.a++; if(F[j]>=6) q.m++; }); return o; };
+  const quebra=(ci,chave)=>{ const o={}; R.forEach((r,j)=>{ const nm=chave?chave(r):String(r[ci]||'').trim()||'(não informado)'; const q=o[nm]=o[nm]||{l:listaLeads?0:null,i:0,a:semA?null:0,m:0}; if(listaLeads) q.l++; if(!listaLeads||F[j]>=4) q.i++; if(!semA&&F[j]>=5) q.a++; if(F[j]>=6) q.m++; }); return o; };
   let P;
   const dCria=R.map(r=>dC>=0?dt(r,dC):dI>=0?dt(r,dI):null);
   const di=R.map((r,j)=>!listaLeads||F[j]>=4?((dIns>=0&&dt(r,dIns))||dCria[j]):null);
@@ -401,7 +452,7 @@ function cvLerTabela(T,un){
     const cnt=(arr,d)=>arr.reduce((a,x)=>a+(x&&x<=d?1:0),0);
     P=dias.map(d=>({d,l:listaLeads?cnt(dCria,d):null,i:cnt(di,d),a:semA?null:cnt(da,d),m:cnt(dm,d)})); }
   else P=[{d:cvHojeISO(),l:listaLeads?R.length:null,i:listaLeads?F.filter(f=>f>=4).length:R.length,a:semA?null:F.filter(f=>f>=5).length,m:F.filter(f=>f>=6).length}];
-  const ult=P[P.length-1]; DIM.forEach(([k,ci])=>ult[k]=quebra(ci));
+  const ult=P[P.length-1]; DIM.forEach(([k,ci])=>{ if(ci>=0) ult[k]=quebra(ci); }); if(cO>=0&&cF>=0) ult.x=quebra(-1,r=>`${String(r[cO]||'').trim()||'(sem origem)'}||${String(r[cF]||'').trim()||'(sem ingresso)'}`);
   /* tempo da inscrição até a matrícula */
   if(dM>=0){ const ds=R.map((r,j)=>di[j]&&dm[j]&&dt(r,dM)?Math.round((cDt(dm[j])-cDt(di[j]))/864e5):null).filter(x=>x!=null&&x>=0).sort((a,b)=>a-b);
     if(ds.length) ult.t={b:CV_FX.map(([a,b])=>ds.filter(x=>x>=a&&x<=b).length),med:cvMed(ds),n:ds.length}; }
@@ -432,8 +483,8 @@ function cvLerTodas(tabs,un){ const L=tabs.map(T=>cvLerTabela(T,un)).filter(Bool
 function cvLer(tabs,un){ const x=cvLerTodas(tabs,un); return x.agg||x.lista; }
 function cvAplicar(c,r,file){ cvGravar(c,x=>{ const temAgg=cvSerie(x).some(p=>p.f!=='lista');
   /* lista de leads num ciclo que já tem a curva do CRM (totais por data): só acrescenta as quebras (curso, origem, atendimento, tempo) ao último dia; não troca os totais */
-  if(r.lista&&temAgg){ const s=cvSerie(x), u=r.P[r.P.length-1]; let alvo=s.filter(p=>p.d<=u.d).slice(-1)[0]||s[s.length-1]; ['c','o','t','at'].forEach(k=>{ if(u[k]&&(k==='t'||k==='at'||!alvo[k])) alvo[k]=u[k]; }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); r.soQuebras=alvo.d; return; }
-  const s=cvSerie(x).filter(p=>!r.P.some(q=>q.d===p.d)); r.P.forEach(q=>{ const old=cvSerie(x).find(p=>p.d===q.d)||{}; const np={d:q.d,f:r.lista?'lista':'agg'}; ['l','i','a','m','v'].forEach(k=>np[k]=q[k]!=null?q[k]:(old[k]??null)); ['c','o','t','at'].forEach(k=>{ if(q[k]) np[k]=q[k]; else if(old[k]) np[k]=old[k]; }); s.push(np); }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); }); }
+  if(r.lista&&temAgg){ const s=cvSerie(x), u=r.P[r.P.length-1]; let alvo=s.filter(p=>p.d<=u.d).slice(-1)[0]||s[s.length-1]; ['c','o','f','x','t','at'].forEach(k=>{ if(u[k]&&(k==='t'||k==='at'||!alvo[k])) alvo[k]=u[k]; }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); r.soQuebras=alvo.d; return; }
+  const s=cvSerie(x).filter(p=>!r.P.some(q=>q.d===p.d)); r.P.forEach(q=>{ const old=cvSerie(x).find(p=>p.d===q.d)||{}; const np={d:q.d,f:r.lista?'lista':'agg'}; ['l','i','a','m','v'].forEach(k=>np[k]=q[k]!=null?q[k]:(old[k]??null)); ['c','o','f','x','t','at'].forEach(k=>{ if(q[k]) np[k]=q[k]; else if(old[k]) np[k]=old[k]; }); s.push(np); }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); }); }
 async function cvLerArq(file){ if(/\.xlsx?$/i.test(file.name)) return xlsxTexto(await file.arrayBuffer(),true); return lerArquivo(file); }
 async function cvImportar(id,file){
   const c=ciclosTodos().find(x=>x.id===id); if(!c) return;
@@ -451,6 +502,8 @@ async function cvImportarTudo(file){
 document.addEventListener('change',e=>{ const t=e.target; if(!t||!t.dataset) return;
   if(t.dataset.cvPer){ const c0=UNS.map(u=>cvEscolhido(u.id)).find(c=>c&&cvSerie(c).length); const P=c0?cvPer(c0):{}; ui.cvDe=t.dataset.cvPer==='de'?t.value:P.de; ui.cvAte=t.dataset.cvPer==='ate'?t.value:P.ate; ui.cvPer='livre'; render(); return; }
   if(t.dataset.cvImp&&t.files&&t.files[0]){ (t.dataset.cvImp==='todas'?cvImportarTudo(t.files[0]):cvImportar(t.dataset.cvImp,t.files[0])); t.value=''; return; }
+  if(t.dataset.cvplano){ const P=cvPlano(t.dataset.cvplano); P[t.dataset.m]=t.value===''?null:num(t.value); cvPlanoSalvar(t.dataset.cvplano,P); setTimeout(render,0); return; }
+  if(t.dataset.cvpeso){ ui.cvPeso=num(t.value); return; }
   if(t.dataset.cvprova){ const L=ciclosTodos(), x=L.find(y=>y.id===t.dataset.cvprova); if(x&&Array.isArray(x.provas)&&x.provas[+t.dataset.j]){ x.provas[+t.dataset.j][t.dataset.f]=t.value; ciclosSalvar(L); setTimeout(render,0); } return; }
   if(t.dataset.cvp&&t.dataset.f==='d'&&!t.value){ toast('A data não pode ficar vazia. Para tirar o registro, use o × no fim da linha.'); setTimeout(render,0); return; }
   if(t.dataset.cvp){ const j=+t.dataset.j, f=t.dataset.f; cvGravar({id:t.dataset.cvp},x=>{ const s=cvSerie(x); const p=s[j]; if(!p) return; p[f]=f==='d'?t.value:(t.value===''?null:num(t.value)); x.serie=s.filter(q=>q.d); }); } });
@@ -460,6 +513,9 @@ if(typeof cicloClick==='function'){ const _cc=cicloClick; cicloClick=function(ac
   if(act==='ciclo-cv-modo'){ ui.cvModo=d.v; render(); return true; }
   if(act==='ciclo-cv-prova-add'){ const L=ciclosTodos(), x=L.find(y=>y.id===d.id); if(x){ x.provas=Array.isArray(x.provas)?x.provas:[]; x.provas.push({id:uid(),d:'',nome:`${x.provas.length+1}º vestibular`}); ciclosSalvar(L); render(); } return true; }
   if(act==='ciclo-cv-prova-del'){ const L=ciclosTodos(), x=L.find(y=>y.id===d.id); if(x&&Array.isArray(x.provas)){ x.provas.splice(+d.j,1); ciclosSalvar(L); render(); } return true; }
+  if(act==='ciclo-cv-ano'){ ui.cvAno=d.v; render(); return true; }
+  if(act==='ciclo-cv-distr'){ const un=d.v, ano=d.ano, anual=num(cur.campos[`${un}.orcamento`]); if(!anual) return true; const cap=cvMesesCapt(un,ano), w=CV_MESES.map((_,m)=>d.peso&&cap.has(m)?1+(num(ui.cvPeso)??50)/100:1), sw=w.reduce((a,b)=>a+b,0);
+    const P=cvPlano(un); CV_MESES.forEach((_,m)=>P[`${ano}-${String(m+1).padStart(2,'0')}`]=Math.round(anual*w[m]/sw)); cvPlanoSalvar(un,P); render(); toast(`Orçamento de ${ano} distribuído${d.peso&&cap.size?` com ${num(ui.cvPeso)??50}% a mais em ${pl(cap.size,'mês de captação','meses de captação')}`:' igual nos 12 meses'}`); return true; }
   if(act==='ciclo-cv-sub'){ ui.cvSub=d.v; render(); return true; }
   if(act==='ciclo-cv-per'){ ui.cvPer=d.v; render(); return true; }
   if(act==='ciclo-cv-sel'){ ui.cvSel=ui.cvSel||{}; ui.cvSel[d.id]=d.v; render(); return true; }

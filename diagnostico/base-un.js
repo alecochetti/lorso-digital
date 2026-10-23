@@ -15,23 +15,27 @@ const buNum=k=>num(cur.campos[k]);
 function buDados(un){
   const caps=capRows().filter(r=>r.un===un);
   const soma=f=>{ const v=caps.map(r=>r[f]).filter(x=>x!=null); return v.length?v.reduce((a,b)=>a+b,0):null; };
-  const alunos=soma('vagas'), meta=soma('meta'), captados=soma('captados');
+  /* matriculados vêm do CRM (matrícula paga) quando a área tem ciclo com registros; o digitado por turno fica só como detalhe */
+  const crm=typeof cvCrmUn==='function'?cvCrmUn(un):null, capDig=soma('captados');
+  const alunos=soma('vagas'), meta=soma('meta'), captados=crm&&crm.m!=null?crm.m:capDig;
   let tSoma=0,tPeso=0; caps.forEach(r=>{ if(r.ticket!=null){ const w=r.captados||r.vagas||1; tSoma+=r.ticket*w; tPeso+=w; } });
   const ticket=tPeso?tSoma/tPeso:null;
   const cs=cur.cursos.filter(c=>c.un===un&&c.status!=='Descontinuado');
   const turmas=cs.reduce((a,c)=>a+(num(c.turmas)||0),0)||null;
   const verba=buNum(`${un}.orcamento`), receita=buNum(`${un}.receita`), metaRec=buNum(`${un}.meta_rec`), metaMat=buNum(`${un}.meta_mat`);
   const origens=BU_ORIGENS.map(([k,l])=>[k,l,buNum(buKey(un,'leads_'+k))]); const somaOr=origens.reduce((a,o)=>a+(o[2]||0),0);
-  const leads=somaOr||buNum(buKey(un,'leads')), insc=buNum(buKey(un,'inscritos')), inscGrowth=buNum(buKey(un,'insc_growth')), verbaMidia=buNum(buKey(un,'verba_midia'));
+  const leads=(crm&&crm.l!=null?crm.l:null)??(somaOr||buNum(buKey(un,'leads'))), insc=(crm&&crm.i!=null?crm.i:null)??buNum(buKey(un,'inscritos')), inscGrowth=buNum(buKey(un,'insc_growth')), verbaMidia=buNum(buKey(un,'verba_midia'));
   const shareGrowth=insc&&inscGrowth!=null?inscGrowth/insc:null, cpiGrowth=verbaMidia&&inscGrowth?verbaMidia/inscGrowth:null;
   const cacMidia=verbaMidia&&captados&&shareGrowth?verbaMidia/(captados*shareGrowth):null;
   const metaOficial=metaMat!=null?metaMat:meta;
   const meses=buNum(buKey(un,'meses_roi'))||12;
-  const cac=verba&&captados?verba/captados:null, cpl=verba&&leads?verba/leads:null;
+  /* o orçamento é anual; com o CRM, o custo do ciclo é o investido até a data (ou a verba planejada do ciclo) */
+  const custo=crm?(crm.inv||crm.verba||null):verba, custoDe=crm?(crm.inv?'investido no ciclo':crm.verba?'verba planejada do ciclo':''):verba!=null?'orçamento anual':'';
+  const cac=custo&&captados?custo/captados:null, cpl=custo&&leads?custo/leads:null;
   const recCapt=captados!=null&&ticket!=null?captados*ticket*meses:null;
-  const roi=verba&&recCapt!=null?(recCapt-verba)/verba:null;
-  const payback=verba&&captados&&ticket?verba/(captados*ticket):null;
-  return {un,caps,alunos,meta:metaOficial,metaSoma:meta,captados,origens,inscGrowth,verbaMidia,shareGrowth,cpiGrowth,cacMidia,coord:cur.campos[`${un}.coord`]||'',cicloRef:cur.campos[`${un}.ciclo_ref`]||'',ticket,turmas,cursos:cs.length,lanc:cs.filter(c=>c.status==='Lançamento').length,verba,receita,metaRec,metaMat,leads,insc,meses,cac,cpl,roi,payback,recCapt,
+  const roi=custo&&recCapt!=null?(recCapt-custo)/custo:null;
+  const payback=custo&&captados&&ticket?custo/(captados*ticket):null;
+  return {un,caps,alunos,meta:metaOficial,metaSoma:meta,captados,capDig,crm,custo,custoDe,origens,inscGrowth,verbaMidia,shareGrowth,cpiGrowth,cacMidia,coord:cur.campos[`${un}.coord`]||'',cicloRef:cur.campos[`${un}.ciclo_ref`]||'',ticket,turmas,cursos:cs.length,lanc:cs.filter(c=>c.status==='Lançamento').length,verba,receita,metaRec,metaMat,leads,insc,meses,cac,cpl,roi,payback,recCapt,
     ocup:alunos&&captados!=null?captados/alunos:null, ating:metaOficial&&captados!=null?captados/metaOficial:null, atRec:metaRec&&receita!=null?receita/metaRec:null,
     convLI:leads&&insc!=null?insc/leads:null, convIM:insc&&captados!=null?captados/insc:null};
 }
@@ -83,9 +87,9 @@ function buUnHtml(un,cursosTabela,pctCell){
   return `
    <p class="bu-ref">${d.cicloRef?`Ciclo de referência <b>${esc(d.cicloRef)}</b>`:'Ciclo de referência não informado'} · ${d.coord?`Coordenação: <b>${esc(d.coord)}</b>`:'coordenação não informada'} <span class="tag area">ligado a ${esc(ent)}</span></p>
    <div class="stats bu-k">
-    ${kp(buN(d.captados),'matriculados no ciclo',d.meta!=null?`meta ${d.metaMat!=null?'oficial ':''}${buN(d.meta)} · ${buX(d.ating)}`:'',d.ating!=null&&d.ating<0.8?'bad':'')}
+    ${kp(buN(d.captados),d.crm?`matriculados · CRM (${esc(d.crm.c.nome||'ciclo')})`:'matriculados no ciclo',[d.meta!=null?`meta ${d.metaMat!=null?'oficial ':''}${buN(d.meta)} · ${buX(d.ating)}`:'',d.crm&&d.capDig!=null&&d.capDig!==d.captados?`digitado na tabela: ${buN(d.capDig)}`:''].filter(Boolean).join(' · '),d.ating!=null&&d.ating<0.8?'bad':'')}
     ${kp(buN(d.alunos),'alunos de capacidade',d.turmas?`${buN(d.turmas)} turmas · ocupação ${buX(d.ocup)}`:d.ocup!=null?`ocupação ${buX(d.ocup)}`:'',d.ocup!=null&&d.ocup<0.7?'warn':'')}
-    ${kp(d.cac!=null?brl(d.cac):'—','CAC geral',d.verba!=null?`orçamento ${brl(d.verba)} ÷ matriculados`:'orçamento de marketing ÷ matriculados')}
+    ${kp(d.cac!=null?brl(d.cac):'—','CAC geral',d.custo!=null?`${d.custoDe} ${brl(d.custo)} ÷ matriculados`:d.crm?'informe o investido na Captação':'orçamento de marketing ÷ matriculados')}
     ${kp(d.cpiGrowth!=null?brl(d.cpiGrowth):'—','custo por inscrito do growth',d.shareGrowth!=null?`growth traz ${buX(d.shareGrowth)} dos inscritos${d.cacMidia!=null?` · CAC de mídia ${brl(d.cacMidia)}`:''}`:'verba de mídia ÷ inscritos via growth')}
     ${kp(buRoi(d.roi),'ROI da captação',d.roi!=null?`${d.meses} meses de mensalidade${d.payback!=null?` · se paga em ${d.payback.toFixed(1).replace('.',',')} meses`:''}`:'',d.roi!=null&&d.roi<0?'bad':'')}
    </div>
@@ -97,7 +101,7 @@ function buUnHtml(un,cursosTabela,pctCell){
     ${metaDif?`<p class="pz-aviso"><span class="i">!</span><span>A meta oficial da coordenação é ${buN(d.metaMat)} e a soma das metas por turno é ${buN(d.metaSoma)}. A oficial é a que vale nos cálculos.</span></p>`:''}</section>
    <section class="block"><div class="block-h"><h3>Verba, funil e retorno</h3><p>CAC geral: orçamento de marketing ÷ matriculados. CAC do growth: verba de mídia ÷ inscritos que vieram do growth.</p></div>
     <div class="fields bu-f">
-     ${buLigado(`${un}.orcamento`,'Orçamento de marketing do ciclo (DRE)','R$',ent)}
+     ${buLigado(`${un}.orcamento`,'Orçamento anual de marketing (fechado)','R$',ent)}
      ${buLigado(buKey(un,'verba_midia'),'Verba de mídia do growth no ciclo','R$')}
      ${buLigado(`${un}.meta_rec`,'Meta de receita','R$',ent)}
      ${buLigado(`${un}.receita`,'Receita realizada ou projetada','R$',ent)}
@@ -121,7 +125,7 @@ function buUnHtml(un,cursosTabela,pctCell){
 /* ---------- Calendário de captação: ciclos por UN e datas dos cursos ---------- */
 const CICLO_ETAPAS=[['camp_ini','Campanha começa'],['insc_ini','Inscrições abrem'],['mat_ini','Matrículas abrem'],['camp_fim','Campanha encerra'],['aulas','Aulas começam']];
 const CICLO_NUM=[['verba','Verba da campanha','R$'],['inscritos','Inscritos',''],['matriculados','Matriculados','']];
-function cicloRoi(c){ const d=buDados(c.un), m=num(c.matriculados); const vInv=typeof cvUlt==='function'?cvUlt(c,'v'):null; const acabou=c.camp_fim&&cDt(c.camp_fim)<=cHoje(); /* durante a campanha só vale o investido até a data; a verba planejada inteira só depois que a campanha acaba */ const v=vInv!=null?vInv:acabou?num(c.verba):null; if(!v||m==null||d.ticket==null) return null; return {roi:(m*d.ticket*d.meses-v)/v,cac:m?v/m:null}; }
+function cicloRoi(c){ const d=buDados(c.un), m=num(c.matriculados); const vInv=typeof cvUlt==='function'?cvUlt(c,'v'):null; const acabou=c.camp_fim&&cDt(c.camp_fim)<=cHoje(); /* durante a campanha só vale o investido até a data; a verba planejada inteira só depois que a campanha acaba */ const v=vInv!=null?vInv:acabou?(num(c.verba)||(typeof cvVerbaCiclo==='function'?cvVerbaCiclo(c):null)):null; if(!v||m==null||d.ticket==null) return null; return {roi:(m*d.ticket*d.meses-v)/v,cac:m?v/m:null}; }
 const CICLO_SUG={colegio:['Matrículas do ano letivo','Rematrícula'],graduacao:['Vestibular 1º semestre','Vestibular 2º semestre','Transferência e segunda graduação'],pos:['Turma do 1º semestre','Turma do 2º semestre'],mestrado:['Processo seletivo']};
 function ciclosTodos(){ try{ const L=JSON.parse(cur.campos['base.ciclos']||'[]'); return Array.isArray(L)?L:[]; }catch(e){ return []; } }
 function ciclosSalvar(L){ cur.campos['base.ciclos']=L.length?JSON.stringify(L):''; touch(false); }
@@ -161,7 +165,7 @@ function ciclosUnHtml(un){
   const cs=cur.cursos.filter(c=>c.un===un&&c.abertura&&c.encerramento);
   return `<section class="block"><div class="block-h"><h3>Calendário de captação</h3><p>Campanha, inscrições, matrículas e início das aulas de cada ciclo.</p></div>
    ${L.length?`<div class="tblw"><table class="tbl tciclos"><thead><tr><th></th><th style="min-width:200px">Ciclo</th>${CICLO_ETAPAS.map(([,l])=>`<th>${l}</th>`).join('')}${CICLO_NUM.map(([,l])=>`<th>${l}</th>`).join('')}<th>ROI da campanha</th><th>Situação</th></tr></thead><tbody>
-    ${L.map(c=>{ const st=cicloSituacao(c); return `<tr><td class="x"><button class="xbtn" data-act="ciclo-del" data-id="${c.id}" aria-label="Apagar o ciclo ${esc(c.nome||'sem nome')}" title="Apagar o ciclo">×</button></td><td><input data-ciclo="${c.id}" data-f="nome" value="${esc(c.nome||'')}" placeholder="Ex.: Vestibular 2027.1" aria-label="Nome do ciclo"></td>${CICLO_ETAPAS.map(([k,l])=>`<td><input type="date" class="dt" data-ciclo="${c.id}" data-f="${k}" value="${esc(c[k]||'')}" aria-label="${l}"></td>`).join('')}${CICLO_NUM.map(([k,l,u])=>{ const daCurva=['inscritos','aprovados','matriculados'].includes(k)&&typeof cvSerie==='function'&&cvSerie(c).length; return `<td><input class="cnum" data-ciclo="${c.id}" data-f="${k}" value="${esc(c[k]||'')}" inputmode="decimal" placeholder="${u||'0'}" aria-label="${l}"${daCurva?' readonly title="Vem dos registros da Captação. Para mudar, edite em Captação › Registros."':''}></td>`; }).join('')}<td class="num">${(r=>r?`<b class="${r.roi<0?'bu-bad':''}">${buRoi(r.roi)}</b>${r.cac!=null?`<small class="curso-obs">CAC ${brl(r.cac)}</small>`:''}`:'<span class="muted">—</span>')(cicloRoi(c))}</td><td><span class="csit ${st.k}">${st.t}</span></td></tr>`; }).join('')}
+    ${L.map(c=>{ const st=cicloSituacao(c); return `<tr><td class="x"><button class="xbtn" data-act="ciclo-del" data-id="${c.id}" aria-label="Apagar o ciclo ${esc(c.nome||'sem nome')}" title="Apagar o ciclo">×</button></td><td><input data-ciclo="${c.id}" data-f="nome" value="${esc(c.nome||'')}" placeholder="Ex.: Vestibular 2027.1" aria-label="Nome do ciclo"></td>${CICLO_ETAPAS.map(([k,l])=>`<td><input type="date" class="dt" data-ciclo="${c.id}" data-f="${k}" value="${esc(c[k]||'')}" aria-label="${l}"></td>`).join('')}${CICLO_NUM.map(([k,l,u])=>{ const daCurva=['inscritos','aprovados','matriculados'].includes(k)&&typeof cvSerie==='function'&&cvSerie(c).length; return `<td><input class="cnum" data-ciclo="${c.id}" data-f="${k}" value="${esc(c[k]||'')}" inputmode="decimal" placeholder="${k==='verba'&&!c.verba&&typeof cvVerbaCiclo==='function'&&cvVerbaCiclo(c)?'plano: '+Math.round(cvVerbaCiclo(c)).toLocaleString('pt-BR'):(u||'0')}" aria-label="${l}"${daCurva?' readonly title="Vem dos registros da Captação. Para mudar, edite em Captação › Registros."':''}></td>`; }).join('')}<td class="num">${(r=>r?`<b class="${r.roi<0?'bu-bad':''}">${buRoi(r.roi)}</b>${r.cac!=null?`<small class="curso-obs">CAC ${brl(r.cac)}</small>`:''}`:'<span class="muted">—</span>')(cicloRoi(c))}</td><td><span class="csit ${st.k}">${st.t}</span></td></tr>`; }).join('')}
    </tbody></table></div>`:'<p class="muted" style="margin:0">Nenhum ciclo ainda. Crie um para cada campanha de captação desta UN.</p>'}
    <div class="bu-cnt"><button class="btn sm" data-act="ciclo-add" data-v="">+ Ciclo de captação</button>${sug.map(n=>`<button class="chip" data-act="ciclo-add" data-v="${esc(n)}">+ ${esc(n)}</button>`).join('')}</div>
    ${cicloTimeline([...L.map(cicloItem),...cs.slice(0,20).map(cursoItem)])}

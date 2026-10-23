@@ -920,3 +920,13 @@ a.btn,a.btn:visited{color:var(--fg);text-decoration:none}
 .tciclos input[readonly]{opacity:.7;cursor:not-allowed}
 
 .sn.sn-off{opacity:.6;font-size:12.5px}.sn.sn-off:hover{opacity:1}
+.cv-ano{display:flex;gap:6px;margin:6px 0}.cv-ano .chip.on{border-color:var(--accent);color:var(--accent)}
+.cv-plano{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;align-items:end;margin-top:8px}
+.cv-plano label{display:flex;flex-direction:column;gap:4px;align-items:stretch;position:relative;padding:6px 4px 50px;border-radius:8px}
+.cv-plano label.capt{background:color-mix(in srgb,var(--l-ciano) 12%,transparent)}
+.cv-plano label span{font-size:11.5px;color:var(--muted);text-align:center}
+.cv-plano input{width:100%;min-width:0;font-size:12px;padding:4px}
+.cv-plano i{position:absolute;bottom:4px;width:38%;border-radius:3px 3px 0 0}.cv-plano i.pl{left:10%;background:var(--cv-i)}.cv-plano i.rl{right:10%;background:var(--cv-m)}
+.cv-peso{display:inline-flex;align-items:center;gap:6px;font-size:13px}.cv-peso input{width:60px}
+.cv-roi{display:inline-flex;align-items:center;gap:6px;justify-content:flex-end}.cv-roi i{display:inline-block;height:8px;border-radius:3px}
+@media (max-width:600px){.cv-plano{grid-template-columns:repeat(3,minmax(0,1fr))}}

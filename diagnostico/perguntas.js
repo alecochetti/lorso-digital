@@ -9,7 +9,7 @@ const LVL_DESC = ['','N1 Iniciante: depende de pessoas e improviso; sem processo
 const IMP = {3:'Impacto alto',2:'Impacto médio',1:'Impacto baixo'};
 
 // campo: [chave, rótulo, tipo]  tipo: n número | R$ moeda | % percentual | min minutos | d dias | t texto
-const UNFIN = [['coord','Coordenador responsável pela UN','t'],['ciclo_ref','Ciclo de referência da captação (ex.: 2027.1)','t'],['meta_mat','Meta oficial de matrículas do ciclo','n'],['meta_rec','Meta de receita','R$'],['receita','Receita realizada ou projetada (ano)','R$'],['folha','Folha de pagamento','R$'],['orcamento','Orçamento de marketing','R$'],['alunos','Alunos ativos','n'],['dem_mkt','Demandas enviadas ao marketing no mês','n'],['dem_atraso','Demandas atrasadas pelo marketing','n']];
+const UNFIN = [['coord','Coordenador responsável pela UN','t'],['ciclo_ref','Ciclo de referência da captação (ex.: 2027.1)','t'],['meta_mat','Meta oficial de matrículas do ciclo','n'],['meta_rec','Meta de receita','R$'],['receita','Receita realizada ou projetada (ano)','R$'],['folha','Folha de pagamento','R$'],['orcamento','Orçamento anual de marketing (fechado)','R$'],['alunos','Alunos ativos','n'],['dem_mkt','Demandas enviadas ao marketing no mês','n'],['dem_atraso','Demandas atrasadas pelo marketing','n']];
 
 // pergunta: [id, título curto, pilar, impacto, eliminatória, enunciado, [N1, N2, N3, N4]]
 const AREAS = [
