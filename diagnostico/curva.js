@@ -380,12 +380,14 @@ function cvLerTabela(T,un){
   const cR=T.cab.findIndex(h=>/^(responsavel|dono|owner|atribuido a|proprietario|usuario responsavel)/.test(h));
   if(cS<0&&dI<0&&dM<0&&dC<0) return null;
   let R=doUn(T.rows.filter(r=>r.some(Boolean))); if(!R.length) return null;
+  /* só é lista de leads se o status fala de funil (não "Vigente" de uma tabela de cursos) ou se há datas de inscrição/matrícula */
+  if(dC<0&&dI<0&&dM<0&&!R.some(r=>/lead|contat|inscri|aprova|matric|desist|perdid|novo|encaminh|negocia|atendiment/.test(cvNorm(r[cS])))) return null;
   const st=r=>cS>=0?cvNorm(r[cS]):'', neg=/nao\s|desist|cancel|reprov|ausent|elimin|perdid|indefer/;
   const ehM=r=>(dM>=0&&dt(r,dM))||(/^matriculad|^matricula (efetivad|confirmad|realizad|concluid)|^efetivad|^pago\b|^confirmad/.test(st(r))&&!neg.test(st(r))&&!/pre|aguard|convoc|analise|pendent|apto|andamento/.test(st(r)));
   const ehA=r=>ehM(r)||(dA>=0&&dt(r,dA))||(/\baprova|classific|convoca|aguardando matric|pre.?matric|apto|matricula em analise|matricula pendente/.test(st(r))&&!neg.test(st(r)));
   const ehI=r=>ehA(r)||(dIns>=0&&dt(r,dIns))||(/inscri|prova|vestibular|enem|aguardando resultado|reprov|ausent|nao matric/.test(st(r))&&!/nao inscri|sem inscri/.test(st(r)));
   const ehCm=r=>ehI(r)||(dCm>=0&&dt(r,dCm))||/negocia|proposta|visita|entrevista|agendad|oportunidad|encaminhad|comercial|interessad/.test(st(r));
-  const ehCt=r=>ehCm(r)||(dCt>=0&&dt(r,dCt))||/contat|atendid|atendiment|retorno|ligac|whats|qualificad|em andamento|sem interesse|nao atende/.test(st(r));
+  const ehCt=r=>ehCm(r)||(dCt>=0&&dt(r,dCt))||/contat|atendid|atendiment|retorno|ligac|whats|qualificad|em andamento|sem interesse|nao atende|desist|perdid/.test(st(r));
   const fase=r=>ehM(r)?6:ehA(r)?5:ehI(r)?4:ehCm(r)?3:ehCt(r)?2:1;
   const F=R.map(fase), listaLeads=F.some(f=>f<4)&&(cS>=0||dIns>=0);
   const semA=cA<0&&dA<0&&!R.some(r=>/\baprova|classific/.test(st(r)));
@@ -425,21 +427,23 @@ function cvDT(v){ const s=String(v||'').trim(); let m;
   if((m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})(?:[ ,T]+(\d{1,2}):(\d{2}))?/))) return new Date(m[3].length===2?2000+ +m[3]:+m[3],m[2]-1,+m[1],+(m[4]||0),+(m[5]||0)).getTime();
   if(/^\d{5}(\.\d+)?$/.test(s)) return Math.round((+s-25569)*864e5)+new Date().getTimezoneOffset()*6e4; return null; }
 
-function cvLer(tabs,un){ for(const T of tabs){ const r=cvLerTabela(T,un); if(r) return r; } return null; }
+/* várias abas: a curva (total por data) e, se houver, a lista de leads, que entra como detalhe (atendimento, tempo até o contato) */
+function cvLerTodas(tabs,un){ const L=tabs.map(T=>cvLerTabela(T,un)).filter(Boolean); const agg=L.find(r=>!r.lista)||null, lista=L.filter(r=>r.lista).sort((a,b)=>b.P.length-a.P.length)[0]||null; return {agg,lista}; }
+function cvLer(tabs,un){ const x=cvLerTodas(tabs,un); return x.agg||x.lista; }
 function cvAplicar(c,r,file){ cvGravar(c,x=>{ const temAgg=cvSerie(x).some(p=>p.f!=='lista');
   /* lista de leads num ciclo que já tem a curva do CRM (totais por data): só acrescenta as quebras (curso, origem, atendimento, tempo) ao último dia; não troca os totais */
-  if(r.lista&&temAgg){ const s=cvSerie(x), u=r.P[r.P.length-1]; let alvo=s.filter(p=>p.d<=u.d).slice(-1)[0]||s[s.length-1]; ['c','o','t','at'].forEach(k=>{ if(u[k]) alvo[k]=u[k]; }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); r.soQuebras=alvo.d; return; }
+  if(r.lista&&temAgg){ const s=cvSerie(x), u=r.P[r.P.length-1]; let alvo=s.filter(p=>p.d<=u.d).slice(-1)[0]||s[s.length-1]; ['c','o','t','at'].forEach(k=>{ if(u[k]&&(k==='t'||k==='at'||!alvo[k])) alvo[k]=u[k]; }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); r.soQuebras=alvo.d; return; }
   const s=cvSerie(x).filter(p=>!r.P.some(q=>q.d===p.d)); r.P.forEach(q=>{ const old=cvSerie(x).find(p=>p.d===q.d)||{}; const np={d:q.d,f:r.lista?'lista':'agg'}; ['l','i','a','m','v'].forEach(k=>np[k]=q[k]!=null?q[k]:(old[k]??null)); ['c','o','t','at'].forEach(k=>{ if(q[k]) np[k]=q[k]; else if(old[k]) np[k]=old[k]; }); s.push(np); }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); }); }
 async function cvLerArq(file){ if(/\.xlsx?$/i.test(file.name)) return xlsxTexto(await file.arrayBuffer(),true); return lerArquivo(file); }
 async function cvImportar(id,file){
   const c=ciclosTodos().find(x=>x.id===id); if(!c) return;
-  try{ const r=cvLer(cvTabelas(await cvLerArq(file)),c.un); if(!r){ toast(CV_FALHA); return; }
-    cvAplicar(c,r,file); toast(r.soQuebras?`A curva deste ciclo já vem do CRM: a lista (${r.tipo}) entrou só como detalhe de cursos, origens e atendimento em ${cvDia(r.soQuebras)}.`:`${pl(r.P.length,'registro','registros')} na curva de ${c.nome||'ciclo'} (${r.tipo})`);
+  try{ const X=cvLerTodas(cvTabelas(await cvLerArq(file)),c.un), r=X.agg||X.lista; if(!r){ toast(CV_FALHA); return; }
+    cvAplicar(c,r,file); if(X.agg&&X.lista){ cvAplicar(c,X.lista,file); toast(`${pl(r.P.length,'registro','registros')} na curva de ${c.nome||'ciclo'} (${r.tipo}), mais o detalhe da lista de leads (${X.lista.tipo})`); return; } toast(r.soQuebras?`A curva deste ciclo já vem do CRM: a lista (${r.tipo}) entrou só como detalhe de cursos, origens e atendimento em ${cvDia(r.soQuebras)}.`:`${pl(r.P.length,'registro','registros')} na curva de ${c.nome||'ciclo'} (${r.tipo})`);
   }catch(e){ console.error(e); toast('Não foi possível ler a planilha: '+(e.message||e)); } }
 /* uma planilha com todas as áreas: cada UN vai para o ciclo escolhido dela */
 async function cvImportarTudo(file){
   try{ const tabs=cvTabelas(await cvLerArq(file)); const feitos=[]; let semUn=false;
-    UNS.forEach(u=>{ const c=cvEscolhido(u.id); if(!c) return; const r=cvLer(tabs,u.id); if(!r) return; if(!r.temUn){ semUn=true; return; } cvAplicar(c,r,file); feitos.push(`${u.nome} (${r.P.length})`); });
+    UNS.forEach(u=>{ const c=cvEscolhido(u.id); if(!c) return; const X=cvLerTodas(tabs,u.id), r=X.agg||X.lista; if(!r) return; if(!r.temUn){ semUn=true; return; } cvAplicar(c,r,file); if(X.agg&&X.lista&&X.lista.temUn) cvAplicar(c,X.lista,file); feitos.push(`${u.nome} (${r.P.length}${X.agg&&X.lista&&X.lista.temUn?' + lista de leads':''})`); });
     if(feitos.length) toast(`Curvas atualizadas: ${feitos.join(', ')}`);
     else toast(semUn?'A planilha não tem uma coluna de UN ou nível. Importe dentro da aba da área.':CV_FALHA);
   }catch(e){ console.error(e); toast('Não foi possível ler a planilha: '+(e.message||e)); } }

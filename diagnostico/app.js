@@ -585,7 +585,7 @@ const unDeTexto=t=>/mestrado|doutorado|stricto/i.test(t||'')?'mestrado':(UN_ALIA
 function cursoParseTabela(txt,exigeCabecalho){
   const sep=sepDe(txt)||'\t'; const linhas=txt.split(/\r?\n/).filter(l=>l.trim()&&!/^## Aba:/.test(l)).map(l=>linhaCsv(l,sep));
   let mapa=null, ini=0;
-  for(let i=0;i<Math.min(6,linhas.length);i++){ const h=linhas[i]; const m={}; h.forEach((cel,ci)=>{ const c=(CURSO_COLS.find(([f,re])=>re.test(cel)&&m[f]==null)||[])[0]; if(c&&cel.length<60) m[c]=ci; }); if(m.nome!=null&&['vagas','preco','modalidade','matriculados','meta','turmas'].some(f=>m[f]!=null)){ mapa=m; ini=i+1; break; } }
+  for(let i=0;i<Math.min(6,linhas.length);i++){ const h=linhas[i]; if(h.some(cel=>/^\s*(data|date|dia|semana)\s*$/i.test(cel)||/\blead|inscrit|status do lead|atendente|primeiro contato/i.test(cel))) return []; /* planilha de captação ou de leads não é tabela de cursos */ const m={}; h.forEach((cel,ci)=>{ const c=(CURSO_COLS.find(([f,re])=>re.test(cel)&&m[f]==null)||[])[0]; if(c&&cel.length<60) m[c]=ci; }); if(m.nome!=null&&['vagas','preco','modalidade','matriculados','meta','turmas'].some(f=>m[f]!=null)){ mapa=m; ini=i+1; break; } }
   if(!mapa&&exigeCabecalho) return [];
   if(!mapa){ mapa={un:0,nome:1,modalidade:2,turno:3,preco:4,vagas:5,matriculados:6,status:7,lancamento:8}; ini=/^un$|^unidade/i.test((linhas[0]||[])[0]||'')?1:0; }
   let unAtual='';
