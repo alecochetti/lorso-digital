@@ -204,6 +204,64 @@ function curvaHtml(un){
   return `<section class="block cv"><div class="block-h"><h3>${esc(c.nome||'Ciclo')}</h3><p>${cicloSituacao(c).t}</p></div>${pend.length?`<div class="cv-eds">${pend.map(({f,ci})=>`<div class="cv-ed"><span><b>Edital ainda sem ciclo: ${esc(f.titulo||'edital')}</b><small>${esc(ci.nome)}: inscrições de ${edFmt(ci.ini)} a ${edFmt(ci.fim)}</small></span><button class="btn sm primary" data-act="ciclo-cv-edital" data-id="${f.id}">Criar o ciclo</button></div>`).join('')}</div>`:''}${topo}${corpo}</section>`;
 }
 
+/* ---------- funis no estilo growth / comercial ---------- */
+const CV_RAMPA=['#065F46','#047857','#0F766E','#0E7490','#0369A1','#075985','#0C4A6E'];
+const cvPct1=v=>v==null||!isFinite(v)?'—':(v*100).toFixed(1).replace('.',',')+'%';
+/* mídia paga pelo nome da origem */
+const CV_PAGO=/google|meta|facebook|instagram|\bads?\b|tiktok|linkedin|bing|youtube|pago|paid|cpc|display|search|pmax|performance max|programat/i;
+/* entradas por registro dentro do período, para a minilinha dos cartões */
+function cvSpark(c,k,P){ const s=cvSerie(c).filter(p=>num(p[k])!=null); const v=[]; s.forEach((p,j)=>{ if(p.d<P.de||p.d>P.ate) return; const ant=j?num(s[j-1][k]):0; v.push(Math.max(0,num(p[k])-(ant||0))); });
+  if(v.length<3) return ''; const mx=Math.max(1,...v), w=84, h=26; return `<svg class="cv-spk" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${v.map((x,j)=>`${(j/(v.length-1)*w).toFixed(1)},${(h-2-x/mx*(h-4)).toFixed(1)}`).join(' ')}"/></svg>`; }
+function cvKpiS(v,l,delta,sub,spark,cls,info){ return `<div class="cv-kc cv-kcs ${cls||''}"${info?` title="${esc(info)}"`:''}><span>${l}</span><b>${v}</b>${spark||''}${delta?`<small class="dl">${delta}</small>`:''}${sub?`<small>${sub}</small>`:''}</div>`; }
+/* funil em trapézios (só cores da marca) + cartões de cada etapa, com o maior gargalo marcado */
+function cvFunilT(E,nota){ E=E.filter(e=>e.v!=null); if(E.length<2) return `<p class="muted">${nota||'Faltam dados para o funil neste período.'}</p>`;
+  const n=E.length, taxa=j=>j&&E[j-1].v?E[j].v/E[j-1].v:null; let pior=-1; E.forEach((e,j)=>{ const t=taxa(j); if(j&&t!=null&&(pior<0||t<taxa(pior))) pior=j; });
+  const band=E.map((e,j)=>{ const w0=100-j*(60/n), w1=100-(j+1)*(60/n); const off0=(100-w0)/2, off1=(100-w1)/2;
+    return `<div class="cv-tz" style="clip-path:polygon(${off0}% 0,${100-off0}% 0,${100-(j===n-1?off0:off1)}% 100%,${j===n-1?off0:off1}% 100%);background:${CV_RAMPA[Math.min(j,CV_RAMPA.length-1)]}"><b>${esc(e.nome)}</b><span>${cvN(e.v)}${e.rot?` · ${esc(e.rot)}`:''}</span></div>`; }).join('');
+  const cards=E.map((e,j)=>{ const t=taxa(j); return `<div class="cv-st-c${j===pior?' pior':''}">${j===pior?'<em class="cv-badge">Maior gargalo</em>':''}<span>${esc(e.nome)}</span><b>${cvN(e.v)}</b>${j&&t!=null?`<small>${cvPct1(t)} da etapa anterior${E[j-1].v-e.v>0?` · perda de ${cvN(E[j-1].v-e.v)}`:''}</small>`:''}${e.custo?`<small class="cu">${e.custo}</small>`:''}</div>`; }).join('');
+  return `<div class="cv-tzw" role="img" aria-label="Funil: ${E.map(e=>`${e.nome} ${cvN(e.v)}`).join(', ')}">${band}</div><div class="cv-sts">${cards}</div>${nota?`<p class="muted cv-nota">${nota}</p>`:''}`; }
+/* receita das matrículas: mensalidade × meses, com o desconto do ENEM */
+function cvRec(un,m,mEnem){ const d=buDados(un), mens=num(cur.campos[`base.${un}.ticket_roi`])||d.ticket, desc=(num(cur.campos[`base.${un}.desc_enem`])||0)/100; if(!mens||m==null) return null; return ((m-(mEnem||0))*mens+(mEnem||0)*mens*(1-desc))*(d.meses||12); }
+function cvGrowthHtml(c,P,C){
+  const J=k=>cvJan(c,k,P.de,P.ate), JC=k=>C?cvJan(C.c,k,C.de,C.ate):null, lab=C?esc(C.lab):'';
+  const inv=J('v'), invC=JC('v'), im=J('im'), cl=J('cl'), l=J('l');
+  /* mídia paga pela origem; com a forma de ingresso, separa o ENEM */
+  const Q=cvQuebra(c,'o',P), X=cvQuebra(c,'x',P); let lp=null,ip=null,mp=null,mE=0,temO=false;
+  if(Q&&!Q.acum){ temO=true; const pg=Q.rows.filter(r=>CV_PAGO.test(r.nome)); lp=pg.reduce((a,r)=>a+(r.l||0),0); ip=pg.reduce((a,r)=>a+(r.i||0),0); mp=pg.reduce((a,r)=>a+(r.m||0),0);
+    if(X&&!X.acum) X.rows.forEach(r=>{ const [o,f]=r.nome.split('||'); if(CV_PAGO.test(o)&&/enem/i.test(f)) mE+=r.m||0; }); else pg.forEach(r=>{ if(/enem/i.test(r.nome)) mE+=r.m||0; }); }
+  const L2=temO?lp:l, I2=temO?ip:J('i'), M2=temO?mp:J('m'), rec=cvRec(c.un,M2,mE), roas=inv&&rec!=null?rec/inv:null;
+  const cards=[cvKpiS(inv?brl(inv):'—','Investimento',cvDelta(inv,invC,lab,1),'mídia no período',cvSpark(c,'v',P)),
+    cvKpiS(cvN(l),'Total de leads',cvDelta(l,JC('l'),lab),'todas as origens',cvSpark(c,'l',P)),
+    temO?cvKpiS(cvN(lp),'Leads de mídia paga','',l?`${cvPct1(lp/l)} dos leads`:''):'',
+    cvKpiS(inv&&L2?brl(inv/L2):'—','CPL real','',temO?'investimento ÷ leads de mídia paga':'investimento ÷ leads'),
+    cvKpiS(cvN(I2),temO?'Inscritos de mídia (MQL)':'Inscritos (MQL)','',inv&&I2?`custo por inscrito ${brl(inv/I2)}`:''),
+    cvKpiS(cvN(M2),temO?'Matrículas de mídia':'Matrículas','',inv&&M2?`CAC de mídia ${brl(inv/M2)}`:''),
+    cvKpiS(rec!=null?brl(rec):'—','Receita atribuída','',rec!=null?`matrículas × mensalidade × ${buDados(c.un).meses||12} meses${mE?`, ${cvN(mE)} pelo ENEM com desconto`:''}`:'informe a mensalidade em Verba e retorno'),
+    cvKpiS(roas!=null?roas.toFixed(2).replace('.',',')+'x':'—','ROAS','',roas!=null?'receita atribuída ÷ investimento':'',null,roas!=null&&roas<1?'ruim':'')].join('');
+  const E=[{nome:'Impressões',v:im,custo:inv&&im?`CPM ${brl(inv/im*1000)}`:''},{nome:'Cliques',v:cl,rot:im&&cl?`CTR ${cvPct1(cl/im)}`:'',custo:inv&&cl?`CPC ${brl(inv/cl)}`:''},
+    {nome:'Leads no CRM',v:l,rot:cl&&l?`conversão ${cvPct1(l/cl)}`:'',custo:inv&&l?`custo por lead ${brl(inv/l)}`:''},
+    ...(temO?[{nome:'Leads de mídia paga',v:lp,rot:l&&lp!=null?`${cvPct1(lp/l)} dos leads`:'',custo:inv&&lp?`CPL real ${brl(inv/lp)}`:''}]:[]),
+    {nome:temO?'Inscritos de mídia (MQL)':'Inscritos (MQL)',v:I2,custo:inv&&I2?`custo por inscrito ${brl(inv/I2)}`:''},
+    {nome:temO?'Matrículas de mídia':'Matrículas',v:M2,custo:inv&&M2?`CAC ${brl(inv/M2)}`:''}];
+  const nota=[im==null?'Para começar o funil nas impressões, inclua as colunas Impressões e Cliques na planilha (relatório do Google e da Meta).':'',
+    !temO?'Sem a coluna Origem, o funil considera todos os leads, não só os de mídia paga.':'Mídia paga = origens com Google, Meta, Facebook, Instagram, TikTok, LinkedIn, Bing, YouTube ou "Ads" no nome.'].filter(Boolean).join(' ');
+  return `<div class="cv-ks cv-ks4">${cards}</div><div class="block cv-in"><h4>Funil de growth, ponta a ponta</h4>${cvFunilT(E,nota)}</div>`; }
+function cvComercialHtml(c,P,C,A){
+  const J=k=>cvJan(c,k,P.de,P.ate), JC=k=>C?cvJan(C.c,k,C.de,C.ate):null, lab=C?esc(C.lab):'';
+  const l=J('l'), i=J('i'), a=J('a'), m=J('m'), d=buDados(c.un), mens=num(cur.campos[`base.${c.un}.ticket_roi`])||d.ticket, meses=d.meses||12;
+  const X=cvQuebra(c,'f',P); let mE=0; if(X&&!X.acum) X.rows.forEach(r=>{ if(/enem/i.test(r.nome)) mE+=r.m||0; });
+  const rec=cvRec(c.un,m,mE), base=l!=null?l:i, conv=base&&m!=null?m/base:null, convC=(()=>{ const b=JC(l!=null?'l':'i'), mm=JC('m'); return b&&mm!=null?mm/b:null; })();
+  const abertos=A.a!=null&&A.m!=null?Math.max(0,A.a-A.m):null, parado=abertos!=null?cvRec(c.un,abertos,0):null;
+  const s=cvSerie(c); let t=null; for(let j=s.length-1;j>=0;j--) if(s[j].t){ t=s[j].t; break; }
+  const cards=[cvKpiS(rec!=null?brl(rec):'—','Receita contratada',cvDelta(rec,JC('m')!=null?cvRec(c.un,JC('m'),0):null,lab),rec!=null?`${cvN(m)} matrículas × ${brl(mens)} × ${meses} meses${mE?' (ENEM com desconto)':''}`:'informe a mensalidade em Verba e retorno',cvSpark(c,'m',P)),
+    cvKpiS(mens?brl(mens):'—','Mensalidade média','',mE?`${cvN(mE)} pelo ENEM, com desconto`:'usada na receita'),
+    cvKpiS(cvPct1(conv),`Conversão ${l!=null?'lead':'inscrito'} → matrícula`,cvDelta(conv,convC,lab,0,1),`${cvN(base)} ${l!=null?'leads':'inscritos'} no período`),
+    cvKpiS(cvN(abertos),'Aprovados sem matrícula','','oportunidades abertas no ciclo',null,abertos&&A.a&&abertos/A.a>0.5?'ruim':''),
+    cvKpiS(parado!=null?brl(parado):'—','Dinheiro na mesa','',parado!=null?'aprovados sem matrícula × mensalidade × meses':''),
+    t?cvKpiS(`${String(t.med).replace('.',',')} dias`,'Inscrição → matrícula','',`mediana de ${cvN(t.n)} matrículas`):''].join('');
+  const E=[{nome:'Leads',v:l},{nome:'Inscritos (MQL)',v:i,custo:''},{nome:'Aprovados (SQL · prontos para matricular)',v:a},{nome:'Matriculados (alunos)',v:m,custo:mens&&m?`receita ${brl(rec)}`:''}];
+  return `<div class="cv-ks cv-ks4">${cards}</div><div class="block cv-in"><h4>Funil comercial</h4>${cvFunilT(E,'Lead → inscrição (MQL) → aprovação no processo seletivo (SQL, pronto para matricular) → matrícula paga (aluno).')}</div>${t?`<div class="block cv-in" style="margin-top:14px"><h4>Tempo da inscrição até a matrícula</h4>${cvTempoHtml(c)}</div>`:''}`; }
+
 function cvSubFunil(c,A){
   const P=cvPer(c), C=cvComp(c,P), J=k=>cvJan(c,k,P.de,P.ate), JC=k=>C?cvJan(C.c,k,C.de,C.ate):null;
   const x={l:J('l'),i:J('i'),a:J('a'),m:J('m')}, inv=J('v')!=null&&J('v')>0?J('v'):null, xc={l:JC('l'),i:JC('i'),a:JC('a'),m:JC('m')}, invC=JC('v');
@@ -218,19 +276,9 @@ function cvSubFunil(c,A){
    </div>
    ${vsAnt!=null?`<p class="pz-aviso${vsAnt<0?'':' ok'}"><span class="i">${vsAnt<0?'!':'✓'}</span><span>No mesmo ponto de "${esc(A.comp.nome)}" eram ${cvN(A.comp.m)} matriculados. Hoje são ${cvN(A.m)}, ${vsAnt<0?`${cvP(-vsAnt)} abaixo`:`${cvP(vsAnt)} acima`}.</span></p>`:''}
    ${A.am!=null&&A.a>=10&&A.am<0.5&&(A.m>0||(c.mat_ini&&A.last&&A.last.d>=c.mat_ini))?`<p class="pz-aviso"><span class="i">!</span><span>${cvN(A.a-A.m)} aprovados ainda não se matricularam (${cvP(1-A.am)}). É dinheiro na mesa: vale uma ação dedicada a eles antes de investir em mais inscritos.</span></p>`:''}
-   <h4 class="cv-h">No período</h4><p class="muted cv-sub">${cvDia(P.de)} a ${cvDia(P.ate)}, pela data de cada registro do CRM.${C?` Abaixo de cada número, a comparação com ${esc(lab)}.`:''}</p>
-   <div class="cv-ks">
-    ${x.l!=null?cvKpi(cvN(x.l),'Leads',cvDelta(x.l,xc.l,esc(lab)),inv&&x.l?`CPL ${brl(inv/x.l)}`:''):''}
-    ${cvKpi(cvN(x.i),'Inscritos',cvDelta(x.i,xc.i,esc(lab)),x.l?`${cvP(x.i/x.l)} dos leads`:'')}
-    ${x.a!=null?cvKpi(cvN(x.a),'Aprovados',cvDelta(x.a,xc.a,esc(lab)),x.i?`${cvP(x.a/x.i)} dos inscritos`:''):''}
-    ${cvKpi(cvN(x.m),'Matriculados',cvDelta(x.m,xc.m,esc(lab)),inv&&x.m?`CAC ${brl(inv/x.m)}`:'')}
-    ${cvKpi(conv!=null?(conv*100).toFixed(1).replace('.',',')+'%':'—',`${base==='l'?'Lead':'Inscrito'} → matrícula`,cvDelta(conv,convC,esc(lab),0,1),'matriculados ÷ '+(base==='l'?'leads':'inscritos'))}
-    ${inv?cvKpi(brl(inv),'Investido',cvDelta(inv,invC,esc(lab),1),'verba de mídia no período'):''}
-   </div>
-   <div class="cv-dois">
-    <div class="block cv-in"><h4>Funil do período</h4><p class="muted cv-sub">Em vermelho, a passagem com a maior perda.</p>${cvFunil(x,inv)}</div>
-    <div class="block cv-in"><h4>Tempo da inscrição até a matrícula</h4>${cvTempoHtml(c)}</div>
-   </div>
+   <div class="cv-fun-h"><h4 class="cv-h" style="margin:0">No período</h4><div class="seg" role="group">${[['growth','Growth e mídia'],['comercial','Comercial e matrícula']].map(([k,l])=>`<button class="${(ui.cvFun||'growth')===k?'on':''}" data-act="ciclo-cv-fun" data-v="${k}" aria-pressed="${(ui.cvFun||'growth')===k}">${l}</button>`).join('')}</div></div>
+   <p class="muted cv-sub">${cvDia(P.de)} a ${cvDia(P.ate)}, pela data de cada registro do CRM.${C?` A comparação é com ${esc(lab)}.`:''}</p>
+   ${(ui.cvFun||'growth')==='growth'?cvGrowthHtml(c,P,C):cvComercialHtml(c,P,C,A)}
    <div class="cv-modo"><h4 class="cv-h" style="margin:0">Curva do ciclo</h4><div class="seg" role="group"><button class="${modo==='acum'?'on':''}" data-act="ciclo-cv-modo" data-v="acum" aria-pressed="${modo==='acum'}">Acumulado</button><button class="${modo==='dia'?'on':''}" data-act="ciclo-cv-modo" data-v="dia" aria-pressed="${modo==='dia'}">Por registro</button></div></div>
    ${modo==='dia'?cvDiario(c,A):`<div class="cv-gs">${cvGrafico(c,A,{keys:['a','m'],ant:['m'],refs:1,proj:1,tit:'Aprovados e matriculados, contra a meta e as vagas'})}${cvGrafico(c,A,{keys:['i'],ant:['i'],h:240,tit:'Inscritos'})}</div>`}`; }
 
@@ -404,12 +452,12 @@ function cvLerTabela(T,un){
   const avisos=()=>[nOutra?`${pl(nOutra,'linha de curso de pós ou mestrado ficou de fora','linhas de cursos de pós ou mestrado ficaram de fora')}`:'',nTot?`${pl(nTot,'linha de total ignorada','linhas de total ignoradas')}`:'',Object.values(MD).some(Boolean)?'datas lidas como mês/dia (padrão americano)':''].filter(Boolean).join(', ');
   const dI=col(/data.*(inscri|cadastr|criac|entrada)|(inscri|cadastr|criad|created).*data|^criado|^created/), dA=col(/data.*aprova|aprova.*data/), dM=col(/data.*matric|matric.*data/);
   const cC=col(/^(curso|nome do curso|programa|oferta|curso de interesse)/), cO=col(/^(origem|canal|fonte|midia|utm.?source|campanha|utm.?campaign)/);
-  const cF=col(/^(forma de ingresso|ingresso|tipo de ingresso|modalidade de ingresso|processo seletivo)$/);
-  const K=['l','i','a','m','v'], DIM=[['c',cC],['o',cO],['f',cF]].filter(x=>x[1]>=0); if(cO>=0&&cF>=0) DIM.push(['x',-1]); /* x = campanha × forma de ingresso, para o retorno por campanha */
+  const cF=col(/^(forma de ingresso|ingresso|tipo de ingresso|modalidade de ingresso|processo seletivo)$/), cIm=colN(/impress/), cCl=colN(/^(cliques?|clicks?|clique no link|cliques no link)/);
+  const K=['im','cl','l','i','a','m','v'], DIM=[['c',cC],['o',cO],['f',cF]].filter(x=>x[1]>=0); if(cO>=0&&cF>=0) DIM.push(['x',-1]); /* x = campanha × forma de ingresso, para o retorno por campanha */
   /* 1) total por data (e por curso e origem, se houver as colunas) */
   if(cD>=0&&cD!==dI&&(cI>=0||cM>=0||cL>=0)&&cS<0&&T.rows.filter(r=>/^\s*\d/.test(r[cI>=0?cI:cM>=0?cM:cL]||'')).length>=1){
     const absurdo=ci=>ci>=0&&T.rows.some(r=>(num(r[ci])||0)>5e6); [['cI',cI],['cL',cL],['cA',cA],['cM',cM]].forEach(([n,ci])=>{ if(absurdo(ci)) throw new Error('A coluna "'+T.cab[ci]+'" tem números grandes demais para ser uma contagem (parece código ou matrícula). Tire essa coluna ou renomeie.'); });
-    const linhas=doUn(T.rows).map(r=>{ const o={d:dt(r,cD),l:cL>=0?num(r[cL]):null,i:cI>=0?num(r[cI]):null,a:cA>=0?num(r[cA]):null,m:cM>=0?num(r[cM]):null,v:cV>=0?num(r[cV]):null}; DIM.forEach(([k,ci])=>o['_'+k]=ci>=0?String(r[ci]||'').trim():''); if(cO>=0&&cF>=0) o._x=`${o._o||'(sem origem)'}||${o._f||'(sem ingresso)'}`; return o; }).filter(p=>p.d&&(p.i!=null||p.m!=null||p.l!=null));
+    const linhas=doUn(T.rows).map(r=>{ const o={d:dt(r,cD),im:cIm>=0?num(r[cIm]):null,cl:cCl>=0?num(r[cCl]):null,l:cL>=0?num(r[cL]):null,i:cI>=0?num(r[cI]):null,a:cA>=0?num(r[cA]):null,m:cM>=0?num(r[cM]):null,v:cV>=0?num(r[cV]):null}; DIM.forEach(([k,ci])=>o['_'+k]=ci>=0?String(r[ci]||'').trim():''); if(cO>=0&&cF>=0) o._x=`${o._o||'(sem origem)'}||${o._f||'(sem ingresso)'}`; return o; }).filter(p=>p.d&&(p.i!=null||p.m!=null||p.l!=null));
     let nDup=0; if(!DIM.length){ const ult={}; linhas.forEach((r,j)=>{ if(ult[r.d]!=null) nDup++; ult[r.d]=j; }); if(nDup){ const keep=new Set(Object.values(ult)); for(let j=linhas.length-1;j>=0;j--) if(!keep.has(j)) linhas.splice(j,1); } }
     const porD={}; linhas.forEach(r=>{ const p=porD[r.d]=porD[r.d]||{d:r.d}; K.forEach(k=>{ if(r[k]!=null) p[k]=(p[k]||0)+r[k]; });
       DIM.forEach(([k])=>{ const nm=r['_'+k]||'(sem '+({c:'curso',o:'origem',f:'ingresso'}[k]||'dado')+')'; p[k]=p[k]||{}; const q=p[k][nm]=p[k][nm]||{}; K.forEach(kk=>{ if(r[kk]!=null) q[kk]=(q[kk]||0)+r[kk]; }); }); });
@@ -484,7 +532,7 @@ function cvLer(tabs,un){ const x=cvLerTodas(tabs,un); return x.agg||x.lista; }
 function cvAplicar(c,r,file){ cvGravar(c,x=>{ const temAgg=cvSerie(x).some(p=>p.f!=='lista');
   /* lista de leads num ciclo que já tem a curva do CRM (totais por data): só acrescenta as quebras (curso, origem, atendimento, tempo) ao último dia; não troca os totais */
   if(r.lista&&temAgg){ const s=cvSerie(x), u=r.P[r.P.length-1]; let alvo=s.filter(p=>p.d<=u.d).slice(-1)[0]||s[s.length-1]; ['c','o','f','x','t','at'].forEach(k=>{ if(u[k]&&(k==='t'||k==='at'||!alvo[k])) alvo[k]=u[k]; }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); r.soQuebras=alvo.d; return; }
-  const s=cvSerie(x).filter(p=>!r.P.some(q=>q.d===p.d)); r.P.forEach(q=>{ const old=cvSerie(x).find(p=>p.d===q.d)||{}; const np={d:q.d,f:r.lista?'lista':'agg'}; ['l','i','a','m','v'].forEach(k=>np[k]=q[k]!=null?q[k]:(old[k]??null)); ['c','o','f','x','t','at'].forEach(k=>{ if(q[k]) np[k]=q[k]; else if(old[k]) np[k]=old[k]; }); s.push(np); }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); }); }
+  const s=cvSerie(x).filter(p=>!r.P.some(q=>q.d===p.d)); r.P.forEach(q=>{ const old=cvSerie(x).find(p=>p.d===q.d)||{}; const np={d:q.d,f:r.lista?'lista':'agg'}; ['im','cl','l','i','a','m','v'].forEach(k=>np[k]=q[k]!=null?q[k]:(old[k]??null)); ['c','o','f','x','t','at'].forEach(k=>{ if(q[k]) np[k]=q[k]; else if(old[k]) np[k]=old[k]; }); s.push(np); }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); }); }
 async function cvLerArq(file){ if(/\.xlsx?$/i.test(file.name)) return xlsxTexto(await file.arrayBuffer(),true); return lerArquivo(file); }
 async function cvImportar(id,file){
   const c=ciclosTodos().find(x=>x.id===id); if(!c) return;
@@ -516,6 +564,7 @@ if(typeof cicloClick==='function'){ const _cc=cicloClick; cicloClick=function(ac
   if(act==='ciclo-cv-ano'){ ui.cvAno=d.v; render(); return true; }
   if(act==='ciclo-cv-distr'){ const un=d.v, ano=d.ano, anual=num(cur.campos[`${un}.orcamento`]); if(!anual) return true; const cap=cvMesesCapt(un,ano), w=CV_MESES.map((_,m)=>d.peso&&cap.has(m)?1+(num(ui.cvPeso)??50)/100:1), sw=w.reduce((a,b)=>a+b,0);
     const P=cvPlano(un); CV_MESES.forEach((_,m)=>P[`${ano}-${String(m+1).padStart(2,'0')}`]=Math.round(anual*w[m]/sw)); cvPlanoSalvar(un,P); render(); toast(`Orçamento de ${ano} distribuído${d.peso&&cap.size?` com ${num(ui.cvPeso)??50}% a mais em ${pl(cap.size,'mês de captação','meses de captação')}`:' igual nos 12 meses'}`); return true; }
+  if(act==='ciclo-cv-fun'){ ui.cvFun=d.v; render(); return true; }
   if(act==='ciclo-cv-sub'){ ui.cvSub=d.v; render(); return true; }
   if(act==='ciclo-cv-per'){ ui.cvPer=d.v; render(); return true; }
   if(act==='ciclo-cv-sel'){ ui.cvSel=ui.cvSel||{}; ui.cvSel[d.id]=d.v; render(); return true; }
