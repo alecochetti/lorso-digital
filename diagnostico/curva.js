@@ -8,6 +8,7 @@
    Carregado depois de base-un.js.
    ===================================================================== */
 if(typeof CICLO_NUM!=='undefined'&&!CICLO_NUM.some(x=>x[0]==='aprovados')) CICLO_NUM.splice(2,0,['aprovados','Aprovados','']);
+if(typeof CICLO_NUM!=='undefined'&&!CICLO_NUM.some(x=>x[0]==='meta')) CICLO_NUM.splice(1,0,['meta','Meta de matrículas do ciclo','']);
 
 const CV_S=[['i','Inscritos','var(--cv-i)'],['a','Aprovados','var(--cv-a)'],['m','Matriculados','var(--cv-m)']];
 const cvN=v=>v==null?'—':Math.round(v).toLocaleString('pt-BR');
@@ -30,14 +31,15 @@ function cvAnalise(c){
   const s=cvSerie(c), last=s[s.length-1]||null, d=buDados(c.un);
   const i=cvUlt(c,'i'), a=cvUlt(c,'a'), m=cvUlt(c,'m'), l=cvUlt(c,'l');
   const t=last?cvOff(c,last.d):null, fim=c.camp_fim?cvOff(c,c.camp_fim):null;
-  const inv=cvUlt(c,'v')!=null?cvUlt(c,'v'):num(c.verba), verba=num(c.verba);
+  const inv=cvUlt(c,'v'), verba=num(c.verba); /* investido = o que o CRM ou a mídia informam até a data; a verba do ciclo é o planejado */
   const ant=cvAnterior(c); let proj=null, comp=null, como='';
   if(m!=null&&t!=null){
-    if(ant){ const pm=cvEm(ant,'m',t), pf=cvUlt(ant,'m'); if(pm) { comp={m:pm,i:cvEm(ant,'i',t),nome:ant.nome}; if(pf!=null&&fim!=null&&t<fim){ proj=m/pm*pf; como=`no ritmo de "${ant.nome}"`; } } }
-    if(proj==null&&fim!=null&&t<fim&&s.length>1){ const ref=s.filter(p=>cvOff(c,p.d)>=t-14&&num(p.m)!=null); if(ref.length>1){ const p0=ref[0], dt=t-cvOff(c,p0.d); if(dt>0){ proj=m+(m-num(p0.m))/dt*(fim-t); como='no ritmo dos últimos 14 dias'; } } }
+    if(ant){ const pm=cvEm(ant,'m',t), pf=cvUlt(ant,'m'); if(pm) { comp={m:pm,i:cvEm(ant,'i',t),nome:ant.nome}; if(pf!=null&&fim!=null&&t<fim&&pm>=10&&m>=5){ proj=m/pm*pf; como=`no ritmo de "${ant.nome}"`; } } }
+    if(proj==null&&fim!=null&&t<fim&&s.length>1){ const ref=s.filter(p=>cvOff(c,p.d)>=t-14&&num(p.m)!=null); if(ref.length>1&&m>=10){ const p0=ref[0], dt=t-cvOff(c,p0.d); if(dt>=7){ proj=m+(m-num(p0.m))/dt*(fim-t); como='no ritmo dos últimos 14 dias'; } } }
   }
   const prev=s.length>1?s[s.length-2]:null, dlt=k=>prev&&num(last[k])!=null&&num(prev[k])!=null?num(last[k])-num(prev[k]):null;
-  return {s,last,prev,i,a,m,l,t,fim,inv,verba,ant,comp,proj,como,meta:d.meta,vagas:d.alunos,
+  const metaC=num(c.meta);
+  return {s,last,prev,i,a,m,l,t,fim,inv,verba,ant,comp,proj,como,meta:metaC||d.meta,metaDe:metaC?'ciclo':'UN',vagas:d.alunos,
     ia:i&&a!=null?a/i:null, am:a&&m!=null?m/a:null, im:i&&m!=null?m/i:null,
     cac:inv&&m?inv/m:null, cpi:inv&&i?inv/i:null, cpa:inv&&a?inv/a:null, cpl:inv&&l?inv/l:null, li:l&&i!=null?i/l:null, cacProj:verba&&proj?verba/proj:null,
     di:dlt('i'),da:dlt('a'),dm:dlt('m')};
@@ -109,8 +111,10 @@ function cvDiario(c,A){ const s=A.s; if(s.length<2) return '<p class="muted" sty
 const CV_PER=[['ciclo','Ciclo todo'],['dia','Último dia'],['7','Últimos 7 dias'],['30','Últimos 30 dias'],['mes','Mês atual'],['mesant','Mês anterior']];
 const cvISO=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const cvSoma=(iso,n)=>{ const d=cDt(iso); d.setDate(d.getDate()+n); return cvISO(d); };
-function cvPer(c){ const s=cvSerie(c), last=s.length?s[s.length-1].d:cvHojeISO(), z=cvZero(c), ini=z?cvISO(z):(s[0]&&s[0].d)||last;
-  const k=ui.cvPer||'ciclo'; let de=ini, ate=last;
+/* a data de referência dos atalhos é a mesma para todas as áreas: o dado mais recente de qualquer ciclo */
+function cvRefGlobal(){ let m=''; ciclosTodos().forEach(c=>{ const s=cvSerie(c); if(s.length&&s[s.length-1].d>m) m=s[s.length-1].d; }); return m||cvHojeISO(); }
+function cvPer(c){ const s=cvSerie(c), lastC=s.length?s[s.length-1].d:cvHojeISO(), z=cvZero(c), ini=z?cvISO(z):(s[0]&&s[0].d)||lastC;
+  const k=ui.cvPer||'ciclo', last=k==='ciclo'?lastC:cvRefGlobal(); let de=ini, ate=last;
   if(k==='dia') de=last; else if(k==='7') de=cvSoma(last,-6); else if(k==='30') de=cvSoma(last,-29);
   else if(k==='mes') de=last.slice(0,8)+'01'; else if(k==='mesant'){ const d=cDt(last.slice(0,8)+'01'); d.setDate(0); ate=cvISO(d); de=ate.slice(0,8)+'01'; }
   else if(k==='livre'){ de=ui.cvDe||ini; ate=ui.cvAte||last; }
@@ -133,7 +137,7 @@ function cvDelta(v,ant,lab,inv,pp){ if(v==null||ant==null) return ''; if(pp){ co
 function cvPerHtml(){ const k=ui.cvPer||'ciclo'; const c0=UNS.map(u=>cvEscolhido(u.id)).find(c=>c&&cvSerie(c).length); const P=c0?cvPer(c0):null;
   return `<div class="cv-per"><div class="cv-per-d"><label>De<input type="date" data-cv-per="de" value="${P?P.de:''}"></label><label>Até<input type="date" data-cv-per="ate" value="${P?P.ate:''}"></label></div>
    <div class="cv-per-b">${CV_PER.map(([v,l])=>`<button class="chip${k===v?' on':''}" data-act="ciclo-cv-per" data-v="${v}" aria-pressed="${k===v}">${l}</button>`).join('')}</div>
-   <p class="muted">${P?`Período: ${cvDia(P.de)} a ${cvDia(P.ate)}. Vale para os números do período em todas as áreas; a meta e a projeção são sempre do ciclo inteiro.`:'Importe os números do CRM para escolher o período.'}</p></div>`; }
+   <p class="muted">${P?(k==='ciclo'?'Ciclo todo: cada área conta desde o início do próprio ciclo até o último registro.':`Período: ${cvDia(P.de)} a ${cvDia(P.ate)}, igual para todas as áreas (o fim é o dado mais recente importado).`)+' A meta e a projeção são sempre do ciclo inteiro.':'Importe os números do CRM para escolher o período.'}</p></div>`; }
 
 /* ---------- funil vertical, com a maior perda em destaque ---------- */
 function cvFunil(x,inv){ const E=[['l','Leads','CPL'],['i','Inscritos','por inscrito'],['a','Aprovados','por aprovado'],['m','Matriculados','CAC']].filter(([k])=>x[k]!=null);
@@ -153,7 +157,8 @@ function cvQuebra(c,dim,P){ const s=cvSerie(c).filter(p=>p[dim]); if(!s.length) 
     .filter(r=>['l','i','a','m'].some(k=>r[k])).sort((a,b)=>(b.m||0)-(a.m||0)||(b.i||0)-(a.i||0));
   const ult=s.filter(p=>p.d<=P.ate).slice(-1)[0]||s[s.length-1]; return {rows,acum,d:ult.d}; }
 const cvNb=x=>cvNorm(x).replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
-function cvBaseCurso(un,nome){ const n=cvNb(nome); const bs=cur.cursos.filter(b=>b.un===un&&b.status!=='Descontinuado'&&(k=>k&&(k===n||n.startsWith(k+' ')||k.startsWith(n+' ')))(cvNb(b.nome)));
+const CV_SUF=/^(noturno|matutino|vespertino|diurno|integral|ead|presencial|hibrido|online|semipresencial|flexivel|live|manha|tarde|noite)( (noturno|matutino|vespertino|diurno|integral|ead|presencial|hibrido|online|semipresencial|flexivel|live|manha|tarde|noite))*$/;
+function cvBaseCurso(un,nome){ const n=cvNb(nome); const bs=cur.cursos.filter(b=>b.un===un&&b.status!=='Descontinuado'&&(k=>k&&(k===n||(n.startsWith(k+' ')&&CV_SUF.test(n.slice(k.length+1)))))(cvNb(b.nome)));
   return {vagas:bs.reduce((a,b)=>a+(num(b.vagas)||0),0)||null,meta:bs.reduce((a,b)=>a+(num(b.meta)||0),0)||null}; }
 
 function cvKpi(v,l,delta,sub,cls){ return `<div class="cv-kc ${cls||''}"><span>${l}</span><b>${v}</b>${delta?`<small class="dl">${delta}</small>`:''}${sub?`<small>${sub}</small>`:''}</div>`; }
@@ -191,13 +196,13 @@ function cvSubFunil(c,A){
   const vsAnt=A.comp&&A.m!=null?A.m/A.comp.m-1:null, modo=ui.cvModo||'acum';
   return `<h4 class="cv-h">Ciclo até agora</h4>
    <div class="cv-ks">
-    ${cvKpi(cvN(A.m),'Matriculados',A.meta?`<em class="${A.m/A.meta>=0.5?'up':''}">${cvP(A.m/A.meta)} da meta</em> de ${cvN(A.meta)}`:'',A.am!=null?`${cvP(A.am)} dos aprovados · ${cvP(A.im)} dos inscritos`:'')}
-    ${cvKpi(A.proj!=null?cvN(A.proj):'—','Projeção de fechamento',A.proj!=null&&A.meta?`<em class="${A.proj>=A.meta*0.95?'up':'dn'}">${cvP(A.proj/A.meta)} da meta</em>`:'',A.proj!=null?A.como:A.fim==null?'informe quando a campanha encerra':'precisa de dois registros')}
+    ${cvKpi(cvN(A.m),'Matriculados',A.meta?`<em class="${A.m/A.meta>=0.5?'up':''}">${cvP(A.m/A.meta)} da meta</em> de ${cvN(A.meta)}${A.metaDe==='UN'?' (meta da UN; defina a meta do ciclo no Calendário)':''}`:'',A.am!=null?`${cvP(A.am)} dos aprovados · ${cvP(A.im)} dos inscritos`:'')}
+    ${cvKpi(A.proj!=null?cvN(A.proj):'—','Projeção de fechamento',A.proj!=null&&A.meta?`<em class="${A.proj>=A.meta*0.95?'up':'dn'}">${cvP(A.proj/A.meta)} da meta</em>`:'',A.proj!=null?A.como:A.fim==null?'informe quando a campanha encerra':'poucos dados para projetar (precisa de 10 matriculados e 7 dias de registros)')}
     ${cvKpi(cvN(A.i),'Inscritos',A.comp&&A.comp.i?cvDelta(A.i,A.comp.i,`${esc(A.comp.nome)} no mesmo ponto`):'',A.ia!=null?`${cvP(A.ia)} viram aprovados`:'')}
     ${cvKpi(A.cac!=null?brl(A.cac):'—','CAC real',A.cacProj!=null?`projetado ${brl(A.cacProj)}`:'',A.inv?`${brl(A.inv)} investidos${A.cpl!=null?` · CPL ${brl(A.cpl)}`:''}`:'informe o investido em Registros')}
    </div>
    ${vsAnt!=null?`<p class="pz-aviso${vsAnt<0?'':' ok'}"><span class="i">${vsAnt<0?'!':'✓'}</span><span>No mesmo ponto de "${esc(A.comp.nome)}" eram ${cvN(A.comp.m)} matriculados. Hoje são ${cvN(A.m)}, ${vsAnt<0?`${cvP(-vsAnt)} abaixo`:`${cvP(vsAnt)} acima`}.</span></p>`:''}
-   ${A.am!=null&&A.a>=10&&A.am<0.5?`<p class="pz-aviso"><span class="i">!</span><span>${cvN(A.a-A.m)} aprovados ainda não se matricularam (${cvP(1-A.am)}). É dinheiro na mesa: vale uma ação dedicada a eles antes de investir em mais inscritos.</span></p>`:''}
+   ${A.am!=null&&A.a>=10&&A.am<0.5&&(A.m>0||(c.mat_ini&&A.last&&A.last.d>=c.mat_ini))?`<p class="pz-aviso"><span class="i">!</span><span>${cvN(A.a-A.m)} aprovados ainda não se matricularam (${cvP(1-A.am)}). É dinheiro na mesa: vale uma ação dedicada a eles antes de investir em mais inscritos.</span></p>`:''}
    <h4 class="cv-h">No período</h4><p class="muted cv-sub">${cvDia(P.de)} a ${cvDia(P.ate)}, pela data de cada registro do CRM.${C?` Abaixo de cada número, a comparação com ${esc(lab)}.`:''}</p>
    <div class="cv-ks">
     ${x.l!=null?cvKpi(cvN(x.l),'Leads',cvDelta(x.l,xc.l,esc(lab)),inv&&x.l?`CPL ${brl(inv/x.l)}`:''):''}
@@ -310,42 +315,62 @@ function cvResumo(c){ const A=cvAnalise(c); if(!A.last) return ''; return ` · $
 
 /* mantém os totais do ciclo (tabela do calendário) iguais ao último registro */
 function cvSync(c){ c.serie=cvSerie(c); ['i','a','m'].forEach((k,j)=>{ const v=cvUlt(c,k); if(v!=null) c[['inscritos','aprovados','matriculados'][j]]=String(v); }); }
-function cvGravar(c,muda){ const L=ciclosTodos(), x=L.find(y=>y.id===c.id); if(!x) return; muda(x); cvSync(x); ciclosSalvar(L); render(); }
+/* o desenho espera o foco ir para o próximo campo (Tab), para não perder o que se digita em seguida */
+function cvGravar(c,muda){ const L=ciclosTodos(), x=L.find(y=>y.id===c.id); if(!x) return; muda(x); cvSync(x); ciclosSalvar(L); setTimeout(render,0); }
 
 /* ---------- importação do CRM ---------- */
 const cvNorm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
-function cvData(v){ const s=String(v||'').trim(); let m;
-  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
-  if((m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/))){ const y=m[3].length===2?'20'+m[3]:m[3]; return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; }
+/* data válida ou null; mdy=true quando a coluna está no padrão americano (mês/dia) */
+const cvOk=(y,m,d)=>{ const x=new Date(+y,+m-1,+d); return x.getFullYear()===+y&&x.getMonth()===+m-1&&x.getDate()===+d&&+y>1990&&+y<2100; };
+function cvData(v,mdy){ const s=String(v||'').trim(); let m;
+  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return cvOk(m[1],m[2],m[3])?`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`:null;
+  if((m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/))){ const y=m[3].length===2?'20'+m[3]:m[3]; const d=mdy?m[2]:m[1], mo=mdy?m[1]:m[2]; return cvOk(y,mo,d)?`${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`:null; }
   if(/^\d{5}(\.\d+)?$/.test(s)){ const d=new Date(Math.round((+s-25569)*864e5)); return d.toISOString().slice(0,10); }
   return null; }
+/* a coluna de datas está em mês/dia? só quando algum valor obriga (2º número > 12 e nenhum 1º > 12) */
+function cvMdy(rows,ci){ if(ci<0) return false; let a=false,b=false; rows.forEach(r=>{ const m=String(r[ci]||'').match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-]\d{2,4}/); if(m){ if(+m[1]>12) a=true; if(+m[2]>12) b=true; } }); return b&&!a; }
+const CV_FALHA='Não achei nesta planilha uma coluna de data com leads, inscritos ou matriculados, nem uma lista de leads com status. Confira o cabeçalho ou use o modelo de planilha da Captação.';
 function cvTabelas(txt){ return String(txt||'').split(/^## Aba:.*$/m).map(b=>b.split('\n').filter(l=>l.trim())).filter(l=>l.length>1).map(ls=>{
   const sep=['\t',';',','].map(s=>[s,ls.slice(0,5).reduce((a,l)=>a+l.split(s).length,0)]).sort((a,b)=>b[1]-a[1])[0][0];
   const split=l=>{ if(sep!==',') return l.split(sep); const out=[]; let cur='',q=false; for(const ch of l){ if(ch==='"') q=!q; else if(ch===','&&!q){ out.push(cur); cur=''; } else cur+=ch; } out.push(cur); return out; };
-  const rows=ls.map(l=>split(l).map(x=>x.replace(/^"|"$/g,'').trim())); const h=rows.findIndex(r=>r.filter(Boolean).length>=2);
+  const rows=ls.map(l=>split(l).map(x=>x.replace(/^"|"$/g,'').trim())); const KW=/data|lead|inscri|aprova|matric|status|etapa|curso|origem|nivel|invest|verba|responsavel|consultor|atendente|equipe|canal|unidade/;
+  let h=-1, best=0; rows.slice(0,10).forEach((r,j)=>{ const n=r.filter(x=>KW.test(cvNorm(x))).length; if(n>best){ best=n; h=j; } }); if(h<0) h=rows.findIndex(r=>r.filter(Boolean).length>=2);
   return {cab:(rows[h]||[]).map(cvNorm),rows:rows.slice(h+1)}; }); }
 const CV_UN={graduacao:/^(?!.*\bpos\b)(?!.*pos[- ]?grad)(?!.*mba).*(gradua|bachar|tecnolog|licenciat|vestibular)/,pos:/\bpos\b|pos[- ]?grad|mba|especializ|lato/,mestrado:/mestrado|stricto|doutor/,colegio:/colegio|ensino (medio|fundamental)|infantil/};
 const CV_FX=[[0,3,'No mesmo dia a 3 dias'],[4,7,'4 a 7 dias'],[8,14,'8 a 14 dias'],[15,30,'15 a 30 dias'],[31,60,'31 a 60 dias'],[61,1e9,'Mais de 60 dias']];
 function cvLerTabela(T,un){
   const col=re=>T.cab.findIndex(h=>re.test(h));
-  const semData=h=>!/^data|^dt\b|^dia\b/.test(h), colN=re=>T.cab.findIndex(h=>semData(h)&&re.test(h));
+  const codigo=h=>/(^|[\s(])(n[º°]|n\.|no\.|num\.?|numero|cod\.?|codigo|id|ra|cpf|protocolo)([\s).]|$)/.test(h);
+  const semData=h=>!/^data|^dt\b|^dia\b/.test(h), colN=re=>T.cab.findIndex(h=>semData(h)&&!codigo(h)&&re.test(h));
   const cD=col(/^(data|dia|date|semana|periodo)\b/), cI=colN(/inscri|candidat/), cL=colN(/lead/), cA=colN(/aprova|classific/), cM=colN(/matricul|efetiv/), cV=colN(/invest|verba|gasto|custo|spend/);
-  const cS=col(/status|etapa|fase|situac|estagio|stage/);
+  const cS=col(/status|etapa|fase|situac|estagio|stage/), cCurso=col(/^(curso|nome do curso|programa|oferta|curso de interesse)/);
   const cU=T.cab.findIndex(h=>/^(un|unidade|unidade de negocio|nivel|produto|tipo de curso|modalidade de ensino|segmento|nivel de ensino|area)$/.test(h));
-  const doUn=rows=>{ if(cU<0||!CV_UN[un]) return rows; return rows.filter(r=>CV_UN[un].test(cvNorm(r[cU]))); };
+  let nOutra=0;
+  const doUn=rows=>{ if(cU<0||!CV_UN[un]){ if(cU<0&&un==='graduacao'&&cCurso>=0){ const ok=rows.filter(r=>!CV_UN.pos.test(cvNorm(r[cCurso]))&&!CV_UN.mestrado.test(cvNorm(r[cCurso]))); nOutra=rows.length-ok.length; return ok; } return rows; } return rows.filter(r=>CV_UN[un].test(cvNorm(r[cU]))); };
+  /* linhas de total e subtotal nunca entram (somariam em dobro) */
+  const TOT=/^(sub)?total|^soma\b|^consolidado|^geral$|^todos$|^todas$/;
+  const total0=T.rows.length; T={cab:T.cab,rows:T.rows.filter(r=>!r.some((x,ci)=>ci<6&&TOT.test(cvNorm(x))))}; const nTot=total0-T.rows.length;
+  const MD={}, dt=(r,ci)=>{ if(ci<0) return null; if(MD[ci]==null) MD[ci]=cvMdy(T.rows,ci); return cvData(r[ci],MD[ci]); };
+  const avisos=()=>[nOutra?`${pl(nOutra,'linha de curso de pós ou mestrado ficou de fora','linhas de cursos de pós ou mestrado ficaram de fora')}`:'',nTot?`${pl(nTot,'linha de total ignorada','linhas de total ignoradas')}`:'',Object.values(MD).some(Boolean)?'datas lidas como mês/dia (padrão americano)':''].filter(Boolean).join(', ');
   const dI=col(/data.*(inscri|cadastr|criac|entrada)|(inscri|cadastr|criad|created).*data|^criado|^created/), dA=col(/data.*aprova|aprova.*data/), dM=col(/data.*matric|matric.*data/);
   const cC=col(/^(curso|nome do curso|programa|oferta|curso de interesse)/), cO=col(/^(origem|canal|fonte|midia|utm.?source|campanha|utm.?campaign)/);
   const K=['l','i','a','m','v'], DIM=[['c',cC],['o',cO]].filter(x=>x[1]>=0);
   /* 1) total por data (e por curso e origem, se houver as colunas) */
   if(cD>=0&&cD!==dI&&(cI>=0||cM>=0||cL>=0)&&cS<0&&T.rows.filter(r=>/^\s*\d/.test(r[cI>=0?cI:cM>=0?cM:cL]||'')).length>=1){
-    const linhas=doUn(T.rows).map(r=>{ const o={d:cvData(r[cD]),l:cL>=0?num(r[cL]):null,i:cI>=0?num(r[cI]):null,a:cA>=0?num(r[cA]):null,m:cM>=0?num(r[cM]):null,v:cV>=0?num(r[cV]):null}; DIM.forEach(([k,ci])=>o['_'+k]=String(r[ci]||'').trim()); return o; }).filter(p=>p.d&&(p.i!=null||p.m!=null||p.l!=null));
+    const absurdo=ci=>ci>=0&&T.rows.some(r=>(num(r[ci])||0)>5e6); [['cI',cI],['cL',cL],['cA',cA],['cM',cM]].forEach(([n,ci])=>{ if(absurdo(ci)) throw new Error('A coluna "'+T.cab[ci]+'" tem números grandes demais para ser uma contagem (parece código ou matrícula). Tire essa coluna ou renomeie.'); });
+    const linhas=doUn(T.rows).map(r=>{ const o={d:dt(r,cD),l:cL>=0?num(r[cL]):null,i:cI>=0?num(r[cI]):null,a:cA>=0?num(r[cA]):null,m:cM>=0?num(r[cM]):null,v:cV>=0?num(r[cV]):null}; DIM.forEach(([k,ci])=>o['_'+k]=String(r[ci]||'').trim()); return o; }).filter(p=>p.d&&(p.i!=null||p.m!=null||p.l!=null));
+    let nDup=0; if(!DIM.length){ const ult={}; linhas.forEach((r,j)=>{ if(ult[r.d]!=null) nDup++; ult[r.d]=j; }); if(nDup){ const keep=new Set(Object.values(ult)); for(let j=linhas.length-1;j>=0;j--) if(!keep.has(j)) linhas.splice(j,1); } }
     const porD={}; linhas.forEach(r=>{ const p=porD[r.d]=porD[r.d]||{d:r.d}; K.forEach(k=>{ if(r[k]!=null) p[k]=(p[k]||0)+r[k]; });
       DIM.forEach(([k])=>{ const nm=r['_'+k]||'(sem '+(k==='c'?'curso':'origem')+')'; p[k]=p[k]||{}; const q=p[k][nm]=p[k][nm]||{}; K.forEach(kk=>{ if(r[kk]!=null) q[kk]=(q[kk]||0)+r[kk]; }); }); });
     const P=Object.values(porD).sort((a,b)=>a.d.localeCompare(b.d));
-    const diario=/novos|no dia|diari|por dia|do dia/.test(T.cab.join(' '))||['l','i','a','m'].some(k=>P.some((p,j)=>j&&p[k]!=null&&P[j-1][k]!=null&&p[k]<P[j-1][k]));
+    /* diário ou acumulado: o cabeçalho decide; sem pista, só é diário se os valores sobem e descem com frequência (uma queda isolada é cancelamento) */
+    const cabT=T.cab.join(' '), pistaD=/novos|no dia|diari|por dia|do dia|por semana|semanal|na semana/.test(cabT), pistaA=/acumul|total ate|ate a data|ate o dia/.test(cabT);
+    const quedas=['l','i','a','m'].map(k=>{ let q=0,n=0; P.forEach((p,j)=>{ if(j&&p[k]!=null&&P[j-1][k]!=null){ n++; if(p[k]<P[j-1][k]) q++; } }); return n?q/n:0; });
+    const nq=['l','i','a','m'].map(k=>P.filter((p,j)=>j&&p[k]!=null&&P[j-1][k]!=null&&p[k]<P[j-1][k]).length);
+    const diario=pistaD||(!pistaA&&Math.max(...quedas)>=0.4&&Math.max(...nq)>=2);
     if(diario){ const acc={}, accD={c:{},o:{}}; P.forEach(p=>{ K.forEach(k=>{ if(p[k]!=null){ acc[k]=(acc[k]||0)+p[k]; p[k]=acc[k]; } });
       DIM.forEach(([dk])=>{ const AC=accD[dk]; Object.entries(p[dk]||{}).forEach(([nm,q])=>{ const a=AC[nm]=AC[nm]||{}; K.forEach(k=>{ if(q[k]!=null) a[k]=(a[k]||0)+q[k]; }); }); const n={}; Object.keys(AC).forEach(nm=>n[nm]={...AC[nm]}); if(Object.keys(n).length) p[dk]=n; }); }); }
-    return P.length?{temUn:cU>=0,tipo:`${diario?'por dia, somados':'acumulado por data'}${cC>=0?', com os cursos':''}${cO>=0?', com as origens':''}`,P}:null; }
+    return P.length?{temUn:cU>=0,tipo:`${diario?'números do dia, somados':'acumulado por data'}${cC>=0?', com os cursos':''}${cO>=0?', com as origens':''}${avisos()?' · '+avisos():''}${nDup?` · ${pl(nDup,'data repetida: ficou a última linha','datas repetidas: ficou a última linha de cada')}`:''}`,P}:null; }
   /* 2) lista de leads ou de inscritos (um por linha) */
   const dC=col(/(^criad|^created|cadastr|entrada|data do lead|data de criac|data de captac)/), dIns=col(/data.*inscri|inscri.*data/);
   const dCt=col(/primeiro contato|data.*(contato|ligac|atendimento)|(contato|ligac|atendimento).*data/), dCm=col(/data.*(encaminh|agend|visita|entrevista|comercial)/);
@@ -356,27 +381,27 @@ function cvLerTabela(T,un){
   if(cS<0&&dI<0&&dM<0&&dC<0) return null;
   let R=doUn(T.rows.filter(r=>r.some(Boolean))); if(!R.length) return null;
   const st=r=>cS>=0?cvNorm(r[cS]):'', neg=/nao\s|desist|cancel|reprov|ausent|elimin|perdid|indefer/;
-  const ehM=r=>(dM>=0&&cvData(r[dM]))||(/matricul|efetiv|confirmad|pago\b/.test(st(r))&&!neg.test(st(r)));
-  const ehA=r=>ehM(r)||(dA>=0&&cvData(r[dA]))||(/\baprova|classific|convoca|aguardando matric/.test(st(r))&&!neg.test(st(r)));
-  const ehI=r=>ehA(r)||(dIns>=0&&cvData(r[dIns]))||(/inscri|prova|vestibular|enem|aguardando resultado|reprov|ausent|nao matric/.test(st(r))&&!/nao inscri|sem inscri/.test(st(r)));
-  const ehCm=r=>ehI(r)||(dCm>=0&&cvData(r[dCm]))||/negocia|proposta|visita|entrevista|agendad|oportunidad|encaminhad|comercial|interessad/.test(st(r));
-  const ehCt=r=>ehCm(r)||(dCt>=0&&cvData(r[dCt]))||/contat|atendid|atendiment|retorno|ligac|whats|qualificad|em andamento|sem interesse|nao atende/.test(st(r));
+  const ehM=r=>(dM>=0&&dt(r,dM))||(/^matriculad|^matricula (efetivad|confirmad|realizad|concluid)|^efetivad|^pago\b|^confirmad/.test(st(r))&&!neg.test(st(r))&&!/pre|aguard|convoc|analise|pendent|apto|andamento/.test(st(r)));
+  const ehA=r=>ehM(r)||(dA>=0&&dt(r,dA))||(/\baprova|classific|convoca|aguardando matric|pre.?matric|apto|matricula em analise|matricula pendente/.test(st(r))&&!neg.test(st(r)));
+  const ehI=r=>ehA(r)||(dIns>=0&&dt(r,dIns))||(/inscri|prova|vestibular|enem|aguardando resultado|reprov|ausent|nao matric/.test(st(r))&&!/nao inscri|sem inscri/.test(st(r)));
+  const ehCm=r=>ehI(r)||(dCm>=0&&dt(r,dCm))||/negocia|proposta|visita|entrevista|agendad|oportunidad|encaminhad|comercial|interessad/.test(st(r));
+  const ehCt=r=>ehCm(r)||(dCt>=0&&dt(r,dCt))||/contat|atendid|atendiment|retorno|ligac|whats|qualificad|em andamento|sem interesse|nao atende/.test(st(r));
   const fase=r=>ehM(r)?6:ehA(r)?5:ehI(r)?4:ehCm(r)?3:ehCt(r)?2:1;
   const F=R.map(fase), listaLeads=F.some(f=>f<4)&&(cS>=0||dIns>=0);
   const semA=cA<0&&dA<0&&!R.some(r=>/\baprova|classific/.test(st(r)));
   const quebra=ci=>{ const o={}; R.forEach((r,j)=>{ const nm=String(r[ci]||'').trim()||'(não informado)'; const q=o[nm]=o[nm]||{l:listaLeads?0:null,i:0,a:semA?null:0,m:0}; if(listaLeads) q.l++; if(!listaLeads||F[j]>=4) q.i++; if(!semA&&F[j]>=5) q.a++; if(F[j]>=6) q.m++; }); return o; };
   let P;
-  const dCria=R.map(r=>dC>=0?cvData(r[dC]):dI>=0?cvData(r[dI]):null);
-  const di=R.map((r,j)=>!listaLeads||F[j]>=4?((dIns>=0&&cvData(r[dIns]))||dCria[j]):null);
-  const dm=R.map((r,j)=>F[j]>=6?((dM>=0&&cvData(r[dM]))||di[j]):null);
+  const dCria=R.map(r=>dC>=0?dt(r,dC):dI>=0?dt(r,dI):null);
+  const di=R.map((r,j)=>!listaLeads||F[j]>=4?((dIns>=0&&dt(r,dIns))||dCria[j]):null);
+  const dm=R.map((r,j)=>F[j]>=6?((dM>=0&&dt(r,dM))||di[j]):null);
   if(dCria.some(Boolean)){ const dias=[...new Set(dCria.concat(di,dm).filter(Boolean))].sort();
-    const da=R.map((r,j)=>F[j]>=5?((dA>=0&&cvData(r[dA]))||(dM>=0&&cvData(r[dM]))||di[j]):null);
+    const da=R.map((r,j)=>F[j]>=5?((dA>=0&&dt(r,dA))||(dM>=0&&dt(r,dM))||di[j]):null);
     const cnt=(arr,d)=>arr.reduce((a,x)=>a+(x&&x<=d?1:0),0);
     P=dias.map(d=>({d,l:listaLeads?cnt(dCria,d):null,i:cnt(di,d),a:semA?null:cnt(da,d),m:cnt(dm,d)})); }
   else P=[{d:cvHojeISO(),l:listaLeads?R.length:null,i:listaLeads?F.filter(f=>f>=4).length:R.length,a:semA?null:F.filter(f=>f>=5).length,m:F.filter(f=>f>=6).length}];
   const ult=P[P.length-1]; DIM.forEach(([k,ci])=>ult[k]=quebra(ci));
   /* tempo da inscrição até a matrícula */
-  if(dM>=0){ const ds=R.map((r,j)=>di[j]&&dm[j]&&cvData(r[dM])?Math.round((cDt(dm[j])-cDt(di[j]))/864e5):null).filter(x=>x!=null&&x>=0).sort((a,b)=>a-b);
+  if(dM>=0){ const ds=R.map((r,j)=>di[j]&&dm[j]&&dt(r,dM)?Math.round((cDt(dm[j])-cDt(di[j]))/864e5):null).filter(x=>x!=null&&x>=0).sort((a,b)=>a-b);
     if(ds.length) ult.t={b:CV_FX.map(([a,b])=>ds.filter(x=>x>=a&&x<=b).length),med:cvMed(ds),n:ds.length}; }
   /* call center e comercial */
   if(listaLeads&&(cRcc>=0||cRcm>=0||cR>=0||cEq>=0)){
@@ -392,7 +417,7 @@ function cvLerTabela(T,un){
       tot:{l:R.length,ct:F.filter(f=>f>=2).length,cm:F.filter(f=>f>=3).length,i:F.filter(f=>f>=4).length,a:semA?null:F.filter(f=>f>=5).length,m:F.filter(f=>f>=6).length},
       tc:todosH.length?{b:CV_HX.map(([a,b])=>todosH.filter(x=>x>=a&&x<b).length).concat([F.filter((f,j)=>f<2&&hs[j]==null).length]),med:cvMed(todosH),n:todosH.length}:null,
       cc:cRcc>=0||cRcm>=0}; }
-  return {temUn:cU>=0,tipo:`lista de ${cvN(R.length)} ${listaLeads?'leads':'inscritos'}, ${dCria.some(Boolean)?'montada por data':'retrato de hoje'}${cC>=0?', com os cursos':''}${cO>=0?', com as origens':''}${ult.at?', com o atendimento':''}`,P}; }
+  return {temUn:cU>=0,lista:true,tipo:`lista de ${cvN(R.length)} ${listaLeads?'leads':'inscritos'}${avisos()?' ('+avisos()+')':''}, ${dCria.some(Boolean)?'montada por data':'retrato de hoje'}${cC>=0?', com os cursos':''}${cO>=0?', com as origens':''}${ult.at?', com o atendimento':''}`,P}; }
 const cvMed=a=>a.length?(a.length%2?a[(a.length-1)/2]:(a[a.length/2-1]+a[a.length/2])/2):null;
 const CV_HX=[[0,1,'Até 1 hora'],[1,4,'1 a 4 horas'],[4,24,'4 a 24 horas'],[24,72,'1 a 3 dias'],[72,1e9,'Mais de 3 dias']];
 function cvDT(v){ const s=String(v||'').trim(); let m;
@@ -401,14 +426,15 @@ function cvDT(v){ const s=String(v||'').trim(); let m;
   if(/^\d{5}(\.\d+)?$/.test(s)) return Math.round((+s-25569)*864e5)+new Date().getTimezoneOffset()*6e4; return null; }
 
 function cvLer(tabs,un){ for(const T of tabs){ const r=cvLerTabela(T,un); if(r) return r; } return null; }
-function cvAplicar(c,r,file){ cvGravar(c,x=>{ const s=cvSerie(x).filter(p=>!r.P.some(q=>q.d===p.d)); r.P.forEach(q=>{ const old=cvSerie(x).find(p=>p.d===q.d)||{}; const np={d:q.d,l:q.l!=null?q.l:(old.l??null),i:q.i,a:q.a,m:q.m,v:q.v!=null?q.v:(old.v??null)}; ['c','o','t','at'].forEach(k=>{ if(q[k]) np[k]=q[k]; else if(old[k]) np[k]=old[k]; }); s.push(np); }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); }); }
-async function cvLerArq(file){ if(!/\.xlsx?$/i.test(file.name)) return lerArquivo(file);
-  await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'); const wb=window.XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
-  return wb.SheetNames.map(nm=>{ const csv=window.XLSX.utils.sheet_to_csv(wb.Sheets[nm],{FS:'\t',blankrows:false,dateNF:'dd/mm/yyyy hh:mm'}); return csv?`## Aba: ${nm}\n${csv}`:''; }).filter(Boolean).join('\n\n'); }
+function cvAplicar(c,r,file){ cvGravar(c,x=>{ const temAgg=cvSerie(x).some(p=>p.f!=='lista');
+  /* lista de leads num ciclo que já tem a curva do CRM (totais por data): só acrescenta as quebras (curso, origem, atendimento, tempo) ao último dia; não troca os totais */
+  if(r.lista&&temAgg){ const s=cvSerie(x), u=r.P[r.P.length-1]; let alvo=s.filter(p=>p.d<=u.d).slice(-1)[0]||s[s.length-1]; ['c','o','t','at'].forEach(k=>{ if(u[k]) alvo[k]=u[k]; }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); r.soQuebras=alvo.d; return; }
+  const s=cvSerie(x).filter(p=>!r.P.some(q=>q.d===p.d)); r.P.forEach(q=>{ const old=cvSerie(x).find(p=>p.d===q.d)||{}; const np={d:q.d,f:r.lista?'lista':'agg'}; ['l','i','a','m','v'].forEach(k=>np[k]=q[k]!=null?q[k]:(old[k]??null)); ['c','o','t','at'].forEach(k=>{ if(q[k]) np[k]=q[k]; else if(old[k]) np[k]=old[k]; }); s.push(np); }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); }); }
+async function cvLerArq(file){ if(/\.xlsx?$/i.test(file.name)) return xlsxTexto(await file.arrayBuffer(),true); return lerArquivo(file); }
 async function cvImportar(id,file){
   const c=ciclosTodos().find(x=>x.id===id); if(!c) return;
   try{ const r=cvLer(cvTabelas(await cvLerArq(file)),c.un); if(!r){ toast(CV_FALHA); return; }
-    cvAplicar(c,r,file); toast(`${pl(r.P.length,'registro','registros')} na curva de ${c.nome||'ciclo'} (${r.tipo})`);
+    cvAplicar(c,r,file); toast(r.soQuebras?`A curva deste ciclo já vem do CRM: a lista (${r.tipo}) entrou só como detalhe de cursos, origens e atendimento em ${cvDia(r.soQuebras)}.`:`${pl(r.P.length,'registro','registros')} na curva de ${c.nome||'ciclo'} (${r.tipo})`);
   }catch(e){ console.error(e); toast('Não foi possível ler a planilha: '+(e.message||e)); } }
 /* uma planilha com todas as áreas: cada UN vai para o ciclo escolhido dela */
 async function cvImportarTudo(file){
@@ -421,7 +447,8 @@ async function cvImportarTudo(file){
 document.addEventListener('change',e=>{ const t=e.target; if(!t||!t.dataset) return;
   if(t.dataset.cvPer){ const c0=UNS.map(u=>cvEscolhido(u.id)).find(c=>c&&cvSerie(c).length); const P=c0?cvPer(c0):{}; ui.cvDe=t.dataset.cvPer==='de'?t.value:P.de; ui.cvAte=t.dataset.cvPer==='ate'?t.value:P.ate; ui.cvPer='livre'; render(); return; }
   if(t.dataset.cvImp&&t.files&&t.files[0]){ (t.dataset.cvImp==='todas'?cvImportarTudo(t.files[0]):cvImportar(t.dataset.cvImp,t.files[0])); t.value=''; return; }
-  if(t.dataset.cvprova){ const L=ciclosTodos(), x=L.find(y=>y.id===t.dataset.cvprova); if(x&&Array.isArray(x.provas)&&x.provas[+t.dataset.j]){ x.provas[+t.dataset.j][t.dataset.f]=t.value; ciclosSalvar(L); render(); } return; }
+  if(t.dataset.cvprova){ const L=ciclosTodos(), x=L.find(y=>y.id===t.dataset.cvprova); if(x&&Array.isArray(x.provas)&&x.provas[+t.dataset.j]){ x.provas[+t.dataset.j][t.dataset.f]=t.value; ciclosSalvar(L); setTimeout(render,0); } return; }
+  if(t.dataset.cvp&&t.dataset.f==='d'&&!t.value){ toast('A data não pode ficar vazia. Para tirar o registro, use o × no fim da linha.'); setTimeout(render,0); return; }
   if(t.dataset.cvp){ const j=+t.dataset.j, f=t.dataset.f; cvGravar({id:t.dataset.cvp},x=>{ const s=cvSerie(x); const p=s[j]; if(!p) return; p[f]=f==='d'?t.value:(t.value===''?null:num(t.value)); x.serie=s.filter(q=>q.d); }); } });
 
 if(typeof cicloClick==='function'){ const _cc=cicloClick; cicloClick=function(act,d){
@@ -444,8 +471,8 @@ const _cvCal=typeof ciclosUnHtml==='function'?ciclosUnHtml:null;
 if(_cvCal){ ciclosUnHtml=function(un){ return _cvCal(un)+(temCaptacao()?`<p class="cv-link"><span>Inscritos, aprovados, matriculados, CAC e CPL de cada ciclo ficam na área Captação.</span><button class="btn sm" data-act="ciclo-cv-ir" data-v="${un}">Abrir a Captação</button></p>`:curvaHtml(un)); }; }
 
 function cvArea(u){ const c=cvEscolhido(u.id), d=buDados(u.id); const A=c?cvAnalise(c):null;
-  const meta=d.meta, m=A&&A.m!=null?A.m:null, proj=A&&A.proj!=null?A.proj:null, base=proj!=null?proj:m;
-  const st=meta&&base!=null?(base>=meta*0.95?['ok','No caminho da meta']:base>=meta*0.8?['at','Atenção']:['mal','Longe da meta']):null;
+  const meta=A?A.meta:d.meta, m=A&&A.m!=null?A.m:null, proj=A&&A.proj!=null?A.proj:null, base=proj!=null?proj:m;
+  const st=meta&&base!=null&&A&&A.last&&(A.proj!=null||(c.camp_fim&&A.last.d>=c.camp_fim))?(base>=meta*0.95?['ok','No caminho da meta']:base>=meta*0.8?['at','Atenção']:['mal','Longe da meta']):null;
   return {u,c,d,A,meta,m,proj,st,orc:d.verba}; }
 const cvAreas=()=>UNS.map(cvArea).filter(x=>x.c||x.meta);
 
@@ -460,17 +487,17 @@ function captacaoGeralHtml(){
     <div class="cv-big"><b>${cvN(x.m)}</b><span>matriculados${x.meta?` de ${cvN(x.meta)} da meta · ${cvP(x.m!=null?x.m/x.meta:null)}`:''}</span></div>
     ${bar(x)}
     ${x.c&&cvSerie(x.c).length?(()=>{ const P=cvPer(x.c), C=cvComp(x.c,P), J=k=>cvJan(x.c,k,P.de,P.ate), JC=k=>C?cvJan(C.c,k,C.de,C.ate):null; return `<p class="cv-cp"><b>No período</b> (${cvDia(P.de)} a ${cvDia(P.ate)}): ${cvN(J('i'))} inscritos${C&&JC('i')!=null?` ${cvDelta(J('i'),JC('i'),'').replace(/ vs .*$/,'')}`:''} · ${cvN(J('m'))} matriculados${C&&JC('m')!=null?` ${cvDelta(J('m'),JC('m'),'').replace(/ vs .*$/,'')}`:''}</p>`; })():''}
-    <dl>${[['Projeção',x.proj!=null?`${cvN(x.proj)}${x.meta?` (${cvP(x.proj/x.meta)})`:''}`:'—'],['Leads',cvN(A.l)],['Inscritos',cvN(A.i)],['Aprovados',cvN(A.a)],['Investido',A.inv?brl(A.inv):'—'],['Orçamento (DRE)',x.orc!=null?brl(x.orc):'—'],['CPL',A.cpl!=null?brl(A.cpl):'—'],['CAC',A.cac!=null?brl(A.cac):'—']].map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
+    <dl>${[['Projeção',x.proj!=null?`${cvN(x.proj)}${x.meta?` (${cvP(x.proj/x.meta)})`:''}`:'—'],['Leads',cvN(A.l)],['Inscritos',cvN(A.i)],['Aprovados',cvN(A.a)],['Investido',A.inv?brl(A.inv):'—'],['Verba planejada do ciclo',x.c&&num(x.c.verba)?brl(num(x.c.verba)):'—'],['CPL',A.cpl!=null?brl(A.cpl):'—'],['CAC',A.cac!=null?brl(A.cac):'—']].map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
     <button class="btn sm" data-act="ciclo-cv-tab" data-v="${x.u.id}">Abrir ${esc(x.u.nome)}</button></article>`; }).join('');
   const comInv=L.filter(x=>x.A&&x.A.inv), mxI=Math.max(1,...comInv.map(x=>x.A.inv));
-  const tot=k=>L.reduce((a,x)=>a+((x.A&&x.A[k])||0),0), invT=tot('inv'), mT=tot('m'), lT=tot('l'), iT=tot('i');
+  const tot=k=>comInv.reduce((a,x)=>a+((x.A&&x.A[k])||0),0), invT=tot('inv'), mT=tot('m'), lT=tot('l'), iT=tot('i');
   return `<div class="cv-cards">${cards}</div>${sem.length?`<p class="muted cv-nota">Sem ciclo de captação: ${sem.map(x=>`<button class="lnk" data-act="ciclo-cv-tab" data-v="${x.u.id}">${esc(x.u.nome)}</button>`).join(', ')}. Abra a área e crie o ciclo.</p>`:''}
-   <p class="muted cv-nota">Meta: a meta oficial da coordenação de cada área, ou a soma das metas por turno. A projeção segue o ritmo do ciclo anterior no mesmo ponto ou, sem ele, o dos últimos 14 dias. O orçamento vem do DRE quando o módulo está ligado.</p>
+   <p class="muted cv-nota">Meta: a meta oficial da coordenação de cada área, ou a soma das metas por turno. A projeção segue o ritmo do ciclo anterior no mesmo ponto ou, sem ele, o dos últimos 14 dias. Investido é o que o CRM ou a mídia informam até a data (coluna Investimento); a verba planejada é a do Calendário de captação.</p>
    ${comInv.length?`<section class="block"><div class="block-h"><h3>Verba investida e CAC por área</h3><p>${brl(invT)} investidos${mT?` · CAC geral ${brl(invT/mT)}`:''}${lT?` · CPL geral ${brl(invT/lT)}`:''}${iT?` · ${brl(invT/iT)} por inscrito`:''}</p></div>
     <div class="chart">${comInv.sort((a,b)=>b.A.inv-a.A.inv).map(x=>`<div class="crow"><span class="nm">${esc(x.u.nome)}</span><div class="track"><span style="width:${(x.A.inv/mxI*100).toFixed(1)}%;min-width:4px;background:var(--cv-m)"></span></div><span class="num" style="font-size:12px">${brl(x.A.inv)}${x.A.cac!=null?` · CAC ${brl(x.A.cac)}`:''}${x.A.cpl!=null?` · CPL ${brl(x.A.cpl)}`:''}</span></div>`).join('')}</div></section>`:''}
    <section class="block"><div class="block-h"><h3>Comparativo das áreas</h3><p>O ciclo escolhido em cada área.</p></div>
-    <div class="tblw"><table class="tbl"><thead><tr><th>Área</th><th>Ciclo</th><th class="r">Meta</th><th class="r">Matriculados</th><th class="r">Da meta</th><th class="r">Projeção</th><th class="r">Leads</th><th class="r">Inscritos</th><th class="r">Aprovados</th><th class="r">Aprovado → matrícula</th><th class="r">Orçamento (DRE)</th><th class="r">Investido</th><th class="r">CPL</th><th class="r">Por inscrito</th><th class="r">CAC</th></tr></thead><tbody>
-    ${L.map(x=>{ const A=x.A||{}; return `<tr><td><b>${esc(x.u.nome)}</b></td><td>${x.c?esc(x.c.nome||'Ciclo'):'—'}</td><td class="num">${cvN(x.meta)}</td><td class="num">${cvN(x.m)}</td><td class="num">${x.meta&&x.m!=null?cvP(x.m/x.meta):'—'}</td><td class="num">${cvN(x.proj)}</td><td class="num">${cvN(A.l)}</td><td class="num">${cvN(A.i)}</td><td class="num">${cvN(A.a)}</td><td class="num">${cvP(A.am)}</td><td class="num">${x.orc!=null?brl(x.orc):'—'}</td><td class="num">${A.inv?brl(A.inv):'—'}</td><td class="num">${A.cpl!=null?brl(A.cpl):'—'}</td><td class="num">${A.cpi!=null?brl(A.cpi):'—'}</td><td class="num">${A.cac!=null?brl(A.cac):'—'}</td></tr>`; }).join('')}
+    <div class="tblw"><table class="tbl"><thead><tr><th>Área</th><th>Ciclo</th><th class="r">Meta</th><th class="r">Matriculados</th><th class="r">Da meta</th><th class="r">Projeção</th><th class="r">Leads</th><th class="r">Inscritos</th><th class="r">Aprovados</th><th class="r">Aprovado → matrícula</th><th class="r">Verba planejada</th><th class="r">Investido</th><th class="r">CPL</th><th class="r">Por inscrito</th><th class="r">CAC</th></tr></thead><tbody>
+    ${L.map(x=>{ const A=x.A||{}; return `<tr><td><b>${esc(x.u.nome)}</b></td><td>${x.c?esc(x.c.nome||'Ciclo'):'—'}</td><td class="num">${cvN(x.meta)}</td><td class="num">${cvN(x.m)}</td><td class="num">${x.meta&&x.m!=null?cvP(x.m/x.meta):'—'}</td><td class="num">${cvN(x.proj)}</td><td class="num">${cvN(A.l)}</td><td class="num">${cvN(A.i)}</td><td class="num">${cvN(A.a)}</td><td class="num">${cvP(A.am)}</td><td class="num">${x.c&&num(x.c.verba)?brl(num(x.c.verba)):'—'}</td><td class="num">${A.inv?brl(A.inv):'—'}</td><td class="num">${A.cpl!=null?brl(A.cpl):'—'}</td><td class="num">${A.cpi!=null?brl(A.cpi):'—'}</td><td class="num">${A.cac!=null?brl(A.cac):'—'}</td></tr>`; }).join('')}
     </tbody></table></div></section>`; }
 
 function renderCaptacao(){
@@ -498,7 +525,8 @@ if(typeof cicloClick==='function'){ const _cc2=cicloClick; cicloClick=function(a
   if(act==='ciclo-cv-ir'){ ui.cvTab=d.v; ui.view='captacao'; render(); window.scrollTo({top:0}); return true; }
   if(act==='ciclo-cv-exp'){ cvExportar(); return true; }
   if(act==='ciclo-cv-edital'){ const f=(cur.fontes||[]).find(x=>x.id===d.id); const e=f&&editalDe(f), ci=e&&edCiclo(e); if(!ci) return true;
-    const L=ciclosTodos(); L.push({id:uid(),un:e.un,nome:ci.nome,camp_ini:'',insc_ini:ci.ini,mat_ini:'',camp_fim:ci.fim,aulas:ci.aulas||''}); ciclosSalvar(L);
+    const nid=uid(), L=ciclosTodos(); L.push({id:nid,un:e.un,nome:ci.nome,camp_ini:'',insc_ini:ci.ini,mat_ini:'',camp_fim:ci.fim,aulas:ci.aulas||''}); ciclosSalvar(L);
+    ui.cvCiclo=ui.cvCiclo||{}; ui.cvCiclo[e.un]=nid; if(ui.view==='captacao') ui.cvTab=e.un;
     const cp=typeof edCap==='function'?edCap(e):null; let n=0; if(cp){ cp.linhas.forEach(l=>{ if(l.atual==null){ cur.campos[`base.cap.${l.k}.vagas`]=String(l.v); n++; } }); if(cp.ref) cur.campos[`${e.un}.ciclo_ref`]=cp.ref; touch(false); }
     render(); toast(`Ciclo "${ci.nome}" criado${n?` e ${pl(n,'linha de vagas preenchida','linhas de vagas preenchidas')} na capacidade`:''}`); return true; }
   return _cc2(act,d); }; }

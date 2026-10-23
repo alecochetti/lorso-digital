@@ -5,7 +5,8 @@ const dec = (x,d=1)=>x==null||isNaN(x)?'—':x.toFixed(d).replace('.',',');
 const num = v=>{ if(v==null||v==='')return null; if(typeof v==='number')return isFinite(v)?v:null;
   let s=String(v).trim().replace(/\s/g,'').replace(/R\$/i,'').replace(/%/g,'');
   const neg=/^\(.*\)$/.test(s)||/^-/.test(s); s=s.replace(/[()\-]/g,'');
-  if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');          // 1.234.567,89
+  if(/^\d{1,3}(,\d{3})+\.\d+$/.test(s)||/^\d{1,3}(,\d{3}){2,}$/.test(s))s=s.replace(/,/g,'');   // 1,234.56 ou 1,234,567 (padrão americano, sem ambiguidade)
+  else if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');          // 1.234.567,89
   else if(/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');       // 1.234.567 (milhar sem centavos)
   const n=Number(s); return isNaN(n)||s===''?null:(neg?-n:n); };
 const brl = n=>n==null?'—':n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
@@ -253,9 +254,9 @@ RULES.push(
  {id:'CRZ-48',sev:'alta',pad:'Gargalo de fluxo',areas:['proreitoria','demandas'],t:'Lançamentos sem antecedência de divulgação',
   test:()=>cur.cursos.some(c=>c.status==='Lançamento')&&le(R('pro2'),2), txt:()=>`Há ${cur.cursos.filter(c=>c.status==='Lançamento').length} cursos em lançamento (${cur.cursos.filter(c=>c.status==='Lançamento').slice(0,4).map(c=>c.nome).join(', ')}${cur.cursos.filter(c=>c.status==='Lançamento').length>4?'…':''}), e o calendário acadêmico chega ao marketing com pouca antecedência. Cada lançamento vira urgência na fila.`,
   rec:['Pacote padrão de lançamento com prazo mínimo de 90 dias','Calendário de lançamentos aprovado pela reitoria']},
- {id:'CRZ-49',sev:'media',pad:'Contradição declarada',areas:()=>['captacao',...[...new Set(capRows().filter(r=>r.ating!=null&&r.ating<0.8).map(r=>r.un))]],t:'Captação bem avaliada, mas abaixo da meta',
-  test:()=>ge(L('captacao'),3)&&capRows().some(r=>r.ating!=null&&r.ating<0.8),
-  txt:()=>`A captação está no nível ${L('captacao')}, mas ${capRows().filter(r=>r.ating!=null&&r.ating<0.8).map(r=>`${r.nm} (${r.mod}) está em ${pct(r.ating)} da meta`).join('; ')}. Vale checar se a meta é realista ou se a conversão trava depois do lead.`,
+ {id:'CRZ-49',sev:'media',pad:'Contradição declarada',areas:()=>['captacao',...crz49Uns()],t:'Captação bem avaliada, mas abaixo da meta',
+  test:()=>ge(L('captacao'),3)&&crz49Uns().length>0,
+  txt:()=>`A captação está no nível ${L('captacao')}, mas ${crz49Uns().map(un=>{ const c=capRows().filter(r=>r.un===un), cp=c.reduce((a,r)=>a+(r.captados||0),0), mt=metaUn(un,c.reduce((a,r)=>a+(r.meta||0),0)); return `${nameOf(un)} está em ${pct(cp/mt)} da meta (${cp} de ${mt})`; }).join('; ')}. Vale checar se a meta é realista ou se a conversão trava depois do lead.`,
   rec:['Funil por curso: lead, inscrito, matriculado','Comparar a meta com a capacidade e o histórico']}
 );
 
@@ -569,11 +570,14 @@ function baseHtml(INS){
    <div class="pager"><span></span><button class="btn primary" data-act="dstep" data-v="reitoria">Ir para Reitoria →</button></div>
   </section>`;
 }
-const UN_ALIAS=[['pos',/p[oó]s|mba|especializa/i],['mestrado',/mestrado|doutorado|stricto/i],['colegio',/col[eé]gio|b[aá]sica|fundamental|m[eé]dio|infantil/i],['graduacao',/gradua|bacharel|licenciatura|tecn[oó]logo/i]];
+function crz49Uns(){ return UNS.map(u=>u.id).filter(un=>{ const c=capRows().filter(r=>r.un===un&&r.captados!=null); if(!c.length) return false; const cp=c.reduce((a,r)=>a+(r.captados||0),0), mt=metaUn(un,capRows().filter(r=>r.un===un).reduce((a,r)=>a+(r.meta||0),0)); return mt>0&&cp/mt<0.8; }); }
+/* meta da UN: a oficial da coordenação vale sobre a soma por turno, em todas as telas, no deck e nos achados */
+const metaUn=(un,soma)=>{ const o=num(cur&&cur.campos[un+'.meta_mat']); return o!=null&&o>0?o:soma; };
+const UN_ALIAS=[['pos',/\bp[oó]s\b|p[oó]s[- ]?gradua|\bmba\b|especializa|lato[- ]?sensu/i],['mestrado',/mestrado|doutorado|stricto/i],['colegio',/col[eé]gio|b[aá]sica|fundamental|m[eé]dio|infantil/i],['graduacao',/gradua|bacharel|licenciatura|tecn[oó]logo/i]];
 const MOD_ALIAS=[['Híbrido',/semi ?presencial|h[ií]brid|flex|blended/i],['EAD',/\bead\b|dist[aâ]ncia|online|on-line|live|ao vivo|remoto/i],['Presencial',/presencial/i]];
 const modDe=t=>(MOD_ALIAS.find(([,re])=>re.test(t||''))||[])[0]||'';
 const ehSoModalidade=t=>/^(presencial|semi ?presencial|ead|a dist[aâ]ncia|h[ií]brido|flex|live|online|ao vivo|blended)$/i.test((t||'').trim());
-const CURSO_COLS=[['matriculados',/matricul|captad|inscrit|ativos|realizado/i],['turmas',/turma/i],['meta',/meta/i],['vagas',/vaga|capacidade|alunos|lota[cç]/i],['preco',/mensalidade|pre[cç]o|valor|ticket/i],['modalidade',/modalidade|formato/i],['turno',/turno|per[ií]odo/i],['status',/status|situa[cç]/i],['abertura',/abertura|in[ií]cio|come[cç]o|come[cç]a/i],['encerramento',/encerra|t[eé]rmino|\bfim\b|final/i],['lancamento',/lan[cç]amento/i],['un',/^un$|unidade|n[ií]vel|segmento|[aá]rea de neg/i],['nome',/curso|programa|nome|produto/i]];
+const CURSO_COLS=[['matriculados',/^(?!.*(data|meta|valor|taxa|pre[cç]o)).*(matr[ií]cul|captad|ativos|realizado)/i],['turmas',/turma/i],['meta',/meta/i],['vagas',/^(?!.*ocios).*(vaga|capacidade|alunos|lota[cç])/i],['preco',/mensalidade|pre[cç]o|^valor(?!.*matr[ií]cula)|ticket/i],['modalidade',/modalidade|formato/i],['turno',/turno|per[ií]odo/i],['status',/status|situa[cç]/i],['abertura',/abertura|in[ií]cio|come[cç]o|come[cç]a/i],['encerramento',/encerra|t[eé]rmino|\bfim\b|final/i],['lancamento',/lan[cç]amento/i],['un',/^un$|^unidade de neg|n[ií]vel|segmento|[aá]rea de neg/i],['campus',/campus|^unidade$|polo|sede/i],['nome',/^(nome do )?curso|programa|^nome$|produto|oferta/i]];
 function sepDe(txt){ const L=txt.split(/\r?\n/).filter(l=>l.trim()).slice(0,20); const c=ch=>L.filter(l=>l.split(ch).length>=3).length; return c('\t')>=L.length/2?'\t':c(';')>=L.length/2?';':c(',')>=L.length/2?',':null; }
 function linhaCsv(l,sep){ if(sep!==','&&sep!==';') return l.split(sep).map(x=>x.trim()); const out=[]; let a='',q=false; for(let i=0;i<l.length;i++){ const ch=l[i]; if(ch==='"'){ if(q&&l[i+1]==='"'){a+='"';i++;} else q=!q; } else if(ch===sep&&!q){ out.push(a.trim()); a=''; } else a+=ch; } out.push(a.trim()); return out; }
 const dataIso=t=>{ const m=String(t||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); if(m){ const y=m[3].length===2?'20'+m[3]:m[3]; return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; } const i=String(t||'').match(/\d{4}-\d{2}-\d{2}/); return i?i[0]:''; };
@@ -581,17 +585,17 @@ const unDeTexto=t=>/mestrado|doutorado|stricto/i.test(t||'')?'mestrado':(UN_ALIA
 function cursoParseTabela(txt,exigeCabecalho){
   const sep=sepDe(txt)||'\t'; const linhas=txt.split(/\r?\n/).filter(l=>l.trim()&&!/^## Aba:/.test(l)).map(l=>linhaCsv(l,sep));
   let mapa=null, ini=0;
-  for(let i=0;i<Math.min(6,linhas.length);i++){ const h=linhas[i]; const m={}; h.forEach((cel,ci)=>{ const c=(CURSO_COLS.find(([f,re])=>re.test(cel)&&m[f]==null)||[])[0]; if(c&&cel.length<60) m[c]=ci; }); if(m.nome!=null&&Object.keys(m).length>=2){ mapa=m; ini=i+1; break; } }
+  for(let i=0;i<Math.min(6,linhas.length);i++){ const h=linhas[i]; const m={}; h.forEach((cel,ci)=>{ const c=(CURSO_COLS.find(([f,re])=>re.test(cel)&&m[f]==null)||[])[0]; if(c&&cel.length<60) m[c]=ci; }); if(m.nome!=null&&['vagas','preco','modalidade','matriculados','meta','turmas'].some(f=>m[f]!=null)){ mapa=m; ini=i+1; break; } }
   if(!mapa&&exigeCabecalho) return [];
   if(!mapa){ mapa={un:0,nome:1,modalidade:2,turno:3,preco:4,vagas:5,matriculados:6,status:7,lancamento:8}; ini=/^un$|^unidade/i.test((linhas[0]||[])[0]||'')?1:0; }
   let unAtual='';
   return linhas.slice(ini).map(c=>{ const g=f=>mapa[f]!=null?String(c[mapa[f]]||'').trim():'';
     const nome=g('nome'); const unTxt=g('un'); if(unTxt) unAtual=unDeTexto(unTxt)||unAtual;
-    if(!nome||/^total/i.test(nome)) return null;
+    if(!nome||/^(sub)?total|^soma\b|^total geral|^consolidado/i.test(nome.normalize('NFD').replace(/[\u0300-\u036f]/g,''))) return null;
     const st=/lan[cç]/i.test(g('status'))?'Lançamento':/descon/i.test(g('status'))?'Descontinuado':'Vigente';
     const md=g('modalidade'), mod=typeof modDe==='function'&&modDe(md)?modDe(md):(md?'Presencial':'');
     const tur=turnoDe(g('turno'));
-    return {id:uid(),un:mapa.un!=null?unDeTexto(unTxt):unAtual,nome,modalidade:mod,turno:tur,preco:g('preco').replace(/r\$\s*/i,''),turmas:g('turmas'),vagas:g('vagas'),meta:g('meta'),matriculados:g('matriculados'),abertura:dataIso(g('abertura')),encerramento:dataIso(g('encerramento')),status:st,lancamento:g('lancamento'),obs:''};
+    return {id:uid(),un:mapa.un!=null?unDeTexto(unTxt):unAtual,nome,modalidade:mod,turno:tur,preco:g('preco').replace(/r\$\s*/i,''),turmas:g('turmas'),vagas:g('vagas'),meta:g('meta'),matriculados:g('matriculados'),abertura:dataIso(g('abertura')),encerramento:dataIso(g('encerramento')),status:st,lancamento:g('lancamento'),obs:g('campus')};
   }).filter(Boolean);
 }
 /* Junta cursos novos com a tabela: o que já existe (mesmo nome e UN) só ganha os números que faltam ou mudaram. */
@@ -722,8 +726,8 @@ function renderExecucao(INS){
   const P=cur.acoes.filter(isPlano), done=P.filter(t=>t.status==='Concluída').length, x=crossTasks(INS);
   const hzBar=k=>{ const L=P.filter(t=>planoHz(t)===k); if(!L.length)return ''; const d=L.filter(t=>t.status==='Concluída').length; return `<div class="hzrow"><span>${HZN[k]} prazo <small class="muted">${HZ.find(h=>h[0]===k)[2]}</small></span><span class="vb"><span style="width:${Math.round(d/L.length*100)}%"></span></span><span class="mono">${d}/${L.length}</span></div>`; };
   $('#main').innerHTML=`<section class="panel">${stageHead(st)}
-   <section class="block"><div class="block-h"><h3>Plano de ação</h3><p>${P.length} ações · ${done} concluídas${x.late.length?` · <span style="color:var(--n1)">${x.late.length} atrasadas</span>`:''}</p></div>
-    <p class="muted" style="font-size:13.5px;margin:-4px 0 14px">Preenchido sozinho com as ações das causas raiz do diagnóstico, em "A fazer" e com prazo pelo horizonte. É só arrastar até Concluída. Ação excluída não volta.</p>
+   <section class="block"><div class="block-h"><h3>Quadro de execução</h3><p>${P.length} ações · ${done} concluídas${x.late.length?` · <span style="color:var(--n1)">${x.late.length} atrasadas</span>`:''}</p></div>
+    <p class="muted" style="font-size:13.5px;margin:-4px 0 14px">${cur.campos['pa.enviado']?'As ações vieram do Plano de ação enviado.':'Enquanto o Plano de ação não é enviado, este quadro se preenche sozinho com as ações das causas raiz do diagnóstico.'} Prazo pelo horizonte; arraste até Concluída. Ação excluída não volta.</p>
     ${P.length?`<div class="hzbars">${['c','m','l'].map(hzBar).join('')}</div>`:''}
     ${P.length||blocosDe(INS).length?kanbanHtml():'<p class="empty">O plano aparece aqui assim que o diagnóstico tiver respostas suficientes para apontar as causas raiz.</p>'}</section>
    ${x.semTarefa.length||x.fracas.length?`<section class="block"><div class="block-h"><h3>Ainda sem ação no plano</h3><p>O que o diagnóstico aponta e não tem cartão.</p></div><div class="xlist">
@@ -857,7 +861,7 @@ function planoHtml(INS){
    <p class="muted" style="font-size:12.5px">O número indica o bloco de causa raiz. As ações específicas de cada incongruência estão nas evidências e viram tarefas no kanban.</p>`;
 }
 function unScoreHtml(){
-  const rows=UNS.map(u=>{ const caps=capRows().filter(r=>r.un===u.id); const sum=k=>{const v=caps.map(r=>r[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0):null;}; const vg=sum('vagas'),cp=sum('captados'),mt=sum('meta'); const f=unFin(u.id);
+  const rows=UNS.map(u=>{ const caps=capRows().filter(r=>r.un===u.id); const sum=k=>{const v=caps.map(r=>r[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0):null;}; const vg=sum('vagas'),cp=sum('captados'),mt=metaUn(u.id,sum('meta')); const f=unFin(u.id);
     return {u,exp:unxGet(u.id,'expect'),s:SC[u.id],ocup:vg&&cp!=null?cp/vg:null,ating:mt&&cp!=null?cp/mt:null,rec:f.meta_rec&&f.receita!=null?f.receita/f.meta_rec:null,svc:unSvc(u)}; });
   const cell=(x,w)=>x==null?'<td class="r muted">—</td>':`<td class="r" style="${x<w?'color:var(--n1);font-weight:600':''}">${pct(x)}</td>`;
   return `<div class="tblw"><table class="tbl"><thead><tr><th>UN</th><th>A reitoria espera</th><th style="min-width:180px">Maturidade</th><th class="r">Ocupação de vagas</th><th class="r">Captação x meta</th><th class="r">Receita x meta</th><th class="r">Atendimento do marketing</th></tr></thead><tbody>
@@ -1064,9 +1068,10 @@ function dreParse(txt){
     else if(/inadimpl/.test(L)) kind='inadimplencia';
     else if(/folha|pessoal|sal[aá]rio/.test(L)) kind='folha';
     else if(/marketing|publicidade|propaganda|m[ií]dia|capta[cç][aã]o/.test(L)) kind='verba';
-    else if(/ebitda|resultado|lucro/.test(L)) kind='ebitda';
+    else if(/financeir|lucro bruto|outras receitas|dedu[cç]/.test(L)){ ign.push(l); return; }
+    else if(/ebitda|resultado operacional|lucro operacional|resultado (l[ií]quido|do exerc)|lucro l[ií]quido/.test(L)) kind='ebitda';
     else if(/receita|faturamento/.test(L)) kind='receita';
-    else if(/custo|despesa/.test(L)) kind='custo';
+    else if(/^(\(-\)\s*)?(custos? e despesas|custos? totais|despesas totais|total de (custos|despesas))/.test(L)||/^(\(-\)\s*)?(custo|despesa)s?( operacionais)?$/.test(L)) kind='custo';
     if(!kind){ign.push(l);return;}
     const sets=[];
     if(un){
@@ -1083,7 +1088,9 @@ function dreParse(txt){
     }
     sets.forEach(([k,v])=>out.push({k,v,label,un}));
   });
-  return {out,ign};
+  /* duas linhas querendo o mesmo campo: nenhuma entra, o consultor decide (antes, a última sobrescrevia em silêncio) */
+  const cont={}; out.forEach(x=>cont[x.k]=(cont[x.k]||0)+1); const conf=out.filter(x=>cont[x.k]>1);
+  return {out:out.filter(x=>cont[x.k]===1),ign,conf};
 }
 const DRE_MODELO=`Receita bruta de mensalidades;0;0
 (-) Bolsas e descontos;0;0
@@ -1114,7 +1121,8 @@ function dreHtmlImport(){
    <textarea id="dre-txt" rows="6" placeholder="Receita líquida;100.000.000;88.000.000&#10;Despesas com marketing;5.000.000;3.500.000&#10;Folha marketing;90.000;90.000&#10;Receita;30.000.000;27.500.000;Graduação" style="width:100%;font-family:var(--mono);font-size:13px">${esc(ui.dreTxt||'')}</textarea>
    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="dre-ler">Ler DRE</button><button class="btn ghost" data-act="dre-modelo">Copiar modelo de DRE educacional</button>${pv&&pv.out.length?`<button class="btn primary" data-act="dre-aplicar">Aplicar ${pv.out.length} valores</button>`:''}</div>
    ${pv?`${pv.out.length?`<div class="tblw"><table class="tbl"><thead><tr><th>Linha da DRE</th><th>Vai preencher</th><th class="r">Valor</th><th class="r">Hoje</th></tr></thead><tbody>${pv.out.map(x=>`<tr><td>${esc(x.label)}${x.un?` <span class="chip">${esc(nameOf(x.un))}</span>`:''}</td><td>${esc(CAMPO_NOME(x.k))}</td><td class="r">${brl(x.v)}</td><td class="r muted">${cur.campos[x.k]?brl(num(cur.campos[x.k])):'vazio'}</td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Nenhuma linha reconhecida. Use o formato: nome da linha; orçado; realizado; UN.</p>'}
-   ${pv.ign.length?`<p class="muted" style="font-size:13px">${pv.ign.length} linha(s) ignorada(s) por não serem usadas no diagnóstico: ${esc(pv.ign.slice(0,4).map(l=>l.split(/\t|;|\|/)[0]).join(', '))}${pv.ign.length>4?'…':''}</p>`:''}`:''}
+   ${pv.conf&&pv.conf.length?`<p class="pz-aviso"><span class="i">!</span><span>Estas linhas disputam o mesmo campo e ficaram de fora: ${esc(pv.conf.map(x=>`${x.label} → ${CAMPO_NOME(x.k)}`).join('; '))}. Cole só a linha certa de cada uma.</span></p>`:''}
+   ${pv.ign.length?`<p class="muted" style="font-size:13px">${pv.ign.length} linha(s) não reconhecida(s) ou fora do que o diagnóstico usa (confira se não era para entrar): ${esc(pv.ign.slice(0,4).map(l=>l.split(/\t|;|\|/)[0]).join(', '))}${pv.ign.length>4?'…':''}</p>`:''}`:''}
   </section>`;
 }
 /* ---------- Expectativas da reitoria por UN ---------- */
@@ -1345,7 +1353,8 @@ function renderSide(INS){
      <span class="sb-g">Fases 2 a 5</span>
      ${STAGES.slice(1).map(st=>(st.id==='execucao'&&typeof renderPlano==='function'?sideItem('plano','Plano de ação','view','plano',(()=>{const n=paItens().length;return n||'';})()):'')+sideItem(st.id,st.nome,'stage',st.id,st.id==='execucao'&&cur.acoes.some(isPlano)?`${cur.acoes.filter(t=>isPlano(t)&&t.status==='Concluída').length}/${cur.acoes.filter(isPlano).length}`:st.q&&st.q.length?pc(stageProgress(st)):'',st.id==='execucao'&&hot)).join('')}
 `:''}
-     ${temMod('dre')||temMod('lancamento')||temMod('captacao')?'<span class="sb-g">Módulos</span>':''}
+     ${temMod('dre')||temMod('lancamento')||temMod('captacao')||(adm&&!FOCO)?'<span class="sb-g">Módulos</span>':''}
+     ${adm&&!FOCO?MODS_TODOS.filter(([k])=>k!=='diagnostico'&&!modsCliente().includes(k)).map(([k,l])=>`<button class="sn sn-off" data-act="mod-toggle" data-v="${k}" title="Ligar ${esc(l)} para ${esc(cur.nome||'este cliente')}"><span class="lb">+ Ligar ${esc(l)}</span></button>`).join(''):''}
      ${temMod('captacao')&&typeof renderCaptacao==='function'?(()=>{ const n=cvAlertas(); return sideItem('captacao','Captação','view','captacao',n||'',n>0); })():''}
      ${temMod('dre')?sideItem('dre','DRE e orçamento','view','dre',cur.mods&&cur.mods.dre&&cur.mods.dre.meses?cur.mods.dre.meses.filter(M=>M.lancado).length+'/12':''):''}
      ${temMod('lancamento')?sideItem('lancamento','Lançamento de curso','view','lancamento'):''}
@@ -1529,15 +1538,30 @@ function pdfLinhas(items){ let txt='', y=null, xFim=null;
     if(s){ if(xFim!==null){ const gap=tx-xFim; txt+=gap>h*1.2?'   ':gap>h*0.15&&!/\s$/.test(txt)?' ':''; } txt+=s; xFim=tx+(it.width||0); y=ty; }
     if(it.hasEOL){ txt=txt.replace(/[ \t]+$/,'')+'\n'; xFim=null; y=null; } });
   return txt.split('\n').map(l=>l.replace(/[ \t]+$/,'')).filter(l=>l.trim()).join('\n').trim(); }
+/* Excel: lê o VALOR de cada célula, não o texto formatado (que o leitor devolve no padrão americano:
+   data trocada e milhar com vírgula). Números saem no padrão brasileiro (1234,56), datas em dd/mm/aaaa,
+   porcentagem como 12%, moeda como R$ 1234,56. Vale para a Base de conhecimento e para a Captação. */
+async function xlsxTexto(buf,comHora){ await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'); const X=window.XLSX;
+  const wb=X.read(buf,{type:'array',cellDates:false,cellNF:true,cellText:false});
+  const p2=n=>String(n).padStart(2,'0'), br=v=>{ const r=Math.round(v*1e6)/1e6; return String(r).replace('.',','); };
+  const cel=c=>{ if(!c) return ''; if(c.t==='n'){ const z=String(c.z||'');
+      if(z&&X.SSF.is_date(z)){ const d=X.SSF.parse_date_code(c.v); if(!d) return ''; const dt=`${p2(d.d)}/${p2(d.m)}/${d.y}`; return comHora&&(d.H||d.M)?`${dt} ${p2(d.H)}:${p2(d.M)}`:dt; }
+      if(/%/.test(z)) return br(c.v*100)+'%'; if(/R\$|\[\$R/.test(z)) return 'R$ '+br(c.v); return br(c.v); }
+    if(c.t==='d'&&c.v instanceof Date) return `${p2(c.v.getDate())}/${p2(c.v.getMonth()+1)}/${c.v.getFullYear()}`;
+    if(c.t==='b') return c.v?'sim':'não'; return String(c.v==null?'':c.v).replace(/[\t\r\n]+/g,' ').trim(); };
+  return wb.SheetNames.map(nm=>{ const ws=wb.Sheets[nm]; if(!ws||!ws['!ref']) return ''; const R=X.utils.decode_range(ws['!ref']); const L=[];
+    for(let r=R.s.r;r<=R.e.r;r++){ const row=[]; for(let c=R.s.c;c<=R.e.c;c++) row.push(cel(ws[X.utils.encode_cell({r,c})])); while(row.length&&row[row.length-1]==='') row.pop(); if(row.some(x=>x!=='')) L.push(row.join('\t')); }
+    return L.length?`## Aba: ${nm}\n${L.join('\n')}`:''; }).filter(Boolean).join('\n\n'); }
+/* CSV/TXT: UTF-8; se não for, Windows-1252 (o "CSV separado por vírgulas" do Excel em português) */
+function textoDe(buf){ try{ return new TextDecoder('utf-8',{fatal:true}).decode(buf).replace(/^\ufeff/,''); }catch(e){ return new TextDecoder('windows-1252').decode(buf); } }
 async function lerArquivo(file){
   const n=file.name.toLowerCase();
   if(file.size>15*1024*1024) throw new Error('arquivo maior que 15 MB');
   if(n.endsWith('.pdf')){ await loadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js'); const lib=window.pdfjsLib; lib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
     const doc=await lib.getDocument({data:await file.arrayBuffer()}).promise; const out=[]; for(let i=1;i<=Math.min(doc.numPages,300);i++){ const p=await doc.getPage(i); const c=await p.getTextContent(); out.push(pdfLinhas(c.items)); } return out.filter(Boolean).join('\n\n'); }
-  if(/\.xlsx?$/.test(n)){ await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'); const wb=window.XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
-    return wb.SheetNames.map(nm=>{ const csv=window.XLSX.utils.sheet_to_csv(wb.Sheets[nm],{FS:'\t',blankrows:false,dateNF:'dd/mm/yyyy'}).split('\n').filter(l=>l.replace(/\t/g,'').trim()).join('\n'); return csv?`## Aba: ${nm}\n${csv.replace(/\b(\d{4})-(\d{2})-(\d{2})(?:[T ][\d:.]+Z?)?\b/g,'$3/$2/$1')}`:''; }).filter(Boolean).join('\n\n'); }
+  if(/\.xlsx?$/.test(n)) return xlsxTexto(await file.arrayBuffer());
   if(n.endsWith('.docx')){ await loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js'); const r=await window.mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()}); return r.value; }
-  const t=await file.text();
+  const t=textoDe(await file.arrayBuffer());
   if(/\.html?$/.test(n)){ const d=new DOMParser().parseFromString(t,'text/html'); d.querySelectorAll('script,style,noscript').forEach(x=>x.remove()); return (d.body?d.body.innerText||d.body.textContent:'').replace(/\n{3,}/g,'\n\n').trim(); }
   return t;
 }
@@ -1707,7 +1731,7 @@ function render(){
   const drafts=[...document.querySelectorAll(DRAFT)].map(el=>[focusKey(el),el.value]).filter(x=>x[0]&&x[1]);
   document.querySelectorAll('details[data-keep]').forEach(d=>{ ui.open[d.dataset.keep]=d.open; });
   renderInner();
-  drafts.forEach(([k,v])=>{ const el=document.querySelector(k); if(el&&!el.value) el.value=v; });
+  drafts.forEach(([k,v])=>{ const el=document.querySelector(k); if(el&&(!el.value||el.tagName==='SELECT')) el.value=v; }); /* select nunca fica vazio: sem isto, a gravidade escolhida voltava para o padrão */
   if(fk){ const el=document.querySelector(fk); if(el&&el!==document.activeElement){ el.focus({preventScroll:true}); try{ if(selS!=null) el.setSelectionRange(selS,selE);}catch(e){} } }
 }
 function renderInner(){
@@ -1826,7 +1850,7 @@ async function exportPptx(){
   // expectativa x realidade
   sl=base('Expectativa da reitoria x realidade das UNs','Unidades de negócio');
   const hdr=['UN','A reitoria espera','Maturidade','Ocupação de vagas','Captação x meta','Receita x meta'].map(h=>({text:h,options:{bold:true,color:C.mut,fontSize:11,fill:{color:C.card}}}));
-  const urows=UNS.map(u=>{ const caps=capRows().filter(r=>r.un===u.id); const sm=k=>{const v=caps.map(r=>r[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0):null;}; const vg=sm('vagas'),cp=sm('captados'),mt=sm('meta'),f=unFin(u.id),sc=SC[u.id];
+  const urows=UNS.map(u=>{ const caps=capRows().filter(r=>r.un===u.id); const sm=k=>{const v=caps.map(r=>r[k]).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0):null;}; const vg=sm('vagas'),cp=sm('captados'),mt=metaUn(u.id,sm('meta')),f=unFin(u.id),sc=SC[u.id];
     const c=(v,w)=>({text:v==null?'—':pct(v),options:{color:v!=null&&v<w?C.n1:C.fg}});
     return [{text:u.nome,options:{bold:true,color:C.fg}},{text:unxGet(u.id,'expect')||'—',options:{color:C.fg}},{text:sc.score!=null?`${dec(sc.score)} · N${sc.level}`:'sem nota',options:{color:lvColor(sc.level),bold:true}},c(vg&&cp!=null?cp/vg:null,0.7),c(mt&&cp!=null?cp/mt:null,0.8),c(f.meta_rec&&f.receita!=null?f.receita/f.meta_rec:null,0.9)]; });
   sl.addTable([hdr,...urows],{x:0.5,y:1.7,w:12.3,fontFace:F,fontSize:13,color:C.fg,border:{type:'solid',color:C.line,pt:0.5},rowH:0.55,fill:{color:C.bg}});
@@ -2137,6 +2161,14 @@ function go(view){ ui.view=view; ui.copy=null; saveUi(); render(); window.scroll
 function genFromInsight(i){ const have=new Set(cur.acoes.map(a=>a.txt)); let n=0; i.rec.forEach(t=>{ if(!have.has(t)){ newTask({txt:t,area:i.areas[0]||'',origem:i.id}); n++; } }); return n; }
 function copyText(txt,okMsg){ try{ navigator.clipboard.writeText(txt).then(()=>toast(okMsg),()=>{ui.copy=txt;render();}); }catch(e){ ui.copy=txt; render(); } }
 
+/* Desfazer: toda ação de apagar guarda o estado anterior e mostra "Removido · Desfazer" por 8 segundos */
+const UNDO_ACTS=new Set(['ent-del','dor-del','sys-del','fonte-del','curso-del','ciclo-del','ciclo-cv-del','ciclo-cv-prova-del','kpi-del','kx-del','ini-del','fofa-del','pa-del','task-del','teste-del','pes-del','pdi-acdel','md-delun']);
+let undoSnap=null;
+function toastDesfazer(msg){ const el=$('#toast'); if(!el) return; el.innerHTML=`${esc(msg)} <button type="button" class="toast-undo" data-act="desfazer">Desfazer</button>`; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>{ el.hidden=true; undoSnap=null; },8000); }
+document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('[data-act]'); if(!b||!cur) return; const a=b.dataset.act;
+  if(a==='desfazer'){ e.stopImmediatePropagation(); if(undoSnap&&undoSnap.id===cur.id){ Object.keys(undoSnap.dados).forEach(k=>cur[k]=undoSnap.dados[k]); undoSnap=null; touch(true); $('#toast').hidden=true; toast('Desfeito'); } return; }
+  if(!UNDO_ACTS.has(a)) return; const antes=clone(cur), v0=ver;
+  setTimeout(()=>{ if(ver!==v0&&cur&&cur.id===antes.id){ undoSnap={id:antes.id,dados:antes}; toastDesfazer('Removido.'); } },30); },true);
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]'); if(!b)return; const act=b.dataset.act, d=b.dataset;
   if(act==='auth-mode'){ authMode=d.v; authMsg=null; renderAuth(); return; }
@@ -2226,7 +2258,7 @@ document.addEventListener('click',e=>{
   else if(act==='ent-add'){ cur.entrevistas.push({id:uid(),area:d.area,nome:'',cargo:'',depto:nameOf(d.area),data:today()}); touch(true); const els=document.querySelectorAll('[data-ent][data-f="nome"]'); els.length&&els[els.length-1].focus(); }
   else if(act==='ent-del'){ cur.entrevistas.splice(+d.i,1); touch(true); }
   else if(act==='unx'){ const key=unxKey(d.un,d.k); if(d.multi){ let L=(cur.campos[key]||'').split('|').filter(Boolean); if(L.includes(d.v)) L=L.filter(x=>x!==d.v); else { if(L.length>=+d.multi){ toast(`Escolha até ${d.multi} prioridades`); return; } L.push(d.v); } if(L.length)cur.campos[key]=L.join('|'); else delete cur.campos[key]; } else { if(cur.campos[key]===d.v) delete cur.campos[key]; else cur.campos[key]=d.v; } touch(true); }
-  else if(act==='dre-go'){ ui.view='fases'; ui.stage='diagnostico'; ui.area='financeiro'; saveUi(); render(); const el=document.getElementById('dre-import'); el&&el.scrollIntoView({block:'start'}); const t=$('#dre-txt'); t&&t.focus({preventScroll:true}); }
+  else if(act==='dre-go'){ ui.view='fases'; ui.stage='diagnostico'; ui.dstep='reitoria'; ui.area='financeiro'; saveUi(); render(); const el=document.getElementById('dre-import'); el&&el.scrollIntoView({block:'start'}); const t=$('#dre-txt'); t&&t.focus({preventScroll:true}); }
   else if(act==='dre-modelo'){ copyText(DRE_MODELO.replace(/;/g,'\t'),'Modelo copiado: cole numa planilha, preencha e cole de volta aqui'); }
   else if(act==='dre-ler'){ ui.dreTxt=($('#dre-txt')||{}).value||''; ui.drePreview=dreParse(ui.dreTxt); render(); }
   else if(act==='dre-aplicar'){ const pv=ui.drePreview; if(pv){ pv.out.forEach(x=>{ cur.campos[x.k]=String(x.v); }); const n=pv.out.length; ui.drePreview=null; ui.dreTxt=''; touch(true); toast(`${n} valores da DRE aplicados`); } }
@@ -2335,4 +2367,5 @@ document.addEventListener('toggle',e=>{ const d=e.target; if(d&&d.dataset&&d.dat
 document.addEventListener('focusout',()=>{ setTimeout(()=>{ if(!isTyping()&&(pendingData||pendingRemote))adoptRemote(); },0); });
 window.addEventListener('pagehide',()=>{ if(ver!==savedVer) flush(); });
 window.addEventListener('beforeunload',e=>{ if(ver!==savedVer){ flush(); e.preventDefault(); e.returnValue=''; } });
-boot();
+/* espera todos os módulos (base-un, curva, identidade...) carregarem antes de abrir o cliente */
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();

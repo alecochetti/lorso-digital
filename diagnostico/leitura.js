@@ -36,7 +36,7 @@ function ltParseTopicos(txt){
     const ind=raw.match(/^\s*/)[0].replace(/\t/g,'    ').length;
     const h=raw.match(/^\s*(#{1,6})\s+(.*)$/);
     if(h){ const t=ltLimpa(h[2]).replace(/^\d+[.)]\s*/,'').replace(/:$/,'').trim(); const lv=h[1].length; pilha=[];
-      const sec=Object.keys(LT_SECAO).find(k=>LT_SECAO[k].test(t)&&!/curso|gradua|p[oó]s|mestrado|col[eé]gio/i.test(t))||'';
+      const sec=Object.keys(LT_SECAO).find(k=>LT_SECAO[k].test(t)&&!/curso|gradua|\bp[oó]s\b|p[oó]s-|mestrado|col[eé]gio/i.test(t))||'';
       if(lv<=3){ un=ltUn(t); topo=un?'':t.replace(/\s*\(.*\)\s*$/,''); grupo=''; mod=ltMod(t); secao=sec; }
       else { grupo=t; mod=ltMod(t)||(secao?'':mod); if(sec) secao=sec; }
       return; }
@@ -117,7 +117,7 @@ function leituraHtml(f){
   const porUn=[...UNS.map(u=>[u.nome,cs.filter(c=>c.un===u.id).length]),['sem UN',cs.filter(c=>!c.un).length]].filter(x=>x[1]).map(x=>`${x[0]} ${x[1]}`).join(' · ');
   const nada=!mx.novos&&!mx.atual&&!cap.length&&!blocos.length;
   return `<div class="lt">
-    <div class="lt-h"><b>${nada?'Leitura feita':'O que a leitura encontrou'}</b><span class="muted">${r.via==='ia'?'Lido com IA e conferido pela leitura automática':'Leitura automática'}${nada?': nada novo para a base. O que já estava aqui foi aproveitado.':'. Confira e adicione o que fizer sentido.'}</span>
+    <div class="lt-h"><b>${nada?'Leitura feita':'O que a leitura encontrou'}</b><span class="muted">${r.via==='ia'?'Lido com IA e conferido pela leitura automática':'Leitura automática'}${nada?': não encontrei cursos, números ou datas novos neste arquivo (ou o que ele traz já está na base). Se você sabe que tem informação aqui, use Ler com IA.':'. Confira e adicione o que fizer sentido.'}</span>
       <button class="btn sm" data-act="lt-ia" data-id="${f.id}" ${lendo?'disabled':''}>${lendo?'Lendo com IA…':ia?'Ler de novo com IA':'Ler com IA'}</button></div>
     ${ia&&ia.erro?`<p class="lt-aviso"><span class="i">!</span><span>${esc(ia.erro)}</span></p>`:''}
     ${r.resumo?`<p class="fres">${esc(r.resumo)}</p>`:''}

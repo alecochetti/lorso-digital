@@ -22,7 +22,7 @@ const KX_CAT={
   {id:'ltv_cac',n:'LTV ÷ CAC',d:'Eficiência financeira da captação.',ref:'Ensino superior: entre 3x e 5x',c:1},
   {id:'payback',n:'Payback do CAC',d:'Meses de mensalidade paga para cobrir o custo de aquisição.',ref:'Abaixo de 3 a 6 meses',c:1,auto:kxPorUn(d=>d.payback,kxMes)},
   {id:'na_mesa',n:'Dinheiro na mesa',d:'Valor estimado dos leads qualificados e inscritos que abandonaram antes do pagamento.'},
-  {id:'roas_romi',n:'ROAS e ROMI',d:'Retorno sobre mídia paga e sobre o investimento total de marketing.',c:1,auto:kxPorUn(d=>d.roi,v=>v>=1?(v+1).toFixed(1).replace('.',',')+'x a verba':kxPct(v))},
+  {id:'roas_romi',n:'ROAS e ROMI',d:'Retorno sobre mídia paga e sobre o investimento total de marketing.',c:1,auto:kxPorUn(d=>d.roi,v=>(v+1).toFixed(1).replace('.',',')+'x a verba')},
   {id:'funil_global',n:'Conversão global do funil',d:'Visitantes → leads → inscritos → presentes na prova ou ENEM enviado → matriculados pagantes.',c:1,auto:kxPorUn(d=>d.convIM,v=>'inscrito→matrícula '+kxPct(v))},
   {id:'curva',n:'Curva de captação do ciclo',d:'% da meta de matrículas atingida a cada semana, comparada ao mesmo ponto do ciclo anterior.',ed:1,c:1,auto:kxPorUn(d=>d.ating,kxPct)},
   {id:'ticket_liq',n:'Ticket líquido',d:'Mensalidade depois de bolsas, descontos, convênios, FIES e Prouni.',ed:1},

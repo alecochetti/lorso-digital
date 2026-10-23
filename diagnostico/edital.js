@@ -18,6 +18,10 @@ function edUn(cab){ const t=edSemAcento(cab).toLowerCase();
   if(/gradua|vestibular|\benem\b|bacharel|tecnolog/.test(t)) return 'graduacao';
   if(/colegio|ensino fundamental|educacao infantil/.test(t)) return 'colegio';
   return ''; }
+/* UN do edital: o título manda; sem título claro, vence o nível mais citado no começo do texto (não o primeiro que aparece) */
+function edUnDe(tit,T){ const pt=edUn(tit); if(pt) return pt; const t=edSemAcento(T.slice(0,8000)).toLowerCase(), n=re=>(t.match(re)||[]).length;
+  const sc={mestrado:n(/mestrado|doutorado|stricto sensu/g),pos:n(/pos-gradua|pos gradua|lato sensu|\bmba\b|especializa/g),graduacao:n(/(?<!pos[- ])gradua|vestibular|\benem\b|bacharel|tecnolog|licenciatura/g),colegio:n(/colegio|ensino fundamental|ensino medio|educacao infantil/g)};
+  const best=Object.entries(sc).sort((a,b)=>b[1]-a[1])[0]; return best&&best[1]?best[0]:''; }
 function edSemestre(t){ let m=t.match(/PROCESSO SELETIVO\s+(\d{4})\s*[-./]\s*([12])/i); if(m) return `${m[1]}.${m[2]}`;
   m=t.match(/([12])\s*[oº°]\s*semestre (?:do ano letivo )?de\s+(\d{4})/i); if(m) return `${m[2]}.${m[1]}`;
   m=t.match(/\b(20\d{2})[./-]([12])\b/); return m?`${m[1]}.${m[2]}`:''; }
@@ -38,9 +42,9 @@ function edVagas(T){
   const ini=h.index+h[0].length; const fim=T.slice(ini).search(/TOTAL DE VAGAS|Legenda/i); const seg=T.slice(ini,fim>0?ini+fim:ini+6000);
   const n=turnos.length*2+1; const tok=seg.split(/\s+/).filter(Boolean); const rows=[]; let nome=[];
   for(let i=0;i<tok.length;i++){
-    const isNum=x=>/^(\d{1,5}|-|–)$/.test(x||'');
+    const isNum=x=>/^(\d{1,5}|\d{1,3}\.\d{3}|-|–)$/.test(x||'');
     if(isNum(tok[i])&&tok.slice(i,i+n).length===n&&tok.slice(i,i+n).every(isNum)){
-      const v=tok.slice(i,i+n).map(x=>/^\d+$/.test(x)?+x:null); const nm=edTiraCab(nome.join(' '));
+      const v=tok.slice(i,i+n).map(x=>/^[\d.]+$/.test(x)?+x.replace(/\./g,''):null); const nm=edTiraCab(nome.join(' '));
       if(nm&&nm.length>=3&&nm.length<=90) rows.push({nome:nm,vagas:turnos.map((t,j)=>v[j]),total:v[turnos.length],porTurma:turnos.map((t,j)=>v[turnos.length+1+j])});
       nome=[]; i+=n-1; }
     else nome.push(tok[i]); }
@@ -111,7 +115,7 @@ function editalDe(f){
   const T=edPlano(f&&f.conteudo); const tit=String(f&&f.titulo||'');
   if(!/edital/i.test(tit+' '+T.slice(0,1500))||!/processo seletivo|vestibular|inscri[cç]/i.test(T.slice(0,4000))) return null;
   if(typeof fonteAchado==='function'&&fonteAchado(f)) return null;
-  const un=edUn(tit+' '+T.slice(0,1500)), sem=edSemestre(tit+' '+T.slice(0,1500));
+  const un=edUnDe(tit,T), sem=edSemestre(tit+' '+T.slice(0,1500));
   const T2=T.replace(/Esse documento foi assinado.{0,160}?validate\/[A-Z0-9-]+/gi,' ').replace(/\s+/g,' ');
   const vg=edVagas(T2), mec=edMec(T2), per=edPeriodo(T2), regras=edRegras(T2,per);
   const mecDe=n=>mec.find(x=>edCore(x.nome)===edCore(n));

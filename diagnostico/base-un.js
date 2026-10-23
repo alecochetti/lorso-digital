@@ -37,7 +37,8 @@ function buDados(un){
 }
 const buN=v=>v==null?'—':Math.round(v).toLocaleString('pt-BR');
 const buX=v=>v==null?'—':(v*100).toFixed(0)+'%';
-const buRoi=v=>v==null?'—':v>=1?(v+1).toFixed(1).replace('.',',').replace(',0','')+'x a verba':(v>=0?'+':'')+(v*100).toFixed(0)+'%';
+/* sempre no mesmo formato: receita da captação ÷ verba (1x = empata; abaixo de 1x, a verba não voltou) */
+const buRoi=v=>v==null?'—':(v+1).toFixed(1).replace('.',',')+'x a verba';
 
 function buTabs(){
   const t=ui.baseUn||'geral', semUn=cur.cursos.filter(c=>!c.un).length;
@@ -104,6 +105,8 @@ function buUnHtml(un,cursosTabela,pctCell){
      ${buLigado(buKey(un,'insc_growth'),'Desses, inscritos que vieram do growth','n')}
      ${buLigado(buKey(un,'meses_roi'),'Meses de mensalidade por aluno (para o ROI anual)','m')}
     </div>
+    ${(()=>{ const W=[]; if(d.inscGrowth!=null&&d.insc!=null&&d.inscGrowth>d.insc) W.push(`os inscritos do growth (${buN(d.inscGrowth)}) passam do total de inscritos (${buN(d.insc)})`); if(d.leads!=null&&d.insc!=null&&d.leads<d.insc) W.push(`há menos leads (${buN(d.leads)}) que inscritos (${buN(d.insc)})`); if(d.captados!=null&&d.insc!=null&&d.captados>d.insc) W.push(`há mais matriculados (${buN(d.captados)}) que inscritos (${buN(d.insc)})`);
+      return W.length?`<p class="pz-aviso"><span class="i">!</span><span>Confira os números: ${W.join('; ')}. Até corrigir, as taxas e o CAC de mídia desta área não são confiáveis.</span></p>`:''; })()}
     <div class="dsec"><b>Leads por origem</b><div class="fields bu-f">${BU_ORIGENS.map(([k,l])=>buLigado(buKey(un,'leads_'+k),l,'n')).join('')}</div></div>
     ${d.leads||d.insc?`<div class="bu-funil">${[['Leads',d.leads],['Inscritos',d.insc],['Matriculados',d.captados]].map(([l,v],i,a)=>`<div><b>${buN(v)}</b><span>${l}</span>${i<a.length-1&&v&&a[i+1][1]!=null?`<small>${buX(a[i+1][1]/v)} seguem</small>`:''}</div>`).join('')}</div>`:''}
     ${d.origens.some(o=>o[2])?`<div class="chart">${d.origens.filter(o=>o[2]).sort((a,b)=>b[2]-a[2]).map(o=>`<div class="crow"><span class="nm">${esc(o[1])}</span><div class="track"><span style="width:${(o[2]/Math.max(...d.origens.map(x=>x[2]||0))*100).toFixed(1)}%;min-width:4px;background:var(--n3)"></span></div><span class="num" style="font-size:12px">${buN(o[2])} · ${buX(o[2]/d.leads)}</span></div>`).join('')}</div>`:''}
@@ -118,7 +121,7 @@ function buUnHtml(un,cursosTabela,pctCell){
 /* ---------- Calendário de captação: ciclos por UN e datas dos cursos ---------- */
 const CICLO_ETAPAS=[['camp_ini','Campanha começa'],['insc_ini','Inscrições abrem'],['mat_ini','Matrículas abrem'],['camp_fim','Campanha encerra'],['aulas','Aulas começam']];
 const CICLO_NUM=[['verba','Verba da campanha','R$'],['inscritos','Inscritos',''],['matriculados','Matriculados','']];
-function cicloRoi(c){ const d=buDados(c.un), v=num(c.verba), m=num(c.matriculados); if(!v||m==null||d.ticket==null) return null; return {roi:(m*d.ticket*d.meses-v)/v,cac:m?v/m:null}; }
+function cicloRoi(c){ const d=buDados(c.un), m=num(c.matriculados); const vInv=typeof cvUlt==='function'?cvUlt(c,'v'):null; const acabou=c.camp_fim&&cDt(c.camp_fim)<=cHoje(); /* durante a campanha só vale o investido até a data; a verba planejada inteira só depois que a campanha acaba */ const v=vInv!=null?vInv:acabou?num(c.verba):null; if(!v||m==null||d.ticket==null) return null; return {roi:(m*d.ticket*d.meses-v)/v,cac:m?v/m:null}; }
 const CICLO_SUG={colegio:['Matrículas do ano letivo','Rematrícula'],graduacao:['Vestibular 1º semestre','Vestibular 2º semestre','Transferência e segunda graduação'],pos:['Turma do 1º semestre','Turma do 2º semestre'],mestrado:['Processo seletivo']};
 function ciclosTodos(){ try{ const L=JSON.parse(cur.campos['base.ciclos']||'[]'); return Array.isArray(L)?L:[]; }catch(e){ return []; } }
 function ciclosSalvar(L){ cur.campos['base.ciclos']=L.length?JSON.stringify(L):''; touch(false); }
@@ -157,8 +160,8 @@ function ciclosUnHtml(un){
   const L=ciclosTodos().filter(c=>c.un===un), sug=(CICLO_SUG[un]||[]).filter(n=>!L.some(c=>c.nome===n));
   const cs=cur.cursos.filter(c=>c.un===un&&c.abertura&&c.encerramento);
   return `<section class="block"><div class="block-h"><h3>Calendário de captação</h3><p>Campanha, inscrições, matrículas e início das aulas de cada ciclo.</p></div>
-   ${L.length?`<div class="tblw"><table class="tbl tciclos"><thead><tr><th style="min-width:200px">Ciclo</th>${CICLO_ETAPAS.map(([,l])=>`<th>${l}</th>`).join('')}${CICLO_NUM.map(([,l])=>`<th>${l}</th>`).join('')}<th>ROI da campanha</th><th>Situação</th><th></th></tr></thead><tbody>
-    ${L.map(c=>{ const st=cicloSituacao(c); return `<tr><td><input data-ciclo="${c.id}" data-f="nome" value="${esc(c.nome||'')}" placeholder="Ex.: Vestibular 2027.1" aria-label="Nome do ciclo"></td>${CICLO_ETAPAS.map(([k,l])=>`<td><input type="date" class="dt" data-ciclo="${c.id}" data-f="${k}" value="${esc(c[k]||'')}" aria-label="${l}"></td>`).join('')}${CICLO_NUM.map(([k,l,u])=>`<td><input class="cnum" data-ciclo="${c.id}" data-f="${k}" value="${esc(c[k]||'')}" inputmode="decimal" placeholder="${u||'0'}" aria-label="${l}"></td>`).join('')}<td class="num">${(r=>r?`<b class="${r.roi<0?'bu-bad':''}">${buRoi(r.roi)}</b>${r.cac!=null?`<small class="curso-obs">CAC ${brl(r.cac)}</small>`:''}`:'<span class="muted">—</span>')(cicloRoi(c))}</td><td><span class="csit ${st.k}">${st.t}</span></td><td class="x"><button class="xbtn" data-act="ciclo-del" data-id="${c.id}" aria-label="Remover ciclo">×</button></td></tr>`; }).join('')}
+   ${L.length?`<div class="tblw"><table class="tbl tciclos"><thead><tr><th></th><th style="min-width:200px">Ciclo</th>${CICLO_ETAPAS.map(([,l])=>`<th>${l}</th>`).join('')}${CICLO_NUM.map(([,l])=>`<th>${l}</th>`).join('')}<th>ROI da campanha</th><th>Situação</th></tr></thead><tbody>
+    ${L.map(c=>{ const st=cicloSituacao(c); return `<tr><td class="x"><button class="xbtn" data-act="ciclo-del" data-id="${c.id}" aria-label="Apagar o ciclo ${esc(c.nome||'sem nome')}" title="Apagar o ciclo">×</button></td><td><input data-ciclo="${c.id}" data-f="nome" value="${esc(c.nome||'')}" placeholder="Ex.: Vestibular 2027.1" aria-label="Nome do ciclo"></td>${CICLO_ETAPAS.map(([k,l])=>`<td><input type="date" class="dt" data-ciclo="${c.id}" data-f="${k}" value="${esc(c[k]||'')}" aria-label="${l}"></td>`).join('')}${CICLO_NUM.map(([k,l,u])=>{ const daCurva=['inscritos','aprovados','matriculados'].includes(k)&&typeof cvSerie==='function'&&cvSerie(c).length; return `<td><input class="cnum" data-ciclo="${c.id}" data-f="${k}" value="${esc(c[k]||'')}" inputmode="decimal" placeholder="${u||'0'}" aria-label="${l}"${daCurva?' readonly title="Vem dos registros da Captação. Para mudar, edite em Captação › Registros."':''}></td>`; }).join('')}<td class="num">${(r=>r?`<b class="${r.roi<0?'bu-bad':''}">${buRoi(r.roi)}</b>${r.cac!=null?`<small class="curso-obs">CAC ${brl(r.cac)}</small>`:''}`:'<span class="muted">—</span>')(cicloRoi(c))}</td><td><span class="csit ${st.k}">${st.t}</span></td></tr>`; }).join('')}
    </tbody></table></div>`:'<p class="muted" style="margin:0">Nenhum ciclo ainda. Crie um para cada campanha de captação desta UN.</p>'}
    <div class="bu-cnt"><button class="btn sm" data-act="ciclo-add" data-v="">+ Ciclo de captação</button>${sug.map(n=>`<button class="chip" data-act="ciclo-add" data-v="${esc(n)}">+ ${esc(n)}</button>`).join('')}</div>
    ${cicloTimeline([...L.map(cicloItem),...cs.slice(0,20).map(cursoItem)])}
@@ -176,7 +179,7 @@ function ciclosGeralHtml(){
 function ciclosAgoraHtml(){ // para a Visão geral do diagnóstico
   const h=cHoje(), L=ciclosTodos().filter(c=>{ const st=cicloSituacao(c); if(st.k==='agora') return true; const ini=cDt(c.camp_ini||c.insc_ini); return st.k==='futuro'&&ini&&(ini-h)/864e5<=60; });
   if(!L.length) return '';
-  return `<section class="block"><div class="block-h"><h3>Captação agora e nos próximos 60 dias</h3><button class="btn sm" data-act="bu-tab" data-v="geral">Ver calendário</button></div>
+  return `<section class="block"><div class="block-h"><h3>Captação agora e nos próximos 60 dias</h3>${typeof temCaptacao==='function'&&temCaptacao()?'<button class="btn sm" data-act="ciclo-cv-tab" data-v="geral">Abrir a Captação</button>':'<button class="btn sm" data-act="bu-tab" data-v="geral">Ver calendário</button>'}</div>
    <div class="xlist">${L.map(c=>{ const st=cicloSituacao(c); return `<div class="xitem ${st.k==='agora'?'alta':'media'}"><span class="t">${esc(c.nome||'Ciclo')} · ${esc((UNS.find(u=>u.id===c.un)||{}).nome||'')}<small>${st.t}${c.mat_ini?` · matrículas a partir de ${cFmt(c.mat_ini)}`:''}${c.aulas?` · aulas em ${cFmt(c.aulas)}`:''}${typeof cvResumo==='function'?cvResumo(c):''}</small></span></div>`; }).join('')}</div></section>`;
 }
 function cicloClick(act,d){
@@ -184,7 +187,7 @@ function cicloClick(act,d){
   if(act==='ciclo-del'){ ciclosSalvar(ciclosTodos().filter(c=>c.id!==d.id)); render(); return true; }
   return false;
 }
-['change'].forEach(ev=>document.addEventListener(ev,e=>{ const t=e.target; if(!t||!t.dataset||t.dataset.ciclo==null) return; const L=ciclosTodos(), c=L.find(x=>x.id===t.dataset.ciclo); if(!c) return; c[t.dataset.f]=t.value; ciclosSalvar(L); render(); }));
+['change'].forEach(ev=>document.addEventListener(ev,e=>{ const t=e.target; if(!t||!t.dataset||t.dataset.ciclo==null) return; const L=ciclosTodos(), c=L.find(x=>x.id===t.dataset.ciclo); if(!c) return; c[t.dataset.f]=t.value; ciclosSalvar(L); setTimeout(render,0); }));
 
 /* ---------- Regra: campanha começando com a UN despreparada ---------- */
 function cicloRisco(){

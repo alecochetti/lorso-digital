@@ -30,9 +30,11 @@
 
   /* Cliente em modo leitura (ex.: reitoria): vê tudo, não altera nada. O banco também bloqueia. */
   const soLeitura=()=>typeof me!=='undefined'&&me&&typeof cur!=='undefined'&&cur&&((me.papel==='cliente'&&cur.clienteLeitura)||(me.papel==='equipe'&&cur.meuNivel==='leitura'));
-  if(typeof touch==='function'){ const _touch=touch; touch=function(full){ if(soLeitura()){ try{ if(typeof snap!=='undefined'&&snap) cur=clone(snap); }catch(e){} if(typeof toast==='function') toast('Modo leitura: a LORSO mantém estes dados'); if(full&&typeof render==='function') render(); return; } return _touch(full); }; }
+  if(typeof touch==='function'){ const _touch=touch; touch=function(full){ if(soLeitura()){ try{ if(typeof snap!=='undefined'&&snap) cur=clone(snap); }catch(e){} if(typeof toast==='function') toast('Modo leitura: nada foi alterado. A LORSO mantém estes dados'); window.__leituraBloq=Date.now(); if(full&&typeof render==='function') render(); return; } return _touch(full); }; }
+  /* no modo leitura, o aviso de sucesso que viria depois de uma ação bloqueada ("3 tarefas criadas") não aparece */
+  if(typeof toast==='function'){ const _toast=toast; toast=function(t){ if(soLeitura()&&window.__leituraBloq&&Date.now()-window.__leituraBloq<1500&&!/^Modo leitura/.test(t)) return; return _toast(t); }; }
   function travarLeitura(main){ document.body.classList.toggle('so-leitura',!!soLeitura()); if(!soLeitura()) return;
-    main.querySelectorAll('input,select,textarea').forEach(el=>{ if(['pes-busca','hr-pessoa','hr-de','hr-ate'].includes(el.id)||el.closest('.hr-filtros')) return; el.disabled=true; });
+    main.querySelectorAll('input,select,textarea').forEach(el=>{ if(['pes-busca','hr-pessoa','hr-de','hr-ate'].includes(el.id)||el.closest('.hr-filtros')||el.closest('#f-senha')||el.dataset.me!=null||el.dataset.cvPer!=null) return; el.disabled=true; });
     if(!main.querySelector('.iv-leitura')){ main.insertAdjacentHTML('afterbegin','<p class="pz-aviso iv-leitura"><span class="i">!</span><span>Modo leitura. Os dados são mantidos pela equipe LORSO.</span></p>'); } }
   function enfeitar(){
     const main=document.getElementById('main'); if(!main) return;
