@@ -165,7 +165,7 @@ function cvEscolhido(un){ const L=ciclosTodos().filter(c=>c.un===un); if(!L.leng
 const CV_SUB=[['funil','Funil e matrículas'],['cursos','Cursos'],['origens','Origens e campanhas'],['atend','Call center e comercial'],['registros','Registros e importação']];
 function curvaHtml(un){
   const L=ciclosTodos().filter(c=>c.un===un); const c=cvEscolhido(un);
-  if(!c) return `<section class="block"><div class="block-h"><h3>Captação</h3></div><p class="empty">Crie o ciclo de captação desta área no Calendário de captação, abaixo (por exemplo, Vestibular 2027.1), e importe os números do CRM.</p></section>`;
+  if(!c) return `<section class="block"><div class="block-h"><h3>Captação</h3></div>${cvEditaisHtml(un)}<p class="empty">Ou crie o ciclo à mão no Calendário de captação, abaixo (por exemplo, Vestibular 2027.1), e depois importe os números do CRM.</p></section>`;
   const A=cvAnalise(c), sub=CV_SUB.some(x=>x[0]===ui.cvSub)?ui.cvSub:'funil';
   const em=c.cvEm?new Date(c.cvEm):null;
   const topo=`${L.length>1?`<div class="bu-cnt cv-ciclos">${L.map(x=>`<button class="chip${x.id===c.id?' on':''}" data-act="ciclo-cv-ver" data-id="${x.id}" aria-pressed="${x.id===c.id}">${esc(x.nome||'Ciclo sem nome')}${cvSerie(x).length?` · ${cvSerie(x).length}`:''}</button>`).join('')}</div>`:''}
@@ -178,7 +178,8 @@ function curvaHtml(un){
   else if(sub==='origens') corpo=cvSubQuebra(c,A,'o');
   else if(sub==='atend') corpo=cvSubAtend(c);
   else corpo=cvSubRegistros(c,A);
-  return `<section class="block cv"><div class="block-h"><h3>${esc(c.nome||'Ciclo')}</h3><p>${cicloSituacao(c).t}</p></div>${topo}${corpo}</section>`;
+  const pend=cvEditais(un).filter(x=>x.ci);
+  return `<section class="block cv"><div class="block-h"><h3>${esc(c.nome||'Ciclo')}</h3><p>${cicloSituacao(c).t}</p></div>${pend.length?`<div class="cv-eds">${pend.map(({f,ci})=>`<div class="cv-ed"><span><b>Edital ainda sem ciclo: ${esc(f.titulo||'edital')}</b><small>${esc(ci.nome)}: inscrições de ${edFmt(ci.ini)} a ${edFmt(ci.fim)}</small></span><button class="btn sm primary" data-act="ciclo-cv-edital" data-id="${f.id}">Criar o ciclo</button></div>`).join('')}</div>`:''}${topo}${corpo}</section>`;
 }
 
 function cvSubFunil(c,A){
@@ -224,6 +225,12 @@ function cvSubQuebra(c,A,dim){
    <div class="tblw"><table class="tbl cv-ct"><thead><tr><th>${cursos?'Curso':'Origem'}</th><th class="r">Leads</th><th class="r">Inscritos</th><th class="r">Aprovados</th><th class="r">Matriculados</th><th class="r">Aprovado → matrícula</th><th class="r">${Q.rows.some(r=>r.l)?'Lead':'Inscrito'} → matrícula</th>${cursos?'<th class="r">Vagas</th><th class="r">Ocupação</th><th class="r">Meta</th><th class="r">Da meta</th>':''}<th class="r">Investido</th><th class="r">CPL</th><th class="r">CAC</th></tr></thead><tbody>
     ${Q.rows.map(r=>{ const b=cursos?cvBaseCurso(c.un,r.nome):{}; const bs=Q.rows.some(x=>x.l)?r.l:r.i; return `<tr class="${sel.nome===r.nome?'on':''}"><td><button class="lnk" data-act="ciclo-cv-sel" data-id="${key}" data-v="${esc(r.nome)}">${esc(r.nome)}</button></td><td class="num">${cvN(r.l)}</td><td class="num">${cvN(r.i)}</td><td class="num">${cvN(r.a)}</td><td class="num">${cvN(r.m)}</td><td class="num">${r.a?cvP(r.m/r.a):'—'}</td><td class="num">${bs?cvP((r.m||0)/bs):'—'}</td>${cursos?`<td class="num">${cvN(b.vagas)}</td><td class="num${b.vagas&&r.m!=null&&r.m/b.vagas<0.5?' cv-baixo':''}">${b.vagas&&r.m!=null?cvP(r.m/b.vagas):'—'}</td><td class="num">${cvN(b.meta)}</td><td class="num">${b.meta&&r.m!=null?cvP(r.m/b.meta):'—'}</td>`:''}<td class="num">${r.v?brl(r.v):'—'}</td><td class="num">${r.v&&r.l?brl(r.v/r.l):'—'}</td><td class="num">${r.v&&r.m?brl(r.v/r.m):'—'}</td></tr>`; }).join('')}
    </tbody></table></div>${cursos?'<p class="muted cv-nota">Vagas e meta vêm da tabela de cursos da área. A ocupação em vermelho está abaixo de 50%.</p>':''}`; }
+
+/* editais lidos na Base que ainda podem virar ciclo desta área */
+function cvEditais(un){ if(typeof editalDe!=='function') return []; return (cur.fontes||[]).map(f=>{ let e=null; try{ e=editalDe(f); }catch(x){} return e&&(!un||e.un===un)?{f,e,ci:edCiclo(e)}:null; }).filter(Boolean); }
+function cvEditaisHtml(un){ const L=cvEditais(un), nm=(UNS.find(u=>u.id===un)||{}).nome||'';
+  if(!L.length) return `<p class="muted cv-nota">Nenhum edital de ${esc(nm)} foi lido na Base de conhecimento. Suba o edital em Base de conhecimento › Fontes e ele cria o ciclo com as datas.</p>`;
+  return `<div class="cv-eds">${L.map(({f,e,ci})=>`<div class="cv-ed"><span><b>${esc(f.titulo||'Edital')}</b><small>${ci?`${esc(ci.nome)}: inscrições de ${edFmt(ci.ini)} a ${edFmt(ci.fim)}${ci.aulas?` · aulas em ${edFmt(ci.aulas)}`:''}`:e.per?'o ciclo deste edital já existe':'o edital não traz o período de inscrições'}</small></span>${ci?`<button class="btn sm primary" data-act="ciclo-cv-edital" data-id="${f.id}">Criar o ciclo</button>`:''}</div>`).join('')}</div>`; }
 
 /* ---------- call center e comercial ---------- */
 const cvH=h=>h==null?'—':h<1?`${Math.round(h*60)} min`:h<48?`${String(Math.round(h*10)/10).replace('.',',')} h`:`${String(Math.round(h/24*10)/10).replace('.',',')} dias`;
@@ -433,7 +440,7 @@ const cvAreas=()=>UNS.map(cvArea).filter(x=>x.c||x.meta);
 
 function captacaoGeralHtml(){
   const T=cvAreas(), L=T.filter(x=>x.c), sem=T.filter(x=>!x.c);
-  if(!L.length) return `<p class="empty">Nenhuma área com ciclo de captação ou meta ainda. Abra a aba de uma área, crie o ciclo (por exemplo, Vestibular 2027.1) e importe os números do CRM.</p>`;
+  if(!L.length){ const E=cvEditais(null).filter(x=>x.ci); return `<p class="empty">Nenhuma área com ciclo de captação ainda.${E.length?' Estes editais lidos na Base já podem virar ciclo:':' Abra a aba de uma área, crie o ciclo (por exemplo, Vestibular 2027.1) e importe os números do CRM.'}</p>${E.length?`<div class="cv-eds">${E.map(({f,e,ci})=>`<div class="cv-ed"><span><b>${esc(f.titulo||'Edital')}</b><small>${esc(edUnNome(e.un))} · ${esc(ci.nome)}: inscrições de ${edFmt(ci.ini)} a ${edFmt(ci.fim)}</small></span><button class="btn sm primary" data-act="ciclo-cv-edital" data-id="${f.id}">Criar o ciclo</button></div>`).join('')}</div>`:''}`; }
   const bar=x=>{ if(!x.meta) return ''; const top=Math.max(x.meta,x.proj||0,x.m||0)*1.08, w=v=>(Math.min(v,top)/top*100).toFixed(1);
     return `<div class="cv-meta" aria-hidden="true"><i class="ok" style="width:${w(x.m||0)}%"></i>${x.proj!=null?`<i class="pj" style="left:${w(x.proj)}%"></i>`:''}<i class="alvo" style="left:${w(x.meta)}%"></i></div>`; };
   const cards=L.map(x=>{ const A=x.A||{}; return `<article class="cv-card">
@@ -479,6 +486,10 @@ if(typeof cicloClick==='function'){ const _cc2=cicloClick; cicloClick=function(a
   if(act==='ciclo-cv-tab'){ ui.cvTab=d.v; ui.view='captacao'; render(); window.scrollTo({top:0}); return true; }
   if(act==='ciclo-cv-ir'){ ui.cvTab=d.v; ui.view='captacao'; render(); window.scrollTo({top:0}); return true; }
   if(act==='ciclo-cv-exp'){ cvExportar(); return true; }
+  if(act==='ciclo-cv-edital'){ const f=(cur.fontes||[]).find(x=>x.id===d.id); const e=f&&editalDe(f), ci=e&&edCiclo(e); if(!ci) return true;
+    const L=ciclosTodos(); L.push({id:uid(),un:e.un,nome:ci.nome,camp_ini:'',insc_ini:ci.ini,mat_ini:'',camp_fim:ci.fim,aulas:ci.aulas||''}); ciclosSalvar(L);
+    const cp=typeof edCap==='function'?edCap(e):null; let n=0; if(cp){ cp.linhas.forEach(l=>{ if(l.atual==null){ cur.campos[`base.cap.${l.k}.vagas`]=String(l.v); n++; } }); if(cp.ref) cur.campos[`${e.un}.ciclo_ref`]=cp.ref; touch(false); }
+    render(); toast(`Ciclo "${ci.nome}" criado${n?` e ${pl(n,'linha de vagas preenchida','linhas de vagas preenchidas')} na capacidade`:''}`); return true; }
   return _cc2(act,d); }; }
 
 /* aviso no menu: áreas longe da meta */
