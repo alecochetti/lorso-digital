@@ -946,3 +946,7 @@ a.btn,a.btn:visited{color:var(--fg);text-decoration:none}
 .cv-st-c.pior{border-color:var(--l-ciano);background:color-mix(in srgb,var(--l-ciano) 8%,var(--surface))}
 .cv-badge{align-self:flex-start;margin-bottom:2px;font-style:normal;font-size:10.5px;font-weight:800;color:#0E7490;border:1px solid var(--l-ciano);border-radius:999px;padding:1px 7px;background:var(--surface)}
 :root:not([data-theme="light"]) .cv-badge{color:#7DD3FC}
+/* calendário de captação: o × e o nome do ciclo ficam à vista ao rolar a tabela para o lado */
+.tciclos th:nth-child(1),.tciclos td:nth-child(1){position:sticky;left:0;z-index:2;background:var(--surface)}
+.tciclos th:nth-child(2),.tciclos td:nth-child(2){position:sticky;left:36px;z-index:2;background:var(--surface);box-shadow:6px 0 8px -6px rgba(16,24,40,.18)}
+.tciclos td:nth-child(1){width:36px;min-width:36px}
