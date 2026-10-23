@@ -54,7 +54,7 @@ function cvGrafico(c,A,o){
   const xs=[...series,...antS].flatMap(x=>x.p.map(p=>p[0])); if(A.fim!=null) xs.push(A.fim);
   const x0=Math.min(0,...xs), x1=Math.max(x0+7,...xs);
   const ys=[...series,...antS].flatMap(x=>x.p.map(p=>p[1])); (o.refs?[A.meta,A.vagas]:[]).concat(o.proj?[A.proj]:[]).forEach(v=>v&&ys.push(v));
-  const yTop=(v=>{ const p=Math.pow(10,Math.floor(Math.log10(v||1))); return Math.ceil((v||1)/p*2)/2*p; })(Math.max(1,...ys)*1.05);
+  const yMx=Math.max(4,...ys)*1.04, st0=yMx/4, pw10=Math.pow(10,Math.floor(Math.log10(st0))), stp=[1,2,2.5,5,10].map(f=>f*pw10).find(f=>f>=st0), yTop=stp*4;
   const X=t=>ml+(t-x0)/(x1-x0)*pw, Y=v=>mt+ph-(v/yTop)*ph;
   const path=p=>p.map((q,j)=>`${j?'L':'M'}${X(q[0]).toFixed(1)},${Y(q[1]).toFixed(1)}`).join('');
   const ticks=[0,.25,.5,.75,1].map(f=>f*yTop);
@@ -104,68 +104,134 @@ function cvDiario(c,A){ const s=A.s; if(s.length<2) return '<p class="muted" sty
     <span class="tr" role="cell"><i style="width:${(Math.max(0,r.i||0)/mx*100).toFixed(1)}%;background:var(--cv-i)"></i><em>${r.i!=null?'+'+cvN(r.i):'—'} inscritos</em></span>
     <span class="tr" role="cell"><i style="width:${(Math.max(0,r.m||0)/mx*100).toFixed(1)}%;background:var(--cv-m)"></i><em>${r.m!=null?'+'+cvN(r.m):'—'} matriculados</em></span></div>`).join('')}</div>`; }
 
-/* ---------- funil da área e de cada curso ---------- */
-function cvCursos(c){ const s=cvSerie(c); let p=null; for(let j=s.length-1;j>=0;j--) if(s[j].c&&Object.keys(s[j].c).length){ p=s[j]; break; } if(!p) return null;
-  const base=cur.cursos.filter(x=>x.un===c.un&&x.status!=='Descontinuado'), nb=x=>cvNorm(x).replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
-  const rows=Object.entries(p.c).map(([nome,q])=>{ const n=nb(nome); const bs=base.filter(b=>{ const k=nb(b.nome); return k&&(k===n||n.startsWith(k+' ')||k.startsWith(n+' ')); });
-    const vagas=bs.reduce((a,b)=>a+(num(b.vagas)||0),0)||null, meta=bs.reduce((a,b)=>a+(num(b.meta)||0),0)||null;
-    return {nome,l:num(q.l),i:num(q.i),a:num(q.a),m:num(q.m),v:num(q.v),vagas,meta}; }).sort((a,b)=>(b.i||0)-(a.i||0));
-  return {d:p.d,rows}; }
+/* ---------- período: vale para todos os números do CRM ---------- */
+const CV_PER=[['ciclo','Ciclo todo'],['dia','Último dia'],['7','Últimos 7 dias'],['30','Últimos 30 dias'],['mes','Mês atual'],['mesant','Mês anterior']];
+const cvISO=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const cvSoma=(iso,n)=>{ const d=cDt(iso); d.setDate(d.getDate()+n); return cvISO(d); };
+function cvPer(c){ const s=cvSerie(c), last=s.length?s[s.length-1].d:cvHojeISO(), z=cvZero(c), ini=z?cvISO(z):(s[0]&&s[0].d)||last;
+  const k=ui.cvPer||'ciclo'; let de=ini, ate=last;
+  if(k==='dia') de=last; else if(k==='7') de=cvSoma(last,-6); else if(k==='30') de=cvSoma(last,-29);
+  else if(k==='mes') de=last.slice(0,8)+'01'; else if(k==='mesant'){ const d=cDt(last.slice(0,8)+'01'); d.setDate(0); ate=cvISO(d); de=ate.slice(0,8)+'01'; }
+  else if(k==='livre'){ de=ui.cvDe||ini; ate=ui.cvAte||last; }
+  if(de<ini) de=ini; if(ate<de) ate=de; return {k,de,ate,ini,last}; }
+/* valor acumulado no fim do dia (degrau: o último registro até a data) */
+function cvAte(c,k,iso,dim,nome){ const s=cvSerie(c); let v=null, achou=false;
+  for(const p of s){ if(p.d>iso) break; const src=dim?(p[dim]&&p[dim][nome]):p; if(dim&&!p[dim]) continue; achou=true; v=src?num(src[k]):0; }
+  return achou?v:null; }
+function cvJan(c,k,de,ate,dim,nome){ const fim=cvAte(c,k,ate,dim,nome); if(fim==null) return null; const ini=cvAte(c,k,cvSoma(de,-1),dim,nome);
+  if(ini==null){ const z=cvZero(c); const s=cvSerie(c).filter(p=>!dim||p[dim]); if(s.length&&s[0].d>=de) return fim; if(z&&cvISO(z)>=de) return fim; return dim?null:fim; }
+  return fim-(ini||0); }
+/* comparação: período anterior do mesmo tamanho, ou o mesmo trecho do ciclo anterior */
+function cvComp(c,P){ const n=Math.round((cDt(P.ate)-cDt(P.de))/864e5)+1, de2=cvSoma(P.de,-n), ate2=cvSoma(P.de,-1);
+  if(de2>=P.ini) return {c,de:de2,ate:ate2,lab:`${cvDia(de2)} a ${cvDia(ate2)}`};
+  const ant=cvAnterior(c); if(!ant) return null; const z=cvZero(c), za=cvZero(ant); if(!z||!za) return null;
+  const off=iso=>Math.round((cDt(iso)-z)/864e5), em=o=>cvISO(new Date(za.getTime()+o*864e5));
+  return {c:ant,de:em(off(P.de)),ate:em(off(P.ate)),lab:`o mesmo trecho de ${ant.nome||'ciclo anterior'}`}; }
+function cvDelta(v,ant,lab,inv,pp){ if(v==null||ant==null) return ''; if(pp){ const d=(v-ant)*100; return `<em class="${(inv?-d:d)>=0?'up':'dn'}">${d>=0?'▲':'▼'} ${d>=0?'+':''}${d.toFixed(1).replace('.',',')} p.p.</em> vs ${lab}`; }
+  if(!ant) return v?`<em class="up">▲ novo</em> vs ${lab} (0)`:''; const d=v/ant-1; return `<em class="${(inv?-d:d)>=0?'up':'dn'}">${d>=0?'▲':'▼'} ${d>=0?'+':''}${(d*100).toFixed(1).replace('.',',')}%</em> vs ${lab} (${cvN(ant)})`; }
+function cvPerHtml(){ const k=ui.cvPer||'ciclo'; const c0=UNS.map(u=>cvEscolhido(u.id)).find(c=>c&&cvSerie(c).length); const P=c0?cvPer(c0):null;
+  return `<div class="cv-per"><div class="cv-per-d"><label>De<input type="date" data-cv-per="de" value="${P?P.de:''}"></label><label>Até<input type="date" data-cv-per="ate" value="${P?P.ate:''}"></label></div>
+   <div class="cv-per-b">${CV_PER.map(([v,l])=>`<button class="chip${k===v?' on':''}" data-act="ciclo-cv-per" data-v="${v}" aria-pressed="${k===v}">${l}</button>`).join('')}</div>
+   <p class="muted">${P?`Período: ${cvDia(P.de)} a ${cvDia(P.ate)}. Vale para os números do período em todas as áreas; a meta e a projeção são sempre do ciclo inteiro.`:'Importe os números do CRM para escolher o período.'}</p></div>`; }
+
+/* ---------- funil vertical, com a maior perda em destaque ---------- */
 function cvFunil(x,inv){ const E=[['l','Leads','CPL'],['i','Inscritos','por inscrito'],['a','Aprovados','por aprovado'],['m','Matriculados','CAC']].filter(([k])=>x[k]!=null);
-  if(!E.length) return ''; const top=Math.max(1,...E.map(([k])=>x[k]||0)); const cor={l:'var(--cv-l)',i:'var(--cv-i)',a:'var(--cv-a)',m:'var(--cv-m)'};
-  return `<div class="cv-funil" role="table" aria-label="Funil">${E.map(([k,l,cl],j)=>{ const v=x[k]||0, ant=j?x[E[j-1][0]]:null; return `<div class="cv-fe" role="row">
-    <span class="nm" role="cell">${l}</span>
-    <span class="tr" role="cell"><i style="width:${Math.max(1,v/top*100).toFixed(1)}%;background:${cor[k]}"></i></span>
-    <span class="v" role="cell"><b>${cvN(x[k])}</b>${ant?` <small>${cvP(v/ant)} de ${E[j-1][1].toLowerCase()}</small>`:''}${inv&&v?` <small class="cu">${cl} ${brl(inv/v)}</small>`:''}</span></div>`; }).join('')}</div>`; }
-function cvFunilHtml(c,A){ const C=cvCursos(c); ui.cvCurso=ui.cvCurso||{}; const sel=C&&C.rows.find(r=>r.nome===ui.cvCurso[c.id])||null;
-  const x=sel||{l:A.l,i:A.i,a:A.a,m:A.m}, inv=sel?sel.v:A.inv;
-  if(x.i==null&&x.m==null&&x.l==null) return '';
-  return `<div class="cv-fb"><div class="cv-fh"><b>Funil ${sel?`de ${esc(sel.nome)}`:`de ${esc((UNS.find(u=>u.id===c.un)||{}).nome||'')}`}</b>${sel?`<button class="btn sm ghost" data-act="ciclo-cv-curso" data-id="${c.id}" data-v="">Ver a área toda</button>`:''}</div>
-   ${cvFunil(x,inv)}
-   ${C?`<div class="tblw"><table class="tbl cv-ct"><thead><tr><th>Curso <small class="muted">· ${cvDia(C.d)}</small></th><th class="r">Leads</th><th class="r">Inscritos</th><th class="r">Aprovados</th><th class="r">Matriculados</th><th class="r">Aprovado → matrícula</th><th class="r">Inscrito → matrícula</th><th class="r">Vagas</th><th class="r">Ocupação</th><th class="r">Meta</th><th class="r">Da meta</th><th class="r">CAC</th></tr></thead><tbody>
-    ${C.rows.map(r=>`<tr class="${sel&&sel.nome===r.nome?'on':''}"><td><button class="lnk" data-act="ciclo-cv-curso" data-id="${c.id}" data-v="${esc(r.nome)}">${esc(r.nome)}</button></td><td class="num">${cvN(r.l)}</td><td class="num">${cvN(r.i)}</td><td class="num">${cvN(r.a)}</td><td class="num">${cvN(r.m)}</td><td class="num">${r.a?cvP(r.m/r.a):'—'}</td><td class="num">${r.i?cvP(r.m/r.i):'—'}</td><td class="num">${cvN(r.vagas)}</td><td class="num${r.vagas&&r.m!=null&&r.m/r.vagas<0.5?' cv-baixo':''}">${r.vagas&&r.m!=null?cvP(r.m/r.vagas):'—'}</td><td class="num">${cvN(r.meta)}</td><td class="num">${r.meta&&r.m!=null?cvP(r.m/r.meta):'—'}</td><td class="num">${r.v&&r.m?brl(r.v/r.m):'—'}</td></tr>`).join('')}
-   </tbody></table></div><p class="muted cv-nota">Vagas e meta vêm da tabela de cursos da área. Clique num curso para ver o funil dele.</p>`:`<p class="muted cv-nota">Para ver o funil de cada curso, a planilha do CRM precisa de uma coluna Curso.</p>`}
-  </div>`; }
+  if(!E.length) return '<p class="muted">Sem números neste período.</p>'; const top=Math.max(1,...E.map(([k])=>x[k]||0));
+  const taxas=E.slice(1).map(([k],j)=>{ const a=x[E[j][0]]; return a?(x[k]||0)/a:null; }); const pior=taxas.reduce((b,t,j)=>t!=null&&(b<0||t<taxas[b])?j:b,-1);
+  return `<div class="cv-vf">${E.map(([k,l,cl],j)=>`${j?`<p class="cv-pass${j-1===pior?' pior':''}">↓ ${taxas[j-1]!=null?(taxas[j-1]*100).toFixed(1).replace('.',',')+'%':'—'} passam</p>`:''}
+    <div class="cv-vf-r"><span>${l}</span><b>${cvN(x[k])}</b></div><div class="cv-vf-b"><i style="width:${Math.max(1.5,(x[k]||0)/top*100).toFixed(1)}%"></i></div>${inv&&x[k]?`<small class="cv-vf-c">${cl} ${brl(inv/x[k])}</small>`:''}`).join('')}</div>`; }
+
+function cvTempoHtml(c){ const s=cvSerie(c); let t=null; for(let j=s.length-1;j>=0;j--) if(s[j].t){ t=s[j].t; break; }
+  if(!t) return `<p class="muted">Aparece quando a planilha do CRM traz a data de inscrição e a data de matrícula de cada aluno.</p>`; const mx=Math.max(1,...t.b);
+  return `<p class="muted cv-sub">Matrículas por dias entre a inscrição e a matrícula. Mediana: ${String(t.med).replace('.',',')} dias, em ${cvN(t.n)} matrículas.</p>
+   <div class="cv-tm">${CV_FX.map(([a,b,l],j)=>`<span>${l}</span><div><i class="${a>30?'tarde':''}" style="width:${(t.b[j]/mx*100).toFixed(1)}%"></i></div><b>${t.b[j]}</b>`).join('')}</div>`; }
+
+/* quebra por curso ou origem, no período quando há dados nas duas pontas */
+function cvQuebra(c,dim,P){ const s=cvSerie(c).filter(p=>p[dim]); if(!s.length) return null; const nomes=[...new Set(s.flatMap(p=>Object.keys(p[dim])))];
+  let acum=false; const rows=nomes.map(nm=>{ const o={nome:nm}; ['l','i','a','m','v'].forEach(k=>{ let v=cvJan(c,k,P.de,P.ate,dim,nm); if(v==null){ v=cvAte(c,k,P.ate,dim,nm); if(v!=null) acum=true; } o[k]=v; }); return o; })
+    .filter(r=>['l','i','a','m'].some(k=>r[k])).sort((a,b)=>(b.m||0)-(a.m||0)||(b.i||0)-(a.i||0));
+  const ult=s.filter(p=>p.d<=P.ate).slice(-1)[0]||s[s.length-1]; return {rows,acum,d:ult.d}; }
+const cvNb=x=>cvNorm(x).replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+function cvBaseCurso(un,nome){ const n=cvNb(nome); const bs=cur.cursos.filter(b=>b.un===un&&b.status!=='Descontinuado'&&(k=>k&&(k===n||n.startsWith(k+' ')||k.startsWith(n+' ')))(cvNb(b.nome)));
+  return {vagas:bs.reduce((a,b)=>a+(num(b.vagas)||0),0)||null,meta:bs.reduce((a,b)=>a+(num(b.meta)||0),0)||null}; }
+
+function cvKpi(v,l,delta,sub,cls){ return `<div class="cv-kc ${cls||''}"><span>${l}</span><b>${v}</b>${delta?`<small class="dl">${delta}</small>`:''}${sub?`<small>${sub}</small>`:''}</div>`; }
 
 /* ---------- bloco da UN ---------- */
 function cvEscolhido(un){ const L=ciclosTodos().filter(c=>c.un===un); if(!L.length) return null; ui.cvCiclo=ui.cvCiclo||{};
   const e=L.find(c=>c.id===ui.cvCiclo[un]); if(e) return e;
   return L.find(c=>cicloSituacao(c).k==='agora')||L.filter(c=>cvSerie(c).length).sort((a,b)=>String(cvSerie(b).slice(-1)[0].d).localeCompare(cvSerie(a).slice(-1)[0].d))[0]||L[L.length-1]; }
 
+const CV_SUB=[['funil','Funil e matrículas'],['cursos','Cursos'],['origens','Origens e campanhas'],['registros','Registros e importação']];
 function curvaHtml(un){
   const L=ciclosTodos().filter(c=>c.un===un); const c=cvEscolhido(un);
-  const cab=`<div class="block-h"><h3>Curva de captação</h3><p>Inscritos, aprovados e matriculados ao longo do ciclo, contra o ciclo anterior. Os números vêm do CRM, por dia ou por semana.</p></div>`;
-  if(!c) return `<section class="block">${cab}<p class="empty">Crie o ciclo de captação desta área no Calendário de captação (por exemplo, Vestibular 2027.1) para registrar a curva.</p></section>`;
-  const A=cvAnalise(c), modo=(ui.cvModo||'acum'), todos=ui.cvTodos===c.id;
-  const kp=(v,l,s,cls)=>`<div class="stat ${cls||''}"><b>${v}</b><span>${l}</span>${s?`<small>${s}</small>`:''}</div>`;
-  const dd=v=>v!=null&&v!==0?` · ${v>0?'+':''}${cvN(v)} desde ${cvDia(A.prev.d)}`:'';
-  const vsAnt=A.comp&&A.m!=null?A.m/A.comp.m-1:null;
-  const lin=A.s.slice().reverse(), vis=todos?lin:lin.slice(0,8);
-  return `<section class="block cv">${cab}
-   ${L.length>1?`<div class="bu-cnt cv-ciclos">${L.map(x=>`<button class="chip${x.id===c.id?' on':''}" data-act="ciclo-cv-ver" data-id="${x.id}" aria-pressed="${x.id===c.id}">${esc(x.nome||'Ciclo sem nome')}${cvSerie(x).length?` · ${cvSerie(x).length}`:''}</button>`).join('')}</div>`:''}
-   ${A.last?`<p class="cv-hoje"><b>${esc(c.nome||'Ciclo')}</b> · último registro ${cvDia(A.last.d)}${A.prev?`: ${[A.di!=null?`${A.di>=0?'+':''}${cvN(A.di)} inscritos`:'',A.da!=null?`${A.da>=0?'+':''}${cvN(A.da)} aprovados`:'',A.dm!=null?`${A.dm>=0?'+':''}${cvN(A.dm)} matriculados`:''].filter(Boolean).join(', ')} desde ${cvDia(A.prev.d)}`:''}${c.cvFonte?` <span class="muted">· ${esc(c.cvFonte)}</span>`:''}</p>
-   <div class="stats cv-k">
-    ${kp(cvN(A.i),'inscritos',A.comp&&A.comp.i!=null?`${esc(A.comp.nome)} tinha ${cvN(A.comp.i)} neste ponto`:dd(A.di).replace(/^ · /,''))}
-    ${kp(cvN(A.a),'aprovados',A.ia!=null?`${cvP(A.ia)} dos inscritos`:'')}
-    ${kp(cvN(A.m),'matriculados',[A.am!=null?`${cvP(A.am)} dos aprovados`:'',A.im!=null?`${cvP(A.im)} dos inscritos`:''].filter(Boolean).join(' · '),A.am!=null&&A.am<0.5?'warn':'')}
-    ${kp(A.cac!=null?brl(A.cac):'—','CAC real até agora',A.inv?`${brl(A.inv)} investidos ÷ matriculados${A.cpi!=null?` · ${brl(A.cpi)} por inscrito`:''}`:'informe o investido até a data ou a verba do ciclo')}
-    ${kp(A.proj!=null?cvN(A.proj):'—','projeção de matriculados',A.proj!=null?`${A.como}${A.meta?` · ${cvP(A.proj/A.meta)} da meta`:''}${A.cacProj!=null?` · CAC projetado ${brl(A.cacProj)}`:''}`:A.fim==null?'informe quando a campanha encerra':'precisa de dois registros',A.proj!=null&&A.meta&&A.proj<A.meta*0.9?'bad':'')}
+  if(!c) return `<section class="block"><div class="block-h"><h3>Captação</h3></div><p class="empty">Crie o ciclo de captação desta área no Calendário de captação, abaixo (por exemplo, Vestibular 2027.1), e importe os números do CRM.</p></section>`;
+  const A=cvAnalise(c), sub=CV_SUB.some(x=>x[0]===ui.cvSub)?ui.cvSub:'funil';
+  const em=c.cvEm?new Date(c.cvEm):null;
+  const topo=`${L.length>1?`<div class="bu-cnt cv-ciclos">${L.map(x=>`<button class="chip${x.id===c.id?' on':''}" data-act="ciclo-cv-ver" data-id="${x.id}" aria-pressed="${x.id===c.id}">${esc(x.nome||'Ciclo sem nome')}${cvSerie(x).length?` · ${cvSerie(x).length}`:''}</button>`).join('')}</div>`:''}
+   <p class="cv-atual">${A.last?`${em?`Atualizado em <b>${em.toLocaleDateString('pt-BR')} às ${em.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</b> · `:''}dados até <b>${cDt(A.last.d).toLocaleDateString('pt-BR')}</b>${c.cvFonte?` · da planilha "${esc(c.cvFonte)}"`:''}`:'Sem registros ainda.'}</p>
+   <nav class="cv-sub-t" aria-label="Partes da captação">${CV_SUB.map(([k,l])=>`<button class="${sub===k?'on':''}" data-act="ciclo-cv-sub" data-v="${k}" ${sub===k?'aria-current="page"':''}>${l}</button>`).join('')}</nav>`;
+  let corpo='';
+  if(!A.last&&sub!=='registros') corpo=`<p class="empty">${esc(c.nome||'Este ciclo')} ainda não tem registros. Em <button class="lnk" data-act="ciclo-cv-sub" data-v="registros">Registros e importação</button>, importe a planilha do CRM ou registre os números de hoje.</p>`;
+  else if(sub==='funil') corpo=cvSubFunil(c,A);
+  else if(sub==='cursos') corpo=cvSubQuebra(c,A,'c');
+  else if(sub==='origens') corpo=cvSubQuebra(c,A,'o');
+  else corpo=cvSubRegistros(c,A);
+  return `<section class="block cv"><div class="block-h"><h3>${esc(c.nome||'Ciclo')}</h3><p>${cicloSituacao(c).t}</p></div>${topo}${corpo}</section>`;
+}
+
+function cvSubFunil(c,A){
+  const P=cvPer(c), C=cvComp(c,P), J=k=>cvJan(c,k,P.de,P.ate), JC=k=>C?cvJan(C.c,k,C.de,C.ate):null;
+  const x={l:J('l'),i:J('i'),a:J('a'),m:J('m')}, inv=J('v')!=null&&J('v')>0?J('v'):null, xc={l:JC('l'),i:JC('i'),a:JC('a'),m:JC('m')}, invC=JC('v');
+  const lab=C?C.lab:'', base=x.l!=null?'l':'i', conv=x[base]&&x.m!=null?x.m/x[base]:null, convC=xc[base]&&xc.m!=null?xc.m/xc[base]:null;
+  const vsAnt=A.comp&&A.m!=null?A.m/A.comp.m-1:null, modo=ui.cvModo||'acum';
+  return `<h4 class="cv-h">Ciclo até agora</h4>
+   <div class="cv-ks">
+    ${cvKpi(cvN(A.m),'Matriculados',A.meta?`<em class="${A.m/A.meta>=0.5?'up':''}">${cvP(A.m/A.meta)} da meta</em> de ${cvN(A.meta)}`:'',A.am!=null?`${cvP(A.am)} dos aprovados · ${cvP(A.im)} dos inscritos`:'')}
+    ${cvKpi(A.proj!=null?cvN(A.proj):'—','Projeção de fechamento',A.proj!=null&&A.meta?`<em class="${A.proj>=A.meta*0.95?'up':'dn'}">${cvP(A.proj/A.meta)} da meta</em>`:'',A.proj!=null?A.como:A.fim==null?'informe quando a campanha encerra':'precisa de dois registros')}
+    ${cvKpi(cvN(A.i),'Inscritos',A.comp&&A.comp.i?cvDelta(A.i,A.comp.i,`${esc(A.comp.nome)} no mesmo ponto`):'',A.ia!=null?`${cvP(A.ia)} viram aprovados`:'')}
+    ${cvKpi(A.cac!=null?brl(A.cac):'—','CAC real',A.cacProj!=null?`projetado ${brl(A.cacProj)}`:'',A.inv?`${brl(A.inv)} investidos${A.cpl!=null?` · CPL ${brl(A.cpl)}`:''}`:'informe o investido em Registros')}
    </div>
    ${vsAnt!=null?`<p class="pz-aviso${vsAnt<0?'':' ok'}"><span class="i">${vsAnt<0?'!':'✓'}</span><span>No mesmo ponto de "${esc(A.comp.nome)}" eram ${cvN(A.comp.m)} matriculados. Hoje são ${cvN(A.m)}, ${vsAnt<0?`${cvP(-vsAnt)} abaixo`:`${cvP(vsAnt)} acima`}.</span></p>`:''}
    ${A.am!=null&&A.a>=10&&A.am<0.5?`<p class="pz-aviso"><span class="i">!</span><span>${cvN(A.a-A.m)} aprovados ainda não se matricularam (${cvP(1-A.am)}). É dinheiro na mesa: vale uma ação dedicada a eles antes de investir em mais inscritos.</span></p>`:''}
-   ${cvFunilHtml(c,A)}
-   <div class="cv-modo"><div class="seg" role="group"><button class="${modo==='acum'?'on':''}" data-act="ciclo-cv-modo" data-v="acum" aria-pressed="${modo==='acum'}">Acumulado</button><button class="${modo==='dia'?'on':''}" data-act="ciclo-cv-modo" data-v="dia" aria-pressed="${modo==='dia'}">Por registro</button></div></div>
-   ${modo==='dia'?cvDiario(c,A):`<div class="cv-gs">${cvGrafico(c,A,{keys:['a','m'],ant:['m'],refs:1,proj:1,tit:'Aprovados e matriculados, contra a meta e as vagas'})}${cvGrafico(c,A,{keys:['i'],ant:['i'],h:240,tit:'Inscritos'})}</div>`}`:`<p class="empty">${esc(c.nome||'Este ciclo')} ainda não tem registros. Importe a planilha do CRM ou registre os números de hoje.</p>`}
-   <div class="cv-acoes">
-    <label class="btn sm primary cv-up">Importar do CRM<input type="file" data-cv-imp="${c.id}" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden></label>
-    <button class="btn sm" data-act="ciclo-cv-add" data-id="${c.id}">+ Registrar os números de hoje</button>
-    <span class="muted cv-dica">A planilha pode ser o total por dia (data, inscritos, aprovados, matriculados) ou a lista de inscritos com status. A lista entra como o retrato de hoje.</span>
+   <h4 class="cv-h">No período</h4><p class="muted cv-sub">${cvDia(P.de)} a ${cvDia(P.ate)}, pela data de cada registro do CRM.${C?` Abaixo de cada número, a comparação com ${esc(lab)}.`:''}</p>
+   <div class="cv-ks">
+    ${x.l!=null?cvKpi(cvN(x.l),'Leads',cvDelta(x.l,xc.l,esc(lab)),inv&&x.l?`CPL ${brl(inv/x.l)}`:''):''}
+    ${cvKpi(cvN(x.i),'Inscritos',cvDelta(x.i,xc.i,esc(lab)),x.l?`${cvP(x.i/x.l)} dos leads`:'')}
+    ${x.a!=null?cvKpi(cvN(x.a),'Aprovados',cvDelta(x.a,xc.a,esc(lab)),x.i?`${cvP(x.a/x.i)} dos inscritos`:''):''}
+    ${cvKpi(cvN(x.m),'Matriculados',cvDelta(x.m,xc.m,esc(lab)),inv&&x.m?`CAC ${brl(inv/x.m)}`:'')}
+    ${cvKpi(conv!=null?(conv*100).toFixed(1).replace('.',',')+'%':'—',`${base==='l'?'Lead':'Inscrito'} → matrícula`,cvDelta(conv,convC,esc(lab),0,1),'matriculados ÷ '+(base==='l'?'leads':'inscritos'))}
+    ${inv?cvKpi(brl(inv),'Investido',cvDelta(inv,invC,esc(lab),1),'verba de mídia no período'):''}
    </div>
+   <div class="cv-dois">
+    <div class="block cv-in"><h4>Funil do período</h4><p class="muted cv-sub">Em vermelho, a passagem com a maior perda.</p>${cvFunil(x,inv)}</div>
+    <div class="block cv-in"><h4>Tempo da inscrição até a matrícula</h4>${cvTempoHtml(c)}</div>
+   </div>
+   <div class="cv-modo"><h4 class="cv-h" style="margin:0">Curva do ciclo</h4><div class="seg" role="group"><button class="${modo==='acum'?'on':''}" data-act="ciclo-cv-modo" data-v="acum" aria-pressed="${modo==='acum'}">Acumulado</button><button class="${modo==='dia'?'on':''}" data-act="ciclo-cv-modo" data-v="dia" aria-pressed="${modo==='dia'}">Por registro</button></div></div>
+   ${modo==='dia'?cvDiario(c,A):`<div class="cv-gs">${cvGrafico(c,A,{keys:['a','m'],ant:['m'],refs:1,proj:1,tit:'Aprovados e matriculados, contra a meta e as vagas'})}${cvGrafico(c,A,{keys:['i'],ant:['i'],h:240,tit:'Inscritos'})}</div>`}`; }
+
+function cvSubQuebra(c,A,dim){
+  const P=cvPer(c), Q=cvQuebra(c,dim,P), cursos=dim==='c', nomeD=cursos?'curso':'origem';
+  if(!Q) return `<p class="empty">Para ver ${cursos?'o funil de cada curso':'leads, matrículas e custo por origem'}, a planilha do CRM precisa de uma coluna ${cursos?'Curso':'Origem (ou Canal, Fonte, UTM)'}.</p>`;
+  ui.cvSel=ui.cvSel||{}; const key=c.id+dim, sel=Q.rows.find(r=>r.nome===ui.cvSel[key])||Q.rows[0];
+  const mxM=Math.max(1,...Q.rows.map(r=>r.m||0)), totM=Q.rows.reduce((a,r)=>a+(r.m||0),0);
+  return `<p class="muted cv-sub">${Q.acum?`Números acumulados até ${cvDia(Q.d)}: a planilha trouxe ${nomeD} só no último retrato, então o período não se aplica aqui.`:`${cvDia(P.de)} a ${cvDia(P.ate)}.`} Clique num${cursos?'':'a'} ${nomeD} para ver o funil.</p>
+   <div class="cv-dois">
+    <div class="block cv-in"><h4>Funil de ${esc(sel.nome)}</h4>${cvFunil(sel,sel.v)}</div>
+    <div class="block cv-in"><h4>Matriculados por ${nomeD}</h4><div class="cv-tm cv-q">${Q.rows.slice(0,12).map(r=>`<span title="${esc(r.nome)}">${esc(r.nome)}</span><div><i style="width:${((r.m||0)/mxM*100).toFixed(1)}%;background:var(--cv-m)"></i></div><b>${cvN(r.m)}${totM?` <small>${cvP((r.m||0)/totM)}</small>`:''}</b>`).join('')}</div></div>
+   </div>
+   <div class="tblw"><table class="tbl cv-ct"><thead><tr><th>${cursos?'Curso':'Origem'}</th><th class="r">Leads</th><th class="r">Inscritos</th><th class="r">Aprovados</th><th class="r">Matriculados</th><th class="r">Aprovado → matrícula</th><th class="r">${Q.rows.some(r=>r.l)?'Lead':'Inscrito'} → matrícula</th>${cursos?'<th class="r">Vagas</th><th class="r">Ocupação</th><th class="r">Meta</th><th class="r">Da meta</th>':''}<th class="r">Investido</th><th class="r">CPL</th><th class="r">CAC</th></tr></thead><tbody>
+    ${Q.rows.map(r=>{ const b=cursos?cvBaseCurso(c.un,r.nome):{}; const bs=Q.rows.some(x=>x.l)?r.l:r.i; return `<tr class="${sel.nome===r.nome?'on':''}"><td><button class="lnk" data-act="ciclo-cv-sel" data-id="${key}" data-v="${esc(r.nome)}">${esc(r.nome)}</button></td><td class="num">${cvN(r.l)}</td><td class="num">${cvN(r.i)}</td><td class="num">${cvN(r.a)}</td><td class="num">${cvN(r.m)}</td><td class="num">${r.a?cvP(r.m/r.a):'—'}</td><td class="num">${bs?cvP((r.m||0)/bs):'—'}</td>${cursos?`<td class="num">${cvN(b.vagas)}</td><td class="num${b.vagas&&r.m!=null&&r.m/b.vagas<0.5?' cv-baixo':''}">${b.vagas&&r.m!=null?cvP(r.m/b.vagas):'—'}</td><td class="num">${cvN(b.meta)}</td><td class="num">${b.meta&&r.m!=null?cvP(r.m/b.meta):'—'}</td>`:''}<td class="num">${r.v?brl(r.v):'—'}</td><td class="num">${r.v&&r.l?brl(r.v/r.l):'—'}</td><td class="num">${r.v&&r.m?brl(r.v/r.m):'—'}</td></tr>`; }).join('')}
+   </tbody></table></div>${cursos?'<p class="muted cv-nota">Vagas e meta vêm da tabela de cursos da área. A ocupação em vermelho está abaixo de 50%.</p>':''}`; }
+
+function cvSubRegistros(c,A){ const todos=ui.cvTodos===c.id, lin=A.s.slice().reverse(), vis=todos?lin:lin.slice(0,10);
+  return `<div class="cv-acoes">
+    <label class="btn sm primary cv-up">Importar do CRM para ${esc(c.nome||'este ciclo')}<input type="file" data-cv-imp="${c.id}" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden></label>
+    <button class="btn sm" data-act="ciclo-cv-add" data-id="${c.id}">+ Registrar os números de hoje</button></div>
+   <p class="muted cv-nota">A planilha pode ser o total por dia ou semana (data, leads, inscritos, aprovados, matriculados, investimento, e se tiver, curso e origem) ou a lista de inscritos com status, data de inscrição e data de matrícula. Uma data que já existe é substituída pela nova.</p>
    ${A.s.length?`<div class="tblw"><table class="tbl cv-t"><thead><tr><th>Data</th><th class="r">Leads</th><th class="r">Inscritos</th><th class="r">Aprovados</th><th class="r">Matriculados</th><th class="r">Investido até a data</th><th class="r">CAC na data</th><th></th></tr></thead><tbody>
-    ${vis.map(p=>{ const j=A.s.indexOf(p), v=num(p.v)!=null?num(p.v):null, m=num(p.m); return `<tr><td><input type="date" class="dt" data-cvp="${c.id}" data-j="${j}" data-f="d" value="${esc(p.d)}" aria-label="Data"></td>${['l','i','a','m','v'].map(k=>`<td><input class="cnum" data-cvp="${c.id}" data-j="${j}" data-f="${k}" value="${esc(p[k]==null?'':String(p[k]))}" inputmode="decimal" placeholder="${k==='v'?'R$':'0'}" aria-label="${{l:'Leads',i:'Inscritos',a:'Aprovados',m:'Matriculados',v:'Investido até a data'}[k]}"></td>`).join('')}<td class="num">${v&&m?brl(v/m):'—'}</td><td><button class="x" data-act="ciclo-cv-del" data-id="${c.id}" data-j="${j}" aria-label="Apagar o registro de ${cvDia(p.d)}">×</button></td></tr>`; }).join('')}
-   </tbody></table></div>${lin.length>8?`<button class="btn sm ghost" data-act="ciclo-cv-todos" data-id="${c.id}">${todos?'Mostrar só os últimos':`Ver todos os ${lin.length} registros`}</button>`:''}`:''}
-  </section>`;
-}
+    ${vis.map(p=>{ const j=A.s.indexOf(p), v=num(p.v), m=num(p.m); return `<tr><td><input type="date" class="dt" data-cvp="${c.id}" data-j="${j}" data-f="d" value="${esc(p.d)}" aria-label="Data"></td>${['l','i','a','m','v'].map(k=>`<td><input class="cnum" data-cvp="${c.id}" data-j="${j}" data-f="${k}" value="${esc(p[k]==null?'':String(p[k]))}" inputmode="decimal" placeholder="${k==='v'?'R$':'0'}" aria-label="${{l:'Leads',i:'Inscritos',a:'Aprovados',m:'Matriculados',v:'Investido até a data'}[k]}"></td>`).join('')}<td class="num">${v&&m?brl(v/m):'—'}</td><td><button class="x" data-act="ciclo-cv-del" data-id="${c.id}" data-j="${j}" aria-label="Apagar o registro de ${cvDia(p.d)}">×</button></td></tr>`; }).join('')}
+   </tbody></table></div>${lin.length>10?`<button class="btn sm ghost" data-act="ciclo-cv-todos" data-id="${c.id}">${todos?'Mostrar só os últimos':`Ver todos os ${lin.length} registros`}</button>`:''}`:''}`; }
 
 /* resumo de uma linha para "Captação agora" na Visão geral */
 function cvResumo(c){ const A=cvAnalise(c); if(!A.last) return ''; return ` · ${cvDia(A.last.d)}: ${cvN(A.i)} inscritos${A.di?` (+${cvN(A.di)})`:''}, ${cvN(A.m)} matriculados${A.dm?` (+${cvN(A.dm)})`:''}`; }
@@ -187,6 +253,7 @@ function cvTabelas(txt){ return String(txt||'').split(/^## Aba:.*$/m).map(b=>b.s
   const rows=ls.map(l=>split(l).map(x=>x.replace(/^"|"$/g,'').trim())); const h=rows.findIndex(r=>r.filter(Boolean).length>=2);
   return {cab:(rows[h]||[]).map(cvNorm),rows:rows.slice(h+1)}; }); }
 const CV_UN={graduacao:/^(?!.*\bpos\b)(?!.*pos[- ]?grad)(?!.*mba).*(gradua|bachar|tecnolog|licenciat|vestibular)/,pos:/\bpos\b|pos[- ]?grad|mba|especializ|lato/,mestrado:/mestrado|stricto|doutor/,colegio:/colegio|ensino (medio|fundamental)|infantil/};
+const CV_FX=[[0,3,'No mesmo dia a 3 dias'],[4,7,'4 a 7 dias'],[8,14,'8 a 14 dias'],[15,30,'15 a 30 dias'],[31,60,'31 a 60 dias'],[61,1e9,'Mais de 60 dias']];
 function cvLerTabela(T,un){
   const col=re=>T.cab.findIndex(h=>re.test(h));
   const cD=col(/^(data|dia|date|semana|periodo)\b/), cI=col(/inscri|candidat/), cL=col(/lead/), cA=col(/aprova|classific/), cM=col(/matricul|efetiv/), cV=col(/invest|verba|gasto|custo|spend/);
@@ -194,17 +261,18 @@ function cvLerTabela(T,un){
   const cU=T.cab.findIndex(h=>/^(un|unidade|unidade de negocio|nivel|produto|tipo de curso|modalidade de ensino|segmento|nivel de ensino|area)$/.test(h));
   const doUn=rows=>{ if(cU<0||!CV_UN[un]) return rows; return rows.filter(r=>CV_UN[un].test(cvNorm(r[cU]))); };
   const dI=col(/data.*(inscri|cadastr|criac|entrada)|(inscri|cadastr|criad|created).*data|^criado|^created/), dA=col(/data.*aprova|aprova.*data/), dM=col(/data.*matric|matric.*data/);
-  const cC=col(/^(curso|nome do curso|programa|oferta|curso de interesse)/);
-  const K=['l','i','a','m','v'];
-  /* 1) total por data (e por curso, se houver a coluna) */
-  if(cD>=0&&(cI>=0||cM>=0||cL>=0)&&cS<0&&T.rows.filter(r=>/^\s*\d/.test(r[cI>=0?cI:cM>=0?cM:cL]||'')).length>=1){
-    const linhas=doUn(T.rows).map(r=>({d:cvData(r[cD]),cu:cC>=0?String(r[cC]||'').trim():'',l:cL>=0?num(r[cL]):null,i:cI>=0?num(r[cI]):null,a:cA>=0?num(r[cA]):null,m:cM>=0?num(r[cM]):null,v:cV>=0?num(r[cV]):null})).filter(p=>p.d&&(p.i!=null||p.m!=null||p.l!=null));
-    const porD={}; linhas.forEach(r=>{ const p=porD[r.d]=porD[r.d]||{d:r.d}; K.forEach(k=>{ if(r[k]!=null) p[k]=(p[k]||0)+r[k]; }); if(r.cu){ p.c=p.c||{}; const q=p.c[r.cu]=p.c[r.cu]||{}; K.forEach(k=>{ if(r[k]!=null) q[k]=(q[k]||0)+r[k]; }); } });
+  const cC=col(/^(curso|nome do curso|programa|oferta|curso de interesse)/), cO=col(/^(origem|canal|fonte|midia|utm.?source|campanha|utm.?campaign)/);
+  const K=['l','i','a','m','v'], DIM=[['c',cC],['o',cO]].filter(x=>x[1]>=0);
+  /* 1) total por data (e por curso e origem, se houver as colunas) */
+  if(cD>=0&&cD!==dI&&(cI>=0||cM>=0||cL>=0)&&cS<0&&T.rows.filter(r=>/^\s*\d/.test(r[cI>=0?cI:cM>=0?cM:cL]||'')).length>=1){
+    const linhas=doUn(T.rows).map(r=>{ const o={d:cvData(r[cD]),l:cL>=0?num(r[cL]):null,i:cI>=0?num(r[cI]):null,a:cA>=0?num(r[cA]):null,m:cM>=0?num(r[cM]):null,v:cV>=0?num(r[cV]):null}; DIM.forEach(([k,ci])=>o['_'+k]=String(r[ci]||'').trim()); return o; }).filter(p=>p.d&&(p.i!=null||p.m!=null||p.l!=null));
+    const porD={}; linhas.forEach(r=>{ const p=porD[r.d]=porD[r.d]||{d:r.d}; K.forEach(k=>{ if(r[k]!=null) p[k]=(p[k]||0)+r[k]; });
+      DIM.forEach(([k])=>{ const nm=r['_'+k]||'(sem '+(k==='c'?'curso':'origem')+')'; p[k]=p[k]||{}; const q=p[k][nm]=p[k][nm]||{}; K.forEach(kk=>{ if(r[kk]!=null) q[kk]=(q[kk]||0)+r[kk]; }); }); });
     const P=Object.values(porD).sort((a,b)=>a.d.localeCompare(b.d));
     const diario=/novos|no dia|diari|por dia|do dia/.test(T.cab.join(' '))||['l','i','a','m'].some(k=>P.some((p,j)=>j&&p[k]!=null&&P[j-1][k]!=null&&p[k]<P[j-1][k]));
-    if(diario){ const acc={}, accC={}; P.forEach(p=>{ K.forEach(k=>{ if(p[k]!=null){ acc[k]=(acc[k]||0)+p[k]; p[k]=acc[k]; } });
-      const nc={}; Object.keys(accC).forEach(cu=>nc[cu]={...accC[cu]}); Object.entries(p.c||{}).forEach(([cu,q])=>{ const a=accC[cu]=accC[cu]||{}; K.forEach(k=>{ if(q[k]!=null) a[k]=(a[k]||0)+q[k]; }); nc[cu]={...a}; }); if(Object.keys(nc).length) p.c=nc; }); }
-    return P.length?{temUn:cU>=0,tipo:`${diario?'por dia, somados':'acumulado por data'}${cC>=0?', com os cursos':''}`,P}:null; }
+    if(diario){ const acc={}, accD={c:{},o:{}}; P.forEach(p=>{ K.forEach(k=>{ if(p[k]!=null){ acc[k]=(acc[k]||0)+p[k]; p[k]=acc[k]; } });
+      DIM.forEach(([dk])=>{ const AC=accD[dk]; Object.entries(p[dk]||{}).forEach(([nm,q])=>{ const a=AC[nm]=AC[nm]||{}; K.forEach(k=>{ if(q[k]!=null) a[k]=(a[k]||0)+q[k]; }); }); const n={}; Object.keys(AC).forEach(nm=>n[nm]={...AC[nm]}); if(Object.keys(n).length) p[dk]=n; }); }); }
+    return P.length?{temUn:cU>=0,tipo:`${diario?'por dia, somados':'acumulado por data'}${cC>=0?', com os cursos':''}${cO>=0?', com as origens':''}`,P}:null; }
   /* 2) lista de inscritos (um por linha) */
   if(cS<0&&dI<0&&dM<0) return null;
   let R=doUn(T.rows.filter(r=>r.some(Boolean))); if(!R.length) return null;
@@ -212,19 +280,22 @@ function cvLerTabela(T,un){
   const ehM=r=>(dM>=0&&cvData(r[dM]))||(/matricul|efetiv|confirmad|pago\b/.test(st(r))&&!neg.test(st(r)));
   const ehA=r=>ehM(r)||(dA>=0&&cvData(r[dA]))||(/\baprova|classific|convoca|aguardando matric/.test(st(r))&&!neg.test(st(r)));
   const semA=cA<0&&dA<0&&!R.some(r=>/\baprova|classific/.test(st(r)));
-  const porCurso=()=>{ if(cC<0) return null; const o={}; R.forEach(r=>{ const cu=String(r[cC]||'').trim()||'Sem curso'; const q=o[cu]=o[cu]||{i:0,a:semA?null:0,m:0}; q.i++; if(!semA&&ehA(r)) q.a++; if(ehM(r)) q.m++; }); return o; };
+  const quebra=ci=>{ const o={}; R.forEach(r=>{ const nm=String(r[ci]||'').trim()||'(não informado)'; const q=o[nm]=o[nm]||{i:0,a:semA?null:0,m:0}; q.i++; if(!semA&&ehA(r)) q.a++; if(ehM(r)) q.m++; }); return o; };
   let P;
-  if(dI>=0){ const dias=[...new Set(R.map(r=>cvData(r[dI])).concat(R.map(r=>dM>=0&&cvData(r[dM]))).filter(Boolean))].sort();
-    const di=R.map(r=>cvData(r[dI])), da=R.map((r,j)=>ehA(r)?((dA>=0&&cvData(r[dA]))||(dM>=0&&cvData(r[dM]))||di[j]):null), dm=R.map((r,j)=>ehM(r)?((dM>=0&&cvData(r[dM]))||di[j]):null);
+  const di=R.map(r=>dI>=0?cvData(r[dI]):null), dm=R.map((r,j)=>ehM(r)?((dM>=0&&cvData(r[dM]))||di[j]):null);
+  if(dI>=0){ const dias=[...new Set(di.concat(dm).filter(Boolean))].sort();
+    const da=R.map((r,j)=>ehA(r)?((dA>=0&&cvData(r[dA]))||(dM>=0&&cvData(r[dM]))||di[j]):null);
     const cnt=(arr,d)=>arr.reduce((a,x)=>a+(x&&x<=d?1:0),0);
     P=dias.map(d=>({d,i:cnt(di,d),a:semA?null:cnt(da,d),m:cnt(dm,d)})); }
   else P=[{d:cvHojeISO(),i:R.length,a:semA?null:R.filter(ehA).length,m:R.filter(ehM).length}];
-  const pc=porCurso(); if(pc&&P.length) P[P.length-1].c=pc;
-  return P.length?{temUn:cU>=0,tipo:`lista de ${cvN(R.length)} inscritos, ${dI>=0?'montada por data':'retrato de hoje'}${pc?', com os cursos':''}`,P}:null; }
+  const ult=P[P.length-1]; DIM.forEach(([k,ci])=>ult[k]=quebra(ci));
+  /* tempo da inscrição até a matrícula */
+  if(dI>=0&&dM>=0){ const ds=R.map((r,j)=>di[j]&&dm[j]&&dM>=0&&cvData(r[dM])?Math.round((cDt(dm[j])-cDt(di[j]))/864e5):null).filter(x=>x!=null&&x>=0).sort((a,b)=>a-b);
+    if(ds.length) ult.t={b:CV_FX.map(([a,b])=>ds.filter(x=>x>=a&&x<=b).length),med:ds[Math.floor((ds.length-1)/2)]+(ds.length%2?0:(ds[ds.length/2]-ds[ds.length/2-1])/2),n:ds.length}; }
+  return {temUn:cU>=0,tipo:`lista de ${cvN(R.length)} inscritos, ${dI>=0?'montada por data':'retrato de hoje'}${cC>=0?', com os cursos':''}${cO>=0?', com as origens':''}`,P}; }
 
 function cvLer(tabs,un){ for(const T of tabs){ const r=cvLerTabela(T,un); if(r) return r; } return null; }
-function cvAplicar(c,r,file){ cvGravar(c,x=>{ const s=cvSerie(x).filter(p=>!r.P.some(q=>q.d===p.d)); r.P.forEach(q=>{ const old=cvSerie(x).find(p=>p.d===q.d); const np={d:q.d,l:q.l!=null?q.l:(old?old.l:null),i:q.i,a:q.a,m:q.m,v:q.v!=null?q.v:(old?old.v:null)}; if(q.c) np.c=q.c; else if(old&&old.c) np.c=old.c; s.push(np); }); x.serie=s; x.cvFonte=`importado de ${file.name} em ${new Date().toLocaleDateString('pt-BR')}`; }); }
-const CV_FALHA='Não achei colunas de data, leads, inscritos ou status nesta planilha. Mande o arquivo para a LORSO ajustar a leitura.';
+function cvAplicar(c,r,file){ cvGravar(c,x=>{ const s=cvSerie(x).filter(p=>!r.P.some(q=>q.d===p.d)); r.P.forEach(q=>{ const old=cvSerie(x).find(p=>p.d===q.d)||{}; const np={d:q.d,l:q.l!=null?q.l:(old.l??null),i:q.i,a:q.a,m:q.m,v:q.v!=null?q.v:(old.v??null)}; ['c','o','t'].forEach(k=>{ if(q[k]) np[k]=q[k]; else if(old[k]) np[k]=old[k]; }); s.push(np); }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); }); }
 async function cvImportar(id,file){
   const c=ciclosTodos().find(x=>x.id===id); if(!c) return;
   try{ const r=cvLer(cvTabelas(await lerArquivo(file)),c.un); if(!r){ toast(CV_FALHA); return; }
@@ -239,13 +310,16 @@ async function cvImportarTudo(file){
   }catch(e){ console.error(e); toast('Não foi possível ler a planilha: '+(e.message||e)); } }
 
 document.addEventListener('change',e=>{ const t=e.target; if(!t||!t.dataset) return;
+  if(t.dataset.cvPer){ const c0=UNS.map(u=>cvEscolhido(u.id)).find(c=>c&&cvSerie(c).length); const P=c0?cvPer(c0):{}; ui.cvDe=t.dataset.cvPer==='de'?t.value:P.de; ui.cvAte=t.dataset.cvPer==='ate'?t.value:P.ate; ui.cvPer='livre'; render(); return; }
   if(t.dataset.cvImp&&t.files&&t.files[0]){ (t.dataset.cvImp==='todas'?cvImportarTudo(t.files[0]):cvImportar(t.dataset.cvImp,t.files[0])); t.value=''; return; }
   if(t.dataset.cvp){ const j=+t.dataset.j, f=t.dataset.f; cvGravar({id:t.dataset.cvp},x=>{ const s=cvSerie(x); const p=s[j]; if(!p) return; p[f]=f==='d'?t.value:(t.value===''?null:num(t.value)); x.serie=s.filter(q=>q.d); }); } });
 
 if(typeof cicloClick==='function'){ const _cc=cicloClick; cicloClick=function(act,d){
   if(act==='ciclo-cv-ver'){ const c=ciclosTodos().find(x=>x.id===d.id); if(c){ ui.cvCiclo=ui.cvCiclo||{}; ui.cvCiclo[c.un]=c.id; render(); } return true; }
   if(act==='ciclo-cv-modo'){ ui.cvModo=d.v; render(); return true; }
-  if(act==='ciclo-cv-curso'){ ui.cvCurso=ui.cvCurso||{}; ui.cvCurso[d.id]=d.v; render(); return true; }
+  if(act==='ciclo-cv-sub'){ ui.cvSub=d.v; render(); return true; }
+  if(act==='ciclo-cv-per'){ ui.cvPer=d.v; render(); return true; }
+  if(act==='ciclo-cv-sel'){ ui.cvSel=ui.cvSel||{}; ui.cvSel[d.id]=d.v; render(); return true; }
   if(act==='ciclo-cv-todos'){ ui.cvTodos=ui.cvTodos===d.id?null:d.id; render(); return true; }
   if(act==='ciclo-cv-add'){ cvGravar({id:d.id},x=>{ const s=cvSerie(x), h=cvHojeISO(); if(s.some(p=>p.d===h)){ toast('Hoje já tem registro. Ajuste os números na tabela.'); return; } const u=s[s.length-1]||{}; s.push({d:h,l:u.l??null,i:u.i??null,a:u.a??null,m:u.m??null,v:u.v??null}); x.serie=s; }); return true; }
   if(act==='ciclo-cv-del'){ cvGravar({id:d.id},x=>{ const s=cvSerie(x); s.splice(+d.j,1); x.serie=s; }); return true; }
@@ -273,6 +347,7 @@ function captacaoGeralHtml(){
     <small class="muted">${x.c?`${esc(x.c.nome||'Ciclo')} · ${cicloSituacao(x.c).t}`:'sem ciclo de captação'}</small>
     <div class="cv-big"><b>${cvN(x.m)}</b><span>matriculados${x.meta?` de ${cvN(x.meta)} da meta · ${cvP(x.m!=null?x.m/x.meta:null)}`:''}</span></div>
     ${bar(x)}
+    ${x.c&&cvSerie(x.c).length?(()=>{ const P=cvPer(x.c), C=cvComp(x.c,P), J=k=>cvJan(x.c,k,P.de,P.ate), JC=k=>C?cvJan(C.c,k,C.de,C.ate):null; return `<p class="cv-cp"><b>No período</b> (${cvDia(P.de)} a ${cvDia(P.ate)}): ${cvN(J('i'))} inscritos${C&&JC('i')!=null?` ${cvDelta(J('i'),JC('i'),'').replace(/ vs .*$/,'')}`:''} · ${cvN(J('m'))} matriculados${C&&JC('m')!=null?` ${cvDelta(J('m'),JC('m'),'').replace(/ vs .*$/,'')}`:''}</p>`; })():''}
     <dl>${[['Projeção',x.proj!=null?`${cvN(x.proj)}${x.meta?` (${cvP(x.proj/x.meta)})`:''}`:'—'],['Leads',cvN(A.l)],['Inscritos',cvN(A.i)],['Aprovados',cvN(A.a)],['Investido',A.inv?brl(A.inv):'—'],['Orçamento (DRE)',x.orc!=null?brl(x.orc):'—'],['CPL',A.cpl!=null?brl(A.cpl):'—'],['CAC',A.cac!=null?brl(A.cac):'—']].map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
     <button class="btn sm" data-act="ciclo-cv-tab" data-v="${x.u.id}">Abrir ${esc(x.u.nome)}</button></article>`; }).join('');
   const comInv=L.filter(x=>x.A&&x.A.inv), mxI=Math.max(1,...comInv.map(x=>x.A.inv));
@@ -294,6 +369,7 @@ function renderCaptacao(){
    <header class="ph" style="grid-template-columns:minmax(0,1fr) auto"><div><span class="eyebrow"><b>Captação</b></span><h2 style="margin-top:8px">Como a captação está indo</h2><p class="lead">Leads, inscritos, aprovados e matriculados de cada área, contra a meta e o ciclo anterior, com a verba investida, o CPL e o CAC. Os números vêm do CRM, por dia ou por semana.</p></div>
     <div class="cv-topo"><label class="btn primary cv-up">Importar do CRM<input type="file" data-cv-imp="todas" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden></label><button class="btn" data-act="ciclo-cv-exp">Exportar planilha</button></div></header>
    <nav class="subtabs bu-tabs" aria-label="Áreas">${tabs.map(([id,nm])=>`<button class="${t===id?'on':''}" data-act="ciclo-cv-tab" data-v="${id}" ${t===id?'aria-current="page"':''}>${esc(nm)}${id!=='geral'&&nCic(id)?` <span class="bu-n">${nCic(id)}</span>`:''}</button>`).join('')}</nav>
+   ${cvPerHtml()}
    ${t==='geral'?`<p class="muted cv-nota">Para importar todas as áreas de uma vez, a planilha precisa de uma coluna de UN ou nível (Graduação, Pós…). Sem ela, importe dentro da aba de cada área.</p>${captacaoGeralHtml()}`:curvaHtml(t)+(_cvCal?_cvCal(t):'')}
   </section>`; }
 
