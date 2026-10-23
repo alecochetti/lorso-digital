@@ -51,7 +51,7 @@ function cvGrafico(c,A,o){
   const ant=A.ant, ap=k=>ant?cvSerie(ant).map(p=>[cvOff(ant,p.d),num(p[k])]).filter(x=>x[0]!=null&&x[1]!=null):[];
   const series=CV_S.filter(x=>o.keys.includes(x[0])).map(([k,l,cor])=>({k,l,cor,p:pts(k)})).filter(x=>x.p.length);
   const antS=[['i','Inscritos'],['a','Aprovados'],['m','Matriculados']].filter(x=>o.ant.includes(x[0])).map(([k,l])=>({k,l,cor:CV_S.find(x=>x[0]===k)[2],p:ap(k)})).filter(x=>x.p.length);
-  const xs=[...series,...antS].flatMap(x=>x.p.map(p=>p[0])); if(A.fim!=null) xs.push(A.fim);
+  const xs=[...series,...antS].flatMap(x=>x.p.map(p=>p[0])); if(A.fim!=null) xs.push(A.fim); cvProvas(c).forEach(v=>{ const t=cvOff(c,v.d); if(t!=null) xs.push(t); });
   const x0=Math.min(0,...xs), x1=Math.max(x0+7,...xs);
   const ys=[...series,...antS].flatMap(x=>x.p.map(p=>p[1])); (o.refs?[A.meta,A.vagas]:[]).concat(o.proj?[A.proj]:[]).forEach(v=>v&&ys.push(v));
   const yMx=Math.max(4,...ys)*1.04, st0=yMx/4, pw10=Math.pow(10,Math.floor(Math.log10(st0))), stp=[1,2,2.5,5,10].map(f=>f*pw10).find(f=>f>=st0), yTop=stp*4;
@@ -72,6 +72,7 @@ function cvGrafico(c,A,o){
     ${xt.map(t=>`<text x="${X(t)}" y="${H-12}" class="cv-ax" text-anchor="middle">${dLab(t)}</text>`).join('')}
     ${o.refs&&A.meta?`<line x1="${ml}" x2="${ml+pw}" y1="${Y(A.meta)}" y2="${Y(A.meta)}" class="cv-ref"/>`:''}
     ${o.refs&&A.vagas?`<line x1="${ml}" x2="${ml+pw}" y1="${Y(A.vagas)}" y2="${Y(A.vagas)}" class="cv-ref cv-ref2"/>`:''}
+    ${cvProvas(c).map((v,j)=>{ const t=cvOff(c,v.d); if(t==null||t<x0||t>x1) return ''; return `<line x1="${X(t)}" x2="${X(t)}" y1="${mt}" y2="${mt+ph}" class="cv-prova"/><text x="${X(t)+4}" y="${mt+11}" class="cv-ax cv-provat">${esc(v.nome||'Vestibular '+(j+1))}</text>`; }).join('')}
     ${A.fim!=null?`<line x1="${X(A.fim)}" x2="${X(A.fim)}" y1="${mt}" y2="${mt+ph}" class="cv-fim"/><text x="${X(A.fim)-4}" y="${mt+10}" class="cv-ax" text-anchor="end">fim da campanha</text>`:''}
     ${antS.map(x=>`<path d="${path(x.p)}" class="cv-ant" style="stroke:${x.cor}"/>`).join('')}
     ${series.map(x=>`<path d="${path(x.p)}" class="cv-lin" style="stroke:${x.cor}"/>${(x.p.length<=12?x.p:x.p.slice(-1)).map(q=>`<circle cx="${X(q[0])}" cy="${Y(q[1])}" r="3.2" class="cv-pt" style="fill:${x.cor}"/>`).join('')}`).join('')}
@@ -169,6 +170,7 @@ function curvaHtml(un){
   const A=cvAnalise(c), sub=CV_SUB.some(x=>x[0]===ui.cvSub)?ui.cvSub:'funil';
   const em=c.cvEm?new Date(c.cvEm):null;
   const topo=`${L.length>1?`<div class="bu-cnt cv-ciclos">${L.map(x=>`<button class="chip${x.id===c.id?' on':''}" data-act="ciclo-cv-ver" data-id="${x.id}" aria-pressed="${x.id===c.id}">${esc(x.nome||'Ciclo sem nome')}${cvSerie(x).length?` · ${cvSerie(x).length}`:''}</button>`).join('')}</div>`:''}
+   ${(()=>{ const h=cvHojeISO(), pr=cvProvas(c).find(v=>v.d>=h); return pr?`<p class="cv-atual">Próximo vestibular: <b>${esc(pr.nome||'vestibular')}</b> ${pr.d===h?'hoje':`em ${Math.round((cDt(pr.d)-cDt(h))/864e5)} dias`}, ${cvDia(pr.d)}.</p>`:''; })()}
    <p class="cv-atual">${A.last?`${em?`Atualizado em <b>${em.toLocaleDateString('pt-BR')} às ${em.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</b> · `:''}dados até <b>${cDt(A.last.d).toLocaleDateString('pt-BR')}</b>${c.cvFonte?` · da planilha "${esc(c.cvFonte)}"`:''}`:'Sem registros ainda.'}</p>
    <nav class="cv-sub-t" aria-label="Partes da captação">${CV_SUB.map(([k,l])=>`<button class="${sub===k?'on':''}" data-act="ciclo-cv-sub" data-v="${k}" ${sub===k?'aria-current="page"':''}>${l}</button>`).join('')}</nav>`;
   let corpo='';
@@ -288,8 +290,14 @@ function cvPessoas(pes,cc){
     ${P.map(x=>`<tr><td><b>${esc(x.nome)}</b></td><td class="nw">${esc(x.eq)}</td><td class="num">${cvN(x.l)}</td><td class="num">${cvN(x.ct)} <small class="muted">${cvP(x.ct/(x.l||1))}</small></td><td class="num">${cvN(x.cm)}</td><td class="num">${cvN(x.i)}</td><td class="num">${cvN(x.m)}</td><td class="num">${cvPc(x.m,x.l)}</td><td class="num${x.hmed>24?' cv-baixo':''}">${cvH(x.hmed)}</td></tr>`).join('')}
    </tbody></table></div>`; }
 
+/* vestibulares e provas do ciclo */
+function cvProvas(c){ return (Array.isArray(c.provas)?c.provas:[]).filter(v=>v&&v.d).sort((a,b)=>a.d.localeCompare(b.d)); }
+function cvProvasHtml(c){ const L=Array.isArray(c.provas)?c.provas:[], h=cvHojeISO(), prox=cvProvas(c).find(v=>v.d>=h);
+  return `<div class="cv-provas"><div class="cv-provas-h"><b>Vestibulares e provas do ciclo</b>${prox?`<span class="tag area">próximo: ${esc(prox.nome||'vestibular')} ${prox.d===h?'hoje':`em ${Math.round((cDt(prox.d)-cDt(h))/864e5)} dias`} (${cvDia(prox.d)})</span>`:''}</div>
+   ${L.length?`<div class="cv-pl">${L.map((v,j)=>`<div class="cv-pr"><input type="date" class="dt" data-cvprova="${c.id}" data-j="${j}" data-f="d" value="${esc(v.d||'')}" aria-label="Data do vestibular"><input data-cvprova="${c.id}" data-j="${j}" data-f="nome" value="${esc(v.nome||'')}" placeholder="Ex.: 1º vestibular agendado, prova ENEM, vestibular de inverno" aria-label="Nome do vestibular"><button class="x" data-act="ciclo-cv-prova-del" data-id="${c.id}" data-j="${j}" aria-label="Apagar">×</button></div>`).join('')}</div>`:'<p class="muted cv-nota" style="margin:0">Cadastre as datas de prova: elas aparecem como linhas na curva, para ver o efeito de cada vestibular nas inscrições.</p>'}
+   <button class="btn sm" data-act="ciclo-cv-prova-add" data-id="${c.id}">+ Vestibular ou prova</button></div>`; }
 function cvSubRegistros(c,A){ const todos=ui.cvTodos===c.id, lin=A.s.slice().reverse(), vis=todos?lin:lin.slice(0,10);
-  return `<div class="cv-acoes">
+  return `${cvProvasHtml(c)}<div class="cv-acoes">
     <label class="btn sm primary cv-up">Importar do CRM para ${esc(c.nome||'este ciclo')}<input type="file" data-cv-imp="${c.id}" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden></label>
     <button class="btn sm" data-act="ciclo-cv-add" data-id="${c.id}">+ Registrar os números de hoje</button></div>
    <p class="muted cv-nota">A planilha pode ser o total por dia ou semana (data, leads, inscritos, aprovados, matriculados, investimento, e se tiver, curso e origem) ou a lista de inscritos com status, data de inscrição e data de matrícula. Uma data que já existe é substituída pela nova.</p>
@@ -413,11 +421,14 @@ async function cvImportarTudo(file){
 document.addEventListener('change',e=>{ const t=e.target; if(!t||!t.dataset) return;
   if(t.dataset.cvPer){ const c0=UNS.map(u=>cvEscolhido(u.id)).find(c=>c&&cvSerie(c).length); const P=c0?cvPer(c0):{}; ui.cvDe=t.dataset.cvPer==='de'?t.value:P.de; ui.cvAte=t.dataset.cvPer==='ate'?t.value:P.ate; ui.cvPer='livre'; render(); return; }
   if(t.dataset.cvImp&&t.files&&t.files[0]){ (t.dataset.cvImp==='todas'?cvImportarTudo(t.files[0]):cvImportar(t.dataset.cvImp,t.files[0])); t.value=''; return; }
+  if(t.dataset.cvprova){ const L=ciclosTodos(), x=L.find(y=>y.id===t.dataset.cvprova); if(x&&Array.isArray(x.provas)&&x.provas[+t.dataset.j]){ x.provas[+t.dataset.j][t.dataset.f]=t.value; ciclosSalvar(L); render(); } return; }
   if(t.dataset.cvp){ const j=+t.dataset.j, f=t.dataset.f; cvGravar({id:t.dataset.cvp},x=>{ const s=cvSerie(x); const p=s[j]; if(!p) return; p[f]=f==='d'?t.value:(t.value===''?null:num(t.value)); x.serie=s.filter(q=>q.d); }); } });
 
 if(typeof cicloClick==='function'){ const _cc=cicloClick; cicloClick=function(act,d){
   if(act==='ciclo-cv-ver'){ const c=ciclosTodos().find(x=>x.id===d.id); if(c){ ui.cvCiclo=ui.cvCiclo||{}; ui.cvCiclo[c.un]=c.id; render(); } return true; }
   if(act==='ciclo-cv-modo'){ ui.cvModo=d.v; render(); return true; }
+  if(act==='ciclo-cv-prova-add'){ const L=ciclosTodos(), x=L.find(y=>y.id===d.id); if(x){ x.provas=Array.isArray(x.provas)?x.provas:[]; x.provas.push({id:uid(),d:'',nome:`${x.provas.length+1}º vestibular`}); ciclosSalvar(L); render(); } return true; }
+  if(act==='ciclo-cv-prova-del'){ const L=ciclosTodos(), x=L.find(y=>y.id===d.id); if(x&&Array.isArray(x.provas)){ x.provas.splice(+d.j,1); ciclosSalvar(L); render(); } return true; }
   if(act==='ciclo-cv-sub'){ ui.cvSub=d.v; render(); return true; }
   if(act==='ciclo-cv-per'){ ui.cvPer=d.v; render(); return true; }
   if(act==='ciclo-cv-sel'){ ui.cvSel=ui.cvSel||{}; ui.cvSel[d.id]=d.v; render(); return true; }

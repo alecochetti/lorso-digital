@@ -903,3 +903,8 @@ a.btn,a.btn:visited{color:var(--fg);text-decoration:none}
 .cv-eds{display:flex;flex-direction:column;gap:8px;margin:0 0 12px}
 .cv-ed{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
 .cv-ed span{display:flex;flex-direction:column;gap:2px}.cv-ed small{color:var(--muted);font-size:12.5px}
+.cv-provas{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 14px;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.cv-provas-h{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cv-pl{display:flex;flex-direction:column;gap:6px;width:100%}
+.cv-pr{display:grid;grid-template-columns:150px minmax(0,1fr) 32px;gap:8px;align-items:center}
+.cv-prova{stroke:var(--cv-i);stroke-width:1;stroke-dasharray:3 3;opacity:.7}.cv-provat{fill:var(--cv-i);font-weight:600}
