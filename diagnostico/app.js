@@ -1257,6 +1257,7 @@ function comoHtml(){
 /* ================= MENU LATERAL, VISÃO GERAL E PERFIL ================= */
 const ICO={
  base:'M4 19.5V5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2zm0 0A2 2 0 0 0 6 21h13',
+ captacao:'M3 17l6-6 4 4 8-8M14 7h7v7',
  reitoria:'M3 10h18M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 21h18M12 3l9 5H3z',
  entrevistas:'M21 12a8 8 0 0 1-11.7 7.1L4 20.5l1.4-5A8 8 0 1 1 21 12z',
  visao:'M3 12h4l3-8 4 16 3-8h4',
@@ -1305,10 +1306,10 @@ function sideItem(k,label,act,v,meta,hot){
   const on=navOn(k);
   return `<button class="sn ${on?'on':''}" data-act="${act}" data-v="${v}" ${on?'aria-current="page"':''}>${ico(k)}<span class="lb">${label}</span>${meta!=null&&meta!==''?`<span class="mt ${hot?'hot':''}">${meta}</span>`:''}</button>`;
 }
-const MODS_TODOS=[['diagnostico','Diagnóstico de maturidade'],['dre','DRE e orçamento'],['lancamento','Lançamento de curso']];
+const MODS_TODOS=[['diagnostico','Diagnóstico de maturidade'],['captacao','Captação'],['dre','DRE e orçamento'],['lancamento','Lançamento de curso']];
 // Modo foco: /diagnostico/?modulo=lancamento ou ?modulo=dre (vem do painel do /admin) mostra só aquele módulo.
-const FOCO=(()=>{ const m=new URLSearchParams(location.search).get('modulo'); return m==='dre'||m==='lancamento'?m:null; })();
-const FOCO_VIEW={dre:'dre',lancamento:'lancamento'};
+const FOCO=(()=>{ const m=new URLSearchParams(location.search).get('modulo'); return m==='dre'||m==='lancamento'||m==='captacao'?m:null; })();
+const FOCO_VIEW={dre:'dre',lancamento:'lancamento',captacao:'captacao'};
 let focoIni=false;
 const focoTem=d=>!Array.isArray(d.modulos)||!d.modulos.length||d.modulos.includes(FOCO);
 function modsCliente(){ const m=cur&&all[cur.id]&&Array.isArray(all[cur.id].modulos)?all[cur.id].modulos:null; return m&&m.length?m:['diagnostico','dre','lancamento']; }
@@ -1344,7 +1345,8 @@ function renderSide(INS){
      <span class="sb-g">Fases 2 a 5</span>
      ${STAGES.slice(1).map(st=>(st.id==='execucao'&&typeof renderPlano==='function'?sideItem('plano','Plano de ação','view','plano',(()=>{const n=paItens().length;return n||'';})()):'')+sideItem(st.id,st.nome,'stage',st.id,st.id==='execucao'&&cur.acoes.some(isPlano)?`${cur.acoes.filter(t=>isPlano(t)&&t.status==='Concluída').length}/${cur.acoes.filter(isPlano).length}`:st.q&&st.q.length?pc(stageProgress(st)):'',st.id==='execucao'&&hot)).join('')}
 `:''}
-     ${temMod('dre')||temMod('lancamento')?'<span class="sb-g">Módulos</span>':''}
+     ${temMod('dre')||temMod('lancamento')||temMod('captacao')?'<span class="sb-g">Módulos</span>':''}
+     ${temMod('captacao')&&typeof renderCaptacao==='function'?(()=>{ const n=cvAlertas(); return sideItem('captacao','Captação','view','captacao',n||'',n>0); })():''}
      ${temMod('dre')?sideItem('dre','DRE e orçamento','view','dre',cur.mods&&cur.mods.dre&&cur.mods.dre.meses?cur.mods.dre.meses.filter(M=>M.lancado).length+'/12':''):''}
      ${temMod('lancamento')?sideItem('lancamento','Lançamento de curso','view','lancamento'):''}
      ${temPTC()?(()=>{ const P=cur.mods&&cur.mods.ptc, L=P&&Array.isArray(P.pecas)?P.pecas:[]; const ag=L.filter(p=>p.status==='aprovacao').length; const n=ag||L.filter(p=>p.status!=='publicado'&&p.data&&p.data>=today()&&p.data<=isoLocal(new Date(Date.now()+7*864e5))).length; return sideItem('ptc','Plano tático (PTC)','view','ptc',n||'',ag>0); })():''}
@@ -1722,8 +1724,9 @@ function renderInner(){
     $('#main').innerHTML=`<section class="auth" style="min-height:auto"><div class="auth-box"><h2>Nenhum diagnóstico ainda</h2><p>${me&&me.papel!=='cliente'?'Crie o primeiro com o nome do cliente. Depois convide a equipe e distribua as áreas.':'Nenhum diagnóstico foi liberado para você ainda. Fale com a LORSO Digital.'}</p>${me&&me.papel!=='cliente'?`<form id="f-novo2"><label>Cliente<input id="novo-nome2" required placeholder="Nome da instituição"></label><button class="btn primary" type="submit">Criar diagnóstico</button></form>`:''}</div></section>`;
     return; }
   if(ui.view==='tarefas'){ ui.view='fases'; ui.stage='execucao'; }
-  if(!temMod('diagnostico')&&['fases','visao','dores','sistemas','como','relatorio','pessoas','solicitantes'].includes(ui.view)) ui.view=temMod('dre')?'dre':temMod('lancamento')?'lancamento':'perfil';
-  if((ui.view==='dre'&&!temMod('dre'))||(ui.view==='lancamento'&&!temMod('lancamento'))||(ui.view==='ptc'&&!temPTC())) ui.view=temMod('diagnostico')?'fases':temMod('dre')?'dre':temMod('lancamento')?'lancamento':'perfil';
+  const vMod=()=>temMod('captacao')?'captacao':temMod('dre')?'dre':temMod('lancamento')?'lancamento':'perfil';
+  if(!temMod('diagnostico')&&['fases','visao','dores','sistemas','como','relatorio','pessoas','solicitantes'].includes(ui.view)) ui.view=vMod();
+  if((ui.view==='dre'&&!temMod('dre'))||(ui.view==='lancamento'&&!temMod('lancamento'))||(ui.view==='ptc'&&!temPTC())||(ui.view==='captacao'&&!temMod('captacao'))) ui.view=temMod('diagnostico')?'fases':vMod();
   computeAll(); const INS=runEngine();
   renderBar(); renderSide(INS);
   document.body.classList.toggle('rp-mode', ui.view==='relatorio');
@@ -1737,6 +1740,7 @@ function renderInner(){
   else if(ui.view==='dre') renderDRE();
   else if(ui.view==='lancamento') renderLancamento();
   else if(ui.view==='ptc'&&temPTC()) renderPTC();
+  else if(ui.view==='captacao'&&typeof renderCaptacao==='function') renderCaptacao();
   else if(ui.view==='internas'&&podeInternas()) renderInternas();
   else if(ui.view==='horas'&&typeof renderHoras==='function') renderHoras();
   else if(ui.view==='acessos'&&typeof renderAcessos==='function') renderAcessos();

@@ -177,7 +177,7 @@ function ciclosAgoraHtml(){ // para a Visão geral do diagnóstico
   const h=cHoje(), L=ciclosTodos().filter(c=>{ const st=cicloSituacao(c); if(st.k==='agora') return true; const ini=cDt(c.camp_ini||c.insc_ini); return st.k==='futuro'&&ini&&(ini-h)/864e5<=60; });
   if(!L.length) return '';
   return `<section class="block"><div class="block-h"><h3>Captação agora e nos próximos 60 dias</h3><button class="btn sm" data-act="bu-tab" data-v="geral">Ver calendário</button></div>
-   <div class="xlist">${L.map(c=>{ const st=cicloSituacao(c); return `<div class="xitem ${st.k==='agora'?'alta':'media'}"><span class="t">${esc(c.nome||'Ciclo')} · ${esc((UNS.find(u=>u.id===c.un)||{}).nome||'')}<small>${st.t}${c.mat_ini?` · matrículas a partir de ${cFmt(c.mat_ini)}`:''}${c.aulas?` · aulas em ${cFmt(c.aulas)}`:''}</small></span></div>`; }).join('')}</div></section>`;
+   <div class="xlist">${L.map(c=>{ const st=cicloSituacao(c); return `<div class="xitem ${st.k==='agora'?'alta':'media'}"><span class="t">${esc(c.nome||'Ciclo')} · ${esc((UNS.find(u=>u.id===c.un)||{}).nome||'')}<small>${st.t}${c.mat_ini?` · matrículas a partir de ${cFmt(c.mat_ini)}`:''}${c.aulas?` · aulas em ${cFmt(c.aulas)}`:''}${typeof cvResumo==='function'?cvResumo(c):''}</small></span></div>`; }).join('')}</div></section>`;
 }
 function cicloClick(act,d){
   if(act==='ciclo-add'){ const un=ui.baseUn; if(!UNS.some(u=>u.id===un)) return true; const L=ciclosTodos(); L.push({id:uid(),un,nome:d.v||'',camp_ini:'',insc_ini:'',mat_ini:'',camp_fim:'',aulas:''}); ciclosSalvar(L); render(); return true; }

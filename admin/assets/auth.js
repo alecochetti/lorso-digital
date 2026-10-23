@@ -17,6 +17,7 @@ export const MODULOS = {
   // Os três abrem na Central em /diagnostico/ (mesma sessão Supabase). Com ?modulo= ela entra em modo foco
   // e mostra só aquele módulo. Quando Lançamentos e DRE tiverem app próprio, troque a url.
   diagnostico: { nome: "Diagnóstico", url: "/diagnostico/", texto: "Diagnóstico completo da operação, com Lançamentos e DRE." },
+  captacao: { nome: "Captação", url: "/diagnostico/?modulo=captacao", texto: "Leads, inscritos, aprovados e matriculados por área, com meta, verba, CPL e CAC." },
   lancamento: { nome: "Lançamentos", url: "/diagnostico/?modulo=lancamento", texto: "Planejamento e acompanhamento dos seus lançamentos." },
   dre: { nome: "DRE", url: "/diagnostico/?modulo=dre", texto: "Demonstrativo de resultado mês a mês." },
 };

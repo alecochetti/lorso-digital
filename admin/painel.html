@@ -106,7 +106,7 @@ else {
         <span class="n">Tarefas LORSO</span><span class="c">Seu painel de clientes: tarefas e projetos de todos os clientes que você atende.</span><span class="go">Abrir ›</span></a>` + (perfil?.papel === "admin" ? `<a class="card" href="/diagnostico/?central=lorso&tela=acessos">
         <span class="n">Equipe e acessos</span><span class="c">Convide pessoas da LORSO por e-mail e defina, por cliente, quem é editor ou só visualiza.</span><span class="go">Abrir ›</span></a><a class="card" href="/admin/contratos/">
         <span class="n">Contratos</span><span class="c">Gere a minuta, revise com o cliente e colete as assinaturas eletrônicas com registro de evidências.</span><span class="go">Abrir ›</span></a>` : "");
-      const ordem = ["diagnostico", "lancamento", "dre"];
+      const ordem = ["diagnostico", "captacao", "lancamento", "dre"];
       // Sem logo enviado nem arquivo do cliente: volta para as iniciais
       document.addEventListener("error", (e) => { const im = e.target; if (im && im.tagName === "IMG" && im.dataset.ini) { const s = document.createElement("span"); s.className = "mono"; s.setAttribute("aria-hidden", "true"); s.textContent = im.dataset.ini; im.parentNode.replaceWith(s); } }, true);
       const urlDe = (k, id) => k === "diagnostico" ? `/diagnostico/?cliente=${encodeURIComponent(id)}` : `/diagnostico/?modulo=${k}&cliente=${encodeURIComponent(id)}`;
