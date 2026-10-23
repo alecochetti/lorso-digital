@@ -162,7 +162,7 @@ function cvEscolhido(un){ const L=ciclosTodos().filter(c=>c.un===un); if(!L.leng
   const e=L.find(c=>c.id===ui.cvCiclo[un]); if(e) return e;
   return L.find(c=>cicloSituacao(c).k==='agora')||L.filter(c=>cvSerie(c).length).sort((a,b)=>String(cvSerie(b).slice(-1)[0].d).localeCompare(cvSerie(a).slice(-1)[0].d))[0]||L[L.length-1]; }
 
-const CV_SUB=[['funil','Funil e matrículas'],['cursos','Cursos'],['origens','Origens e campanhas'],['registros','Registros e importação']];
+const CV_SUB=[['funil','Funil e matrículas'],['cursos','Cursos'],['origens','Origens e campanhas'],['atend','Call center e comercial'],['registros','Registros e importação']];
 function curvaHtml(un){
   const L=ciclosTodos().filter(c=>c.un===un); const c=cvEscolhido(un);
   if(!c) return `<section class="block"><div class="block-h"><h3>Captação</h3></div><p class="empty">Crie o ciclo de captação desta área no Calendário de captação, abaixo (por exemplo, Vestibular 2027.1), e importe os números do CRM.</p></section>`;
@@ -176,6 +176,7 @@ function curvaHtml(un){
   else if(sub==='funil') corpo=cvSubFunil(c,A);
   else if(sub==='cursos') corpo=cvSubQuebra(c,A,'c');
   else if(sub==='origens') corpo=cvSubQuebra(c,A,'o');
+  else if(sub==='atend') corpo=cvSubAtend(c);
   else corpo=cvSubRegistros(c,A);
   return `<section class="block cv"><div class="block-h"><h3>${esc(c.nome||'Ciclo')}</h3><p>${cicloSituacao(c).t}</p></div>${topo}${corpo}</section>`;
 }
@@ -224,6 +225,62 @@ function cvSubQuebra(c,A,dim){
     ${Q.rows.map(r=>{ const b=cursos?cvBaseCurso(c.un,r.nome):{}; const bs=Q.rows.some(x=>x.l)?r.l:r.i; return `<tr class="${sel.nome===r.nome?'on':''}"><td><button class="lnk" data-act="ciclo-cv-sel" data-id="${key}" data-v="${esc(r.nome)}">${esc(r.nome)}</button></td><td class="num">${cvN(r.l)}</td><td class="num">${cvN(r.i)}</td><td class="num">${cvN(r.a)}</td><td class="num">${cvN(r.m)}</td><td class="num">${r.a?cvP(r.m/r.a):'—'}</td><td class="num">${bs?cvP((r.m||0)/bs):'—'}</td>${cursos?`<td class="num">${cvN(b.vagas)}</td><td class="num${b.vagas&&r.m!=null&&r.m/b.vagas<0.5?' cv-baixo':''}">${b.vagas&&r.m!=null?cvP(r.m/b.vagas):'—'}</td><td class="num">${cvN(b.meta)}</td><td class="num">${b.meta&&r.m!=null?cvP(r.m/b.meta):'—'}</td>`:''}<td class="num">${r.v?brl(r.v):'—'}</td><td class="num">${r.v&&r.l?brl(r.v/r.l):'—'}</td><td class="num">${r.v&&r.m?brl(r.v/r.m):'—'}</td></tr>`; }).join('')}
    </tbody></table></div>${cursos?'<p class="muted cv-nota">Vagas e meta vêm da tabela de cursos da área. A ocupação em vermelho está abaixo de 50%.</p>':''}`; }
 
+/* ---------- call center e comercial ---------- */
+const cvH=h=>h==null?'—':h<1?`${Math.round(h*60)} min`:h<48?`${String(Math.round(h*10)/10).replace('.',',')} h`:`${String(Math.round(h/24*10)/10).replace('.',',')} dias`;
+function cvFunilAt(x){ const E=[['l','Leads recebidos'],['ct','Contatados'],['cm','Com o comercial'],['i','Inscritos'],['a','Aprovados'],['m','Matriculados']].filter(([k])=>x[k]!=null);
+  const top=Math.max(1,x.l||0); const taxas=E.slice(1).map(([k],j)=>{ const a=x[E[j][0]]; return a?(x[k]||0)/a:null; }); const pior=taxas.reduce((b,t,j)=>t!=null&&(b<0||t<taxas[b])?j:b,-1);
+  return `<div class="cv-vf">${E.map(([k,l],j)=>`${j?`<p class="cv-pass${j-1===pior?' pior':''}">↓ ${taxas[j-1]!=null?(taxas[j-1]*100).toFixed(1).replace('.',',')+'%':'—'} passam</p>`:''}<div class="cv-vf-r"><span>${l}</span><b>${cvN(x[k])}</b></div><div class="cv-vf-b"><i style="width:${Math.max(1.5,(x[k]||0)/top*100).toFixed(1)}%"></i></div>`).join('')}</div>`; }
+function cvSubAtend(c){
+  const s=cvSerie(c); let p=null; for(let j=s.length-1;j>=0;j--) if(s[j].at){ p=s[j]; break; }
+  if(!p) return `<div class="empty cv-vazio"><p>Para ver o funil do call center e do comercial, importe do CRM a <b>lista de leads</b> (um por linha), com estas colunas:</p>
+   <ul><li><b>Status</b> ou etapa do lead (novo, em contato, encaminhado ao comercial, inscrito, aprovado, matriculado, perdido…)</li><li><b>Atendente do call center</b> e <b>Consultor comercial</b>, ou uma coluna <b>Responsável</b> com outra de <b>Equipe</b></li><li><b>Data de criação</b> do lead e <b>Data do primeiro contato</b>, com a hora, para medir o tempo de resposta</li><li>Se tiver: data de inscrição, data de matrícula, curso e origem</li></ul></div>`;
+  const at=p.at, t=at.tot, ord=(a,b)=>(b.m-a.m)||(b.i-a.i)||(b.l-a.l);
+  const eqs=Object.entries(at.eq), pes=at.pes.slice().sort(ord), mx=Math.max(1,...pes.map(x=>x.m));
+  const sc=t.l-t.ct;
+  const eqCard=([nm,o])=>{ const cc=/call/i.test(nm); return `<div class="cv-kc cv-eqc"><span>${esc(nm)}</span><b>${cvN(o.l)}</b><small>${cc?'leads atribuídos':'leads recebidos'}</small>
+    <dl>${(cc?[['Contatados',o.ct,o.l],['Levados ao comercial',o.cm,o.ct],['Inscritos',o.i,o.l],['Tempo até o 1º contato',null,null,cvH(o.hmed)]]:[['Inscritos',o.i,o.l],['Aprovados',o.a,o.i],['Matriculados',o.m,o.l],['Conversão',null,null,o.l?((o.m/o.l)*100).toFixed(1).replace('.',',')+'%':'—']]).map(([l,v,b,txt])=>`<div><dt>${l}</dt><dd>${txt!=null?txt:`${cvN(v)}${b?` <small>${cvP(v/b)}</small>`:''}`}</dd></div>`).join('')}</dl></div>`; };
+  return `<p class="muted cv-sub">Retrato da lista de leads de ${cvDia(p.d)}: cada lead na etapa em que está hoje. Para acompanhar a evolução, importe a lista toda semana (ou todo dia no começo da campanha).</p>
+   <div class="cv-ks">
+    ${cvKpi(cvN(t.l),'Leads recebidos','',`${cvN(at.pes.length)} pessoas no atendimento`)}
+    ${cvKpi(cvN(t.ct),'Contatados','',t.l?`${cvP(t.ct/t.l)} dos leads`:'')}
+    ${cvKpi(cvN(sc),'Sem contato','',t.l?`${cvP(sc/t.l)} dos leads ainda sem contato`:'',sc/t.l>0.2?'ruim':'')}
+    ${cvKpi(cvN(t.cm),'Com o comercial','',t.ct?`${cvP(t.cm/t.ct)} dos contatados`:'')}
+    ${cvKpi(cvN(t.m),'Matriculados','',t.l?`${(t.m/t.l*100).toFixed(1).replace('.',',')}% dos leads`:'')}
+    ${at.tc?cvKpi(cvH(at.tc.med),'Tempo até o 1º contato','',`mediana de ${cvN(at.tc.n)} leads contatados`,at.tc.med>24?'ruim':''):''}
+   </div>
+   ${sc&&t.l&&sc/t.l>0.2?`<p class="pz-aviso"><span class="i">!</span><span>${cvN(sc)} leads (${cvP(sc/t.l)}) ainda não foram contatados. Lead que espera esfria: a chance de inscrição cai a cada hora sem resposta.</span></p>`:''}
+   <div class="cv-dois">
+    <div class="block cv-in"><h4>Funil do atendimento</h4><p class="muted cv-sub">Em vermelho, a passagem com a maior perda.</p>${cvFunilAt(t)}</div>
+    <div class="block cv-in"><h4>Tempo até o primeiro contato</h4>${at.tc?`<p class="muted cv-sub">Da criação do lead ao primeiro contato. Mediana: ${cvH(at.tc.med)}.</p><div class="cv-tm">${CV_HX.map(([a,b,l],j)=>`<span>${l}</span><div><i class="${a>=24?'tarde':''}" style="width:${(at.tc.b[j]/Math.max(1,...at.tc.b)*100).toFixed(1)}%"></i></div><b>${cvN(at.tc.b[j])}</b>`).join('')}<span>Sem contato</span><div><i class="tarde" style="width:${(at.tc.b[5]/Math.max(1,...at.tc.b)*100).toFixed(1)}%"></i></div><b>${cvN(at.tc.b[5])}</b></div>`:'<p class="muted">Aparece quando a lista traz a data de criação do lead e a data do primeiro contato, com a hora.</p>'}</div>
+   </div>
+   ${eqs.length>1||at.cc?`<h4 class="cv-h">Equipes</h4><div class="cv-ks cv-eqs">${eqs.map(eqCard).join('')}</div>`:''}
+   ${pes.length?cvPessoas(pes,at.cc):''}`; }
+function cvBarras(L,val,fmt,cor){ const mx=Math.max(1e-9,...L.map(val)); return `<div class="cv-tm cv-q">${L.slice(0,12).map(x=>`<span title="${esc(x.nome)}">${esc(x.nome)}</span><div><i style="width:${(val(x)/mx*100).toFixed(1)}%;${cor?`background:${cor}`:''}"></i></div><b>${fmt(x)}</b>`).join('')}</div>`; }
+const cvPc=(a,b)=>b?(a/b*100).toFixed(1).replace('.',',')+'%':'—';
+function cvPessoas(pes,cc){
+  const linha=(x,cols)=>`<tr><td><b>${esc(x.nome)}</b></td>${cols.map(f=>`<td class="num">${f(x)}</td>`).join('')}</tr>`;
+  if(cc){ const C=pes.filter(x=>x.eq==='Call center').sort((a,b)=>b.cm/(b.l||1)-a.cm/(a.l||1)), M=pes.filter(x=>x.eq==='Comercial').sort((a,b)=>(b.m-a.m)||(b.i-a.i));
+    return `${C.length?`<h4 class="cv-h">Call center, por atendente</h4><div class="cv-dois">
+      <div class="block cv-in"><h4>Leads levados ao comercial</h4><p class="muted cv-sub">Do total atribuído a cada atendente.</p>${cvBarras(C,x=>x.l?x.cm/x.l:0,x=>`${cvPc(x.cm,x.l)} <small>${cvN(x.cm)}</small>`)}</div>
+      <div class="block cv-in"><h4>Tempo até o primeiro contato</h4><p class="muted cv-sub">Mediana de cada atendente. Menor é melhor.</p>${cvBarras(C.filter(x=>x.hmed!=null).sort((a,b)=>a.hmed-b.hmed),x=>x.hmed,x=>cvH(x.hmed),'var(--cv-l)')}</div></div>
+      <div class="tblw"><table class="tbl cv-ct"><thead><tr><th>Atendente</th><th class="r">Leads atribuídos</th><th class="r">Contatados</th><th class="r">Sem contato</th><th class="r">Levados ao comercial</th><th class="r">Inscritos</th><th class="r">Matriculados</th><th class="r">1º contato (mediana)</th></tr></thead><tbody>
+      ${C.map(x=>linha(x,[x=>cvN(x.l),x=>`${cvN(x.ct)} <small class="muted">${cvP(x.ct/(x.l||1))}</small>`,x=>`<span class="${x.l&&(x.l-x.ct)/x.l>0.2?'cv-baixo':''}">${cvN(x.l-x.ct)}</span>`,x=>`${cvN(x.cm)} <small class="muted">${cvP(x.cm/(x.l||1))}</small>`,x=>cvN(x.i),x=>cvN(x.m),x=>`<span class="${x.hmed>24?'cv-baixo':''}">${cvH(x.hmed)}</span>`])).join('')}
+      </tbody></table></div>`:''}
+     ${M.length?`<h4 class="cv-h">Comercial, por consultor</h4><div class="cv-dois">
+      <div class="block cv-in"><h4>Matriculados</h4>${cvBarras(M,x=>x.m,x=>cvN(x.m),'var(--cv-m)')}</div>
+      <div class="block cv-in"><h4>Conversão em matrícula</h4><p class="muted cv-sub">Matriculados ÷ leads recebidos do call center.</p>${cvBarras(M.filter(x=>x.l>=5).slice().sort((a,b)=>b.m/b.l-a.m/a.l),x=>x.m/x.l,x=>cvPc(x.m,x.l))}</div></div>
+      <div class="tblw"><table class="tbl cv-ct"><thead><tr><th>Consultor</th><th class="r">Leads recebidos</th><th class="r">Inscritos</th><th class="r">Aprovados</th><th class="r">Matriculados</th><th class="r">Aprovado → matrícula</th><th class="r">Lead → matrícula</th></tr></thead><tbody>
+      ${M.map(x=>linha(x,[x=>cvN(x.l),x=>`${cvN(x.i)} <small class="muted">${cvP(x.i/(x.l||1))}</small>`,x=>cvN(x.a),x=>cvN(x.m),x=>x.a?cvPc(x.m,x.a):'—',x=>cvPc(x.m,x.l)])).join('')}
+      </tbody></table></div>`:''}
+     <p class="muted cv-nota">Em vermelho: mais de 20% dos leads sem contato ou primeiro contato acima de 24 horas.</p>`; }
+  const P=pes.slice().sort((a,b)=>(b.m-a.m)||(b.i-a.i));
+  return `<h4 class="cv-h">Por pessoa</h4><div class="cv-dois">
+    <div class="block cv-in"><h4>Matriculados</h4>${cvBarras(P,x=>x.m,x=>cvN(x.m),'var(--cv-m)')}</div>
+    <div class="block cv-in"><h4>Conversão lead → matrícula</h4>${cvBarras(P.filter(x=>x.l>=5).sort((a,b)=>b.m/b.l-a.m/a.l),x=>x.m/x.l,x=>cvPc(x.m,x.l))}</div></div>
+   <div class="tblw"><table class="tbl cv-ct"><thead><tr><th>Pessoa</th><th>Equipe</th><th class="r">Leads</th><th class="r">Contatados</th><th class="r">Com o comercial</th><th class="r">Inscritos</th><th class="r">Matriculados</th><th class="r">Lead → matrícula</th><th class="r">1º contato (mediana)</th></tr></thead><tbody>
+    ${P.map(x=>`<tr><td><b>${esc(x.nome)}</b></td><td class="nw">${esc(x.eq)}</td><td class="num">${cvN(x.l)}</td><td class="num">${cvN(x.ct)} <small class="muted">${cvP(x.ct/(x.l||1))}</small></td><td class="num">${cvN(x.cm)}</td><td class="num">${cvN(x.i)}</td><td class="num">${cvN(x.m)}</td><td class="num">${cvPc(x.m,x.l)}</td><td class="num${x.hmed>24?' cv-baixo':''}">${cvH(x.hmed)}</td></tr>`).join('')}
+   </tbody></table></div>`; }
+
 function cvSubRegistros(c,A){ const todos=ui.cvTodos===c.id, lin=A.s.slice().reverse(), vis=todos?lin:lin.slice(0,10);
   return `<div class="cv-acoes">
     <label class="btn sm primary cv-up">Importar do CRM para ${esc(c.nome||'este ciclo')}<input type="file" data-cv-imp="${c.id}" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden></label>
@@ -256,7 +313,8 @@ const CV_UN={graduacao:/^(?!.*\bpos\b)(?!.*pos[- ]?grad)(?!.*mba).*(gradua|bacha
 const CV_FX=[[0,3,'No mesmo dia a 3 dias'],[4,7,'4 a 7 dias'],[8,14,'8 a 14 dias'],[15,30,'15 a 30 dias'],[31,60,'31 a 60 dias'],[61,1e9,'Mais de 60 dias']];
 function cvLerTabela(T,un){
   const col=re=>T.cab.findIndex(h=>re.test(h));
-  const cD=col(/^(data|dia|date|semana|periodo)\b/), cI=col(/inscri|candidat/), cL=col(/lead/), cA=col(/aprova|classific/), cM=col(/matricul|efetiv/), cV=col(/invest|verba|gasto|custo|spend/);
+  const semData=h=>!/^data|^dt\b|^dia\b/.test(h), colN=re=>T.cab.findIndex(h=>semData(h)&&re.test(h));
+  const cD=col(/^(data|dia|date|semana|periodo)\b/), cI=colN(/inscri|candidat/), cL=colN(/lead/), cA=colN(/aprova|classific/), cM=colN(/matricul|efetiv/), cV=colN(/invest|verba|gasto|custo|spend/);
   const cS=col(/status|etapa|fase|situac|estagio|stage/);
   const cU=T.cab.findIndex(h=>/^(un|unidade|unidade de negocio|nivel|produto|tipo de curso|modalidade de ensino|segmento|nivel de ensino|area)$/.test(h));
   const doUn=rows=>{ if(cU<0||!CV_UN[un]) return rows; return rows.filter(r=>CV_UN[un].test(cvNorm(r[cU]))); };
@@ -273,37 +331,73 @@ function cvLerTabela(T,un){
     if(diario){ const acc={}, accD={c:{},o:{}}; P.forEach(p=>{ K.forEach(k=>{ if(p[k]!=null){ acc[k]=(acc[k]||0)+p[k]; p[k]=acc[k]; } });
       DIM.forEach(([dk])=>{ const AC=accD[dk]; Object.entries(p[dk]||{}).forEach(([nm,q])=>{ const a=AC[nm]=AC[nm]||{}; K.forEach(k=>{ if(q[k]!=null) a[k]=(a[k]||0)+q[k]; }); }); const n={}; Object.keys(AC).forEach(nm=>n[nm]={...AC[nm]}); if(Object.keys(n).length) p[dk]=n; }); }); }
     return P.length?{temUn:cU>=0,tipo:`${diario?'por dia, somados':'acumulado por data'}${cC>=0?', com os cursos':''}${cO>=0?', com as origens':''}`,P}:null; }
-  /* 2) lista de inscritos (um por linha) */
-  if(cS<0&&dI<0&&dM<0) return null;
+  /* 2) lista de leads ou de inscritos (um por linha) */
+  const dC=col(/(^criad|^created|cadastr|entrada|data do lead|data de criac|data de captac)/), dIns=col(/data.*inscri|inscri.*data/);
+  const dCt=col(/primeiro contato|data.*(contato|ligac|atendimento)|(contato|ligac|atendimento).*data/), dCm=col(/data.*(encaminh|agend|visita|entrevista|comercial)/);
+  const cEq=T.cab.findIndex(h=>/^(equipe|time|setor|fila|celula)$/.test(h));
+  const cRcc=T.cab.findIndex(h=>semData(h)&&/call ?center|atendente|operador|\bsdr\b|pre.?venda|teleatend/.test(h));
+  const cRcm=T.cab.findIndex(h=>semData(h)&&/consultor|vendedor|closer|executivo|comercial/.test(h));
+  const cR=T.cab.findIndex(h=>/^(responsavel|dono|owner|atribuido a|proprietario|usuario responsavel)/.test(h));
+  if(cS<0&&dI<0&&dM<0&&dC<0) return null;
   let R=doUn(T.rows.filter(r=>r.some(Boolean))); if(!R.length) return null;
   const st=r=>cS>=0?cvNorm(r[cS]):'', neg=/nao\s|desist|cancel|reprov|ausent|elimin|perdid|indefer/;
   const ehM=r=>(dM>=0&&cvData(r[dM]))||(/matricul|efetiv|confirmad|pago\b/.test(st(r))&&!neg.test(st(r)));
   const ehA=r=>ehM(r)||(dA>=0&&cvData(r[dA]))||(/\baprova|classific|convoca|aguardando matric/.test(st(r))&&!neg.test(st(r)));
+  const ehI=r=>ehA(r)||(dIns>=0&&cvData(r[dIns]))||(/inscri|prova|vestibular|enem|aguardando resultado|reprov|ausent|nao matric/.test(st(r))&&!/nao inscri|sem inscri/.test(st(r)));
+  const ehCm=r=>ehI(r)||(dCm>=0&&cvData(r[dCm]))||/negocia|proposta|visita|entrevista|agendad|oportunidad|encaminhad|comercial|interessad/.test(st(r));
+  const ehCt=r=>ehCm(r)||(dCt>=0&&cvData(r[dCt]))||/contat|atendid|atendiment|retorno|ligac|whats|qualificad|em andamento|sem interesse|nao atende/.test(st(r));
+  const fase=r=>ehM(r)?6:ehA(r)?5:ehI(r)?4:ehCm(r)?3:ehCt(r)?2:1;
+  const F=R.map(fase), listaLeads=F.some(f=>f<4)&&(cS>=0||dIns>=0);
   const semA=cA<0&&dA<0&&!R.some(r=>/\baprova|classific/.test(st(r)));
-  const quebra=ci=>{ const o={}; R.forEach(r=>{ const nm=String(r[ci]||'').trim()||'(não informado)'; const q=o[nm]=o[nm]||{i:0,a:semA?null:0,m:0}; q.i++; if(!semA&&ehA(r)) q.a++; if(ehM(r)) q.m++; }); return o; };
+  const quebra=ci=>{ const o={}; R.forEach((r,j)=>{ const nm=String(r[ci]||'').trim()||'(não informado)'; const q=o[nm]=o[nm]||{l:listaLeads?0:null,i:0,a:semA?null:0,m:0}; if(listaLeads) q.l++; if(!listaLeads||F[j]>=4) q.i++; if(!semA&&F[j]>=5) q.a++; if(F[j]>=6) q.m++; }); return o; };
   let P;
-  const di=R.map(r=>dI>=0?cvData(r[dI]):null), dm=R.map((r,j)=>ehM(r)?((dM>=0&&cvData(r[dM]))||di[j]):null);
-  if(dI>=0){ const dias=[...new Set(di.concat(dm).filter(Boolean))].sort();
-    const da=R.map((r,j)=>ehA(r)?((dA>=0&&cvData(r[dA]))||(dM>=0&&cvData(r[dM]))||di[j]):null);
+  const dCria=R.map(r=>dC>=0?cvData(r[dC]):dI>=0?cvData(r[dI]):null);
+  const di=R.map((r,j)=>!listaLeads||F[j]>=4?((dIns>=0&&cvData(r[dIns]))||dCria[j]):null);
+  const dm=R.map((r,j)=>F[j]>=6?((dM>=0&&cvData(r[dM]))||di[j]):null);
+  if(dCria.some(Boolean)){ const dias=[...new Set(dCria.concat(di,dm).filter(Boolean))].sort();
+    const da=R.map((r,j)=>F[j]>=5?((dA>=0&&cvData(r[dA]))||(dM>=0&&cvData(r[dM]))||di[j]):null);
     const cnt=(arr,d)=>arr.reduce((a,x)=>a+(x&&x<=d?1:0),0);
-    P=dias.map(d=>({d,i:cnt(di,d),a:semA?null:cnt(da,d),m:cnt(dm,d)})); }
-  else P=[{d:cvHojeISO(),i:R.length,a:semA?null:R.filter(ehA).length,m:R.filter(ehM).length}];
+    P=dias.map(d=>({d,l:listaLeads?cnt(dCria,d):null,i:cnt(di,d),a:semA?null:cnt(da,d),m:cnt(dm,d)})); }
+  else P=[{d:cvHojeISO(),l:listaLeads?R.length:null,i:listaLeads?F.filter(f=>f>=4).length:R.length,a:semA?null:F.filter(f=>f>=5).length,m:F.filter(f=>f>=6).length}];
   const ult=P[P.length-1]; DIM.forEach(([k,ci])=>ult[k]=quebra(ci));
   /* tempo da inscrição até a matrícula */
-  if(dI>=0&&dM>=0){ const ds=R.map((r,j)=>di[j]&&dm[j]&&dM>=0&&cvData(r[dM])?Math.round((cDt(dm[j])-cDt(di[j]))/864e5):null).filter(x=>x!=null&&x>=0).sort((a,b)=>a-b);
-    if(ds.length) ult.t={b:CV_FX.map(([a,b])=>ds.filter(x=>x>=a&&x<=b).length),med:ds[Math.floor((ds.length-1)/2)]+(ds.length%2?0:(ds[ds.length/2]-ds[ds.length/2-1])/2),n:ds.length}; }
-  return {temUn:cU>=0,tipo:`lista de ${cvN(R.length)} inscritos, ${dI>=0?'montada por data':'retrato de hoje'}${cC>=0?', com os cursos':''}${cO>=0?', com as origens':''}`,P}; }
+  if(dM>=0){ const ds=R.map((r,j)=>di[j]&&dm[j]&&cvData(r[dM])?Math.round((cDt(dm[j])-cDt(di[j]))/864e5):null).filter(x=>x!=null&&x>=0).sort((a,b)=>a-b);
+    if(ds.length) ult.t={b:CV_FX.map(([a,b])=>ds.filter(x=>x>=a&&x<=b).length),med:cvMed(ds),n:ds.length}; }
+  /* call center e comercial */
+  if(listaLeads&&(cRcc>=0||cRcm>=0||cR>=0||cEq>=0)){
+    const hs=R.map(r=>{ if(dC<0||dCt<0) return null; const a=cvDT(r[dC]), b=cvDT(r[dCt]); return a&&b&&b>=a?(b-a)/36e5:null; });
+    const novo=()=>({l:0,ct:0,cm:0,i:0,a:semA?null:0,m:0,h:[]}), soma=(o,j)=>{ o.l++; if(F[j]>=2)o.ct++; if(F[j]>=3)o.cm++; if(F[j]>=4)o.i++; if(!semA&&F[j]>=5)o.a++; if(F[j]>=6)o.m++; if(hs[j]!=null)o.h.push(hs[j]); };
+    const eq={}, pes={}, add=(e,nm,j)=>{ soma(eq[e]=eq[e]||novo(),j); if(nm){ const k=nm+'|'+e; const q=pes[k]=pes[k]||Object.assign(novo(),{nome:nm,eq:e}); soma(q,j); } };
+    R.forEach((r,j)=>{ const v=ci=>ci>=0?String(r[ci]||'').trim():'';
+      if(cRcc>=0||cRcm>=0){ if(cRcc>=0) add('Call center',v(cRcc)||'(sem atendente)',j); if(cRcm>=0&&(v(cRcm)||F[j]>=3)) add('Comercial',v(cRcm)||'(sem consultor)',j); }
+      else add(cEq>=0?(v(cEq)||'(sem equipe)'):'Atendimento',cR>=0?(v(cR)||'(sem responsável)'):'',j); });
+    const fecha=o=>{ const h=o.h.sort((a,b)=>a-b); delete o.h; o.hmed=h.length?cvMed(h):null; return o; };
+    const todosH=hs.filter(x=>x!=null).sort((a,b)=>a-b);
+    ult.at={eq:Object.fromEntries(Object.entries(eq).map(([k,o])=>[k,fecha(o)])),pes:Object.values(pes).map(fecha),
+      tot:{l:R.length,ct:F.filter(f=>f>=2).length,cm:F.filter(f=>f>=3).length,i:F.filter(f=>f>=4).length,a:semA?null:F.filter(f=>f>=5).length,m:F.filter(f=>f>=6).length},
+      tc:todosH.length?{b:CV_HX.map(([a,b])=>todosH.filter(x=>x>=a&&x<b).length).concat([F.filter((f,j)=>f<2&&hs[j]==null).length]),med:cvMed(todosH),n:todosH.length}:null,
+      cc:cRcc>=0||cRcm>=0}; }
+  return {temUn:cU>=0,tipo:`lista de ${cvN(R.length)} ${listaLeads?'leads':'inscritos'}, ${dCria.some(Boolean)?'montada por data':'retrato de hoje'}${cC>=0?', com os cursos':''}${cO>=0?', com as origens':''}${ult.at?', com o atendimento':''}`,P}; }
+const cvMed=a=>a.length?(a.length%2?a[(a.length-1)/2]:(a[a.length/2-1]+a[a.length/2])/2):null;
+const CV_HX=[[0,1,'Até 1 hora'],[1,4,'1 a 4 horas'],[4,24,'4 a 24 horas'],[24,72,'1 a 3 dias'],[72,1e9,'Mais de 3 dias']];
+function cvDT(v){ const s=String(v||'').trim(); let m;
+  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{2}))?/))) return new Date(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0)).getTime();
+  if((m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})(?:[ ,T]+(\d{1,2}):(\d{2}))?/))) return new Date(m[3].length===2?2000+ +m[3]:+m[3],m[2]-1,+m[1],+(m[4]||0),+(m[5]||0)).getTime();
+  if(/^\d{5}(\.\d+)?$/.test(s)) return Math.round((+s-25569)*864e5)+new Date().getTimezoneOffset()*6e4; return null; }
 
 function cvLer(tabs,un){ for(const T of tabs){ const r=cvLerTabela(T,un); if(r) return r; } return null; }
-function cvAplicar(c,r,file){ cvGravar(c,x=>{ const s=cvSerie(x).filter(p=>!r.P.some(q=>q.d===p.d)); r.P.forEach(q=>{ const old=cvSerie(x).find(p=>p.d===q.d)||{}; const np={d:q.d,l:q.l!=null?q.l:(old.l??null),i:q.i,a:q.a,m:q.m,v:q.v!=null?q.v:(old.v??null)}; ['c','o','t'].forEach(k=>{ if(q[k]) np[k]=q[k]; else if(old[k]) np[k]=old[k]; }); s.push(np); }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); }); }
+function cvAplicar(c,r,file){ cvGravar(c,x=>{ const s=cvSerie(x).filter(p=>!r.P.some(q=>q.d===p.d)); r.P.forEach(q=>{ const old=cvSerie(x).find(p=>p.d===q.d)||{}; const np={d:q.d,l:q.l!=null?q.l:(old.l??null),i:q.i,a:q.a,m:q.m,v:q.v!=null?q.v:(old.v??null)}; ['c','o','t','at'].forEach(k=>{ if(q[k]) np[k]=q[k]; else if(old[k]) np[k]=old[k]; }); s.push(np); }); x.serie=s; x.cvFonte=file.name; x.cvEm=new Date().toISOString(); }); }
+async function cvLerArq(file){ if(!/\.xlsx?$/i.test(file.name)) return lerArquivo(file);
+  await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'); const wb=window.XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
+  return wb.SheetNames.map(nm=>{ const csv=window.XLSX.utils.sheet_to_csv(wb.Sheets[nm],{FS:'\t',blankrows:false,dateNF:'dd/mm/yyyy hh:mm'}); return csv?`## Aba: ${nm}\n${csv}`:''; }).filter(Boolean).join('\n\n'); }
 async function cvImportar(id,file){
   const c=ciclosTodos().find(x=>x.id===id); if(!c) return;
-  try{ const r=cvLer(cvTabelas(await lerArquivo(file)),c.un); if(!r){ toast(CV_FALHA); return; }
+  try{ const r=cvLer(cvTabelas(await cvLerArq(file)),c.un); if(!r){ toast(CV_FALHA); return; }
     cvAplicar(c,r,file); toast(`${pl(r.P.length,'registro','registros')} na curva de ${c.nome||'ciclo'} (${r.tipo})`);
   }catch(e){ console.error(e); toast('Não foi possível ler a planilha: '+(e.message||e)); } }
 /* uma planilha com todas as áreas: cada UN vai para o ciclo escolhido dela */
 async function cvImportarTudo(file){
-  try{ const tabs=cvTabelas(await lerArquivo(file)); const feitos=[]; let semUn=false;
+  try{ const tabs=cvTabelas(await cvLerArq(file)); const feitos=[]; let semUn=false;
     UNS.forEach(u=>{ const c=cvEscolhido(u.id); if(!c) return; const r=cvLer(tabs,u.id); if(!r) return; if(!r.temUn){ semUn=true; return; } cvAplicar(c,r,file); feitos.push(`${u.nome} (${r.P.length})`); });
     if(feitos.length) toast(`Curvas atualizadas: ${feitos.join(', ')}`);
     else toast(semUn?'A planilha não tem uma coluna de UN ou nível. Importe dentro da aba da área.':CV_FALHA);
