@@ -163,6 +163,7 @@ html.m .cnode .num{width:36px;height:36px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* proposta FECAP */
+.alerta{border-color:rgba(255,92,92,.55)!important;background:linear-gradient(180deg,rgba(255,92,92,.10),rgba(14,18,26,.92))!important;box-shadow:0 16px 40px -20px rgba(255,92,92,.5)}
 .pstep{display:flex;gap:12px;align-items:flex-start;padding:8px 13px;border:1px solid var(--line);border-radius:12px;background:rgba(14,18,26,.92)}
 .pstep .num{flex:none;width:28px;height:28px;font-size:13px;display:flex;align-items:center;justify-content:center}
 .pstep b{display:block;font-family:Archivo,sans-serif;font-weight:800;font-size:14px}
@@ -505,6 +506,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
         <div class="hcard"><div class="ic"><i data-lucide="megaphone" class="w-[18px] h-[18px]"></i></div><div><b>Agência de RP</b><p>Imprensa, reputação e pauta institucional da FECAP.</p></div></div>
         <div class="hcard"><div class="ic"><i data-lucide="trending-up" class="w-[18px] h-[18px]"></i></div><div><b>Agência de performance e growth</b><p>Mídia paga por curso, testes e otimização diária das campanhas.</p></div></div>
         <div class="hcard"><div class="ic"><i data-lucide="database" class="w-[18px] h-[18px]"></i></div><div><b>Dados e desenvolvimento</b><p>Integrações de CRM, páginas e automações, quando necessário.</p></div></div>
+        <div class="hcard" style="border-color:rgba(0,229,255,.35)"><div class="ic" style="color:var(--cyan)"><i data-lucide="headset" class="w-[18px] h-[18px]"></i></div><div><b>Apoio ao atendimento · Carol Farias</b><p>Facilitadora, com pós-graduação pela Gestão Barragan. Apoio externo ao atendimento.</p></div></div>
       </div>
     </div>
   </div>
@@ -561,9 +563,10 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <section class="slide" aria-label="Verticalização dos anúncios">
   <span class="eyebrow rise">// 15 <b>Frente 4 · Estudo de viabilidade</b></span>
   <h2 class="ttl rise text-[42px] mt-4">Anúncios por curso, <em>não só por modalidade.</em></h2>
-  <div class="grid grid-cols-2 gap-5 mt-6 rise">
+  <div class="grid grid-cols-3 gap-4 mt-6 rise">
     <div class="card p-5"><div class="cat">Hoje · Pós e Colégio</div><p class="text-[14.5px] text-graph mt-2">Campanhas por modalidade e frente de estudo. Não se sabe quanto custa e quanto retorna cada curso.</p></div>
     <div class="card p-5" style="border-color:rgba(0,255,135,.4)"><div class="cat" style="color:var(--neon)">Proposta</div><p class="text-[14.5px] text-graph mt-2">Cada curso com verba, CPL, CAC e retorno próprios, como já fazemos por campanha no ENEM e no vestibular.</p></div>
+    <div class="card p-5 alerta"><div class="cat flex items-center gap-2" style="color:#FF5C5C"><i data-lucide="triangle-alert" class="w-4 h-4"></i>Atenção</div><p class="text-[14px] text-graph mt-2">A viabilidade da verba para verticalizar é validada a partir do diagnóstico. Para isso precisamos do <b class="text-ink">CPL e do CAC reais</b> por curso, e hoje não sabemos se há visibilidade desses números.</p></div>
   </div>
   <div class="grid grid-cols-4 gap-3 mt-auto mb-1 rise">
     <div class="card p-4 flex flex-col gap-2"><span class="num">01</span><div class="font-display font-extrabold uppercase text-[14px]">Orçamento</div><p class="text-[12.5px] text-graph">Levantamento prévio: sem ele, a verba por curso pode ficar pequena demais para a mídia render.</p></div>
@@ -578,6 +581,10 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   <span class="eyebrow rise">// 16 <b>Frente 5 · Equipe de Marketing</b></span>
   <h2 class="ttl rise text-[44px] mt-4">Gestão e growth treinados, <em>time desenvolvido.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">O objetivo é que, em abril, a nova gestão e a pessoa de performance e growth conduzam a operação com autonomia, e cada pessoa do time esteja no papel certo.</p>
+  <div class="card p-4 mt-5 rise flex items-center gap-5" style="border-color:rgba(0,255,135,.45);background:linear-gradient(90deg,rgba(0,255,135,.08),rgba(14,18,26,.92) 55%)">
+    <div class="flex-none"><div class="font-mono text-[10.5px] tracking-[.14em] text-emer">O QUE JÁ ESTAMOS FAZENDO</div><div class="font-display font-extrabold text-[19px] mt-1">Gerente de Marketing Educacional</div><div class="flex gap-2 mt-2"><span class="chip g">Vaga aberta</span><span class="chip">Processo LORSO Digital</span><span class="chip">Presencial · SP · CLT</span></div></div>
+    <div class="ml-auto text-right flex-none"><div class="font-display font-extrabold text-[40px] text-emer leading-none">+20</div><div class="font-mono text-[11px] tracking-[.12em] text-mute mt-1">CURRÍCULOS ANALISADOS</div></div>
+  </div>
   <div class="grid grid-cols-4 gap-4 mt-auto mb-2">
     <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="graduation-cap" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Nova gestão</div><p class="text-[13.5px] text-graph">Repasse do histórico de cada unidade, mentoria em planejamento, orçamento e campanhas, e acompanhamento nas primeiras decisões.</p></div>
     <div class="card p-5 rise flex flex-col gap-2" style="border-color:rgba(0,229,255,.35)"><i data-lucide="trending-up" class="w-5 h-5 text-cyan"></i><div class="font-display font-extrabold uppercase text-[15px]">Vaga de performance e growth</div><p class="text-[13.5px] text-graph">Perfil da vaga, apoio na seleção e treinamento de quem entrar em mídia, funil e testes.</p></div>
@@ -688,6 +695,19 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
     </div>
   </div>
 </section>
+
+<!-- 24 INVESTIMENTO -->
+<section class="slide" aria-label="Investimento">
+  <div class="grain"></div>
+  <div class="absolute -right-24 -bottom-24 w-[580px] h-[580px] rounded-full" style="background:radial-gradient(circle,rgba(0,255,135,.18),transparent 65%)"></div>
+  <span class="eyebrow rise relative">// 24 <b>Investimento</b></span>
+  <div class="relative mt-auto flex flex-col gap-6 max-w-[980px] mb-6">
+    <h2 class="ttl rise text-[72px]">Investimento</h2>
+    <p class="rise text-[28px] font-display font-extrabold leading-tight">Agora é hora de colocar o plano em ação. <em class="not-italic text-emer">Vamos iniciar?</em></p>
+    <div class="rise flex flex-wrap gap-3 mt-2"><span class="chip g">Novembro a abril</span><span class="chip">Graduação · Pós · Equipe · Processos</span><span class="chip">LORSO Digital</span></div>
+  </div>
+</section>
+
 
 <button class="ctl" id="prev" aria-label="Slide anterior"><i data-lucide="arrow-left" class="w-4 h-4"></i>Anterior</button>
 <div id="counter"></div>
