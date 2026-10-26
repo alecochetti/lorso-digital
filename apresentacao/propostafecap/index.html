@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+
+<meta name="theme-color" content="#0A0D13">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="64x64" href="/assets/img/favicon.png">
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<title>Proposta FECAP · LORSO Digital</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script>
+tailwind.config={theme:{extend:{
+  fontFamily:{sans:['Inter','system-ui','sans-serif'],display:['Archivo','Arial Black','sans-serif'],mono:['"JetBrains Mono"','ui-monospace','monospace']},
+  colors:{bg:'#0A0D13',panel:'#0E121A',ink:'#F2F5F7',graph:'#A9B3C1',mute:'#7D8796',line:'#1C222D',emer:'#00FF87',cyan:'#00E5FF',sand:'#D9C7A7'}
+}}}
+</script>
+<style>
+/* Layout: palco 16:9 fixo (1280x720) escalado para a tela; tom oficial do site LORSO: grafite azulado quase preto, verde neon, rótulos mono "// 0X"; mídias reais em molduras de navegador e celular com zoom */
+:root{--bg:#0A0D13;--panel:#0E121A;--panel2:#121722;--ink:#F2F5F7;--mute:#7D8796;--line:#1C222D;--neon:#00FF87;--cyan:#00E5FF;--sand:#D9C7A7;color-scheme:dark}
+html,body{height:100%}
+body{background:#05070B;color:var(--ink);font-family:Inter,system-ui,sans-serif;overflow:hidden}
+#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{width:1280px;height:720px;flex:none;position:relative;overflow:hidden;background:var(--bg);border-radius:18px;border:1px solid var(--line);box-shadow:0 40px 120px -40px rgba(0,255,135,.12);transform-origin:center}
+.slide{position:absolute;inset:0;padding:56px 72px 96px;display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateX(40px);transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1),visibility 0s .55s}
+.slide.on{opacity:1;visibility:visible;transform:none;transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
+.slide.back{transform:translateX(-40px)}
+.slide.on .rise{animation:rise .7s both cubic-bezier(.2,.7,.2,1)}
+.slide.on .rise:nth-child(2){animation-delay:.08s}.slide.on .rise:nth-child(3){animation-delay:.16s}.slide.on .rise:nth-child(4){animation-delay:.24s}.slide.on .rise:nth-child(5){animation-delay:.32s}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.eyebrow{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.eyebrow b{font-weight:500;color:var(--neon)}
+.ttl{font-family:Archivo,"Arial Black",sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:-.02em;line-height:1.02;text-wrap:balance}
+.ttl em{font-style:normal;color:var(--neon)}
+.float{animation:float 6s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-8px)}}
+.grain{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:64px 64px;opacity:.35;mask-image:radial-gradient(ellipse at 70% 30%,#000,transparent 70%)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;transition:transform .25s,box-shadow .3s,border-color .3s}
+.card:hover{transform:translateY(-4px);border-color:rgba(0,255,135,.45)}
+.num{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:Archivo,sans-serif;font-weight:800;font-size:17px;background:#151A24;color:var(--ink);transition:all .3s}
+.step .bar{height:2px;background:var(--line);border-radius:2px;margin-top:auto;position:relative;overflow:hidden}
+.step .bar i{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,var(--neon),var(--cyan))}
+.step.act{border-color:rgba(0,255,135,.55);background:#101620;box-shadow:0 24px 60px -20px rgba(0,255,135,.35)}
+.step.act .num{background:var(--neon);color:#06110B;box-shadow:0 0 24px rgba(0,255,135,.45)}
+.step.act .bar i{animation:fill 3.2s linear forwards}
+@keyframes fill{to{width:100%}}
+.step.done .num{background:rgba(0,255,135,.12);color:var(--neon)}
+.chip{font-family:"JetBrains Mono",monospace;font-size:11px;padding:6px 10px;border-radius:99px;border:1px solid var(--line);color:var(--mute);white-space:nowrap}
+.chip.g{border-color:rgba(0,255,135,.5);color:var(--neon)}
+.tab{padding:8px 15px;border-radius:99px;font-size:13px;font-weight:600;color:var(--mute);border:1px solid var(--line);background:var(--panel);cursor:pointer;transition:all .2s}
+.tab[aria-selected="true"]{background:var(--neon);color:#06110B;border-color:var(--neon)}
+.tabpanel{animation:rise .45s both}
+.foot{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.1em;color:var(--neon);display:flex;justify-content:space-between;align-items:center}
+.cat{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--sand)}
+ul.ck{display:flex;flex-direction:column;gap:11px;color:#A9B3C1;font-size:15px;line-height:1.45}
+ul.ck li{display:flex;gap:12px}
+ul.ck li::before{content:"";flex:none;width:7px;height:7px;margin-top:7px;border-radius:2px;background:var(--neon);box-shadow:0 0 10px rgba(0,255,135,.6)}
+
+/* molduras com mídia real */
+.frame{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 30px 70px -30px rgba(0,255,135,.22)}
+.fbar{display:flex;gap:6px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.fbar i{width:9px;height:9px;border-radius:50%;background:#252C39}
+.fbar span{margin-left:8px;font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--mute)}
+.scr{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;object-position:top;background:#000}
+.phone{width:190px;flex:none;border-radius:30px;border:7px solid #1A202B;background:#000;overflow:hidden;position:relative;box-shadow:0 30px 60px -25px rgba(0,229,255,.25)}
+.phone>video,.phone>img{display:block;width:100%;aspect-ratio:780/1688;object-fit:cover;object-position:top}
+.tall{width:220px;flex:none;border-radius:18px;border:1px solid var(--line);overflow:hidden;background:#000;box-shadow:0 30px 60px -25px rgba(0,255,135,.2)}
+.tall>video{display:block;width:100%;aspect-ratio:9/16;object-fit:cover}
+.zoom{cursor:zoom-in;position:relative}
+.zoom::after{content:"";position:absolute;right:10px;top:10px;width:28px;height:28px;border-radius:8px;background:rgba(10,13,19,.75) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300FF87' stroke-width='2'%3E%3Cpath d='M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7'/%3E%3C/svg%3E") center/14px no-repeat;opacity:0;transition:opacity .2s}
+.zoom:hover::after{opacity:1}
+.lbl{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);text-align:center;margin-top:10px}
+.thumb{width:96px;border-radius:8px;border:1px solid var(--line);overflow:hidden;cursor:pointer;opacity:.6;transition:all .2s}
+.thumb img,.thumb video{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;object-position:top}
+.thumb.on,.thumb:hover{opacity:1;border-color:var(--neon)}
+.tree{display:flex;flex-wrap:wrap;gap:6px}
+.tree span{font-size:12px;padding:5px 9px;border-radius:6px;background:#151A24;color:#C9D1DB}
+
+/* zoom */
+#lb{position:absolute;inset:0;z-index:30;background:rgba(5,7,11,.92);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:40px}
+#lb>*{max-width:100%;max-height:100%;border-radius:12px;border:1px solid var(--line);box-shadow:0 30px 100px -20px rgba(0,255,135,.3)}
+#lb .x{position:absolute;top:18px;right:22px;font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--mute);border:0;box-shadow:none}
+
+/* controles */
+#progress{position:absolute;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--neon),var(--cyan));box-shadow:0 0 12px rgba(0,255,135,.6);transition:width .5s ease;z-index:10}
+.ctl{position:absolute;bottom:24px;z-index:10;display:flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:99px;border:1px solid var(--line);background:rgba(14,18,26,.85);backdrop-filter:blur(6px);font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;transition:all .2s;text-decoration:none}
+.ctl:hover{border-color:var(--neon);color:var(--neon)}
+.ctl:disabled{opacity:.3;cursor:default}
+.ctl.pri{background:var(--neon);color:#06110B;border-color:var(--neon)}
+.ctl.pri:hover{color:#06110B;box-shadow:0 0 24px rgba(0,255,135,.45)}
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+#prev{left:28px}#next{right:28px}
+#back{top:20px;bottom:auto;right:28px;height:36px;font-size:12px;border-color:rgba(0,255,135,.45);color:var(--neon)}
+#back:hover{background:var(--neon);color:#06110B}
+#counter{position:absolute;bottom:37px;left:50%;transform:translateX(-50%);font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.12em;color:var(--mute);z-index:10}
+
+.cnode{background:none;border:0;cursor:pointer;color:inherit}
+.cnode[aria-selected="true"] .num{background:var(--neon);color:#06110B;box-shadow:0 0 24px rgba(0,255,135,.45)}
+.cnode[aria-selected="true"] span:last-child{color:var(--neon)}
+/* hub final */
+.hcard{display:flex;gap:12px;align-items:flex-start;padding:13px 15px;background:rgba(14,18,26,.92);border:1px solid var(--line);border-radius:12px;transition:border-color .25s,box-shadow .25s,transform .25s;cursor:default}
+.hcard:hover,.hcard.hot{border-color:rgba(0,255,135,.55);box-shadow:0 18px 40px -18px rgba(0,255,135,.4);transform:translateY(-2px)}
+.hcard .ic{width:36px;height:36px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#121B22;border:1px solid #1E2A33;color:var(--neon)}
+.hcard b{display:block;font-family:Archivo,sans-serif;font-weight:800;font-size:14.5px;letter-spacing:-.01em}
+.hcard p{font-size:12px;line-height:1.45;color:#A9B3C1;margin-top:3px}
+#hubCore{width:180px;height:180px}
+.ring{position:absolute;left:50%;top:50%;border-radius:50%;transform:translate(-50%,-50%)}
+.ring.r1{width:250px;height:250px;border:1px solid rgba(0,229,255,.18)}
+.ring.r2{width:330px;height:330px;border:1px dashed rgba(0,255,135,.22);animation:spin 40s linear infinite}
+.ring.r3{width:410px;height:410px;border:1px solid rgba(255,255,255,.05)}
+.ring.r2::before{content:"";position:absolute;top:-4px;left:50%;width:8px;height:8px;border-radius:50%;background:var(--neon);box-shadow:0 0 12px var(--neon)}
+@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.core{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 40%,#122019,#0A0D13 70%);border:2px solid rgba(0,255,135,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;box-shadow:0 0 60px rgba(0,255,135,.25),inset 0 0 30px rgba(0,255,135,.12);animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 90px rgba(0,255,135,.4),inset 0 0 40px rgba(0,255,135,.2)}}
+.glow{position:absolute;left:50%;top:50%;width:520px;height:520px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(0,255,135,.12),transparent 60%);pointer-events:none}
+#hubSvg path.base{fill:none;stroke:rgba(140,160,180,.16);stroke-width:1.2}
+#hubSvg path.hp{fill:none;stroke-width:1.6;opacity:.75;transition:opacity .25s,stroke-width .25s}
+#hubSvg path.hp.hot{opacity:1;stroke-width:2.6}
+#hubSvg .go{stroke-dasharray:var(--l);stroke-dashoffset:var(--l);animation:draw 1.3s cubic-bezier(.4,.1,.2,1) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+/* ===== versão mobile (celular em pé): slides viram página de rolagem ===== */
+html.m,html.m body{height:auto}
+html.m body{overflow-x:hidden;overflow-y:auto}
+html.m #viewport{position:static;display:block}
+html.m #stage{width:100%;height:auto;transform:none!important;border-radius:0;border:0;overflow:visible}
+html.m .slide{position:relative;inset:auto;opacity:1;visibility:visible;transform:none;padding:52px 18px 44px;min-height:0;border-bottom:1px solid var(--line);overflow:hidden;transition:none}
+html.m .slide .rise{animation:none!important}
+html.m .slide [class*="grid-cols"]{grid-template-columns:1fr!important}
+html.m .slide .grid{gap:14px!important}
+html.m .ttl{font-size:30px!important;line-height:1.05}
+html.m .slide:first-of-type .ttl{font-size:38px!important}
+html.m .slide p.text-xl,html.m .slide p.text-lg{font-size:16px!important}
+html.m .float{animation:none}
+html.m .step{height:auto!important}
+html.m .flex.items-end.justify-between{flex-direction:column;align-items:flex-start;gap:16px}
+html.m [role="tablist"]{flex-wrap:wrap}
+html.m .slide .flex.gap-4.items-start,html.m .slide .flex.gap-5.items-start,html.m .slide .flex.gap-6.items-start{flex-wrap:wrap;justify-content:center;gap:14px}
+html.m .slide .mt-10,html.m .slide .mt-8,html.m .slide .mt-12{margin-top:0!important}
+html.m .phone{width:44vw!important;max-width:200px}
+html.m .tall{width:44vw!important;max-width:220px}
+html.m .w-px.self-stretch{display:none}
+html.m .zoom::after{opacity:1}
+html.m .mt-auto{margin-top:24px!important}
+html.m .grain{display:none}
+html.m #prev,html.m #next,html.m #counter,html.m #back{display:none!important}
+html.m #progress{position:fixed;top:0;z-index:40}
+html.m #lb{position:fixed;padding:16px}
+html.m #hubSvg,html.m .ring,html.m .glow{display:none}
+html.m #hub{display:flex;flex-direction:column;gap:14px}
+html.m #hub>div:nth-child(3){order:-1;height:auto;padding:8px 0 20px}
+html.m #hub>div:nth-child(3) .absolute{position:static;transform:none;margin-top:10px}
+html.m #hub>div:nth-child(3){flex-direction:column}
+html.m #hubCore{width:130px;height:130px}
+html.m .min-h-\[208px\],html.m .min-h-\[150px\]{min-height:0}
+html.m .cnode .num{width:36px;height:36px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* proposta FECAP */
+table.sci{border-collapse:collapse;font-size:13px}
+table.sci th{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:500;padding:12px 18px;border-bottom:1px solid var(--line);background:var(--panel2)}
+table.sci td{padding:8.5px 18px;border-bottom:1px solid var(--line);color:#A9B3C1;vertical-align:top}
+table.sci td:first-child{color:var(--ink);font-weight:600;width:38%}
+table.sci td b{color:var(--ink);font-weight:600}
+table.sci tr:last-child td{border-bottom:0}
+html.m table.sci td,html.m table.sci th{display:block;width:auto!important;padding:6px 14px}
+html.m table.sci tr{display:block;border-bottom:1px solid var(--line);padding:6px 0}
+html.m table.sci td{border:0}
+html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!important}
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+<div id="progress"></div>
+
+<!-- 1 CAPA -->
+<section class="slide" aria-label="Capa">
+  <div class="grain"></div>
+  <div class="absolute -right-24 -top-24 w-[560px] h-[560px] rounded-full" style="background:radial-gradient(circle,rgba(0,255,135,.18),transparent 65%)"></div>
+  <div class="relative flex items-center gap-3 rise">
+    <svg width="44" height="44" viewBox="0 0 54 54" aria-hidden="true"><path d="M8 6h12v30h26v12H8z" fill="#00FF87"/><path d="M30 6h16l-8 22H22z" fill="#00E5FF"/><circle cx="41" cy="14" r="3.4" fill="#fff"/></svg>
+    <div class="leading-none"><div class="font-display font-extrabold text-xl tracking-wide">LORSO</div><div class="text-[11px] tracking-[.32em] text-mute mt-1">DIGITAL.</div></div>
+    <span class="chip g ml-4">PROPOSTA · FECAP</span>
+  </div>
+  <div class="relative mt-auto flex flex-col gap-6 max-w-[1000px]">
+    <span class="eyebrow rise">// <b>Plano de trabalho para a Reitoria</b></span>
+    <h1 class="ttl rise text-[64px]">Marketing e captação FECAP, <em>de novembro a abril.</em></h1>
+    <p class="rise text-xl text-graph max-w-[780px]">Captação ativa da Graduação e da Pós-Graduação, desenvolvimento da equipe de Marketing e revisão de processos, com método e evidência.</p>
+    <div class="rise flex items-center gap-6 mt-2">
+      <button class="ctl pri !static" data-go="1">Começar <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+      <span class="text-sm text-mute">Alessandro Cochetti · LORSO Digital · Outubro de 2026</span>
+    </div>
+  </div>
+</section>
+
+<!-- 2 TRAJETÓRIA -->
+<section class="slide" aria-label="Quem conduz">
+  <span class="eyebrow rise">// 01 <b>Quem conduz</b></span>
+  <div class="grid grid-cols-[1.05fr_1fr] gap-12 mt-6 flex-1 items-center">
+    <div class="flex flex-col gap-5">
+      <h2 class="ttl rise text-[44px]">Um método construído em anos, <em>testado na operação.</em></h2>
+      <p class="rise text-[17px] text-graph leading-relaxed">Anos de planejamento, estudo e aplicação prática em operações de educação e de finanças. O que vai para a FECAP não é teoria: é o que já rodou, com time, verba e meta.</p>
+      <div class="grid grid-cols-2 gap-3 rise">
+        <div class="card p-5"><div class="font-display text-[34px] font-extrabold tabular-nums"><span data-count="17">17</span>+</div><p class="text-[13px] text-mute">anos liderando unidades de negócio em EdTech, Fintech e E-commerce</p></div>
+        <div class="card p-5"><div class="font-display text-[34px] font-extrabold tabular-nums">+R$<span data-count="40">40</span> mi</div><p class="text-[13px] text-mute">em receita gerada com marketing, marca e go-to-market</p></div>
+      </div>
+    </div>
+    <div class="flex flex-col gap-3">
+      <div class="card p-5 rise"><div class="cat">Educação financeira</div><div class="font-display font-extrabold text-[20px] mt-1">DSOP</div><p class="text-[13.5px] text-graph mt-1">Gestão de marketing em referência nacional de educação financeira.</p></div>
+      <div class="card p-5 rise"><div class="cat">Produtos educacionais</div><div class="font-display font-extrabold text-[20px] mt-1">Me Poupe!</div><p class="text-[13.5px] text-graph mt-1">Produtos educacionais, lançamentos perpétuos, ofertas de alto ticket e gestão operacional de ponta a ponta.</p></div>
+      <div class="card p-5 rise"><div class="cat">SaaS Fintech</div><div class="font-display font-extrabold text-[20px] mt-1">Meu Vista</div><p class="text-[13.5px] text-graph mt-1">Head de Marketing: aquisição paga, conteúdo B2B e B2C e integração do marketing com o comercial.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 POR QUE AGORA -->
+<section class="slide" aria-label="Por que agora">
+  <span class="eyebrow rise">// 02 <b>O momento</b></span>
+  <h2 class="ttl rise text-[48px] mt-4">Transição na gestão <em>com a captação em curso.</em></h2>
+  <div class="grid grid-cols-3 gap-5 mt-auto mb-2">
+    <div class="card p-6 rise flex flex-col gap-3"><i data-lucide="users-round" class="w-6 h-6 text-emer"></i><div class="font-display font-extrabold uppercase text-[17px]">Nova gestão de Marketing</div><p class="text-[14px] text-graph">A operação não pode parar enquanto a nova gestão assume. O time precisa de método, rituais e histórico de cada unidade.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3"><i data-lucide="graduation-cap" class="w-6 h-6 text-emer"></i><div class="font-display font-extrabold uppercase text-[17px]">Ciclo 2027.1 aberto</div><p class="text-[14px] text-graph">Graduação com <b class="text-ink">2.220 vagas</b> no edital (675 diurno e 1.545 noturno). Pós 2027.1 com inscrições até <b class="text-ink">01/02/2027</b>.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3"><i data-lucide="calendar-range" class="w-6 h-6 text-emer"></i><div class="font-display font-extrabold uppercase text-[17px]">Por que até abril</div><p class="text-[14px] text-graph">Fecha o ciclo 2027.1 inteiro e prepara a Pós 2027.2, que no ciclo anterior abriu inscrições em <b class="text-ink">14/04</b>.</p></div>
+  </div>
+</section>
+
+<!-- 4 G-01 -->
+<section class="slide" aria-label="Achado G-01">
+  <span class="eyebrow rise">// 03 <b>O que já vimos · G-01</b></span>
+  <div class="grid grid-cols-[1fr_1.15fr] gap-12 flex-1 items-center mt-2">
+    <div class="rise">
+      <div class="font-display font-extrabold text-[150px] leading-none text-emer tabular-nums" data-count="41">41</div>
+      <p class="text-xl text-ink mt-2 font-semibold">cursos e processos "Em breve", sem formulário de interesse</p>
+      <span class="chip mt-5 inline-block">Levantamento LORSO · 22/10/2026 · site e anúncios públicos</span>
+    </div>
+    <div class="flex flex-col gap-5">
+      <h2 class="ttl rise text-[38px]">A mídia paga leva <em>a uma porta fechada.</em></h2>
+      <ul class="ck rise">
+        <li>Anúncios no Google e na Meta chamam para inscrição em cursos que, no site, estão "Em breve".</li>
+        <li>Sem formulário, lista de espera ou automação, o interessado sai e a verba se perde.</li>
+        <li><span>Exemplo: a Pós em Finanças Corporativas recebe tráfego da campanha <span class="font-mono text-[13px] text-cyan">ebr_enem_pesquisa</span>.</span></li>
+        <li>Afeta Pós, MBA, Mestrado, ENEM e cursos de férias.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 5 G-02 -->
+<section class="slide" aria-label="Achado G-02">
+  <span class="eyebrow rise">// 04 <b>O que já vimos · G-02</b></span>
+  <h2 class="ttl rise text-[46px] mt-4">A captação só existe <em>com edital aberto.</em></h2>
+  <p class="rise text-[17px] text-graph mt-4 max-w-[860px]">Fora da janela de inscrição, a demanda que chega o ano todo (orgânica, indicação, mídia, eventos) não é registrada. Cada turma começa a captar do zero e depende só de mídia comprada na hora.</p>
+  <div class="grid grid-cols-[1.3fr_1fr] gap-5 mt-auto mb-1">
+    <div class="card p-6 rise">
+      <div class="cat">Por que pesa</div>
+      <ul class="ck mt-4">
+        <li>A decisão por uma pós, um MBA ou um mestrado é longa e começa meses antes da abertura.</li>
+        <li>Sem base de interessados por curso, não se sabe quais turmas têm demanda para abrir nem onde investir.</li>
+        <li>O custo por matrícula sobe, porque toda a captação acontece na janela.</li>
+      </ul>
+    </div>
+    <div class="card p-6 rise" style="border-color:rgba(0,229,255,.35)">
+      <div class="cat" style="color:var(--cyan)">Caso a validar</div>
+      <div class="font-display font-extrabold text-[22px] mt-2">Auditoria EAD</div>
+      <p class="text-[14px] text-graph mt-2">Único curso com página própria, anúncio coerente e captação contínua. Antes de virar padrão, vamos verificar o P&amp;L: receita, custo do time externo, mídia, CAC e margem.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6 EDITAIS -->
+<section class="slide" aria-label="Sinais nos editais">
+  <span class="eyebrow rise">// 05 <b>O que já vimos · editais da Pós</b></span>
+  <div class="grid grid-cols-2 gap-12 flex-1 items-center mt-2">
+    <div class="rise flex items-end gap-8">
+      <div><div class="font-display font-extrabold text-[120px] leading-none text-ink tabular-nums">26</div><p class="text-mute font-mono text-xs tracking-[.12em] mt-2">CURSOS · PÓS 2026.2</p></div>
+      <i data-lucide="arrow-right" class="w-10 h-10 text-mute mb-10"></i>
+      <div><div class="font-display font-extrabold text-[120px] leading-none text-emer tabular-nums">1</div><p class="text-mute font-mono text-xs tracking-[.12em] mt-2">CURSO · PÓS 2027.1</p></div>
+    </div>
+    <div class="flex flex-col gap-4">
+      <h2 class="ttl rise text-[34px]">Pouca oferta aberta <em>e edital depois da abertura.</em></h2>
+      <div class="card p-5 rise"><div class="cat">Pós 2026.2</div><p class="text-[14px] text-graph mt-2">Inscrições abertas em <b class="text-ink">14/04</b>. Edital assinado em <b class="text-ink">24/04 e 13/05</b>.</p></div>
+      <div class="card p-5 rise"><div class="cat">Pós 2027.1</div><p class="text-[14px] text-graph mt-2">Inscrições abertas em <b class="text-ink">20/09</b>. Edital assinado em <b class="text-ink">09/10 e 15/10</b>. Hoje, só a Auditoria online está com captação oficial aberta.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 PONTOS CEGOS -->
+<section class="slide" aria-label="Pontos cegos">
+  <span class="eyebrow rise">// 06 <b>O que já vimos · gestão</b></span>
+  <h2 class="ttl rise text-[46px] mt-4">Sem números iguais, <em>não há decisão segura.</em></h2>
+  <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Antes de propor mudanças, todas as áreas precisam falar dos mesmos números.</p>
+  <div class="grid grid-cols-3 gap-5 mt-auto mb-2">
+    <div class="card p-6 rise flex flex-col gap-3"><div class="font-display font-extrabold text-[44px] text-emer leading-none">~90</div><div class="font-display font-extrabold uppercase text-[16px]">Cursos livres sem gestão</div><p class="text-[14px] text-graph">Curta duração e educação executiva sem meta, CAC ou retorno acompanhados como unidade.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3"><div class="font-display font-extrabold text-[44px] text-emer leading-none">10</div><div class="font-display font-extrabold uppercase text-[16px]">Graduações sem turno</div><p class="text-[14px] text-graph">A capacidade da Graduação fica subestimada e a ocupação por turno não fecha.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3"><div class="font-display font-extrabold text-[44px] text-emer leading-none">3</div><div class="font-display font-extrabold uppercase text-[16px]">Definições em aberto</div><p class="text-[14px] text-graph">"Captado", "lead" e "verba" ainda não têm o mesmo significado para Marketing, central e financeiro.</p></div>
+  </div>
+</section>
+
+<!-- 8 O QUE VAMOS ENTENDER -->
+<section class="slide" aria-label="O que vamos entender">
+  <span class="eyebrow rise">// 07 <b>Ponto principal do diagnóstico</b></span>
+  <h2 class="ttl rise text-[40px] mt-3">Além do que já vimos, <em>o que vamos entender.</em></h2>
+  <div class="grid grid-cols-4 gap-4 mt-auto mb-1">
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="landmark" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Reitoria e coordenação</div><p class="text-[13px] text-graph leading-snug">Como as demandas chegam ao Marketing, quem aprova e onde o fluxo trava.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="handshake" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Parcerias</div><p class="text-[13px] text-graph leading-snug">Convênios, empresas parceiras e times externos: o que trazem e como são acompanhados.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="monitor-cog" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Plataformas</div><p class="text-[13px] text-graph leading-snug">CRM, contas de anúncio, site e ferramentas: o que se usa, o que integra e o que se paga sem usar.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="briefcase-business" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Serviços</div><p class="text-[13px] text-graph leading-snug">Agências e fornecedores: escopo, custo e entrega de cada um.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="id-card" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Folha do Marketing</div><p class="text-[13px] text-graph leading-snug">Equipe, papéis e tempo dividido entre tarefas administrativas e unidades de negócio.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="wallet" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Orçamento</div><p class="text-[13px] text-graph leading-snug">Anual por unidade, realizado até o mês e divisão entre mídia, produção, eventos e equipe.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2" style="border-color:rgba(0,229,255,.35)"><i data-lucide="calculator" class="w-5 h-5 text-cyan"></i><div class="font-display font-extrabold uppercase text-[14.5px]">P&amp;L Auditoria EAD</div><p class="text-[13px] text-graph leading-snug">Receita, custos, CPL, CAC e margem: o modelo se paga e pode ser replicado?</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="filter" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Funil de captação</div><p class="text-[13px] text-graph leading-snug">Do lead à matrícula paga no CRM, por unidade, curso, origem, call center e comercial.</p></div>
+  </div>
+</section>
+
+<!-- 9 O QUE ISSO CUSTA -->
+<section class="slide" aria-label="O que isso custa">
+  <span class="eyebrow rise">// 08 <b>O que isso custa</b></span>
+  <h2 class="ttl rise text-[44px] mt-4">Sem número inventado: <em>medido em 30 dias.</em></h2>
+  <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Cada perda vira um indicador com fonte e data. O primeiro relatório à Reitoria traz o valor de cada uma.</p>
+  <div class="grid grid-cols-3 gap-5 mt-auto mb-2">
+    <div class="card p-6 rise flex flex-col gap-3"><span class="chip">A MEDIR</span><div class="font-display font-extrabold uppercase text-[16px]">Verba sem captura</div><p class="text-[14px] text-graph">Investimento das campanhas cujo destino estava "Em breve", cruzado anúncio a anúncio nas contas de mídia.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3"><span class="chip">A MEDIR</span><div class="font-display font-extrabold uppercase text-[16px]">Demanda fora da janela</div><p class="text-[14px] text-graph">Interessados por curso que chegam sem edital aberto, contados a partir da lista de interesse.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3"><span class="chip">A MEDIR</span><div class="font-display font-extrabold uppercase text-[16px]">Lead que esfria</div><p class="text-[14px] text-graph">Tempo até o primeiro contato da central e do comercial, e a conversão em cada etapa do funil.</p></div>
+  </div>
+</section>
+
+<!-- 10 MÉTODO -->
+<section class="slide" aria-label="Método">
+  <span class="eyebrow rise">// 09 <b>Método LORSO</b></span>
+  <h2 class="ttl rise text-[48px] mt-4">Cinco fases, <em>aplicadas a cada unidade.</em></h2>
+  <p class="rise text-[17px] text-graph mt-4 max-w-[700px]">A ordem e a intensidade de cada fase seguem o calendário de captação de cada unidade de negócio.</p>
+  <div class="grid grid-cols-5 gap-4 mt-auto mb-1 rise" id="method">
+    <div class="card step p-5 flex flex-col gap-3 h-[280px] cursor-pointer"><div class="flex justify-between items-center"><span class="num">01</span><span class="font-mono text-[11px] tracking-[.14em] text-mute">FASE 1</span></div><div class="font-display font-extrabold uppercase text-[17px]">Diagnóstico</div><p class="text-[13px] leading-relaxed text-graph">Maturidade do Marketing, fluxo com as unidades, time, orçamento e gargalos da captação, com entrevistas uma a uma.</p><div class="bar"><i></i></div></div>
+    <div class="card step p-5 flex flex-col gap-3 h-[280px] cursor-pointer"><div class="flex justify-between items-center"><span class="num">02</span><span class="font-mono text-[11px] tracking-[.14em] text-mute">FASE 2</span></div><div class="font-display font-extrabold uppercase text-[17px]">Estratégia</div><p class="text-[13px] leading-relaxed text-graph">Plano da transição e da captação: novo fluxo, estrutura do time e verba por unidade, canal e curso.</p><div class="bar"><i></i></div></div>
+    <div class="card step p-5 flex flex-col gap-3 h-[280px] cursor-pointer"><div class="flex justify-between items-center"><span class="num">03</span><span class="font-mono text-[11px] tracking-[.14em] text-mute">FASE 3</span></div><div class="font-display font-extrabold uppercase text-[17px]">Execução</div><p class="text-[13px] leading-relaxed text-graph">Implantação com a nova gestão: fluxo, rituais, automações e ajustes de campanha.</p><div class="bar"><i></i></div></div>
+    <div class="card step p-5 flex flex-col gap-3 h-[280px] cursor-pointer"><div class="flex justify-between items-center"><span class="num">04</span><span class="font-mono text-[11px] tracking-[.14em] text-mute">FASE 4</span></div><div class="font-display font-extrabold uppercase text-[17px]">Otimização</div><p class="text-[13px] leading-relaxed text-graph">Criativos, segmentações e conversão revisados em ciclos curtos, com cada decisão registrada.</p><div class="bar"><i></i></div></div>
+    <div class="card step p-5 flex flex-col gap-3 h-[280px] cursor-pointer"><div class="flex justify-between items-center"><span class="num">05</span><span class="font-mono text-[11px] tracking-[.14em] text-mute">FASE 5</span></div><div class="font-display font-extrabold uppercase text-[17px]">Resultados</div><p class="text-[13px] leading-relaxed text-graph">Indicadores à vista da Reitoria e passagem completa das atividades para a nova gestão.</p><div class="bar"><i></i></div></div>
+  </div>
+</section>
+
+<!-- 11 BASE CIENTÍFICA -->
+<section class="slide" aria-label="Base científica">
+  <span class="eyebrow rise">// 10 <b>Base científica</b></span>
+  <div class="flex items-end justify-between mt-3 rise">
+    <h2 class="ttl text-[38px]">Método LORSO, <em>fundamentado em…</em></h2>
+    <span class="chip">Referências reconhecidas · aplicação LORSO</span>
+  </div>
+  <div class="card mt-auto mb-1 rise overflow-hidden">
+    <table class="sci w-full text-left">
+      <thead><tr><th>Fase do método</th><th>Fundamento</th></tr></thead>
+      <tbody>
+        <tr><td>Maturidade N1–N4: processos, pessoas, ferramentas e cultura</td><td><b>Capability Maturity Model</b> · Paulk et al., SEI/Carnegie Mellon (1993)</td></tr>
+        <tr><td>Gargalos e prioridade</td><td><b>Teoria das Restrições</b> · Goldratt, <i>A Meta</i> (1984): a operação anda no ritmo do gargalo</td></tr>
+        <tr><td>Causa raiz</td><td><b>Diagrama de Ishikawa e 5 Porquês</b> · Sistema Toyota de Produção</td></tr>
+        <tr><td>Comprovado × declarado</td><td><b>Gestão baseada em evidências</b> · Pfeffer &amp; Sutton, Harvard Business Review (2006)</td></tr>
+        <tr><td>Execução e otimização em ciclos</td><td><b>PDCA</b> · Shewhart e Deming</td></tr>
+        <tr><td>Transição da gestão</td><td><b>8 passos da mudança</b> · Kotter, Harvard Business Review (1995)</td></tr>
+        <tr><td>Velocidade da central e do comercial</td><td><b>The Short Life of Online Sales Leads</b> · Oldroyd, McElheran e Elkington, HBR (2011)</td></tr>
+        <tr><td>Captação 365 dias</td><td><b>Regra 95:5</b> · Dawes, Ehrenberg-Bass (2021) · <b>The Long and the Short of It</b> · Binet e Field, IPA (2013)</td></tr>
+        <tr><td>Indicadores para a Reitoria</td><td><b>Balanced Scorecard</b> · Kaplan e Norton, Harvard Business Review (1992)</td></tr>
+        <tr><td>Treinamento da nova gestão</td><td><b>4 níveis de avaliação</b> · Kirkpatrick</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 12 COMO ATUO -->
+<section class="slide" aria-label="Como atuo com o time">
+  <span class="eyebrow rise">// 11 <b>Como atuo com o time</b></span>
+  <div class="grid grid-cols-[1fr_1fr] gap-12 flex-1 items-center mt-2">
+    <div class="flex flex-col gap-5">
+      <h2 class="ttl rise text-[42px]">A LORSO recomenda. <em>A Reitoria decide.</em></h2>
+      <p class="rise text-graph text-[15.5px]">Atuo lado a lado com o time de Marketing, sem ocupar cargo: oriento, treino e acompanho. Contratações, desligamentos, orçamento e mudanças de rota passam pela Reitoria e são executados pela equipe administrativa da FECAP.</p>
+      <div class="grid grid-cols-2 gap-3 rise">
+        <div class="card p-4 flex flex-col gap-2"><i data-lucide="users" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14px]">Rituais com o time</div><p class="text-[13px] text-graph leading-snug">Dailys e weeklys no formato que cada momento pedir.</p></div>
+        <div class="card p-4 flex flex-col gap-2"><i data-lucide="file-bar-chart" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14px]">Reporte à Reitoria</div><p class="text-[13px] text-graph leading-snug">Evolução, gargalos e recomendações direto à Reitoria.</p></div>
+        <div class="card p-4 flex flex-col gap-2"><i data-lucide="layout-dashboard" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14px]">Central de Diagnóstico</div><p class="text-[13px] text-graph leading-snug">Plataforma LORSO com leitura integral para a Reitoria.</p></div>
+        <div class="card p-4 flex flex-col gap-2"><i data-lucide="book-open-check" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14px]">Playbooks</div><p class="text-[13px] text-graph leading-snug">Processos documentados para o time seguir sozinho.</p></div>
+      </div>
+    </div>
+    <div class="card p-7 rise flex flex-col gap-4" style="background:#0C1118">
+      <div class="cat">Especialistas externos</div>
+      <p class="text-[14px] text-graph">Quando um gargalo pedir competência que o time não tem, a LORSO indica e a FECAP contrata direto, sem intermediação.</p>
+      <div class="flex flex-col gap-3 mt-1">
+        <div class="hcard"><div class="ic"><i data-lucide="megaphone" class="w-[18px] h-[18px]"></i></div><div><b>Agência de RP</b><p>Imprensa, reputação e pauta institucional da FECAP.</p></div></div>
+        <div class="hcard"><div class="ic"><i data-lucide="trending-up" class="w-[18px] h-[18px]"></i></div><div><b>Agência de performance e growth</b><p>Mídia paga por curso, testes e otimização diária das campanhas.</p></div></div>
+        <div class="hcard"><div class="ic"><i data-lucide="database" class="w-[18px] h-[18px]"></i></div><div><b>Dados e desenvolvimento</b><p>Integrações de CRM, páginas e automações, quando necessário.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 GRADUAÇÃO -->
+<section class="slide" aria-label="Captação da Graduação">
+  <span class="eyebrow rise">// 12 <b>Frente 1 · Captação ativa da Graduação</b></span>
+  <h2 class="ttl rise text-[44px] mt-4">O funil do CRM <em>lido todos os dias.</em></h2>
+  <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Durante o ciclo 2027.1, a captação é acompanhada com a nova gestão, a central e o comercial, sempre a partir do mesmo número: a matrícula paga no CRM.</p>
+  <div class="grid grid-cols-4 gap-4 mt-auto mb-2">
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="filter" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Funil diário</div><p class="text-[13.5px] text-graph">Leads, inscritos, aprovados e matrículas pagas por curso, turno e origem, com comparação ao ciclo anterior.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="headset" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Central e comercial</div><p class="text-[13.5px] text-graph">Tempo até o primeiro contato e conversão por etapa e por atendente.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="percent" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Retorno por campanha</div><p class="text-[13.5px] text-graph">ENEM calculado com o desconto, vestibular com a mensalidade cheia, sempre sobre o investido.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="calendar-clock" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Verba mês a mês</div><p class="text-[13.5px] text-graph">Orçamento anual distribuído com peso nos meses de captação, como o período de vestibular.</p></div>
+  </div>
+</section>
+
+<!-- 14 PÓS -->
+<section class="slide" aria-label="Captação da Pós">
+  <span class="eyebrow rise">// 13 <b>Frente 2 · Captação ativa da Pós-Graduação</b></span>
+  <h2 class="ttl rise text-[44px] mt-4">Captar o ano todo, <em>converter na abertura.</em></h2>
+  <div class="grid grid-cols-[1.2fr_1fr] gap-6 mt-auto mb-2">
+    <div class="card p-6 rise"><ul class="ck">
+      <li>Formulário de interesse permanente em todas as páginas de curso, com ou sem edital.</li>
+      <li>Interessados no CRM separados por curso, com régua de nutrição até a abertura da turma.</li>
+      <li>Calendário anual de captação por curso, com edital pronto antes de abrir as inscrições.</li>
+      <li>Anúncios coerentes com a página: nenhum clique termina em "Em breve".</li>
+    </ul></div>
+    <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(0,255,135,.4)">
+      <div class="cat">Meta até abril</div>
+      <div class="font-display font-extrabold text-[24px] leading-tight">Pós 2027.2 abrindo com <em class="not-italic text-emer">base de interessados</em> já formada</div>
+      <p class="text-[13.5px] text-graph">E a Pós 2027.1 acompanhada até o fim das inscrições, em 01/02/2027.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 15 AUTOMAÇÃO -->
+<section class="slide" aria-label="Automação e WhatsApp">
+  <span class="eyebrow rise">// 14 <b>Frente 3 · Automação e WhatsApp</b></span>
+  <div class="flex items-end justify-between mt-3 rise">
+    <h2 class="ttl text-[38px]">Cada mensagem <em>na categoria certa.</em></h2>
+    <span class="chip">Regras da Meta · out/2026</span>
+  </div>
+  <div class="grid grid-cols-3 gap-4 mt-auto mb-1">
+    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Utilidade · jornada do candidato</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Confirmação de inscrição</li><li>Lembrete de prova e resultado</li><li>Convocação para matrícula</li><li>Aviso de vencimento</li></ul><p class="text-[12.5px] text-mute mt-auto">Fora do limite de marketing por pessoa. Com conteúdo promocional, a Meta reclassifica como marketing.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Marketing · com opt-in</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Abertura de turma</li><li>Eventos e aulas abertas</li><li>Condição especial de matrícula</li></ul><p class="text-[12.5px] text-mute mt-auto">Listas segmentadas. A Meta aplica um limite dinâmico por pessoa: acima dele a mensagem não é entregue.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">ManyChat e anúncios</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Instagram: comentário → direct → lista de interesse → CRM</li><li>Fluxos de WhatsApp que captam fora da janela de edital</li><li>Anúncios que abrem conversa direto no WhatsApp</li></ul><p class="text-[12.5px] text-mute mt-auto">Consentimento conforme a LGPD em toda entrada.</p></div>
+  </div>
+  <div class="card p-4 mt-4 rise flex items-center gap-4" style="background:#0C1118"><i data-lucide="receipt" class="w-5 h-5 text-cyan flex-none"></i><p class="text-[13.5px] text-graph">Custo sob controle: desde 01/07/2025 a Meta cobra por mensagem entregue e, desde 01/10/2026, cobra também utilidade dentro da janela de 24 h e atendimento acima de 1.000 mensagens por mês. Cobrança em reais obrigatória até 30/06/2027.</p></div>
+</section>
+
+<!-- 16 VERTICALIZAÇÃO -->
+<section class="slide" aria-label="Verticalização dos anúncios">
+  <span class="eyebrow rise">// 15 <b>Frente 4 · Estudo de viabilidade</b></span>
+  <h2 class="ttl rise text-[42px] mt-4">Anúncios por curso, <em>não só por modalidade.</em></h2>
+  <div class="grid grid-cols-2 gap-5 mt-6 rise">
+    <div class="card p-5"><div class="cat">Hoje · Pós e Colégio</div><p class="text-[14.5px] text-graph mt-2">Campanhas por modalidade e frente de estudo. Não se sabe quanto custa e quanto retorna cada curso.</p></div>
+    <div class="card p-5" style="border-color:rgba(0,255,135,.4)"><div class="cat" style="color:var(--neon)">Proposta</div><p class="text-[14.5px] text-graph mt-2">Cada curso com verba, CPL, CAC e retorno próprios, como já fazemos por campanha no ENEM e no vestibular.</p></div>
+  </div>
+  <div class="grid grid-cols-4 gap-3 mt-auto mb-1 rise">
+    <div class="card p-4 flex flex-col gap-2"><span class="num">01</span><div class="font-display font-extrabold uppercase text-[14px]">Orçamento</div><p class="text-[12.5px] text-graph">Levantamento prévio: sem ele, a verba por curso pode ficar pequena demais para a mídia render.</p></div>
+    <div class="card p-4 flex flex-col gap-2"><span class="num">02</span><div class="font-display font-extrabold uppercase text-[14px]">Piloto real</div><p class="text-[12.5px] text-graph">P&amp;L da Auditoria EAD: o único curso que já opera assim dá o custo de referência.</p></div>
+    <div class="card p-4 flex flex-col gap-2"><span class="num">03</span><div class="font-display font-extrabold uppercase text-[14px]">Simulação</div><p class="text-[12.5px] text-graph">Verba mínima, CPL e CAC esperados por curso da Pós e do Colégio.</p></div>
+    <div class="card p-4 flex flex-col gap-2"><span class="num">04</span><div class="font-display font-extrabold uppercase text-[14px]">Decisão</div><p class="text-[12.5px] text-graph">A Reitoria decide quais cursos verticalizar e em que ordem.</p></div>
+  </div>
+</section>
+
+<!-- 17 EQUIPE -->
+<section class="slide" aria-label="Equipe de Marketing">
+  <span class="eyebrow rise">// 16 <b>Frente 5 · Equipe de Marketing</b></span>
+  <h2 class="ttl rise text-[44px] mt-4">Nova gestão treinada, <em>time desenvolvido.</em></h2>
+  <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">O objetivo é que, em abril, a nova gestão conduza a operação com autonomia e cada pessoa do time esteja no papel certo.</p>
+  <div class="grid grid-cols-4 gap-4 mt-auto mb-2">
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="graduation-cap" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Treinamento</div><p class="text-[13.5px] text-graph">Repasse do histórico de cada unidade e mentoria em planejamento, orçamento e campanhas.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="user-check" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Primeiras decisões</div><p class="text-[13.5px] text-graph">Acompanhamento da nova gestão nas decisões dos primeiros ciclos.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="sprout" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Desenvolvimento</div><p class="text-[13.5px] text-graph">Plano de desenvolvimento por pessoa, a partir das entrevistas do diagnóstico.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="network" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Papéis claros</div><p class="text-[13.5px] text-graph">Quem faz o quê e lacunas de competência, com recomendação à Reitoria.</p></div>
+  </div>
+</section>
+
+<!-- 18 PROCESSOS -->
+<section class="slide" aria-label="Processos">
+  <span class="eyebrow rise">// 17 <b>Frente 6 · Processos</b></span>
+  <h2 class="ttl rise text-[44px] mt-4">Marketing que responde <em>às unidades no prazo.</em></h2>
+  <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Hoje, as demandas das unidades e das coordenações chegam por vários caminhos. A proposta é um fluxo único, com prazo e responsável.</p>
+  <div class="grid grid-cols-4 gap-4 mt-auto mb-2">
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="git-branch" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Fluxo de demandas</div><p class="text-[13.5px] text-graph">Da coordenação ao Marketing, com entrada única, responsável e etapa visível.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="timer" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Prazos combinados</div><p class="text-[13.5px] text-graph">Tempo de resposta por tipo de demanda, acompanhado todo mês.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="pie-chart" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Onde vai o tempo</div><p class="text-[13.5px] text-graph">Horas em tarefas administrativas contra horas dedicadas às unidades.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="book-open-check" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Playbooks</div><p class="text-[13.5px] text-graph">Cada processo revisado vira documento para o time seguir sozinho.</p></div>
+  </div>
+</section>
+
+<!-- 19 3 MESES -->
+<section class="slide" aria-label="3 meses">
+  <span class="eyebrow rise">// 18 <b>Plano · 3 meses</b></span>
+  <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[44px]">Novembro a janeiro: <em>diagnóstico e base.</em></h2><span class="chip g">NOV · DEZ · JAN</span></div>
+  <div class="grid grid-cols-3 gap-4 mt-auto mb-2">
+    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Novembro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Ajuste imediato dos anúncios que levam a "Em breve" e lista de interesse nesses cursos</li><li>Acessos ao CRM, contas de mídia, site e orçamento</li><li>Entrevistas com Marketing, coordenações e Reitoria</li><li>Funil da Graduação acompanhado todos os dias</li></ul></div>
+    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Dezembro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Diagnóstico apresentado à Reitoria, com os 8 pontos levantados</li><li>P&amp;L da Auditoria EAD e plano para o fim do contrato do time externo</li><li>Formulário de interesse em todas as páginas de curso</li><li>Opções de agência de RP e de performance para avaliação</li></ul></div>
+    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Janeiro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Plano de ação aprovado pela Reitoria</li><li>Réguas de WhatsApp e ManyChat no ar</li><li>Orçamento mapeado: destrava o estudo por curso</li><li>Pós 2027.1 acompanhada até 01/02</li></ul></div>
+  </div>
+</section>
+
+<!-- 20 6 MESES -->
+<section class="slide" aria-label="6 meses">
+  <span class="eyebrow rise">// 19 <b>Plano · 6 meses</b></span>
+  <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[44px]">Fevereiro a abril: <em>rodando com o time.</em></h2><span class="chip g">FEV · MAR · ABR</span></div>
+  <div class="grid grid-cols-3 gap-4 mt-auto mb-2">
+    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Fevereiro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Matrículas e fechamento do ciclo 2027.1 da Graduação</li><li>Fluxo de demandas com as unidades implantado</li><li>Retorno por campanha do ciclo apresentado</li></ul></div>
+    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Março</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Estudo de verticalização por curso concluído</li><li>Nova gestão conduzindo os rituais</li><li>Playbooks dos processos revisados</li></ul></div>
+    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Abril</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Pós 2027.2 abre com base de interessados</li><li>Decisão da Reitoria sobre anúncios por curso e sobre replicar o modelo da Auditoria EAD</li><li>Relatório de transição</li></ul></div>
+  </div>
+</section>
+
+<!-- 21 A PARTIR DE MAIO -->
+<section class="slide" aria-label="A partir de maio">
+  <span class="eyebrow rise">// 20 <b>Próxima etapa</b></span>
+  <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[44px]">A partir de maio, <em>a programar.</em></h2><span class="chip">COM A REITORIA</span></div>
+  <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">O que fica para depois de abril, para entrar no próximo ciclo com base pronta e método já implantado.</p>
+  <div class="grid grid-cols-3 gap-5 mt-auto mb-2">
+    <div class="card p-6 rise flex flex-col gap-3"><i data-lucide="school" class="w-6 h-6 text-emer"></i><div class="font-display font-extrabold uppercase text-[17px]">Colégio</div><p class="text-[14px] text-graph">Abordagem do Colégio, já com o estudo de anúncios por curso pronto desde abril.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3"><i data-lucide="library" class="w-6 h-6 text-emer"></i><div class="font-display font-extrabold uppercase text-[17px]">Curta duração</div><p class="text-[14px] text-graph">Cursos livres e educação executiva tratados como unidade, com meta, CAC e retorno.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3"><i data-lucide="refresh-cw" class="w-6 h-6 text-emer"></i><div class="font-display font-extrabold uppercase text-[17px]">Sustentação do método</div><p class="text-[14px] text-graph">O que foi implantado de novembro a abril mantido: rituais, indicadores e time operando com autonomia.</p></div>
+  </div>
+</section>
+
+<!-- 22 INDICADORES -->
+<section class="slide" aria-label="Indicadores">
+  <span class="eyebrow rise">// 21 <b>O que a Reitoria acompanha</b></span>
+  <h2 class="ttl rise text-[44px] mt-4">Indicadores com fonte, <em>metas definidas juntos.</em></h2>
+  <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Cada indicador tem fonte e data de atualização definidas. As metas são combinadas com a Reitoria no início do trabalho.</p>
+  <div class="grid grid-cols-4 gap-4 mt-auto mb-2">
+    <div class="card p-5 rise"><div class="cat">Captação</div><ul class="ck mt-3 !text-[13.5px] !gap-2"><li>% da meta de matrículas por unidade e ciclo</li><li>Matrículas pagas no CRM</li></ul></div>
+    <div class="card p-5 rise"><div class="cat">Eficiência</div><ul class="ck mt-3 !text-[13.5px] !gap-2"><li>CPL e CAC por campanha e por curso</li><li>Retorno por campanha</li></ul></div>
+    <div class="card p-5 rise"><div class="cat">Atendimento</div><ul class="ck mt-3 !text-[13.5px] !gap-2"><li>Tempo até o 1º contato</li><li>Interessados captados fora da janela</li></ul></div>
+    <div class="card p-5 rise"><div class="cat">Operação</div><ul class="ck mt-3 !text-[13.5px] !gap-2"><li>Prazo de atendimento às unidades</li><li>Custo de WhatsApp por categoria</li></ul></div>
+  </div>
+</section>
+
+<!-- 23 O QUE PRECISO + PRÓXIMOS PASSOS -->
+<section class="slide" aria-label="Próximos passos">
+  <div class="grain"></div>
+  <span class="eyebrow rise relative">// 22 <b>Para começar</b></span>
+  <div class="relative grid grid-cols-2 gap-10 flex-1 items-center mt-2">
+    <div class="flex flex-col gap-5">
+      <h2 class="ttl rise text-[52px]">Próximos <em>passos.</em></h2>
+      <ul class="ck rise">
+        <li>Indicar o interlocutor e apresentar a nova gestão de Marketing.</li>
+        <li>Autorizar o ajuste imediato dos anúncios que levam a "Em breve".</li>
+        <li>Agendar as entrevistas com Marketing e coordenações.</li>
+        <li>Definir com a Reitoria a expectativa para cada unidade: crescer, manter ou reposicionar.</li>
+      </ul>
+    </div>
+    <div class="card p-6 rise" style="background:#0C1118">
+      <div class="cat">O que preciso da FECAP</div>
+      <ul class="ck mt-4 !text-[14px] !gap-2.5">
+        <li>Exportação do CRM: leads, inscritos, aprovados e matrículas, por curso e origem</li>
+        <li>Acesso de leitura às contas do Google Ads e da Meta</li>
+        <li>Meta de matrículas por ciclo e por unidade</li>
+        <li>Orçamento por unidade: orçado e realizado</li>
+        <li>Mensalidade líquida, permanência e evasão</li>
+        <li>Contrato e custo do time externo da Auditoria EAD</li>
+        <li>Folha do Marketing e contratos de plataformas e serviços</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<button class="ctl" id="prev" aria-label="Slide anterior"><i data-lucide="arrow-left" class="w-4 h-4"></i>Anterior</button>
+<div id="counter"></div>
+<button class="ctl" id="next" aria-label="Próximo slide">Próximo<i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+</div></div>
+
+<script>
+(function(){
+  try{lucide.createIcons()}catch(e){}
+  var stage=document.getElementById('stage'),S=[].slice.call(stage.querySelectorAll('.slide')),N=S.length,cur=-1,root=document.documentElement;
+  var prog=document.getElementById('progress'),cnt=document.getElementById('counter'),pv=document.getElementById('prev'),nx=document.getElementById('next');
+  function isM(){return innerWidth<640||(innerWidth<900&&innerHeight>innerWidth)}
+  function fit(){if(root.classList.contains('m'))return;var s=Math.min((innerWidth-24)/1280,(innerHeight-24)/720,1.5);stage.style.transform='scale('+s+')'}
+  function countUp(sl){sl.querySelectorAll('[data-count]').forEach(function(el){var t=+el.dataset.count,t0=null;function f(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/1200,1);el.textContent=Math.round(t*(1-Math.pow(1-p,3))).toLocaleString('pt-BR');if(p<1)requestAnimationFrame(f)}requestAnimationFrame(f)})}
+  var steps=[].slice.call(stage.querySelectorAll('#method .step')),mi=0,mt=null;
+  function setStep(i){mi=i;steps.forEach(function(s,j){s.classList.remove('act');void s.offsetWidth;s.classList.toggle('done',j<i)});steps[i].classList.add('act')}
+  function loop(){clearInterval(mt);mt=setInterval(function(){setStep((mi+1)%steps.length)},3200)}
+  steps.forEach(function(s,j){s.addEventListener('click',function(){setStep(j);loop()})});
+  function go(i){
+    if(isM()){if(S[i]){cur=i;S[i].scrollIntoView({behavior:'smooth'})}return}
+    if(i<0||i>=N||i===cur)return;var back=i<cur;
+    S.forEach(function(s,j){s.classList.toggle('on',j===i);s.classList.toggle('back',back&&j!==i)});
+    cur=i;prog.style.width=((i+1)/N*100)+'%';cnt.textContent='SLIDE '+(i+1)+' DE '+N;
+    pv.style.visibility=nx.style.visibility=i===0?'hidden':'visible';pv.disabled=i===0;nx.disabled=i===N-1;
+    if(S[i].querySelector('#method')){setStep(0);loop()}else clearInterval(mt);
+    countUp(S[i]);
+  }
+  pv.onclick=function(){go(cur-1)};nx.onclick=function(){go(cur+1)};
+  stage.addEventListener('click',function(e){var t=e.target.closest('[data-go]');if(t)go(+t.dataset.go)});
+  document.addEventListener('keydown',function(e){var onCtl=e.target.closest&&e.target.closest('button,a');
+    if(e.key==='ArrowRight'||e.key==='PageDown'||(!onCtl&&(e.key===' '||e.key==='Enter'))){e.preventDefault();go(cur+1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(cur-1)}
+    else if(e.key==='Home'){go(0)}else if(e.key==='End'){go(N-1)}});
+  var tx=null;stage.addEventListener('touchstart',function(e){tx=e.touches[0].clientX},{passive:true});
+  stage.addEventListener('touchend',function(e){if(tx===null||root.classList.contains('m'))return;var d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(cur+(d<0?1:-1));tx=null});
+  function applyM(){var on=isM();root.classList.toggle('m',on);if(on){stage.style.transform='none'}else{fit()}}
+  addEventListener('resize',function(){applyM();fit()});addEventListener('orientationchange',function(){setTimeout(applyM,200)});
+  addEventListener('scroll',function(){if(!isM())return;var h=root.scrollHeight-innerHeight;prog.style.width=(h>0?scrollY/h*100:0)+'%'},{passive:true});
+  applyM();
+  if(isM()){S.forEach(function(s){s.classList.add('on')});S.forEach(countUp)}else go(0);
+})();
+</script>
+</body>
+</html>
