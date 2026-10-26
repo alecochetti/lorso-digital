@@ -163,6 +163,21 @@ html.m .cnode .num{width:36px;height:36px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* proposta FECAP */
+.pstep{display:flex;gap:12px;align-items:flex-start;padding:8px 13px;border:1px solid var(--line);border-radius:12px;background:rgba(14,18,26,.92)}
+.pstep .num{flex:none;width:28px;height:28px;font-size:13px;display:flex;align-items:center;justify-content:center}
+.pstep b{display:block;font-family:Archivo,sans-serif;font-weight:800;font-size:14px}
+.pstep p{font-size:12.5px;line-height:1.4;color:#A9B3C1;margin-top:2px}
+.pstep.hot{border-color:rgba(0,255,135,.5);box-shadow:0 14px 36px -18px rgba(0,255,135,.45)}
+.mcard{display:flex;flex-direction:column;gap:6px;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:rgba(14,18,26,.92)}
+.mcard .mh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mcard b{font-family:Archivo,sans-serif;font-weight:800;font-size:14px}
+.mcard p{font-size:12px;line-height:1.42;color:#A9B3C1}
+.mcard .mf{margin-top:auto;padding-top:7px;border-top:1px dashed var(--line);font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--cyan)}
+.mcard .tg{flex:none;width:30px;height:17px;border-radius:99px;background:#1C2430;position:relative}
+.mcard .tg::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#6B7686;transition:left .3s,background .3s}
+.mcard.on{border-color:rgba(0,255,135,.55);background:linear-gradient(180deg,rgba(0,255,135,.07),rgba(14,18,26,.92))}
+.mcard.on .tg{background:rgba(0,255,135,.35)}.mcard.on .tg::after{left:15px;background:var(--neon)}
+
 .como{margin-top:auto;padding-top:8px;border-top:1px dashed var(--line);font-family:"JetBrains Mono",monospace;font-size:10.5px;line-height:1.45;letter-spacing:.01em;color:var(--cyan)}
 .como::before{content:"COMO → ";color:var(--neon)}
 .vplay{cursor:pointer}
@@ -397,21 +412,48 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   </div>
 </section>
 
-<!-- 10b COMO FAZEMOS -->
+<!-- 10b COMO FAZEMOS · CENTRAL -->
 <section class="slide" aria-label="Como fazemos: Central de Diagnóstico">
-  <div class="grid grid-cols-[1.3fr_1fr] gap-12 flex-1 items-center">
-    <div class="frame rise vplay" tabindex="0" title="Clique para ver em tela cheia"><div class="fbar"><i></i><i></i><i></i><span>lorso · central de diagnóstico · fecap</span></div><video poster="media/02-diagnostico-demo.jpg" class="scr" src="media/02-diagnostico-demo.mp4" muted loop playsinline preload="metadata"></video></div>
-    <div class="flex flex-col gap-5">
-      <span class="eyebrow rise">// 09.1 <b>Como fazemos</b></span>
-      <h2 class="ttl rise text-[40px]">O método <em>rodando na plataforma.</em></h2>
-      <p class="rise text-[15px] text-graph">A fase 1 não fica em planilha nem em ata: cada entrevista e cada dado entram na Central de Diagnóstico, plataforma própria da LORSO.</p>
-      <ul class="ck rise !text-[14.5px]">
-        <li>Entrevistas registradas por área e por cargo</li>
-        <li>Nota de maturidade N1–N4 calculada a partir das respostas</li>
-        <li>O comprovado separado do declarado</li>
-        <li>Plano de ação com dono, prazo, linha de base e meta</li>
-      </ul>
-      <div class="rise flex gap-2 flex-wrap"><span class="chip g">Plataforma própria</span><span class="chip">Área restrita</span><span class="chip">Dados só da FECAP</span></div>
+  <div class="flex items-end justify-between rise">
+    <div><span class="eyebrow">// 09.1 <b>Como fazemos · Sistemas LORSO 1 de 2</b></span>
+    <h2 class="ttl text-[32px] mt-3 whitespace-nowrap">Central de Diagnóstico: <em>o método na plataforma.</em></h2></div>
+    <div class="flex gap-2"><span class="chip g">Plataforma própria</span><span class="chip">Dados só da FECAP</span></div>
+  </div>
+  <div class="grid grid-cols-[1.15fr_1fr] gap-8 flex-1 items-center mt-4">
+    <div class="frame rise vplay" tabindex="0" title="Clique para ver em tela cheia"><div class="fbar"><i></i><i></i><i></i><span>lorso · central de diagnóstico · fecap</span></div><video poster="media/02-diagnostico-resultados.jpg" class="scr" src="media/02-diagnostico-demo.mp4" muted loop playsinline preload="metadata"></video></div>
+    <div class="flex flex-col gap-3 rise">
+      <div class="cat">Fase 1 · Diagnóstico, em 3 coletas</div>
+      <div class="pstep"><span class="num">1</span><div><b>Base de conhecimento</b><p>Cursos, preços, vagas e capacidade por turno de cada unidade.</p></div></div>
+      <div class="pstep"><span class="num">2</span><div><b>Reitoria e direcionamentos</b><p>Dores, metas, DRE, autonomia e foco de cada unidade.</p></div></div>
+      <div class="pstep"><span class="num">3</span><div><b>Entrevistas</b><p>Jornada 1 a 1 pelas áreas e unidades, registrada por cargo.</p></div></div>
+      <div class="pstep hot"><span class="num"><i data-lucide="activity" class="w-4 h-4"></i></span><div><b>Diagnóstico</b><p>Nota N1–N4, incongruências entre o que se diz e o que os dados mostram, e causas raiz.</p></div></div>
+      <div class="flex flex-col gap-2 mt-1">
+        <div class="flex items-center gap-1.5 flex-wrap"><span class="font-mono text-[10.5px] tracking-[.14em] text-mute w-[92px]">FASES 2 A 5</span><span class="chip">Estratégia</span><span class="chip">Plano de ação</span><span class="chip">Execução</span><span class="chip">Otimização</span><span class="chip">Resultados</span></div>
+        <div class="flex items-center gap-1.5 flex-wrap"><span class="font-mono text-[10.5px] tracking-[.14em] text-mute w-[92px]">MÓDULOS</span><span class="chip g">Captação</span><span class="chip g">DRE e orçamento</span><span class="chip g">Lançamento de curso</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 10c COMO FAZEMOS · LANÇAMENTOS -->
+<section class="slide" aria-label="Como fazemos: Plataforma de Lançamentos">
+  <div class="flex items-end justify-between rise">
+    <div><span class="eyebrow">// 09.2 <b>Como fazemos · Sistemas LORSO 2 de 2</b></span>
+    <h2 class="ttl text-[32px] mt-3 whitespace-nowrap">Lançamentos: <em>um modelo de venda para cada curso.</em></h2></div>
+    <span class="chip">Módulo da Central</span>
+  </div>
+  <div class="grid grid-cols-[1fr_1.25fr] gap-7 flex-1 items-center mt-4">
+    <div class="flex flex-col gap-3 rise">
+      <div class="frame vplay" tabindex="0" title="Clique para ver em tela cheia"><div class="fbar"><i></i><i></i><i></i><span>lançamento · painel e cronograma</span></div><video poster="media/02-lancamento.jpg" class="scr" src="media/02-lancamento.mp4" muted loop playsinline preload="metadata"></video></div>
+      <p class="text-[13px] text-graph leading-snug">Os modelos marcados montam o checklist do curso. Depois vêm painel, cronograma por área com responsável e prazo, tarefas, ofertas, KPIs e economia da turma.</p>
+    </div>
+    <div class="grid grid-cols-2 gap-3 rise">
+      <div class="mcard on"><div class="mh"><b>Curso livre / Extensão</b><i class="tg"></i></div><p>Curta duração (15 h a 120 h), com turma e período de inscrições.</p><div class="mf">FECAP → curta duração e educação executiva</div></div>
+      <div class="mcard"><div class="mh"><b>Lançamento</b><i class="tg"></i></div><p>Janela de inscrições com aquecimento: aulas abertas, lives e grupos de WhatsApp.</p><div class="mf">FECAP → abertura de turma da Pós</div></div>
+      <div class="mcard"><div class="mh"><b>High Ticket</b><i class="tg"></i></div><p>Oferta premium vendida de forma consultiva: aplicação e conversa com o comercial.</p><div class="mf">FECAP → MBAs e programas executivos</div></div>
+      <div class="mcard"><div class="mh"><b>Pré-venda</b><i class="tg"></i></div><p>Venda antes de o curso estar 100% pronto, para validar a oferta e formar a turma fundadora.</p><div class="mf">FECAP → testar demanda de uma turma nova</div></div>
+      <div class="mcard"><div class="mh"><b>Evergreen</b><i class="tg"></i></div><p>Jornada automatizada por interessado, com prazo individual.</p><div class="mf">FECAP → interessados fora da janela de edital</div></div>
+      <div class="mcard"><div class="mh"><b>Perpétuo</b><i class="tg"></i></div><p>Venda contínua, sem janela, com mídia sempre ativa.</p><div class="mf">FECAP → cursos EAD com matrícula contínua</div></div>
     </div>
   </div>
 </section>
@@ -716,6 +758,8 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   addEventListener('resize',function(){if(S[cur]&&S[cur].id==='hubSlide')drawHub()});
   /* destaque automático em sequência */
   setInterval(function(){if(!S[cur]||S[cur].id!=='hubSlide')return;var cs=hub.querySelectorAll('.hcard'),k=Math.floor(Date.now()/1800)%cs.length;cs.forEach(function(c,j){c.classList.toggle('hot',j===k);var p=document.getElementById('hp'+j);if(p)p.classList.toggle('hot',j===k)})},300);
+  var mc=[].slice.call(stage.querySelectorAll('.mcard'));
+  mc.forEach(function(c){c.addEventListener('click',function(){c.classList.toggle('on')})});
   applyM();
   if(isM()){stage.querySelectorAll('video').forEach(function(v){v.controls=true})}
   if(isM()){S.forEach(function(s){s.classList.add('on')});S.forEach(countUp)}else go(0);
