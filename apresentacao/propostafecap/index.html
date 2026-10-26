@@ -163,6 +163,9 @@ html.m .cnode .num{width:36px;height:36px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* proposta FECAP */
+.como{margin-top:auto;padding-top:8px;border-top:1px dashed var(--line);font-family:"JetBrains Mono",monospace;font-size:10.5px;line-height:1.45;letter-spacing:.01em;color:var(--cyan)}
+.como::before{content:"COMO → ";color:var(--neon)}
+.vplay{cursor:pointer}
 #modoDesk{display:none}
 html.m #modoDesk{display:flex;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:50;box-shadow:0 10px 30px -8px rgba(0,255,135,.5)}
 table.sci{border-collapse:collapse;font-size:13px}
@@ -307,16 +310,16 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <!-- 8 O QUE VAMOS ENTENDER -->
 <section class="slide" aria-label="O que vamos entender">
   <span class="eyebrow rise">// 07 <b>Ponto principal do diagnóstico</b></span>
-  <h2 class="ttl rise text-[40px] mt-3">Além do que já vimos, <em>o que vamos entender.</em></h2>
+  <h2 class="ttl rise text-[40px] mt-3">O que vamos entender, <em>e como.</em></h2>
   <div class="grid grid-cols-4 gap-4 mt-auto mb-1">
-    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="landmark" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Reitoria e coordenação</div><p class="text-[13px] text-graph leading-snug">Como as demandas chegam ao Marketing, quem aprova e onde o fluxo trava.</p></div>
-    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="handshake" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Parcerias</div><p class="text-[13px] text-graph leading-snug">Convênios, empresas parceiras e times externos: o que trazem e como são acompanhados.</p></div>
-    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="monitor-cog" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Plataformas</div><p class="text-[13px] text-graph leading-snug">CRM, contas de anúncio, site e ferramentas: o que se usa, o que integra e o que se paga sem usar.</p></div>
-    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="briefcase-business" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Serviços</div><p class="text-[13px] text-graph leading-snug">Agências e fornecedores: escopo, custo e entrega de cada um.</p></div>
-    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="id-card" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Folha do Marketing</div><p class="text-[13px] text-graph leading-snug">Equipe, papéis e tempo dividido entre tarefas administrativas e unidades de negócio.</p></div>
-    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="wallet" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Orçamento</div><p class="text-[13px] text-graph leading-snug">Anual por unidade, realizado até o mês e divisão entre mídia, produção, eventos e equipe.</p></div>
-    <div class="card p-5 rise flex flex-col gap-2" style="border-color:rgba(0,229,255,.35)"><i data-lucide="calculator" class="w-5 h-5 text-cyan"></i><div class="font-display font-extrabold uppercase text-[14.5px]">P&amp;L Auditoria EAD</div><p class="text-[13px] text-graph leading-snug">Receita, custos, CPL, CAC e margem: o modelo se paga e pode ser replicado?</p></div>
-    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="filter" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Funil de captação</div><p class="text-[13px] text-graph leading-snug">Do lead à matrícula paga no CRM, por unidade, curso, origem, call center e comercial.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="landmark" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Reitoria e coordenação</div><p class="text-[13px] text-graph leading-snug">Como as demandas chegam ao Marketing, quem aprova e onde o fluxo trava.</p><p class="como">Entrevista 1 a 1 e o caminho de uma demanda real, do pedido à entrega.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="handshake" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Parcerias</div><p class="text-[13px] text-graph leading-snug">Convênios, empresas parceiras e times externos: o que trazem e como são acompanhados.</p><p class="como">Lista de convênios cruzada com os leads e matrículas de origem parceira no CRM.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="monitor-cog" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Plataformas</div><p class="text-[13px] text-graph leading-snug">CRM, contas de anúncio, site e ferramentas: o que se usa, o que integra e o que se paga sem usar.</p><p class="como">Inventário de acessos e contratos: uso, integração e custo mensal.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="briefcase-business" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Serviços</div><p class="text-[13px] text-graph leading-snug">Agências e fornecedores: escopo, custo e entrega de cada um.</p><p class="como">Contrato e escopo de cada um, comparados às entregas dos últimos 6 meses.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="id-card" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Folha do Marketing</div><p class="text-[13px] text-graph leading-snug">Equipe, papéis e tempo dividido entre tarefas administrativas e unidades de negócio.</p><p class="como">Entrevista com cada pessoa e registro do tempo por tipo de tarefa durante 2 semanas.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="wallet" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Orçamento</div><p class="text-[13px] text-graph leading-snug">Anual por unidade, realizado até o mês e divisão entre mídia, produção, eventos e equipe.</p><p class="como">Orçado × realizado por unidade, com o financeiro.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2" style="border-color:rgba(0,229,255,.35)"><i data-lucide="calculator" class="w-5 h-5 text-cyan"></i><div class="font-display font-extrabold uppercase text-[14.5px]">P&amp;L Auditoria EAD</div><p class="text-[13px] text-graph leading-snug">Receita, custos, CPL, CAC e margem: o modelo se paga e pode ser replicado?</p><p class="como">Matrículas pagas no CRM menos mídia, time externo e plataforma.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="filter" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Funil de captação</div><p class="text-[13px] text-graph leading-snug">Do lead à matrícula paga no CRM, por unidade, curso, origem, call center e comercial.</p><p class="como">Exportação do CRM conciliada com as contas de mídia.</p></div>
   </div>
 </section>
 
@@ -343,6 +346,25 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
     <div class="card step p-5 flex flex-col gap-3 h-[280px] cursor-pointer"><div class="flex justify-between items-center"><span class="num">03</span><span class="font-mono text-[11px] tracking-[.14em] text-mute">FASE 3</span></div><div class="font-display font-extrabold uppercase text-[17px]">Execução</div><p class="text-[13px] leading-relaxed text-graph">Implantação com a nova gestão: fluxo, rituais, automações e ajustes de campanha.</p><div class="bar"><i></i></div></div>
     <div class="card step p-5 flex flex-col gap-3 h-[280px] cursor-pointer"><div class="flex justify-between items-center"><span class="num">04</span><span class="font-mono text-[11px] tracking-[.14em] text-mute">FASE 4</span></div><div class="font-display font-extrabold uppercase text-[17px]">Otimização</div><p class="text-[13px] leading-relaxed text-graph">Criativos, segmentações e conversão revisados em ciclos curtos, com cada decisão registrada.</p><div class="bar"><i></i></div></div>
     <div class="card step p-5 flex flex-col gap-3 h-[280px] cursor-pointer"><div class="flex justify-between items-center"><span class="num">05</span><span class="font-mono text-[11px] tracking-[.14em] text-mute">FASE 5</span></div><div class="font-display font-extrabold uppercase text-[17px]">Resultados</div><p class="text-[13px] leading-relaxed text-graph">Indicadores à vista da Reitoria e passagem completa das atividades para a nova gestão.</p><div class="bar"><i></i></div></div>
+  </div>
+</section>
+
+<!-- 10b COMO FAZEMOS -->
+<section class="slide" aria-label="Como fazemos: Central de Diagnóstico">
+  <div class="grid grid-cols-[1.3fr_1fr] gap-12 flex-1 items-center">
+    <div class="frame rise vplay" tabindex="0" title="Clique para ver em tela cheia"><div class="fbar"><i></i><i></i><i></i><span>lorso · central de diagnóstico · fecap</span></div><video poster="media/02-diagnostico-demo.jpg" class="scr" src="media/02-diagnostico-demo.mp4" muted loop playsinline preload="metadata"></video></div>
+    <div class="flex flex-col gap-5">
+      <span class="eyebrow rise">// 09.1 <b>Como fazemos</b></span>
+      <h2 class="ttl rise text-[40px]">O método <em>rodando na plataforma.</em></h2>
+      <p class="rise text-[15px] text-graph">A fase 1 não fica em planilha nem em ata: cada entrevista e cada dado entram na Central de Diagnóstico, plataforma própria da LORSO.</p>
+      <ul class="ck rise !text-[14.5px]">
+        <li>Entrevistas registradas por área e por cargo</li>
+        <li>Nota de maturidade N1–N4 calculada a partir das respostas</li>
+        <li>O comprovado separado do declarado</li>
+        <li>Plano de ação com dono, prazo, linha de base e meta</li>
+      </ul>
+      <div class="rise flex gap-2 flex-wrap"><span class="chip g">Plataforma própria</span><span class="chip">Área restrita</span><span class="chip">Dados só da FECAP</span></div>
+    </div>
   </div>
 </section>
 
@@ -487,9 +509,23 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   </div>
 </section>
 
+<!-- 18b NOVEMBRO -->
+<section class="slide" aria-label="Novembro: entrevistas">
+  <span class="eyebrow rise">// 18 <b>Novembro · Entrevistas do diagnóstico</b></span>
+  <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[42px]">Todas as entrevistas <em>em quatro semanas.</em></h2><span class="chip g">03/11 → 27/11</span></div>
+  <p class="rise text-[17px] text-graph mt-4 max-w-[860px]">Cada conversa é registrada na Central no mesmo dia, então o diagnóstico vai sendo montado ao longo do mês. Enquanto isso, o funil da Graduação é acompanhado todos os dias.</p>
+  <div class="grid grid-cols-4 gap-4 mt-auto">
+    <div class="card p-5 rise flex flex-col gap-2"><span class="num">S1</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">03 a 06/11</div><div class="font-display font-extrabold uppercase text-[15px]">Reitoria e gestão</div><p class="text-[13px] text-graph">Reitoria, pró-reitorias e gestão de Marketing. Pedido dos acessos e das exportações.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><span class="num">S2</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">09 a 13/11</div><div class="font-display font-extrabold uppercase text-[15px]">Time de Marketing</div><p class="text-[13px] text-graph">Cada pessoa, uma a uma. Central de atendimento e comercial.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><span class="num">S3</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">16 a 19/11</div><div class="font-display font-extrabold uppercase text-[15px]">Graduação</div><p class="text-[13px] text-graph">Coordenações dos cursos de Graduação.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><span class="num">S4</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">23 a 27/11</div><div class="font-display font-extrabold uppercase text-[15px]">Pós-Graduação</div><p class="text-[13px] text-graph">Coordenações da Pós, agrupadas por área. Parceiros e fornecedores.</p></div>
+  </div>
+  <div class="card p-4 mt-4 mb-1 rise flex items-center gap-4" style="background:#0C1118"><i data-lucide="calendar-check" class="w-5 h-5 text-cyan flex-none"></i><p class="text-[13.5px] text-graph">Até 3 entrevistas por dia, de 45 a 60 minutos, com o roteiro enviado antes. Feriados de 02/11 e 20/11 fora da agenda. Em 30/11 tudo está consolidado na Central, e o diagnóstico vai à Reitoria em dezembro. <b class="text-white">Condição: agenda reservada pela FECAP até 03/11.</b></p></div>
+</section>
+
 <!-- 19 3 MESES -->
 <section class="slide" aria-label="3 meses">
-  <span class="eyebrow rise">// 18 <b>Plano · 3 meses</b></span>
+  <span class="eyebrow rise">// 19 <b>Plano · 3 meses</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[44px]">Novembro a janeiro: <em>diagnóstico e base.</em></h2><span class="chip g">NOV · DEZ · JAN</span></div>
   <div class="grid grid-cols-3 gap-4 mt-auto mb-2">
     <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Novembro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Ajuste imediato dos anúncios que levam a "Em breve" e lista de interesse nesses cursos</li><li>Acessos ao CRM, contas de mídia, site e orçamento</li><li>Entrevistas com Marketing, coordenações e Reitoria</li><li>Funil da Graduação acompanhado todos os dias</li></ul></div>
@@ -500,7 +536,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 20 6 MESES -->
 <section class="slide" aria-label="6 meses">
-  <span class="eyebrow rise">// 19 <b>Plano · 6 meses</b></span>
+  <span class="eyebrow rise">// 20 <b>Plano · 6 meses</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[44px]">Fevereiro a abril: <em>rodando com o time.</em></h2><span class="chip g">FEV · MAR · ABR</span></div>
   <div class="grid grid-cols-3 gap-4 mt-auto mb-2">
     <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Fevereiro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Matrículas e fechamento do ciclo 2027.1 da Graduação</li><li>Fluxo de demandas com as unidades implantado</li><li>Retorno por campanha do ciclo apresentado</li></ul></div>
@@ -511,7 +547,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 21 A PARTIR DE MAIO -->
 <section class="slide" aria-label="A partir de maio">
-  <span class="eyebrow rise">// 20 <b>Próxima etapa</b></span>
+  <span class="eyebrow rise">// 21 <b>Próxima etapa</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[44px]">A partir de maio, <em>a programar.</em></h2><span class="chip">COM A REITORIA</span></div>
   <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">O que fica para depois de abril, para entrar no próximo ciclo com base pronta e método já implantado.</p>
   <div class="grid grid-cols-3 gap-5 mt-auto mb-2">
@@ -523,7 +559,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 22 INDICADORES -->
 <section class="slide" aria-label="Indicadores">
-  <span class="eyebrow rise">// 21 <b>O que a Reitoria acompanha</b></span>
+  <span class="eyebrow rise">// 22 <b>O que a Reitoria acompanha</b></span>
   <h2 class="ttl rise text-[44px] mt-4">Indicadores com fonte, <em>metas definidas juntos.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Cada indicador tem fonte e data de atualização definidas. As metas são combinadas com a Reitoria no início do trabalho.</p>
   <div class="grid grid-cols-4 gap-4 mt-auto mb-2">
@@ -537,14 +573,14 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <!-- 23 O QUE PRECISO + PRÓXIMOS PASSOS -->
 <section class="slide" aria-label="Próximos passos">
   <div class="grain"></div>
-  <span class="eyebrow rise relative">// 22 <b>Para começar</b></span>
+  <span class="eyebrow rise relative">// 23 <b>Para começar</b></span>
   <div class="relative grid grid-cols-2 gap-10 flex-1 items-center mt-2">
     <div class="flex flex-col gap-5">
       <h2 class="ttl rise text-[52px]">Próximos <em>passos.</em></h2>
       <ul class="ck rise">
         <li>Indicar o interlocutor e apresentar a nova gestão de Marketing.</li>
         <li>Autorizar o ajuste imediato dos anúncios que levam a "Em breve".</li>
-        <li>Agendar as entrevistas com Marketing e coordenações.</li>
+        <li>Reservar até 03/11 a agenda das entrevistas: Reitoria, Marketing e coordenações.</li>
         <li>Definir com a Reitoria a expectativa para cada unidade: crescer, manter ou reposicionar.</li>
       </ul>
     </div>
@@ -591,6 +627,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
     pv.style.visibility=nx.style.visibility=i===0?'hidden':'visible';pv.disabled=i===0;nx.disabled=i===N-1;
     if(S[i].querySelector('#method')){setStep(0);loop()}else clearInterval(mt);
     countUp(S[i]);
+    stage.querySelectorAll('video').forEach(function(v){if(S[i].contains(v)){var p=v.play();if(p&&p.catch)p.catch(function(){})}else v.pause()});
   }
   pv.onclick=function(){go(cur-1)};nx.onclick=function(){go(cur+1)};
   stage.addEventListener('click',function(e){var t=e.target.closest('[data-go]');if(t)go(+t.dataset.go)});
@@ -605,7 +642,9 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   addEventListener('scroll',function(){if(!isM())return;var h=root.scrollHeight-innerHeight;prog.style.width=(h>0?scrollY/h*100:0)+'%'},{passive:true});
   var bm=document.getElementById('modoDesk');
   bm.addEventListener('click',function(){forca=true;try{sessionStorage.setItem('lorso-modo','desktop')}catch(e){}scrollTo(0,0);S.forEach(function(x){x.classList.remove('on','back')});cur=-1;applyM();go(0)});
+  stage.querySelectorAll('.vplay').forEach(function(f){f.addEventListener('click',function(){var v=f.querySelector('video');v.muted=true;v.play();(v.requestFullscreen||v.webkitEnterFullscreen||function(){}).call(v)})});
   applyM();
+  if(isM()){stage.querySelectorAll('video').forEach(function(v){v.controls=true})}
   if(isM()){S.forEach(function(s){s.classList.add('on')});S.forEach(countUp)}else go(0);
 })();
 </script>
