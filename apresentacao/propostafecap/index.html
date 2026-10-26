@@ -163,6 +163,7 @@ html.m .cnode .num{width:36px;height:36px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* proposta FECAP */
+.rchip{font-family:"JetBrains Mono",monospace;font-size:11px;padding:4px 9px;border-radius:99px;border:1px solid rgba(255,92,92,.5);color:#FFB0B0;background:rgba(255,92,92,.08)}
 .rtag{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border-radius:10px;border:1px solid rgba(255,92,92,.45);background:rgba(255,92,92,.08);color:#FF7A7A}
 .rtag b{font-family:Archivo,sans-serif;font-weight:800;font-size:13px;color:#F2F5F7;text-transform:uppercase;letter-spacing:.02em}
 .funil{display:flex;flex-direction:column;align-items:center;gap:7px}
@@ -269,53 +270,9 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   </div>
 </section>
 
-<!-- 2 TRAJETÓRIA -->
-<section class="slide" aria-label="Quem conduz">
-  <span class="eyebrow rise">// 01 <b>Quem conduz</b></span>
-  <div class="grid grid-cols-[1.05fr_1fr] gap-12 mt-6 flex-1 items-center">
-    <div class="flex flex-col gap-5">
-      <h2 class="ttl rise text-[44px]">Um método construído em anos, <em>testado na operação.</em></h2>
-      <p class="rise text-[17px] text-graph leading-relaxed">Anos de planejamento, estudo e aplicação prática em operações de educação e de finanças. O que vai para a FECAP não é teoria: é o que já rodou, com time, verba e meta.</p>
-      <div class="grid grid-cols-2 gap-3 rise">
-        <div class="card p-5"><div class="font-display text-[34px] font-extrabold tabular-nums"><span data-count="17">17</span>+</div><p class="text-[13px] text-mute">anos liderando unidades de negócio em EdTech, Fintech e E-commerce</p></div>
-        <div class="card p-5"><div class="font-display text-[34px] font-extrabold tabular-nums">+R$<span data-count="40">40</span> mi</div><p class="text-[13px] text-mute">em receita gerada com marketing, marca e go-to-market</p></div>
-      </div>
-    </div>
-    <div class="flex flex-col gap-3">
-      <div class="card p-4 rise" style="border-color:rgba(0,255,135,.5);background:linear-gradient(180deg,rgba(0,255,135,.08),rgba(14,18,26,.92))"><div class="cat" style="color:var(--neon)">Educação superior</div><div class="font-display font-extrabold text-[20px] mt-1">FECAP</div><p class="text-[13.5px] text-graph mt-1">Vivência de quem já passou pela FECAP e por todo o processo.</p></div>
-      <div class="card p-4 rise"><div class="cat">Educação financeira</div><div class="font-display font-extrabold text-[20px] mt-1">DSOP</div><p class="text-[13.5px] text-graph mt-1">Gestão de marketing em referência nacional de educação financeira.</p></div>
-      <div class="card p-4 rise"><div class="cat">Produtos educacionais</div><div class="font-display font-extrabold text-[20px] mt-1">Me Poupe!</div><p class="text-[13.5px] text-graph mt-1">Produtos educacionais, lançamentos perpétuos, ofertas de alto ticket e gestão operacional de ponta a ponta.</p></div>
-      <div class="card p-4 rise"><div class="cat">SaaS Fintech</div><div class="font-display font-extrabold text-[20px] mt-1">Meu Vista</div><p class="text-[13.5px] text-graph mt-1">Head de Marketing: aquisição paga, conteúdo B2B e B2C e integração do marketing com o comercial.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- 2b HUB -->
-<section class="slide" aria-label="Hub LORSO" id="hubSlide" style="padding-top:44px">
-  <div class="flex items-end justify-between rise">
-    <div><span class="eyebrow">// 01.1 <b>Hub de Inteligência Operacional e Escala</b></span>
-    <h2 class="ttl text-[34px] mt-3">Tudo o que construímos, <em>conectado em um só hub.</em></h2></div>
-  </div>
-  <div id="hub" class="relative flex-1 mt-5 grid grid-cols-[340px_1fr_340px] items-center">
-    <svg id="hubSvg" class="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true"><defs>
-      <linearGradient id="gL" x1="0" x2="1"><stop offset="0" stop-color="#00E5FF"/><stop offset="1" stop-color="#00FF87"/></linearGradient>
-      <linearGradient id="gR" x1="1" x2="0"><stop offset="0" stop-color="#8B7CFF"/><stop offset="1" stop-color="#00FF87"/></linearGradient></defs><g id="hubG"></g></svg>
-    <div class="relative z-[1] flex flex-col gap-3" id="hubL"><div class="hcard" data-h="0"><div class="ic"><i data-lucide="palette" class="w-[18px] h-[18px]"></i></div><div><b>Branding e conteúdo</b><p>Marca, RP, LinkedIn, redes sociais e vídeo com uma voz só.</p></div></div><div class="hcard" data-h="1"><div class="ic"><i data-lucide="megaphone" class="w-[18px] h-[18px]"></i></div><div><b>Captação e mídia</b><p>Meta Ads, Google Ads e LPs que transformam clique em lead.</p></div></div><div class="hcard" data-h="2"><div class="ic"><i data-lucide="sparkles" class="w-[18px] h-[18px]"></i></div><div><b>Inteligência artificial</b><p>IA no conteúdo, no diagnóstico e na otimização das campanhas.</p></div></div><div class="hcard" data-h="3"><div class="ic"><i data-lucide="workflow" class="w-[18px] h-[18px]"></i></div><div><b>Automações</b><p>CRM, WhatsApp e réguas de e-mail levando o lead até a venda.</p></div></div></div>
-    <div class="relative flex items-center justify-center h-full">
-      <div class="glow"></div><div class="ring r3"></div><div class="ring r2"></div><div class="ring r1"></div>
-      <div id="hubCore" class="relative z-[1]"><div class="core">
-        <svg width="52" height="52" viewBox="0 0 54 54" aria-hidden="true"><path d="M8 6h12v30h26v12H8z" fill="#00FF87"/><path d="M30 6h16l-8 22H22z" fill="#00E5FF"/><circle cx="41" cy="14" r="3.4" fill="#fff"/></svg>
-        <div class="font-display font-extrabold tracking-wide leading-none text-center">LORSO<div class="text-[9px] tracking-[.32em] text-mute mt-1 font-sans font-medium">DIGITAL.</div></div>
-      </div></div>
-      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 font-mono text-[11px] tracking-[.22em] text-mute whitespace-nowrap">TUDO CONECTADO</div>
-    </div>
-    <div class="relative z-[1] flex flex-col gap-3" id="hubR"><div class="hcard" data-h="4"><div class="ic"><i data-lucide="store" class="w-[18px] h-[18px]"></i></div><div><b>Operações comerciais</b><p>Varejo, atacado e e-commerce com canais organizados e DRE.</p></div></div><div class="hcard" data-h="5"><div class="ic"><i data-lucide="line-chart" class="w-[18px] h-[18px]"></i></div><div><b>Dados e inteligência</b><p>Diagnóstico, dashboards, avaliação de reports e metas.</p></div></div><div class="hcard" data-h="6"><div class="ic"><i data-lucide="rocket" class="w-[18px] h-[18px]"></i></div><div><b>Produto e lançamentos</b><p>Go-to-market, ofertas e plataforma de lançamentos.</p></div></div><div class="hcard" data-h="7"><div class="ic"><i data-lucide="smartphone" class="w-[18px] h-[18px]"></i></div><div><b>Apps e plataformas</b><p>Sistemas e apps próprios construídos do zero.</p></div></div></div>
-  </div>
-</section>
-
 <!-- 3 POR QUE AGORA -->
 <section class="slide" aria-label="Por que agora">
-  <span class="eyebrow rise">// 02 <b>O momento</b></span>
+  <span class="eyebrow rise">// 01 <b>O momento</b></span>
   <h2 class="ttl rise text-[42px] mt-3">Transição na gestão <em>com a captação em curso.</em></h2>
   <div class="grid grid-cols-[1.15fr_1fr] gap-6 mt-auto mb-1">
     <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(255,92,92,.45);background:linear-gradient(180deg,rgba(255,92,92,.07),rgba(14,18,26,.92))">
@@ -339,7 +296,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 4 G-01 -->
 <section class="slide" aria-label="Achado G-01">
-  <span class="eyebrow rise">// 03 <b>O que já vimos · G-01</b></span>
+  <span class="eyebrow rise">// 02 <b>O que já vimos · G-01</b></span>
   <div class="grid grid-cols-[1fr_1.15fr] gap-12 flex-1 items-center mt-2">
     <div class="rise">
       <div class="font-display font-extrabold text-[150px] leading-none text-emer tabular-nums" data-count="41">41</div>
@@ -360,7 +317,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 5 G-02 -->
 <section class="slide" aria-label="Achado G-02">
-  <span class="eyebrow rise">// 04 <b>O que já vimos · G-02</b></span>
+  <span class="eyebrow rise">// 03 <b>O que já vimos · G-02</b></span>
   <h2 class="ttl rise text-[46px] mt-4">A captação só existe <em>com edital aberto.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[860px]">Fora da janela de inscrição, a demanda que chega o ano todo (orgânica, indicação, mídia, eventos) não é registrada. Cada turma começa a captar do zero e depende só de mídia comprada na hora.</p>
   <div class="grid grid-cols-[1.3fr_1fr] gap-5 mt-auto mb-1">
@@ -382,7 +339,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 6 EDITAIS -->
 <section class="slide" aria-label="Sinais nos editais">
-  <span class="eyebrow rise">// 05 <b>O que já vimos · editais da Pós</b></span>
+  <span class="eyebrow rise">// 04 <b>O que já vimos · editais da Pós</b></span>
   <div class="grid grid-cols-2 gap-12 flex-1 items-center mt-2">
     <div class="rise flex items-end gap-8">
       <div><div class="font-display font-extrabold text-[120px] leading-none text-ink tabular-nums">26</div><p class="text-mute font-mono text-xs tracking-[.12em] mt-2">CURSOS · PÓS 2026.2</p></div>
@@ -399,7 +356,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 6b TURMAS DA MANHÃ -->
 <section class="slide" aria-label="Graduação: turmas da manhã">
-  <span class="eyebrow rise">// 05.1 <b>Maior gargalo da Graduação</b></span>
+  <span class="eyebrow rise">// 05 <b>Maior gargalo da Graduação</b></span>
   <h2 class="ttl rise text-[44px] mt-4">Abrir mais turmas <em>de manhã, além da noite.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[860px]">O crescimento da Graduação depende de abrir e lotar mais turmas no período da manhã, curso a curso, sem depender só da noite.</p>
   <div class="grid grid-cols-[1fr_1.5fr] gap-6 mt-auto mb-2">
@@ -428,8 +385,9 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   <span class="eyebrow rise">// 06 <b>O que já vimos · gestão</b></span>
   <h2 class="ttl rise text-[46px] mt-4">Sem números iguais, <em>não há decisão segura.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Antes de propor mudanças, todas as áreas precisam falar dos mesmos números.</p>
-  <div class="grid grid-cols-2 gap-5 mt-auto mb-2">
-    <div class="card p-6 rise flex flex-col gap-3"><div class="font-display font-extrabold text-[44px] text-emer leading-none">~90</div><div class="font-display font-extrabold uppercase text-[16px]">Cursos livres sem estratégia</div><p class="text-[14px] text-graph">Curta duração e educação executiva pedem estratégia de lançamento evergreen e low ticket, com funil, KPIs, metas e pack de comunicação.</p></div>
+  <div class="grid grid-cols-3 gap-5 mt-auto mb-2">
+    <div class="card p-6 rise flex flex-col gap-3"><div class="font-display font-extrabold text-[44px] text-emer leading-none">~90</div><div class="font-display font-extrabold uppercase text-[16px]">Cursos livres sem estratégia</div><p class="text-[14px] text-graph">Curta duração e educação executiva sem estratégia própria de captação.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3 alerta"><div class="cat flex items-center gap-2" style="color:#FF7A7A"><i data-lucide="triangle-alert" class="w-4 h-4"></i>Montar a estratégia</div><div class="font-display font-extrabold uppercase text-[16px]">Lançamento evergreen e low ticket</div><div class="flex flex-wrap gap-1.5"><span class="rchip">Funil</span><span class="rchip">KPIs</span><span class="rchip">Metas</span><span class="rchip">Pack de comunicação</span></div></div>
     <div class="card p-6 rise flex flex-col gap-3"><div class="font-display font-extrabold text-[44px] text-emer leading-none">3</div><div class="font-display font-extrabold uppercase text-[16px]">Definições em aberto</div><p class="text-[14px] text-graph">"Captado", "lead" e "verba" ainda não têm o mesmo significado para Marketing, central e financeiro.</p></div>
   </div>
 </section>
@@ -450,9 +408,53 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   </div>
 </section>
 
+<!-- 2 TRAJETÓRIA -->
+<section class="slide" aria-label="Quem conduz">
+  <span class="eyebrow rise">// 08 <b>Quem conduz</b></span>
+  <div class="grid grid-cols-[1.05fr_1fr] gap-12 mt-6 flex-1 items-center">
+    <div class="flex flex-col gap-5">
+      <h2 class="ttl rise text-[44px]">Um método construído em anos, <em>testado na operação.</em></h2>
+      <p class="rise text-[17px] text-graph leading-relaxed">Anos de planejamento, estudo e aplicação prática em operações de educação e de finanças. O que vai para a FECAP não é teoria: é o que já rodou, com time, verba e meta.</p>
+      <div class="grid grid-cols-2 gap-3 rise">
+        <div class="card p-5"><div class="font-display text-[34px] font-extrabold tabular-nums"><span data-count="17">17</span>+</div><p class="text-[13px] text-mute">anos liderando unidades de negócio em EdTech, Fintech e E-commerce</p></div>
+        <div class="card p-5"><div class="font-display text-[34px] font-extrabold tabular-nums">+R$<span data-count="40">40</span> mi</div><p class="text-[13px] text-mute">em receita gerada com marketing, marca e go-to-market</p></div>
+      </div>
+    </div>
+    <div class="flex flex-col gap-3">
+      <div class="card p-4 rise" style="border-color:rgba(0,255,135,.5);background:linear-gradient(180deg,rgba(0,255,135,.08),rgba(14,18,26,.92))"><div class="cat" style="color:var(--neon)">Educação superior</div><div class="font-display font-extrabold text-[20px] mt-1">FECAP</div><p class="text-[13.5px] text-graph mt-1">Vivência de quem já passou pela FECAP e por todo o processo.</p></div>
+      <div class="card p-4 rise"><div class="cat">Educação financeira</div><div class="font-display font-extrabold text-[20px] mt-1">DSOP</div><p class="text-[13.5px] text-graph mt-1">Gestão de marketing em referência nacional de educação financeira.</p></div>
+      <div class="card p-4 rise"><div class="cat">Produtos educacionais</div><div class="font-display font-extrabold text-[20px] mt-1">Me Poupe!</div><p class="text-[13.5px] text-graph mt-1">Produtos educacionais, lançamentos perpétuos, ofertas de alto ticket e gestão operacional de ponta a ponta.</p></div>
+      <div class="card p-4 rise"><div class="cat">SaaS Fintech</div><div class="font-display font-extrabold text-[20px] mt-1">Meu Vista</div><p class="text-[13.5px] text-graph mt-1">Head de Marketing: aquisição paga, conteúdo B2B e B2C e integração do marketing com o comercial.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2b HUB -->
+<section class="slide" aria-label="Hub LORSO" id="hubSlide" style="padding-top:44px">
+  <div class="flex items-end justify-between rise">
+    <div><span class="eyebrow">// 09 <b>Quem é a LORSO Digital · Hub de Inteligência Operacional e Escala</b></span>
+    <h2 class="ttl text-[34px] mt-3 whitespace-nowrap">Quem é a LORSO Digital: <em>tudo conectado em um só hub.</em></h2></div>
+  </div>
+  <div id="hub" class="relative flex-1 mt-5 grid grid-cols-[340px_1fr_340px] items-center">
+    <svg id="hubSvg" class="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true"><defs>
+      <linearGradient id="gL" x1="0" x2="1"><stop offset="0" stop-color="#00E5FF"/><stop offset="1" stop-color="#00FF87"/></linearGradient>
+      <linearGradient id="gR" x1="1" x2="0"><stop offset="0" stop-color="#8B7CFF"/><stop offset="1" stop-color="#00FF87"/></linearGradient></defs><g id="hubG"></g></svg>
+    <div class="relative z-[1] flex flex-col gap-3" id="hubL"><div class="hcard" data-h="0"><div class="ic"><i data-lucide="palette" class="w-[18px] h-[18px]"></i></div><div><b>Branding e conteúdo</b><p>Marca, RP, LinkedIn, redes sociais e vídeo com uma voz só.</p></div></div><div class="hcard" data-h="1"><div class="ic"><i data-lucide="megaphone" class="w-[18px] h-[18px]"></i></div><div><b>Captação e mídia</b><p>Meta Ads, Google Ads e LPs que transformam clique em lead.</p></div></div><div class="hcard" data-h="2"><div class="ic"><i data-lucide="sparkles" class="w-[18px] h-[18px]"></i></div><div><b>Inteligência artificial</b><p>IA no conteúdo, no diagnóstico e na otimização das campanhas.</p></div></div><div class="hcard" data-h="3"><div class="ic"><i data-lucide="workflow" class="w-[18px] h-[18px]"></i></div><div><b>Automações</b><p>CRM, WhatsApp e réguas de e-mail levando o lead até a venda.</p></div></div></div>
+    <div class="relative flex items-center justify-center h-full">
+      <div class="glow"></div><div class="ring r3"></div><div class="ring r2"></div><div class="ring r1"></div>
+      <div id="hubCore" class="relative z-[1]"><div class="core">
+        <svg width="52" height="52" viewBox="0 0 54 54" aria-hidden="true"><path d="M8 6h12v30h26v12H8z" fill="#00FF87"/><path d="M30 6h16l-8 22H22z" fill="#00E5FF"/><circle cx="41" cy="14" r="3.4" fill="#fff"/></svg>
+        <div class="font-display font-extrabold tracking-wide leading-none text-center">LORSO<div class="text-[9px] tracking-[.32em] text-mute mt-1 font-sans font-medium">DIGITAL.</div></div>
+      </div></div>
+      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 font-mono text-[11px] tracking-[.22em] text-mute whitespace-nowrap">TUDO CONECTADO</div>
+    </div>
+    <div class="relative z-[1] flex flex-col gap-3" id="hubR"><div class="hcard" data-h="4"><div class="ic"><i data-lucide="store" class="w-[18px] h-[18px]"></i></div><div><b>Operações comerciais</b><p>Varejo, atacado e e-commerce com canais organizados e DRE.</p></div></div><div class="hcard" data-h="5"><div class="ic"><i data-lucide="line-chart" class="w-[18px] h-[18px]"></i></div><div><b>Dados e inteligência</b><p>Diagnóstico, dashboards, avaliação de reports e metas.</p></div></div><div class="hcard" data-h="6"><div class="ic"><i data-lucide="rocket" class="w-[18px] h-[18px]"></i></div><div><b>Produto e lançamentos</b><p>Go-to-market, ofertas e plataforma de lançamentos.</p></div></div><div class="hcard" data-h="7"><div class="ic"><i data-lucide="smartphone" class="w-[18px] h-[18px]"></i></div><div><b>Apps e plataformas</b><p>Sistemas e apps próprios construídos do zero.</p></div></div></div>
+  </div>
+</section>
+
 <!-- 10 MÉTODO -->
 <section class="slide" aria-label="Método">
-  <span class="eyebrow rise">// 08 <b>Método LORSO</b></span>
+  <span class="eyebrow rise">// 10 <b>Método LORSO</b></span>
   <h2 class="ttl rise text-[48px] mt-4">Cinco fases, <em>aplicadas a cada unidade.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[700px]">A ordem e a intensidade de cada fase seguem o calendário de captação de cada unidade de negócio.</p>
   <div class="grid grid-cols-5 gap-4 mt-auto mb-1 rise" id="method">
@@ -464,22 +466,10 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   </div>
 </section>
 
-<!-- 9 O QUE ISSO CUSTA -->
-<section class="slide" aria-label="O que isso custa">
-  <span class="eyebrow rise">// 09 <b>O que isso custa</b></span>
-  <h2 class="ttl rise text-[44px] mt-4">Sem número inventado: <em>medido em 30 dias.</em></h2>
-  <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Cada perda vira um indicador com fonte e data. O primeiro relatório à Reitoria traz o valor de cada uma.</p>
-  <div class="grid grid-cols-3 gap-5 mt-auto mb-2">
-    <div class="card p-6 rise flex flex-col gap-3"><span class="chip">A MEDIR</span><div class="font-display font-extrabold uppercase text-[16px]">Verba sem captura</div><p class="text-[14px] text-graph">Investimento das campanhas cujo destino estava "Em breve", cruzado anúncio a anúncio nas contas de mídia.</p></div>
-    <div class="card p-6 rise flex flex-col gap-3"><span class="chip">A MEDIR</span><div class="font-display font-extrabold uppercase text-[16px]">Demanda fora da janela</div><p class="text-[14px] text-graph">Interessados por curso que chegam sem edital aberto, contados a partir da lista de interesse.</p></div>
-    <div class="card p-6 rise flex flex-col gap-3"><span class="chip">A MEDIR</span><div class="font-display font-extrabold uppercase text-[16px]">Lead que esfria</div><p class="text-[14px] text-graph">Tempo até o primeiro contato da central e do comercial, e a conversão em cada etapa do funil.</p></div>
-  </div>
-</section>
-
 <!-- 10b COMO FAZEMOS · CENTRAL -->
 <section class="slide" aria-label="Como fazemos: Central de Diagnóstico">
   <div class="flex items-end justify-between rise">
-    <div><span class="eyebrow">// 09.1 <b>Como fazemos · Sistemas LORSO 1 de 3</b></span>
+    <div><span class="eyebrow">// 11 <b>Como fazemos · Sistemas LORSO 1 de 3</b></span>
     <h2 class="ttl text-[32px] mt-3 whitespace-nowrap">Central de Diagnóstico: <em>o método na plataforma.</em></h2></div>
     <div class="flex gap-2"><span class="chip g">Plataforma própria</span><span class="chip">Dados só da FECAP</span></div>
   </div>
@@ -502,7 +492,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <!-- 10b2 FUNIL DE CAPTAÇÃO -->
 <section class="slide" aria-label="Como fazemos: funil de captação" id="funilSlide">
   <div class="flex items-end justify-between rise">
-    <div><span class="eyebrow">// 09.2 <b>Como fazemos · Sistemas LORSO 2 de 3</b></span>
+    <div><span class="eyebrow">// 12 <b>Como fazemos · Sistemas LORSO 2 de 3</b></span>
     <h2 class="ttl text-[32px] mt-3 whitespace-nowrap">Captação: <em>o funil que o coordenador vê.</em></h2></div>
     <span class="chip">Módulo da Central</span>
   </div>
@@ -534,7 +524,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <!-- 10c COMO FAZEMOS · LANÇAMENTOS -->
 <section class="slide" aria-label="Como fazemos: Plataforma de Lançamentos">
   <div class="flex items-end justify-between rise">
-    <div><span class="eyebrow">// 09.3 <b>Como fazemos · Sistemas LORSO 3 de 3</b></span>
+    <div><span class="eyebrow">// 13 <b>Como fazemos · Sistemas LORSO 3 de 3</b></span>
     <h2 class="ttl text-[32px] mt-3 whitespace-nowrap">Lançamentos: <em>um modelo de venda para cada curso.</em></h2></div>
     <span class="chip">Módulo da Central</span>
   </div>
@@ -556,7 +546,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 11 BASE CIENTÍFICA -->
 <section class="slide" aria-label="Base científica">
-  <span class="eyebrow rise">// 10 <b>Base científica</b></span>
+  <span class="eyebrow rise">// 14 <b>Base científica</b></span>
   <div class="flex items-end justify-between mt-3 rise">
     <h2 class="ttl text-[38px]">Método LORSO, <em>fundamentado em…</em></h2>
     <span class="chip">Referências reconhecidas · aplicação LORSO</span>
@@ -582,7 +572,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 12 COMO ATUO -->
 <section class="slide" aria-label="Como atuo com o time">
-  <span class="eyebrow rise">// 11 <b>Como atuo com o time</b></span>
+  <span class="eyebrow rise">// 15 <b>Como atuo com o time</b></span>
   <div class="grid grid-cols-[1fr_1fr] gap-12 flex-1 items-center mt-2">
     <div class="flex flex-col gap-5">
       <h2 class="ttl rise text-[42px]">A LORSO recomenda. <em>A Reitoria decide.</em></h2>
@@ -609,7 +599,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 13 GRADUAÇÃO -->
 <section class="slide" aria-label="Captação da Graduação">
-  <span class="eyebrow rise">// 12 <b>Frente 1 · Captação ativa da Graduação</b></span>
+  <span class="eyebrow rise">// 16 <b>Frente 1 · Captação ativa da Graduação</b></span>
   <h2 class="ttl rise text-[44px] mt-4">O funil do CRM <em>lido todos os dias.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Durante o ciclo 2027.1, a captação é acompanhada com a nova gestão, a central e o comercial, sempre a partir do mesmo número: a matrícula paga no CRM. A manhã tem meta e acompanhamento próprios.</p>
   <div class="grid grid-cols-4 gap-4 mt-auto mb-2">
@@ -622,7 +612,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 14 PÓS -->
 <section class="slide" aria-label="Captação da Pós">
-  <span class="eyebrow rise">// 13 <b>Frente 2 · Captação ativa da Pós-Graduação</b></span>
+  <span class="eyebrow rise">// 17 <b>Frente 2 · Captação ativa da Pós-Graduação</b></span>
   <h2 class="ttl rise text-[44px] mt-4">Captar o ano todo, <em>converter na abertura.</em></h2>
   <div class="grid grid-cols-[1.2fr_1fr] gap-6 mt-auto mb-2">
     <div class="card p-6 rise"><ul class="ck">
@@ -641,7 +631,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 15 AUTOMAÇÃO -->
 <section class="slide" aria-label="Automação e WhatsApp">
-  <span class="eyebrow rise">// 14 <b>Frente 3 · Automação e WhatsApp</b></span>
+  <span class="eyebrow rise">// 18 <b>Frente 3 · Automação e WhatsApp</b></span>
   <div class="flex items-end justify-between mt-3 rise">
     <h2 class="ttl text-[38px]">Cada mensagem <em>na categoria certa.</em></h2>
     <span class="chip">Regras da Meta · out/2026</span>
@@ -656,7 +646,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 16 VERTICALIZAÇÃO -->
 <section class="slide" aria-label="Verticalização dos anúncios">
-  <span class="eyebrow rise">// 15 <b>Frente 4 · Estudo de viabilidade</b></span>
+  <span class="eyebrow rise">// 19 <b>Frente 4 · Estudo de viabilidade</b></span>
   <h2 class="ttl rise text-[42px] mt-4">Anúncios por curso, <em>não só por modalidade.</em></h2>
   <div class="grid grid-cols-3 gap-4 mt-6 rise">
     <div class="card p-5"><div class="cat">Hoje · Pós e Colégio</div><p class="text-[14.5px] text-graph mt-2">Campanhas por modalidade e frente de estudo. Não se sabe quanto custa e quanto retorna cada curso.</p></div>
@@ -673,7 +663,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 17 EQUIPE -->
 <section class="slide" aria-label="Equipe de Marketing">
-  <span class="eyebrow rise">// 16 <b>Frente 5 · Equipe de Marketing</b></span>
+  <span class="eyebrow rise">// 20 <b>Frente 5 · Equipe de Marketing</b></span>
   <h2 class="ttl rise text-[44px] mt-4">Gestão e growth treinados, <em>time desenvolvido.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">O objetivo é que, em abril, a nova gestão e a pessoa de performance e growth conduzam a operação com autonomia, e cada pessoa do time esteja no papel certo.</p>
   <div class="card p-4 mt-5 rise flex items-center gap-5" style="border-color:rgba(0,255,135,.45);background:linear-gradient(90deg,rgba(0,255,135,.08),rgba(14,18,26,.92) 55%)">
@@ -690,7 +680,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 18 PROCESSOS -->
 <section class="slide" aria-label="Processos">
-  <span class="eyebrow rise">// 17 <b>Frente 6 · Processos</b></span>
+  <span class="eyebrow rise">// 21 <b>Frente 6 · Processos</b></span>
   <h2 class="ttl rise text-[44px] mt-4">Marketing que responde <em>às unidades no prazo.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Hoje, as demandas das unidades e das coordenações chegam por vários caminhos. A proposta é um fluxo único, com prazo e responsável.</p>
   <div class="card p-5 mt-auto rise alerta">
@@ -714,7 +704,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 18b NOVEMBRO -->
 <section class="slide" aria-label="Novembro: entrevistas">
-  <span class="eyebrow rise">// 18 <b>Entrevistas do diagnóstico</b></span>
+  <span class="eyebrow rise">// 22 <b>Entrevistas do diagnóstico</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[40px]">Novembro com a Graduação, <em>Pós em janeiro.</em></h2><span class="chip g">03/11 → JAN</span></div>
   <p class="rise text-[16px] text-graph mt-4 max-w-[900px]">Cada conversa é registrada na Central no mesmo dia. A Pós fica para janeiro, porque a equipe administrativa e os projetos em andamento ainda estão em curso.</p>
   <div class="grid grid-cols-5 gap-3 mt-auto">
@@ -729,7 +719,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 19 3 MESES -->
 <section class="slide" aria-label="3 meses">
-  <span class="eyebrow rise">// 19 <b>Fase 01 · 3 meses</b></span>
+  <span class="eyebrow rise">// 23 <b>Fase 01 · 3 meses</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[44px]">Novembro a janeiro: <em>diagnóstico e base.</em></h2><span class="chip g">NOV · DEZ · JAN</span></div>
   <div class="grid grid-cols-3 gap-4 mt-auto mb-2">
     <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Novembro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Ajuste imediato dos anúncios que levam a "Em breve" e lista de interesse nesses cursos</li><li>Acessos ao CRM, contas de mídia, site e orçamento</li><li>Entrevistas com Reitoria, Marketing e coordenações da Graduação</li><li>Funil da Graduação acompanhado todos os dias</li></ul></div>
@@ -740,7 +730,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 20 6 MESES -->
 <section class="slide" aria-label="6 meses">
-  <span class="eyebrow rise">// 20 <b>Fase 01 · 6 meses</b></span>
+  <span class="eyebrow rise">// 24 <b>Fase 01 · 6 meses</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[44px]">Fevereiro a abril: <em>rodando com o time.</em></h2><span class="chip g">FEV · MAR · ABR</span></div>
   <div class="grid grid-cols-3 gap-4 mt-auto mb-2">
     <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Fevereiro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Matrículas e fechamento do ciclo 2027.1 da Graduação</li><li>Fluxo de demandas com as unidades implantado</li><li>Retorno por campanha do ciclo apresentado</li></ul></div>
@@ -752,7 +742,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <!-- 20b PONTE FASE 02 -->
 <section class="slide" aria-label="Fase 02: continuidade">
   <div class="grain"></div>
-  <span class="eyebrow rise relative">// 20.1 <b>Fase 02</b></span>
+  <span class="eyebrow rise relative">// 25 <b>Fase 02</b></span>
   <div class="relative mt-6 rise">
     <h2 class="ttl text-[52px] max-w-[1000px]">Aqui damos continuidade <em>ao que deu certo.</em></h2>
     <p class="text-[18px] text-graph mt-4 max-w-[820px]">A Fase 01 deixa método, números e time rodando. A Fase 02 parte do que os resultados mostraram.</p>
@@ -766,7 +756,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 21 FASE 02 -->
 <section class="slide" aria-label="Fase 02: maio a setembro">
-  <span class="eyebrow rise">// 21 <b>Fase 02 · Acompanhamento</b></span>
+  <span class="eyebrow rise">// 26 <b>Fase 02 · Acompanhamento</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[42px]">Maio a setembro: <em>próxima captação encaminhada.</em></h2><span class="chip g">MAI → SET</span></div>
   <p class="rise text-[17px] text-graph mt-4 max-w-[860px]">Com o método implantado, a LORSO acompanha o time e abre as frentes que ficaram para depois, para a FECAP entrar no próximo ciclo de captação com tudo pronto.</p>
   <div class="grid grid-cols-3 gap-4 mt-auto mb-2">
@@ -778,7 +768,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 22 INDICADORES -->
 <section class="slide" aria-label="Indicadores">
-  <span class="eyebrow rise">// 22 <b>O que a Reitoria acompanha</b></span>
+  <span class="eyebrow rise">// 27 <b>O que a Reitoria acompanha</b></span>
   <h2 class="ttl rise text-[44px] mt-4">Indicadores com fonte, <em>metas definidas juntos.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Cada indicador tem fonte e data de atualização definidas. As metas são combinadas com a Reitoria no início do trabalho.</p>
   <div class="grid grid-cols-4 gap-4 mt-auto mb-2">
@@ -792,7 +782,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <!-- 23 O QUE PRECISO + PRÓXIMOS PASSOS -->
 <section class="slide" aria-label="Próximos passos">
   <div class="grain"></div>
-  <span class="eyebrow rise relative">// 23 <b>Para começar</b></span>
+  <span class="eyebrow rise relative">// 28 <b>Para começar</b></span>
   <div class="relative grid grid-cols-2 gap-10 flex-1 items-center mt-2">
     <div class="flex flex-col gap-5">
       <h2 class="ttl rise text-[52px]">Próximos <em>passos.</em></h2>
@@ -820,7 +810,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 23b CRONOGRAMA -->
 <section class="slide" aria-label="Cronograma" id="cronoSlide">
-  <span class="eyebrow rise">// 23.1 <b>Cronograma</b></span>
+  <span class="eyebrow rise">// 29 <b>Cronograma</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[42px]">Onze meses, <em>mês a mês.</em></h2><div class="flex gap-2"><span class="chip g">Fase 01 · nov → abr</span><span class="chip" style="color:var(--cyan);border-color:rgba(0,229,255,.4)">Fase 02 · mai → set</span></div></div>
   <p class="rise text-[17px] text-graph mt-4 max-w-[860px]">Da implantação ao acompanhamento: o que cada mês entrega até a próxima captação estar encaminhada.</p>
   <div class="cview rise mt-auto"><div class="ctrack" id="ctrack"><div class="mcd f1" data-i="0"><div class="mtop"><span class="mnum">01</span><span class="mfase">FASE 01</span></div><div class="mnome">Novembro</div><ul><li>Entrevistas da Graduação</li><li>Anúncios "Em breve" ajustados</li><li>Funil da Graduação diário</li></ul></div><div class="mcd f1" data-i="1"><div class="mtop"><span class="mnum">02</span><span class="mfase">FASE 01</span></div><div class="mnome">Dezembro</div><ul><li>Diagnóstico à Reitoria</li><li>P&amp;L da Auditoria EAD</li><li>Formulário de interesse nos cursos</li></ul></div><div class="mcd f1" data-i="2"><div class="mtop"><span class="mnum">03</span><span class="mfase">FASE 01</span></div><div class="mnome">Janeiro</div><ul><li>Entrevistas da Pós</li><li>Plano de ação aprovado</li><li>WhatsApp e ManyChat no ar</li><li>Pós 2027.1 até 01/02</li></ul></div><div class="mcd f1" data-i="3"><div class="mtop"><span class="mnum">04</span><span class="mfase">FASE 01</span></div><div class="mnome">Fevereiro</div><ul><li>Fechamento da Graduação 2027.1</li><li>Fluxo de demandas implantado</li><li>Retorno por campanha</li></ul></div><div class="mcd f1" data-i="4"><div class="mtop"><span class="mnum">05</span><span class="mfase">FASE 01</span></div><div class="mnome">Março</div><ul><li>Estudo por curso concluído</li><li>Nova gestão nos rituais</li><li>Playbooks revisados</li></ul></div><div class="mcd f1" data-i="5"><div class="mtop"><span class="mnum">06</span><span class="mfase">FASE 01</span></div><div class="mnome">Abril</div><ul><li>Pós 2027.2 abre com base</li><li>Decisões da Reitoria</li><li>Relatório de transição</li></ul></div><div class="mcd f2" data-i="6"><div class="mtop"><span class="mnum">07</span><span class="mfase">FASE 02</span></div><div class="mnome">Maio</div><ul><li>Abordagem do Colégio</li><li>Curta duração como unidade</li><li>Acompanhamento do time</li></ul></div><div class="mcd f2" data-i="7"><div class="mtop"><span class="mnum">08</span><span class="mfase">FASE 02</span></div><div class="mnome">Junho</div><ul><li>Pós 2027.2 até o fim das inscrições</li><li>Curta duração com meta e CAC</li><li>Rituais mantidos</li></ul></div><div class="mcd f2" data-i="8"><div class="mtop"><span class="mnum">09</span><span class="mfase">FASE 02</span></div><div class="mnome">Julho</div><ul><li>Retorno da Pós 2027.2</li><li>Verba do próximo ciclo</li><li>Anúncios por curso rodando</li></ul></div><div class="mcd f2" data-i="9"><div class="mtop"><span class="mnum">10</span><span class="mfase">FASE 02</span></div><div class="mnome">Agosto</div><ul><li>Graduação 2028.1 planejada</li><li>Páginas e réguas revisadas</li><li>Listas de interesse prontas</li></ul></div><div class="mcd f2" data-i="10"><div class="mtop"><span class="mnum">11</span><span class="mfase">FASE 02</span></div><div class="mnome">Setembro</div><ul><li>Próxima captação encaminhada</li><li>Time operando com autonomia</li><li>Relatório da Fase 02</li></ul></div></div></div>
@@ -835,7 +825,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <section class="slide" aria-label="Investimento">
   <div class="grain"></div>
   <div class="absolute -right-24 -bottom-24 w-[580px] h-[580px] rounded-full" style="background:radial-gradient(circle,rgba(0,255,135,.18),transparent 65%)"></div>
-  <span class="eyebrow rise relative">// 24 <b>Investimento</b></span>
+  <span class="eyebrow rise relative">// 30 <b>Investimento</b></span>
   <div class="relative mt-auto flex flex-col gap-6 max-w-[980px] mb-6">
     <h2 class="ttl rise text-[72px]">Investimento</h2>
     <p class="rise text-[28px] font-display font-extrabold leading-tight">Agora é hora de colocar o plano em ação. <em class="not-italic text-emer">Vamos iniciar?</em></p>
