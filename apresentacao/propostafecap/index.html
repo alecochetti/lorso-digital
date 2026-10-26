@@ -163,6 +163,55 @@ html.m .cnode .num{width:36px;height:36px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* proposta FECAP */
+.rtag{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border-radius:10px;border:1px solid rgba(255,92,92,.45);background:rgba(255,92,92,.08);color:#FF7A7A}
+.rtag b{font-family:Archivo,sans-serif;font-weight:800;font-size:13px;color:#F2F5F7;text-transform:uppercase;letter-spacing:.02em}
+.funil{display:flex;flex-direction:column;align-items:center;gap:7px}
+.fe{width:var(--w);height:52px;border-radius:10px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:linear-gradient(90deg,rgba(0,229,255,.16),rgba(0,255,135,.16));border:1px solid rgba(0,255,135,.28);transform-origin:center;}
+.fe span{font-family:Archivo,sans-serif;font-weight:800;font-size:15px;white-space:nowrap}
+.fe em{font-style:normal;font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--graph,#A9B3C1);white-space:nowrap;letter-spacing:.04em}
+.fe.hot{background:linear-gradient(90deg,rgba(0,255,135,.35),rgba(0,255,135,.18));border-color:rgba(0,255,135,.7);box-shadow:0 14px 34px -14px rgba(0,255,135,.6)}
+.slide.on .fe{animation:feIn .7s cubic-bezier(.3,.7,.2,1) both}
+.slide.on .fe:nth-child(2){animation-delay:.15s}.slide.on .fe:nth-child(3){animation-delay:.3s}.slide.on .fe:nth-child(4){animation-delay:.45s}
+@keyframes feIn{from{opacity:0;transform:scaleX(.4)}to{opacity:1;transform:scaleX(1)}}
+html.m .fe{width:100%!important}
+.dores{counter-reset:d;display:flex;flex-direction:column;gap:16px;margin-top:4px}
+.dores li{counter-increment:d;position:relative;padding-left:34px;font-size:14.5px;line-height:1.45;color:#A9B3C1}
+.dores li b{color:#F2F5F7}
+.dores li::before{content:counter(d,decimal-leading-zero);position:absolute;left:0;top:0;font-family:"JetBrains Mono",monospace;font-size:11px;color:#FF7A7A;border:1px solid rgba(255,92,92,.4);border-radius:6px;padding:1px 5px}
+.cview{position:relative;overflow:hidden;margin-left:-8px;margin-right:-8px;padding:14px 8px;-webkit-mask:linear-gradient(90deg,transparent,#000 4%,#000 90%,transparent);mask:linear-gradient(90deg,transparent,#000 4%,#000 90%,transparent)}
+.ctrack{display:flex;gap:18px;transition:transform .8s cubic-bezier(.65,.05,.25,1)}
+.mcd{flex:none;width:262px;min-height:250px;padding:20px;border-radius:14px;border:1px solid var(--line);background:rgba(14,18,26,.92);opacity:.38;transform:scale(.94);transition:opacity .6s,transform .6s,border-color .6s,box-shadow .6s;cursor:pointer}
+.mcd .mtop{display:flex;justify-content:space-between;align-items:center}
+.mcd .mnum{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--mute)}
+.mcd .mfase{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.14em;padding:3px 8px;border-radius:99px;border:1px solid rgba(0,255,135,.4);color:var(--neon)}
+.mcd.f2 .mfase{border-color:rgba(0,229,255,.4);color:var(--cyan)}
+.mcd .mnome{font-family:Archivo,sans-serif;font-weight:800;text-transform:uppercase;font-size:24px;margin-top:10px;letter-spacing:-.01em}
+.mcd ul{margin-top:10px;display:flex;flex-direction:column;gap:7px}
+.mcd li{font-size:14px;line-height:1.35;color:#A9B3C1;padding-left:14px;position:relative}
+.mcd li::before{content:"";position:absolute;left:0;top:6px;width:6px;height:6px;border-radius:2px;background:var(--neon)}
+.mcd.f2 li::before{background:var(--cyan)}
+.mcd.past{opacity:.55}
+.mcd.act{opacity:1;transform:scale(1);border-color:rgba(0,255,135,.6);box-shadow:0 22px 50px -22px rgba(0,255,135,.55)}
+.mcd.f2.act{border-color:rgba(0,229,255,.6);box-shadow:0 22px 50px -22px rgba(0,229,255,.55)}
+.tline{position:relative}
+.tbands{display:grid;grid-template-columns:6fr 5fr;gap:6px;margin-bottom:10px}
+.tbands>div{height:22px;border-radius:6px;display:flex;align-items:center;padding:0 10px;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em}
+.tb1{background:rgba(0,255,135,.09);color:var(--neon)}.tb2{background:rgba(0,229,255,.08);color:var(--cyan)}
+.trail{position:absolute;left:4.5%;right:4.5%;top:47px;height:2px;background:#1C222D;border-radius:2px}
+.tfill{height:100%;width:0;border-radius:2px;background:linear-gradient(90deg,var(--neon),var(--cyan));transition:width .8s cubic-bezier(.65,.05,.25,1);box-shadow:0 0 12px rgba(0,255,135,.6)}
+.tnodes{display:grid;grid-template-columns:repeat(11,1fr);position:relative}
+.tn{display:flex;flex-direction:column;align-items:center;gap:8px;background:none;border:0;cursor:pointer;padding:0}
+.tn i{width:12px;height:12px;border-radius:50%;background:#0A0D13;border:2px solid #2A3240;transition:all .4s}
+.tn span{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.12em;color:var(--mute);transition:color .4s}
+.tn.done i{background:var(--neon);border-color:var(--neon)}.tn.f2.done i{background:var(--cyan);border-color:var(--cyan)}
+.tn.act i{transform:scale(1.5);box-shadow:0 0 0 5px rgba(0,255,135,.15),0 0 16px var(--neon)}
+.tn.f2.act i{box-shadow:0 0 0 5px rgba(0,229,255,.15),0 0 16px var(--cyan)}
+.tn.act span{color:#fff}
+html.m .cview{-webkit-mask:none;mask:none;overflow:visible}
+html.m .ctrack{flex-direction:column;transform:none!important}
+html.m .mcd{width:auto;opacity:1;transform:none;min-height:0}
+html.m .tline{display:none}
+
 .alerta{border-color:rgba(255,92,92,.55)!important;background:linear-gradient(180deg,rgba(255,92,92,.10),rgba(14,18,26,.92))!important;box-shadow:0 16px 40px -20px rgba(255,92,92,.5)}
 .pstep{display:flex;gap:12px;align-items:flex-start;padding:8px 13px;border:1px solid var(--line);border-radius:12px;background:rgba(14,18,26,.92)}
 .pstep .num{flex:none;width:28px;height:28px;font-size:13px;display:flex;align-items:center;justify-content:center}
@@ -211,7 +260,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   </div>
   <div class="relative mt-auto flex flex-col gap-6 max-w-[1000px]">
     <span class="eyebrow rise">// <b>Plano de trabalho para a Reitoria</b></span>
-    <h1 class="ttl rise text-[64px]">Marketing e captação FECAP, <em>de novembro a abril.</em></h1>
+    <h1 class="ttl rise text-[64px]">Marketing e captação FECAP, <em>Fase 01.</em></h1>
     <p class="rise text-xl text-graph max-w-[780px]">Captação ativa da Graduação e da Pós-Graduação, desenvolvimento da equipe de Marketing e revisão de processos, com método e evidência.</p>
     <div class="rise flex items-center gap-6 mt-2">
       <button class="ctl pri !static" data-go="1">Começar <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
@@ -266,11 +315,23 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <!-- 3 POR QUE AGORA -->
 <section class="slide" aria-label="Por que agora">
   <span class="eyebrow rise">// 02 <b>O momento</b></span>
-  <h2 class="ttl rise text-[48px] mt-4">Transição na gestão <em>com a captação em curso.</em></h2>
-  <div class="grid grid-cols-3 gap-5 mt-auto mb-2">
-    <div class="card p-6 rise flex flex-col gap-3"><i data-lucide="users-round" class="w-6 h-6 text-emer"></i><div class="font-display font-extrabold uppercase text-[17px]">Nova gestão e vaga de growth</div><p class="text-[14px] text-graph">A operação não pode parar enquanto a nova gestão de Marketing assume e a vaga de performance e growth é preenchida. O time precisa de método, rituais e histórico de cada unidade.</p></div>
-    <div class="card p-6 rise flex flex-col gap-3"><i data-lucide="graduation-cap" class="w-6 h-6 text-emer"></i><div class="font-display font-extrabold uppercase text-[17px]">Ciclo 2027.1 aberto</div><p class="text-[14px] text-graph">Graduação com <b class="text-ink">2.220 vagas</b> no edital (675 diurno e 1.545 noturno). Pós 2027.1 com inscrições até <b class="text-ink">01/02/2027</b>.</p></div>
-    <div class="card p-6 rise flex flex-col gap-3"><i data-lucide="calendar-range" class="w-6 h-6 text-emer"></i><div class="font-display font-extrabold uppercase text-[17px]">Por que até abril</div><p class="text-[14px] text-graph">Fecha o ciclo 2027.1 inteiro e prepara a Pós 2027.2, que no ciclo anterior abriu inscrições em <b class="text-ink">14/04</b>.</p></div>
+  <h2 class="ttl rise text-[42px] mt-3">Transição na gestão <em>com a captação em curso.</em></h2>
+  <div class="grid grid-cols-[1.15fr_1fr] gap-6 mt-auto mb-1">
+    <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(255,92,92,.45);background:linear-gradient(180deg,rgba(255,92,92,.07),rgba(14,18,26,.92))">
+      <div class="cat" style="color:#FF7A7A">Dores citadas na conversa inicial</div>
+      <ol class="dores">
+        <li><b>Marketing lento para atender</b> coordenadores e unidades de negócio. O gargalo não é a captação.</li>
+        <li><b>Fluxo de trabalho sem método:</b> pedidos, sistemas e prioridades sem um caminho único.</li>
+        <li><b>Tempo do time sem medida:</b> não se sabe quanto vai para tarefas administrativas e quanto vai para as unidades.</li>
+        <li><b>Troca da gestão de Marketing:</b> substituir e treinar a nova gestão sem parar a operação.</li>
+        <li><b>Números de cada unidade separados:</b> meta, receita, folha e orçamento não são vistos juntos.</li>
+      </ol>
+    </div>
+    <div class="flex flex-col gap-3 rise">
+      <div class="card p-4 flex flex-col gap-1.5"><i data-lucide="users-round" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Nova gestão e vaga de growth</div><p class="text-[12.5px] text-graph leading-snug">A operação não pode parar enquanto a nova gestão de Marketing assume e a vaga de performance e growth é preenchida. O time precisa de método, rituais e histórico de cada unidade.</p></div>
+      <div class="card p-4 flex flex-col gap-1.5"><i data-lucide="graduation-cap" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Ciclo 2027.1 aberto</div><p class="text-[12.5px] text-graph leading-snug">Graduação com <b class="text-ink">2.220 vagas</b> no edital (675 diurno e 1.545 noturno). Pós 2027.1 com inscrições até <b class="text-ink">01/02/2027</b>.</p></div>
+      <div class="card p-4 flex flex-col gap-1.5"><i data-lucide="calendar-range" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Por que até abril</div><p class="text-[12.5px] text-graph leading-snug">Fecha o ciclo 2027.1 inteiro e prepara a Pós 2027.2, que no ciclo anterior abriu inscrições em <b class="text-ink">14/04</b>.</p></div>
+    </div>
   </div>
 </section>
 
@@ -341,10 +402,10 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   <p class="rise text-[17px] text-graph mt-4 max-w-[860px]">O crescimento da Graduação depende de abrir e lotar mais turmas no período da manhã, curso a curso, sem depender só da noite.</p>
   <div class="grid grid-cols-[1fr_1.5fr] gap-6 mt-auto mb-2">
     <div class="card p-6 rise flex flex-col gap-4">
-      <div class="cat">Edital 2027.1 · vagas por turno</div>
-      <div><div class="flex justify-between font-mono text-[12px] text-mute"><span>DIURNO</span><span>675 · 30%</span></div><div class="h-3 rounded-full bg-[#121821] mt-2 overflow-hidden"><div class="h-full rounded-full" style="width:30%;background:var(--cyan)"></div></div></div>
-      <div><div class="flex justify-between font-mono text-[12px] text-mute"><span>NOTURNO</span><span>1.545 · 70%</span></div><div class="h-3 rounded-full bg-[#121821] mt-2 overflow-hidden"><div class="h-full rounded-full" style="width:70%;background:var(--neon)"></div></div></div>
-      <p class="text-[13.5px] text-graph">De 2.220 vagas, só 3 em cada 10 são de manhã. Cada turma diurna nova precisa de demanda comprovada antes de abrir.</p>
+      <div class="cat">Edital 2027.1 · vagas abertas por turno</div>
+      <div><div class="flex justify-between font-mono text-[12px] text-mute"><span>DIURNO</span><span>675 vagas</span></div><div class="h-3 rounded-full bg-[#121821] mt-2 overflow-hidden"><div class="h-full rounded-full" style="width:30%;background:var(--cyan)"></div></div></div>
+      <div><div class="flex justify-between font-mono text-[12px] text-mute"><span>NOTURNO</span><span>1.545 vagas</span></div><div class="h-3 rounded-full bg-[#121821] mt-2 overflow-hidden"><div class="h-full rounded-full" style="width:70%;background:var(--neon)"></div></div></div>
+      <p class="text-[13.5px] text-graph">Vagas oferecidas no edital da Graduação 2027.1, 2.220 no total. Cada turma nova de manhã precisa de demanda comprovada antes de abrir.</p>
       <div class="card p-4 mt-auto" style="background:#0C1118;border-style:dashed"><div class="cat">O que já está sendo feito</div><p class="text-[13px] text-graph mt-1">Ações atuais da FECAP para a manhã, levantadas na entrevista com a Reitoria.</p></div>
     </div>
     <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(0,255,135,.4)">
@@ -387,21 +448,9 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   </div>
 </section>
 
-<!-- 9 O QUE ISSO CUSTA -->
-<section class="slide" aria-label="O que isso custa">
-  <span class="eyebrow rise">// 08 <b>O que isso custa</b></span>
-  <h2 class="ttl rise text-[44px] mt-4">Sem número inventado: <em>medido em 30 dias.</em></h2>
-  <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Cada perda vira um indicador com fonte e data. O primeiro relatório à Reitoria traz o valor de cada uma.</p>
-  <div class="grid grid-cols-3 gap-5 mt-auto mb-2">
-    <div class="card p-6 rise flex flex-col gap-3"><span class="chip">A MEDIR</span><div class="font-display font-extrabold uppercase text-[16px]">Verba sem captura</div><p class="text-[14px] text-graph">Investimento das campanhas cujo destino estava "Em breve", cruzado anúncio a anúncio nas contas de mídia.</p></div>
-    <div class="card p-6 rise flex flex-col gap-3"><span class="chip">A MEDIR</span><div class="font-display font-extrabold uppercase text-[16px]">Demanda fora da janela</div><p class="text-[14px] text-graph">Interessados por curso que chegam sem edital aberto, contados a partir da lista de interesse.</p></div>
-    <div class="card p-6 rise flex flex-col gap-3"><span class="chip">A MEDIR</span><div class="font-display font-extrabold uppercase text-[16px]">Lead que esfria</div><p class="text-[14px] text-graph">Tempo até o primeiro contato da central e do comercial, e a conversão em cada etapa do funil.</p></div>
-  </div>
-</section>
-
 <!-- 10 MÉTODO -->
 <section class="slide" aria-label="Método">
-  <span class="eyebrow rise">// 09 <b>Método LORSO</b></span>
+  <span class="eyebrow rise">// 08 <b>Método LORSO</b></span>
   <h2 class="ttl rise text-[48px] mt-4">Cinco fases, <em>aplicadas a cada unidade.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[700px]">A ordem e a intensidade de cada fase seguem o calendário de captação de cada unidade de negócio.</p>
   <div class="grid grid-cols-5 gap-4 mt-auto mb-1 rise" id="method">
@@ -413,10 +462,22 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   </div>
 </section>
 
+<!-- 9 O QUE ISSO CUSTA -->
+<section class="slide" aria-label="O que isso custa">
+  <span class="eyebrow rise">// 09 <b>O que isso custa</b></span>
+  <h2 class="ttl rise text-[44px] mt-4">Sem número inventado: <em>medido em 30 dias.</em></h2>
+  <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Cada perda vira um indicador com fonte e data. O primeiro relatório à Reitoria traz o valor de cada uma.</p>
+  <div class="grid grid-cols-3 gap-5 mt-auto mb-2">
+    <div class="card p-6 rise flex flex-col gap-3"><span class="chip">A MEDIR</span><div class="font-display font-extrabold uppercase text-[16px]">Verba sem captura</div><p class="text-[14px] text-graph">Investimento das campanhas cujo destino estava "Em breve", cruzado anúncio a anúncio nas contas de mídia.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3"><span class="chip">A MEDIR</span><div class="font-display font-extrabold uppercase text-[16px]">Demanda fora da janela</div><p class="text-[14px] text-graph">Interessados por curso que chegam sem edital aberto, contados a partir da lista de interesse.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3"><span class="chip">A MEDIR</span><div class="font-display font-extrabold uppercase text-[16px]">Lead que esfria</div><p class="text-[14px] text-graph">Tempo até o primeiro contato da central e do comercial, e a conversão em cada etapa do funil.</p></div>
+  </div>
+</section>
+
 <!-- 10b COMO FAZEMOS · CENTRAL -->
 <section class="slide" aria-label="Como fazemos: Central de Diagnóstico">
   <div class="flex items-end justify-between rise">
-    <div><span class="eyebrow">// 09.1 <b>Como fazemos · Sistemas LORSO 1 de 2</b></span>
+    <div><span class="eyebrow">// 09.1 <b>Como fazemos · Sistemas LORSO 1 de 3</b></span>
     <h2 class="ttl text-[32px] mt-3 whitespace-nowrap">Central de Diagnóstico: <em>o método na plataforma.</em></h2></div>
     <div class="flex gap-2"><span class="chip g">Plataforma própria</span><span class="chip">Dados só da FECAP</span></div>
   </div>
@@ -436,10 +497,42 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   </div>
 </section>
 
+<!-- 10b2 FUNIL DE CAPTAÇÃO -->
+<section class="slide" aria-label="Como fazemos: funil de captação" id="funilSlide">
+  <div class="flex items-end justify-between rise">
+    <div><span class="eyebrow">// 09.2 <b>Como fazemos · Sistemas LORSO 2 de 3</b></span>
+    <h2 class="ttl text-[32px] mt-3 whitespace-nowrap">Captação: <em>o funil que o coordenador vê.</em></h2></div>
+    <span class="chip">Módulo da Central</span>
+  </div>
+  <p class="rise text-[15.5px] text-graph mt-3 max-w-[900px]">Cada coordenação acompanha o próprio curso, do lead à matrícula paga, sem pedir relatório ao Marketing. Os números vêm do CRM da FECAP.</p>
+  <div class="grid grid-cols-[1.35fr_1fr] gap-7 flex-1 items-center mt-2">
+    <div class="frame rise" style="background:#0C1118">
+      <div class="fbar"><i></i><i></i><i></i><span>central · captação · graduação</span></div>
+      <div class="p-5">
+        <div class="flex flex-wrap gap-1.5 mb-4"><span class="chip g">Graduação</span><span class="chip">Curso: Administração</span><span class="chip" style="color:var(--cyan);border-color:rgba(0,229,255,.4)">Turno: manhã</span><span class="chip">Ciclo 2027.1</span></div>
+        <div class="funil">
+          <div class="fe" style="--w:100%"><span>Leads</span><em>origem · campanha · CPL</em></div>
+          <div class="fe" style="--w:84%"><span>Inscritos</span><em>conversão da etapa</em></div>
+          <div class="fe" style="--w:68%"><span>Aprovados</span><em>ENEM · vestibular</em></div>
+          <div class="fe hot" style="--w:54%"><span>Matrículas pagas</span><em>CAC · meta do ciclo</em></div>
+        </div>
+        <div class="font-mono text-[10px] tracking-[.14em] text-mute mt-4">ILUSTRAÇÃO · OS NÚMEROS ENTRAM DO CRM DA FECAP</div>
+      </div>
+    </div>
+    <div class="flex flex-col gap-3 rise">
+      <div class="cat">O diferencial para as coordenações</div>
+      <div class="hcard"><div class="ic"><i data-lucide="filter" class="w-[18px] h-[18px]"></i></div><div><b>Por curso e por turno</b><p>Manhã e noite separadas: quanto falta para fechar cada turma.</p></div></div>
+      <div class="hcard"><div class="ic"><i data-lucide="split" class="w-[18px] h-[18px]"></i></div><div><b>De onde vem cada aluno</b><p>ENEM, vestibular, mídia, orgânico e parcerias, com CPL e CAC.</p></div></div>
+      <div class="hcard"><div class="ic"><i data-lucide="headset" class="w-[18px] h-[18px]"></i></div><div><b>Central e comercial</b><p>Tempo até o primeiro contato e conversão por etapa.</p></div></div>
+      <div class="hcard"><div class="ic"><i data-lucide="target" class="w-[18px] h-[18px]"></i></div><div><b>Meta do ciclo</b><p>Captação diária comparada à meta e ao ciclo anterior.</p></div></div>
+    </div>
+  </div>
+</section>
+
 <!-- 10c COMO FAZEMOS · LANÇAMENTOS -->
 <section class="slide" aria-label="Como fazemos: Plataforma de Lançamentos">
   <div class="flex items-end justify-between rise">
-    <div><span class="eyebrow">// 09.2 <b>Como fazemos · Sistemas LORSO 2 de 2</b></span>
+    <div><span class="eyebrow">// 09.3 <b>Como fazemos · Sistemas LORSO 3 de 3</b></span>
     <h2 class="ttl text-[32px] mt-3 whitespace-nowrap">Lançamentos: <em>um modelo de venda para cada curso.</em></h2></div>
     <span class="chip">Módulo da Central</span>
   </div>
@@ -598,7 +691,18 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   <span class="eyebrow rise">// 17 <b>Frente 6 · Processos</b></span>
   <h2 class="ttl rise text-[44px] mt-4">Marketing que responde <em>às unidades no prazo.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Hoje, as demandas das unidades e das coordenações chegam por vários caminhos. A proposta é um fluxo único, com prazo e responsável.</p>
-  <div class="grid grid-cols-4 gap-4 mt-auto mb-2">
+  <div class="card p-5 mt-auto rise alerta">
+    <div class="flex items-center justify-between gap-6">
+      <div class="max-w-[420px]"><div class="cat flex items-center gap-2" style="color:#FF7A7A"><i data-lucide="scan-search" class="w-4 h-4"></i>Aqui entendemos gargalos e volume</div><p class="text-[14px] text-graph mt-2">Cada demanda e cada hora do time classificadas pelo que entregam à FECAP.</p></div>
+      <div class="grid grid-cols-4 gap-2 flex-1">
+        <div class="rtag"><i data-lucide="user-plus" class="w-4 h-4"></i><b>Captação</b></div>
+        <div class="rtag"><i data-lucide="clipboard-list" class="w-4 h-4"></i><b>Administrativo</b></div>
+        <div class="rtag"><i data-lucide="banknote" class="w-4 h-4"></i><b>Receita</b></div>
+        <div class="rtag"><i data-lucide="megaphone" class="w-4 h-4"></i><b>Awareness</b></div>
+      </div>
+    </div>
+  </div>
+  <div class="grid grid-cols-4 gap-4 mt-4 mb-2">
     <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="git-branch" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Fluxo de demandas</div><p class="text-[13.5px] text-graph">Da coordenação ao Marketing, com entrada única, responsável e etapa visível.</p></div>
     <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="timer" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Prazos combinados</div><p class="text-[13.5px] text-graph">Tempo de resposta por tipo de demanda, acompanhado todo mês.</p></div>
     <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="pie-chart" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Onde vai o tempo</div><p class="text-[13.5px] text-graph">Horas em tarefas administrativas contra horas dedicadas às unidades.</p></div>
@@ -608,32 +712,33 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 18b NOVEMBRO -->
 <section class="slide" aria-label="Novembro: entrevistas">
-  <span class="eyebrow rise">// 18 <b>Novembro · Entrevistas do diagnóstico</b></span>
-  <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[42px]">Todas as entrevistas <em>em quatro semanas.</em></h2><span class="chip g">03/11 → 27/11</span></div>
-  <p class="rise text-[17px] text-graph mt-4 max-w-[860px]">Cada conversa é registrada na Central no mesmo dia, então o diagnóstico vai sendo montado ao longo do mês. Enquanto isso, o funil da Graduação é acompanhado todos os dias.</p>
-  <div class="grid grid-cols-4 gap-4 mt-auto">
-    <div class="card p-5 rise flex flex-col gap-2"><span class="num">S1</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">03 a 06/11</div><div class="font-display font-extrabold uppercase text-[15px]">Reitoria e gestão</div><p class="text-[13px] text-graph">Reitoria, pró-reitorias e gestão de Marketing. Pedido dos acessos e das exportações.</p></div>
-    <div class="card p-5 rise flex flex-col gap-2"><span class="num">S2</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">09 a 13/11</div><div class="font-display font-extrabold uppercase text-[15px]">Time de Marketing</div><p class="text-[13px] text-graph">Cada pessoa, uma a uma. Central de atendimento e comercial.</p></div>
-    <div class="card p-5 rise flex flex-col gap-2"><span class="num">S3</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">16 a 19/11</div><div class="font-display font-extrabold uppercase text-[15px]">Graduação</div><p class="text-[13px] text-graph">Coordenações dos cursos de Graduação.</p></div>
-    <div class="card p-5 rise flex flex-col gap-2"><span class="num">S4</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">23 a 27/11</div><div class="font-display font-extrabold uppercase text-[15px]">Pós-Graduação</div><p class="text-[13px] text-graph">Coordenações da Pós, agrupadas por área. Parceiros e fornecedores.</p></div>
+  <span class="eyebrow rise">// 18 <b>Entrevistas do diagnóstico</b></span>
+  <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[40px]">Novembro com a Graduação, <em>Pós em janeiro.</em></h2><span class="chip g">03/11 → JAN</span></div>
+  <p class="rise text-[16px] text-graph mt-4 max-w-[900px]">Cada conversa é registrada na Central no mesmo dia. A Pós fica para janeiro, porque a equipe administrativa e os projetos em andamento ainda estão em curso.</p>
+  <div class="grid grid-cols-5 gap-3 mt-auto">
+    <div class="card p-4 rise flex flex-col gap-2"><span class="num">S1</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">03 a 06/11</div><div class="font-display font-extrabold uppercase text-[14px]">Reitoria e gestão</div><p class="text-[12.5px] text-graph">Reitoria, pró-reitorias e gestão de Marketing. Pedido dos acessos e das exportações.</p></div>
+    <div class="card p-4 rise flex flex-col gap-2"><span class="num">S2</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">09 a 13/11</div><div class="font-display font-extrabold uppercase text-[14px]">Time de Marketing</div><p class="text-[12.5px] text-graph">Cada pessoa, uma a uma. Central de atendimento e comercial.</p></div>
+    <div class="card p-4 rise flex flex-col gap-2"><span class="num">S3</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">16 a 19/11</div><div class="font-display font-extrabold uppercase text-[14px]">Graduação</div><p class="text-[12.5px] text-graph">Coordenações dos cursos de Graduação.</p></div>
+    <div class="card p-4 rise flex flex-col gap-2"><span class="num">S4</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">23 a 27/11</div><div class="font-display font-extrabold uppercase text-[14px]">Parceiros e consolidação</div><p class="text-[12.5px] text-graph">Parceiros e fornecedores. Diagnóstico consolidado na Central.</p></div>
+    <div class="card p-4 rise flex flex-col gap-2" style="border-color:rgba(0,229,255,.45);background:linear-gradient(180deg,rgba(0,229,255,.07),rgba(14,18,26,.92))"><span class="num" style="color:var(--cyan)">JAN</span><div class="font-mono text-[11px] tracking-[.14em] text-cyan">JANEIRO</div><div class="font-display font-extrabold uppercase text-[14px]">Pós-Graduação</div><p class="text-[12.5px] text-graph">Coordenações da Pós, agrupadas por área, quando a operação atual estiver encaminhada.</p></div>
   </div>
-  <div class="card p-4 mt-4 mb-1 rise flex items-center gap-4" style="background:#0C1118"><i data-lucide="calendar-check" class="w-5 h-5 text-cyan flex-none"></i><p class="text-[13.5px] text-graph">Até 3 entrevistas por dia, de 45 a 60 minutos, com o roteiro enviado antes. Feriados de 02/11 e 20/11 fora da agenda. Em 30/11 tudo está consolidado na Central, e o diagnóstico vai à Reitoria em dezembro. <b class="text-white">Condição: agenda reservada pela FECAP até 03/11.</b></p></div>
+  <div class="card p-4 mt-4 mb-1 rise flex items-center gap-4" style="background:#0C1118"><i data-lucide="calendar-check" class="w-5 h-5 text-cyan flex-none"></i><p class="text-[13.5px] text-graph">Até 3 entrevistas por dia, de 45 a 60 minutos, com o roteiro enviado antes. Feriados de 02/11 e 20/11 fora da agenda. Em dezembro, o diagnóstico da Graduação e do Marketing vai à Reitoria, e a Pós entra em janeiro. <b class="text-white">Condição: agenda de novembro reservada pela FECAP até 03/11.</b></p></div>
 </section>
 
 <!-- 19 3 MESES -->
 <section class="slide" aria-label="3 meses">
-  <span class="eyebrow rise">// 19 <b>Plano · 3 meses</b></span>
+  <span class="eyebrow rise">// 19 <b>Fase 01 · 3 meses</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[44px]">Novembro a janeiro: <em>diagnóstico e base.</em></h2><span class="chip g">NOV · DEZ · JAN</span></div>
   <div class="grid grid-cols-3 gap-4 mt-auto mb-2">
-    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Novembro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Ajuste imediato dos anúncios que levam a "Em breve" e lista de interesse nesses cursos</li><li>Acessos ao CRM, contas de mídia, site e orçamento</li><li>Entrevistas com Marketing, coordenações e Reitoria</li><li>Funil da Graduação acompanhado todos os dias</li></ul></div>
-    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Dezembro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Diagnóstico apresentado à Reitoria, com os 8 pontos levantados</li><li>P&amp;L da Auditoria EAD e plano para o fim do contrato do time externo</li><li>Formulário de interesse em todas as páginas de curso</li><li>Opções de agência de RP e de performance para avaliação</li></ul></div>
-    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Janeiro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Plano de ação aprovado pela Reitoria</li><li>Réguas de WhatsApp e ManyChat no ar</li><li>Orçamento mapeado: destrava o estudo por curso</li><li>Pós 2027.1 acompanhada até 01/02</li></ul></div>
+    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Novembro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Ajuste imediato dos anúncios que levam a "Em breve" e lista de interesse nesses cursos</li><li>Acessos ao CRM, contas de mídia, site e orçamento</li><li>Entrevistas com Reitoria, Marketing e coordenações da Graduação</li><li>Funil da Graduação acompanhado todos os dias</li></ul></div>
+    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Dezembro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Diagnóstico da Graduação e do Marketing apresentado à Reitoria</li><li>P&amp;L da Auditoria EAD e plano para o fim do contrato do time externo</li><li>Formulário de interesse em todas as páginas de curso</li><li>Opções de agência de RP e de performance para avaliação</li></ul></div>
+    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Janeiro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Entrevistas com as coordenações da Pós</li><li>Plano de ação aprovado pela Reitoria</li><li>Réguas de WhatsApp e ManyChat no ar</li><li>Orçamento mapeado: destrava o estudo por curso</li><li>Pós 2027.1 acompanhada até 01/02</li></ul></div>
   </div>
 </section>
 
 <!-- 20 6 MESES -->
 <section class="slide" aria-label="6 meses">
-  <span class="eyebrow rise">// 20 <b>Plano · 6 meses</b></span>
+  <span class="eyebrow rise">// 20 <b>Fase 01 · 6 meses</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[44px]">Fevereiro a abril: <em>rodando com o time.</em></h2><span class="chip g">FEV · MAR · ABR</span></div>
   <div class="grid grid-cols-3 gap-4 mt-auto mb-2">
     <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Fevereiro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Matrículas e fechamento do ciclo 2027.1 da Graduação</li><li>Fluxo de demandas com as unidades implantado</li><li>Retorno por campanha do ciclo apresentado</li></ul></div>
@@ -642,15 +747,15 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   </div>
 </section>
 
-<!-- 21 A PARTIR DE MAIO -->
-<section class="slide" aria-label="A partir de maio">
-  <span class="eyebrow rise">// 21 <b>Próxima etapa</b></span>
-  <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[44px]">A partir de maio, <em>a programar.</em></h2><span class="chip">COM A REITORIA</span></div>
-  <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">O que fica para depois de abril, para entrar no próximo ciclo com base pronta e método já implantado.</p>
-  <div class="grid grid-cols-3 gap-5 mt-auto mb-2">
-    <div class="card p-6 rise flex flex-col gap-3"><i data-lucide="school" class="w-6 h-6 text-emer"></i><div class="font-display font-extrabold uppercase text-[17px]">Colégio</div><p class="text-[14px] text-graph">Abordagem do Colégio, já com o estudo de anúncios por curso pronto desde abril.</p></div>
-    <div class="card p-6 rise flex flex-col gap-3"><i data-lucide="library" class="w-6 h-6 text-emer"></i><div class="font-display font-extrabold uppercase text-[17px]">Curta duração</div><p class="text-[14px] text-graph">Cursos livres e educação executiva tratados como unidade, com meta, CAC e retorno.</p></div>
-    <div class="card p-6 rise flex flex-col gap-3"><i data-lucide="refresh-cw" class="w-6 h-6 text-emer"></i><div class="font-display font-extrabold uppercase text-[17px]">Sustentação do método</div><p class="text-[14px] text-graph">O que foi implantado de novembro a abril mantido: rituais, indicadores e time operando com autonomia.</p></div>
+<!-- 21 FASE 02 -->
+<section class="slide" aria-label="Fase 02: maio a setembro">
+  <span class="eyebrow rise">// 21 <b>Fase 02 · Acompanhamento</b></span>
+  <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[42px]">Maio a setembro: <em>próxima captação encaminhada.</em></h2><span class="chip g">MAI → SET</span></div>
+  <p class="rise text-[17px] text-graph mt-4 max-w-[860px]">Com o método implantado, a LORSO acompanha o time e abre as frentes que ficaram para depois, para a FECAP entrar no próximo ciclo de captação com tudo pronto.</p>
+  <div class="grid grid-cols-3 gap-4 mt-auto mb-2">
+    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Maio e junho</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Abordagem do Colégio, com o estudo de anúncios por curso pronto</li><li>Curta duração como unidade, com meta, CAC e retorno</li><li>Pós 2027.2 acompanhada até o fim das inscrições</li></ul></div>
+    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Julho</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Retorno por campanha da Pós 2027.2 apresentado</li><li>Verba mês a mês do próximo ciclo proposta à Reitoria</li><li>Anúncios por curso rodando nos cursos aprovados</li></ul></div>
+    <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Agosto e setembro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Captação da Graduação 2028.1 planejada com o time</li><li>Páginas, réguas e listas de interesse revisadas para a abertura</li><li>Rituais, indicadores e time operando com autonomia</li></ul></div>
   </div>
 </section>
 
@@ -677,7 +782,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
       <ul class="ck rise">
         <li>Indicar o interlocutor, apresentar a nova gestão de Marketing e alinhar a vaga de performance e growth.</li>
         <li>Autorizar o ajuste imediato dos anúncios que levam a "Em breve".</li>
-        <li>Reservar até 03/11 a agenda das entrevistas: Reitoria, Marketing e coordenações.</li>
+        <li>Reservar até 03/11 a agenda de novembro: Reitoria, Marketing e coordenações da Graduação.</li>
         <li>Definir com a Reitoria a expectativa para cada unidade: crescer, manter ou reposicionar.</li>
       </ul>
     </div>
@@ -696,6 +801,19 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   </div>
 </section>
 
+<!-- 23b CRONOGRAMA -->
+<section class="slide" aria-label="Cronograma" id="cronoSlide">
+  <span class="eyebrow rise">// 23.1 <b>Cronograma</b></span>
+  <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[42px]">Onze meses, <em>mês a mês.</em></h2><div class="flex gap-2"><span class="chip g">Fase 01 · nov → abr</span><span class="chip" style="color:var(--cyan);border-color:rgba(0,229,255,.4)">Fase 02 · mai → set</span></div></div>
+  <p class="rise text-[17px] text-graph mt-4 max-w-[860px]">Da implantação ao acompanhamento: o que cada mês entrega até a próxima captação estar encaminhada.</p>
+  <div class="cview rise mt-auto"><div class="ctrack" id="ctrack"><div class="mcd f1" data-i="0"><div class="mtop"><span class="mnum">01</span><span class="mfase">FASE 01</span></div><div class="mnome">Novembro</div><ul><li>Entrevistas da Graduação</li><li>Anúncios "Em breve" ajustados</li><li>Funil da Graduação diário</li></ul></div><div class="mcd f1" data-i="1"><div class="mtop"><span class="mnum">02</span><span class="mfase">FASE 01</span></div><div class="mnome">Dezembro</div><ul><li>Diagnóstico à Reitoria</li><li>P&amp;L da Auditoria EAD</li><li>Formulário de interesse nos cursos</li></ul></div><div class="mcd f1" data-i="2"><div class="mtop"><span class="mnum">03</span><span class="mfase">FASE 01</span></div><div class="mnome">Janeiro</div><ul><li>Entrevistas da Pós</li><li>Plano de ação aprovado</li><li>WhatsApp e ManyChat no ar</li><li>Pós 2027.1 até 01/02</li></ul></div><div class="mcd f1" data-i="3"><div class="mtop"><span class="mnum">04</span><span class="mfase">FASE 01</span></div><div class="mnome">Fevereiro</div><ul><li>Fechamento da Graduação 2027.1</li><li>Fluxo de demandas implantado</li><li>Retorno por campanha</li></ul></div><div class="mcd f1" data-i="4"><div class="mtop"><span class="mnum">05</span><span class="mfase">FASE 01</span></div><div class="mnome">Março</div><ul><li>Estudo por curso concluído</li><li>Nova gestão nos rituais</li><li>Playbooks revisados</li></ul></div><div class="mcd f1" data-i="5"><div class="mtop"><span class="mnum">06</span><span class="mfase">FASE 01</span></div><div class="mnome">Abril</div><ul><li>Pós 2027.2 abre com base</li><li>Decisões da Reitoria</li><li>Relatório de transição</li></ul></div><div class="mcd f2" data-i="6"><div class="mtop"><span class="mnum">07</span><span class="mfase">FASE 02</span></div><div class="mnome">Maio</div><ul><li>Abordagem do Colégio</li><li>Curta duração como unidade</li><li>Acompanhamento do time</li></ul></div><div class="mcd f2" data-i="7"><div class="mtop"><span class="mnum">08</span><span class="mfase">FASE 02</span></div><div class="mnome">Junho</div><ul><li>Pós 2027.2 até o fim das inscrições</li><li>Curta duração com meta e CAC</li><li>Rituais mantidos</li></ul></div><div class="mcd f2" data-i="8"><div class="mtop"><span class="mnum">09</span><span class="mfase">FASE 02</span></div><div class="mnome">Julho</div><ul><li>Retorno da Pós 2027.2</li><li>Verba do próximo ciclo</li><li>Anúncios por curso rodando</li></ul></div><div class="mcd f2" data-i="9"><div class="mtop"><span class="mnum">10</span><span class="mfase">FASE 02</span></div><div class="mnome">Agosto</div><ul><li>Graduação 2028.1 planejada</li><li>Páginas e réguas revisadas</li><li>Listas de interesse prontas</li></ul></div><div class="mcd f2" data-i="10"><div class="mtop"><span class="mnum">11</span><span class="mfase">FASE 02</span></div><div class="mnome">Setembro</div><ul><li>Próxima captação encaminhada</li><li>Time operando com autonomia</li><li>Relatório da Fase 02</li></ul></div></div></div>
+  <div class="tline rise mt-6 mb-1">
+    <div class="tbands"><div class="tb1"><span>FASE 01 · IMPLANTAÇÃO</span></div><div class="tb2"><span>FASE 02 · ACOMPANHAMENTO</span></div></div>
+    <div class="trail"><div class="tfill" id="tfill"></div></div>
+    <div class="tnodes"><button class="tn f1" data-i="0" type="button"><i></i><span>NOV</span></button><button class="tn f1" data-i="1" type="button"><i></i><span>DEZ</span></button><button class="tn f1" data-i="2" type="button"><i></i><span>JAN</span></button><button class="tn f1" data-i="3" type="button"><i></i><span>FEV</span></button><button class="tn f1" data-i="4" type="button"><i></i><span>MAR</span></button><button class="tn f1" data-i="5" type="button"><i></i><span>ABR</span></button><button class="tn f2" data-i="6" type="button"><i></i><span>MAI</span></button><button class="tn f2" data-i="7" type="button"><i></i><span>JUN</span></button><button class="tn f2" data-i="8" type="button"><i></i><span>JUL</span></button><button class="tn f2" data-i="9" type="button"><i></i><span>AGO</span></button><button class="tn f2" data-i="10" type="button"><i></i><span>SET</span></button></div>
+  </div>
+</section>
+
 <!-- 24 INVESTIMENTO -->
 <section class="slide" aria-label="Investimento">
   <div class="grain"></div>
@@ -704,7 +822,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   <div class="relative mt-auto flex flex-col gap-6 max-w-[980px] mb-6">
     <h2 class="ttl rise text-[72px]">Investimento</h2>
     <p class="rise text-[28px] font-display font-extrabold leading-tight">Agora é hora de colocar o plano em ação. <em class="not-italic text-emer">Vamos iniciar?</em></p>
-    <div class="rise flex flex-wrap gap-3 mt-2"><span class="chip g">Novembro a abril</span><span class="chip">Graduação · Pós · Equipe · Processos</span><span class="chip">LORSO Digital</span></div>
+    <div class="rise flex flex-wrap gap-3 mt-2"><span class="chip g">Fase 01 · novembro a abril</span><span class="chip g">Fase 02 · maio a setembro</span><span class="chip">Graduação · Pós · Equipe · Processos</span><span class="chip">LORSO Digital</span></div>
   </div>
 </section>
 
@@ -780,6 +898,15 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   setInterval(function(){if(!S[cur]||S[cur].id!=='hubSlide')return;var cs=hub.querySelectorAll('.hcard'),k=Math.floor(Date.now()/1800)%cs.length;cs.forEach(function(c,j){c.classList.toggle('hot',j===k);var p=document.getElementById('hp'+j);if(p)p.classList.toggle('hot',j===k)})},300);
   var mc=[].slice.call(stage.querySelectorAll('.mcard'));
   mc.forEach(function(c){c.addEventListener('click',function(){c.classList.toggle('on')})});
+  /* cronograma: cards passando mês a mês */
+  var ctr=document.getElementById('ctrack'),mcs=[].slice.call(ctr.children),tns=[].slice.call(stage.querySelectorAll('.tn')),tf=document.getElementById('tfill'),ci=0,ct=null;
+  function cset(i){ci=i;var w=mcs[0].offsetWidth+18;ctr.style.transform='translateX('+(-Math.max(0,Math.min(i-1,mcs.length-4))*w)+'px)';
+    mcs.forEach(function(c,j){c.classList.toggle('act',j===i);c.classList.toggle('past',j<i)});
+    tns.forEach(function(n,j){n.classList.toggle('act',j===i);n.classList.toggle('done',j<=i)});
+    tf.style.width=(i/(mcs.length-1)*100)+'%'}
+  function crun(){clearInterval(ct);ct=setInterval(function(){if(ci>=mcs.length-1){clearInterval(ct);return}cset(ci+1)},2300)}
+  mcs.concat(tns).forEach(function(el){el.addEventListener('click',function(){cset(+el.dataset.i);crun()})});
+  var _go2=go;go=function(i){_go2(i);if(S[i]&&S[i].id==='cronoSlide'){cset(0);setTimeout(crun,900)}else clearInterval(ct)};
   applyM();
   if(isM()){stage.querySelectorAll('video').forEach(function(v){v.controls=true})}
   if(isM()){S.forEach(function(s){s.classList.add('on')});S.forEach(countUp)}else go(0);
