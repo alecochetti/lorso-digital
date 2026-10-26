@@ -174,8 +174,8 @@ html.m .cnode .num{width:36px;height:36px}
 .slide.on .fe:nth-child(2){animation-delay:.15s}.slide.on .fe:nth-child(3){animation-delay:.3s}.slide.on .fe:nth-child(4){animation-delay:.45s}
 @keyframes feIn{from{opacity:0;transform:scaleX(.4)}to{opacity:1;transform:scaleX(1)}}
 html.m .fe{width:100%!important}
-.dores{counter-reset:d;display:flex;flex-direction:column;gap:16px;margin-top:4px}
-.dores li{counter-increment:d;position:relative;padding-left:34px;font-size:14.5px;line-height:1.45;color:#A9B3C1}
+.dores{counter-reset:d;display:flex;flex-direction:column;gap:11px;margin-top:2px}
+.dores li{counter-increment:d;position:relative;padding-left:34px;font-size:13.5px;line-height:1.45;color:#A9B3C1}
 .dores li b{color:#F2F5F7}
 .dores li::before{content:counter(d,decimal-leading-zero);position:absolute;left:0;top:0;font-family:"JetBrains Mono",monospace;font-size:11px;color:#FF7A7A;border:1px solid rgba(255,92,92,.4);border-radius:6px;padding:1px 5px}
 .cview{position:relative;overflow:hidden;margin-left:-8px;margin-right:-8px;padding:14px 8px;-webkit-mask:linear-gradient(90deg,transparent,#000 4%,#000 90%,transparent);mask:linear-gradient(90deg,transparent,#000 4%,#000 90%,transparent)}
@@ -325,6 +325,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
         <li><b>Tempo do time sem medida:</b> não se sabe quanto vai para tarefas administrativas e quanto vai para as unidades.</li>
         <li><b>Troca da gestão de Marketing:</b> substituir e treinar a nova gestão sem parar a operação.</li>
         <li><b>Números de cada unidade separados:</b> meta, receita, folha e orçamento não são vistos juntos.</li>
+        <li><b>Comissionamento da equipe:</b> precisa bater com o churn da captação do semestre, então só é apurado após uma jornada completa de captação.</li>
       </ol>
     </div>
     <div class="flex flex-col gap-3 rise">
@@ -427,7 +428,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   <h2 class="ttl rise text-[46px] mt-4">Sem números iguais, <em>não há decisão segura.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Antes de propor mudanças, todas as áreas precisam falar dos mesmos números.</p>
   <div class="grid grid-cols-2 gap-5 mt-auto mb-2">
-    <div class="card p-6 rise flex flex-col gap-3"><div class="font-display font-extrabold text-[44px] text-emer leading-none">~90</div><div class="font-display font-extrabold uppercase text-[16px]">Cursos livres sem gestão</div><p class="text-[14px] text-graph">Curta duração e educação executiva sem meta, CAC ou retorno acompanhados como unidade.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3"><div class="font-display font-extrabold text-[44px] text-emer leading-none">~90</div><div class="font-display font-extrabold uppercase text-[16px]">Cursos livres sem estratégia</div><p class="text-[14px] text-graph">Curta duração e educação executiva pedem estratégia de lançamento evergreen e low ticket, com funil, KPIs, metas e pack de comunicação.</p></div>
     <div class="card p-6 rise flex flex-col gap-3"><div class="font-display font-extrabold text-[44px] text-emer leading-none">3</div><div class="font-display font-extrabold uppercase text-[16px]">Definições em aberto</div><p class="text-[14px] text-graph">"Captado", "lead" e "verba" ainda não têm o mesmo significado para Marketing, central e financeiro.</p></div>
   </div>
 </section>
@@ -744,6 +745,21 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
     <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Fevereiro</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Matrículas e fechamento do ciclo 2027.1 da Graduação</li><li>Fluxo de demandas com as unidades implantado</li><li>Retorno por campanha do ciclo apresentado</li></ul></div>
     <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Março</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Estudo de verticalização por curso concluído</li><li>Nova gestão conduzindo os rituais</li><li>Playbooks dos processos revisados</li></ul></div>
     <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Abril</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Pós 2027.2 abre com base de interessados</li><li>Decisão da Reitoria sobre anúncios por curso e sobre replicar o modelo da Auditoria EAD</li><li>Relatório de transição</li></ul></div>
+  </div>
+</section>
+
+<!-- 20b PONTE FASE 02 -->
+<section class="slide" aria-label="Fase 02: continuidade">
+  <div class="grain"></div>
+  <span class="eyebrow rise relative">// 20.1 <b>Fase 02</b></span>
+  <div class="relative mt-6 rise">
+    <h2 class="ttl text-[52px] max-w-[1000px]">Aqui damos continuidade <em>ao que deu certo.</em></h2>
+    <p class="text-[18px] text-graph mt-4 max-w-[820px]">A Fase 01 deixa método, números e time rodando. A Fase 02 parte do que os resultados mostraram.</p>
+  </div>
+  <div class="relative grid grid-cols-3 gap-5 mt-auto mb-2">
+    <div class="card p-6 rise flex flex-col gap-3"><span class="num">01</span><div class="font-display font-extrabold uppercase text-[19px]">Continuar</div><p class="text-[14px] text-graph">O que trouxe resultado na Graduação e na Pós vira rotina do time, com dono e indicador.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3"><span class="num">02</span><div class="font-display font-extrabold uppercase text-[19px]">Refinar</div><p class="text-[14px] text-graph">Campanhas, réguas, fluxo de demandas e verba ajustados com o que os ciclos ensinaram.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(0,229,255,.45)"><span class="num" style="color:var(--cyan)">03</span><div class="font-display font-extrabold uppercase text-[19px]">Próximas unidades</div><p class="text-[14px] text-graph">O método levado às próximas unidades de negócio, começando por Colégio e curta duração.</p></div>
   </div>
 </section>
 
