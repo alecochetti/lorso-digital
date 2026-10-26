@@ -163,6 +163,8 @@ html.m .cnode .num{width:36px;height:36px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* proposta FECAP */
+#modoDesk{display:none}
+html.m #modoDesk{display:flex;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:50;box-shadow:0 10px 30px -8px rgba(0,255,135,.5)}
 table.sci{border-collapse:collapse;font-size:13px}
 table.sci th{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:500;padding:12px 18px;border-bottom:1px solid var(--line);background:var(--panel2)}
 table.sci td{padding:8.5px 18px;border-bottom:1px solid var(--line);color:#A9B3C1;vertical-align:top}
@@ -563,6 +565,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <button class="ctl" id="prev" aria-label="Slide anterior"><i data-lucide="arrow-left" class="w-4 h-4"></i>Anterior</button>
 <div id="counter"></div>
+<button class="ctl pri" id="modoDesk" type="button"><i data-lucide="presentation" class="w-4 h-4"></i>Ver como apresentação</button>
 <button class="ctl" id="next" aria-label="Próximo slide">Próximo<i data-lucide="arrow-right" class="w-4 h-4"></i></button>
 </div></div>
 
@@ -571,7 +574,9 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   try{lucide.createIcons()}catch(e){}
   var stage=document.getElementById('stage'),S=[].slice.call(stage.querySelectorAll('.slide')),N=S.length,cur=-1,root=document.documentElement;
   var prog=document.getElementById('progress'),cnt=document.getElementById('counter'),pv=document.getElementById('prev'),nx=document.getElementById('next');
-  function isM(){return innerWidth<640||(innerWidth<900&&innerHeight>innerWidth)}
+  var forca=/[?&#](desktop|apresentacao)\b/.test(location.search+location.hash);
+  try{if(sessionStorage.getItem('lorso-modo')==='desktop')forca=true}catch(e){}
+  function isM(){return !forca&&(innerWidth<640||(innerWidth<900&&innerHeight>innerWidth))}
   function fit(){if(root.classList.contains('m'))return;var s=Math.min((innerWidth-24)/1280,(innerHeight-24)/720,1.5);stage.style.transform='scale('+s+')'}
   function countUp(sl){sl.querySelectorAll('[data-count]').forEach(function(el){var t=+el.dataset.count,t0=null;function f(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/1200,1);el.textContent=Math.round(t*(1-Math.pow(1-p,3))).toLocaleString('pt-BR');if(p<1)requestAnimationFrame(f)}requestAnimationFrame(f)})}
   var steps=[].slice.call(stage.querySelectorAll('#method .step')),mi=0,mt=null;
@@ -598,6 +603,8 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   function applyM(){var on=isM();root.classList.toggle('m',on);if(on){stage.style.transform='none'}else{fit()}}
   addEventListener('resize',function(){applyM();fit()});addEventListener('orientationchange',function(){setTimeout(applyM,200)});
   addEventListener('scroll',function(){if(!isM())return;var h=root.scrollHeight-innerHeight;prog.style.width=(h>0?scrollY/h*100:0)+'%'},{passive:true});
+  var bm=document.getElementById('modoDesk');
+  bm.addEventListener('click',function(){forca=true;try{sessionStorage.setItem('lorso-modo','desktop')}catch(e){}scrollTo(0,0);S.forEach(function(x){x.classList.remove('on','back')});cur=-1;applyM();go(0)});
   applyM();
   if(isM()){S.forEach(function(s){s.classList.add('on')});S.forEach(countUp)}else go(0);
 })();
