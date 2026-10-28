@@ -163,6 +163,13 @@ html.m .cnode .num{width:36px;height:36px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* proposta FECAP */
+.mt2{display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;border:1px solid var(--line);background:rgba(10,13,19,.6)}
+.mt2 b{font-family:Archivo,sans-serif;font-weight:800;font-size:15px;line-height:1.2;color:#F2F5F7}
+.mt2i{flex:none;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#121B22;border:1px solid #1E2A33;color:var(--neon)}
+.mt2.hot{grid-column:1/-1;border-color:rgba(0,255,135,.6);background:linear-gradient(90deg,rgba(0,255,135,.16),rgba(0,255,135,.04));box-shadow:0 14px 34px -16px rgba(0,255,135,.55)}
+.mt2.hot .mt2i{background:var(--neon);color:#0A0D13;border-color:var(--neon)}
+.mt2.hot b{font-size:16.5px}
+.mt2:last-child{grid-column:1/-1}
 b.un{font-family:inherit!important;font-size:inherit!important;line-height:inherit!important;font-weight:800!important;display:inline!important;margin:0!important;color:inherit;text-transform:uppercase;letter-spacing:.01em}
 .f2big{flex:none;width:132px;height:132px;border-radius:24px;display:flex;align-items:center;justify-content:center;text-align:center;font-family:Archivo,sans-serif;font-weight:900;font-size:34px;line-height:.95;color:#0A0D13;background:linear-gradient(135deg,var(--cyan),#7CF3FF);box-shadow:0 0 0 6px rgba(0,229,255,.12),0 24px 60px -18px rgba(0,229,255,.8)}
 .xic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#FF5C5C;color:#0A0D13;box-shadow:0 0 18px rgba(255,92,92,.6)}
@@ -399,13 +406,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
     </div>
     <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(0,255,135,.4)">
       <div class="cat" style="color:var(--neon)">Como o Marketing ajuda a encher a manhã</div>
-      <ul class="ck !text-[14px] !gap-3 mt-1">
-        <li><span><b class="text-ink">Demanda por turno no CRM.</b> O turno de interesse registrado desde o primeiro contato, por curso.</span></li>
-        <li><span><b class="text-ink">Público da manhã.</b> Quem acaba de sair do ensino médio e ainda não trabalha: ENEM, escolas parceiras e o próprio Colégio FECAP.</span></li>
-        <li><span><b class="text-ink">Campanha e verba próprias.</b> Anúncios, página e mensagem da manhã separados dos da noite.</span></li>
-        <li><span><b class="text-ink">Argumento da manhã.</b> Rotina de estudo, vida no campus e tarde livre para estágio.</span></li>
-        <li><span><b class="text-ink">Meta e ocupação por turno.</b> Captação da manhã acompanhada à parte no relatório à Reitoria.</span></li>
-      </ul>
+      <div class="grid grid-cols-2 gap-3 mt-1 flex-1"><div class="mt2 hot"><span class="mt2i"><i data-lucide="handshake" class="w-5 h-5"></i></span><b>Montar a estratégia junto ao coordenador</b></div><div class="mt2"><span class="mt2i"><i data-lucide="filter" class="w-5 h-5"></i></span><b>Demanda por turno no CRM</b></div><div class="mt2"><span class="mt2i"><i data-lucide="users" class="w-5 h-5"></i></span><b>Público da manhã</b></div><div class="mt2"><span class="mt2i"><i data-lucide="megaphone" class="w-5 h-5"></i></span><b>Campanha e verba próprias</b></div><div class="mt2"><span class="mt2i"><i data-lucide="sun" class="w-5 h-5"></i></span><b>Argumento da manhã</b></div><div class="mt2"><span class="mt2i"><i data-lucide="target" class="w-5 h-5"></i></span><b>Meta e ocupação por turno</b></div></div>
     </div>
   </div>
 </section>
