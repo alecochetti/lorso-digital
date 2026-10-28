@@ -163,6 +163,7 @@ html.m .cnode .num{width:36px;height:36px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* proposta FECAP */
+b.un{font-family:inherit!important;font-size:inherit!important;line-height:inherit!important;font-weight:800!important;display:inline!important;margin:0!important;color:inherit;text-transform:uppercase;letter-spacing:.01em}
 .f2big{flex:none;width:132px;height:132px;border-radius:24px;display:flex;align-items:center;justify-content:center;text-align:center;font-family:Archivo,sans-serif;font-weight:900;font-size:34px;line-height:.95;color:#0A0D13;background:linear-gradient(135deg,var(--cyan),#7CF3FF);box-shadow:0 0 0 6px rgba(0,229,255,.12),0 24px 60px -18px rgba(0,229,255,.8)}
 .xic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#FF5C5C;color:#0A0D13;box-shadow:0 0 18px rgba(255,92,92,.6)}
 .rt{border:1px solid var(--line);border-radius:12px;background:rgba(14,18,26,.92);padding:12px 13px;display:flex;flex-direction:column;gap:8px;transition:border-color .3s,transform .3s}
@@ -285,7 +286,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   <div class="relative mt-auto flex flex-col gap-6 max-w-[1000px]">
     <span class="eyebrow rise">// <b>Plano de trabalho para a Reitoria</b></span>
     <h1 class="ttl rise text-[64px]">Marketing e captação FECAP, <em>Fase 01.</em></h1>
-    <p class="rise text-xl text-graph max-w-[780px]">Captação ativa da Graduação e da Pós-Graduação, desenvolvimento da equipe de Marketing e revisão de processos, com método e evidência.</p>
+    <p class="rise text-xl text-graph max-w-[780px]">Captação ativa da <b class="un">GRADUAÇÃO</b> e da <b class="un">PÓS-GRADUAÇÃO</b>, desenvolvimento da equipe de Marketing e revisão de processos, com método e evidência.</p>
     <div class="rise flex items-center gap-6 mt-2">
       <button class="ctl pri !static" data-go="1">Começar <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
       <span class="text-sm text-mute">Alessandro Cochetti · LORSO Digital · Outubro de 2026</span>
@@ -311,8 +312,8 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
     </div>
     <div class="flex flex-col gap-3 rise">
       <div class="card p-4 flex flex-col gap-1.5"><i data-lucide="users-round" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Nova gestão e vaga de growth</div><p class="text-[12.5px] text-graph leading-snug">A operação não pode parar enquanto a nova gestão de Marketing assume e a vaga de performance e growth é preenchida. O time precisa de método, rituais e histórico de cada unidade.</p></div>
-      <div class="card p-4 flex flex-col gap-1.5"><i data-lucide="graduation-cap" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Graduação 2027.1 aberta</div><p class="text-[12.5px] text-graph leading-snug">Graduação com <b class="text-ink">2.220 vagas</b> no edital (675 diurno e 1.545 noturno).</p></div>
-      <div class="card p-4 flex flex-col gap-1.5" style="border-color:rgba(0,255,135,.6);background:linear-gradient(180deg,rgba(0,255,135,.16),rgba(0,255,135,.06));box-shadow:0 16px 40px -18px rgba(0,255,135,.55)"><i data-lucide="layers" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Atendimento de todas as BUs</div><p class="text-[12.5px] text-graph leading-snug">Pelo histórico da FECAP, o Marketing tende a focar na <b class="text-ink">Graduação</b> e deixa as demais unidades de negócio em segundo plano.</p></div>
+      <div class="card p-4 flex flex-col gap-1.5"><i data-lucide="graduation-cap" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]"><b class="un">GRADUAÇÃO</b> 2027.1 aberta</div><p class="text-[12.5px] text-graph leading-snug"><b class="un">GRADUAÇÃO</b> com <b class="text-ink">2.220 vagas</b> no edital (675 diurno e 1.545 noturno).</p></div>
+      <div class="card p-4 flex flex-col gap-1.5" style="border-color:rgba(0,255,135,.6);background:linear-gradient(180deg,rgba(0,255,135,.16),rgba(0,255,135,.06));box-shadow:0 16px 40px -18px rgba(0,255,135,.55)"><i data-lucide="layers" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Atendimento de todas as BUs</div><p class="text-[12.5px] text-graph leading-snug">Pelo histórico da FECAP, o Marketing tende a focar na <b class="text-ink"><b class="un">GRADUAÇÃO</b></b> e deixa as demais unidades de negócio em segundo plano.</p></div>
     </div>
   </div>
 </section>
@@ -332,8 +333,8 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
       <ul class="ck rise">
         <li>Anúncios no Google e na Meta chamam para inscrição em cursos que, no site, estão "Em breve".</li>
         <li>Sem formulário, lista de espera ou automação, o interessado sai e a verba se perde.</li>
-        <li><span>Exemplo: a Pós em Finanças Corporativas recebe tráfego da campanha <span class="font-mono text-[13px] text-cyan">ebr_enem_pesquisa</span>.</span></li>
-        <li>Afeta Pós, MBA, Mestrado, ENEM e cursos de férias.</li>
+        <li><span>Exemplo: a <b class="un">PÓS</b> em Finanças Corporativas recebe tráfego da campanha <span class="font-mono text-[13px] text-cyan">ebr_enem_pesquisa</span>.</span></li>
+        <li><span>Afeta <b class="un">PÓS</b>, <b class="un">MBA</b>, Mestrado, ENEM e cursos de férias.</span></li>
       </ul>
     </div>
   </div>
@@ -352,7 +353,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
     <div class="card p-6 rise">
       <div class="cat">Por que pesa</div>
       <ul class="ck mt-4">
-        <li>A decisão por uma pós, um MBA ou um mestrado é longa e começa meses antes da abertura.</li>
+        <li><span>A decisão por uma <b class="un">PÓS</b>, um <b class="un">MBA</b> ou um mestrado é longa e começa meses antes da abertura.</span></li>
         <li>Sem base de interessados por curso, não se sabe quais turmas têm demanda para abrir nem onde investir.</li>
         <li>O custo por matrícula sobe, porque toda a captação acontece na janela.</li>
       </ul>
@@ -367,32 +368,32 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 6 EDITAIS -->
 <section class="slide" aria-label="Sinais nos editais">
-  <span class="eyebrow rise">// 04 <b>O que já vimos · editais da Pós</b></span>
+  <span class="eyebrow rise">// 04 <b>O que já vimos · editais da <b class="un">PÓS</b></b></span>
   <div class="grid grid-cols-2 gap-12 flex-1 items-center mt-2">
     <div class="rise flex items-end gap-8">
-      <div><div class="font-display font-extrabold text-[120px] leading-none text-ink tabular-nums">26</div><p class="text-mute font-mono text-xs tracking-[.12em] mt-2">CURSOS · PÓS 2026.2</p></div>
+      <div><div class="font-display font-extrabold text-[120px] leading-none tabular-nums" style="color:#FF5C5C;text-shadow:0 0 40px rgba(255,92,92,.35)">26</div><p class="text-mute font-mono text-xs tracking-[.12em] mt-2">CURSOS · <b class="un">PÓS</b> 2026.2</p><span class="rchip inline-block mt-2" style="font-weight:700">EM BREVE</span></div>
       <i data-lucide="arrow-right" class="w-10 h-10 text-mute mb-10"></i>
-      <div><div class="font-display font-extrabold text-[120px] leading-none text-emer tabular-nums">1</div><p class="text-mute font-mono text-xs tracking-[.12em] mt-2">CURSO · PÓS 2027.1</p></div>
+      <div><div class="font-display font-extrabold text-[120px] leading-none text-emer tabular-nums">1</div><p class="text-mute font-mono text-xs tracking-[.12em] mt-2">CURSO · <b class="un">PÓS</b> 2027.1</p></div>
     </div>
     <div class="flex flex-col gap-4">
       <h2 class="ttl rise text-[34px]">Pouca oferta aberta <em>e edital depois da abertura.</em></h2>
-      <div class="card p-5 rise"><div class="cat">Pós 2026.2</div><p class="text-[14px] text-graph mt-2">Inscrições abertas em <b class="text-ink">14/04</b>. Edital assinado em <b class="text-ink">24/04 e 13/05</b>.</p></div>
-      <div class="card p-5 rise"><div class="cat">Pós 2027.1</div><p class="text-[14px] text-graph mt-2">Inscrições abertas em <b class="text-ink">20/09</b>. Edital assinado em <b class="text-ink">09/10 e 15/10</b>. Hoje, só a Auditoria online está com captação oficial aberta.</p></div>
+      <div class="card p-5 rise"><div class="cat"><b class="un">PÓS</b> 2026.2</div><p class="text-[14px] text-graph mt-2">Inscrições abertas em <b class="text-ink">14/04</b>. Edital assinado em <b class="text-ink">24/04 e 13/05</b>.</p><p class="text-[14.5px] font-semibold mt-2" style="color:#FF7A7A">Site com edital antigo. Por qual motivo?</p></div>
+      <div class="card p-5 rise alerta"><div class="cat" style="color:#FF7A7A"><b class="un">PÓS</b> 2027.1</div><p class="text-[15px] text-ink font-semibold mt-2 leading-snug">Onde está o edital? Onde está a lista de interesse?</p><p class="text-[14px] mt-1" style="color:#FF7A7A">Sem datas, sem plano.</p></div>
     </div>
   </div>
 </section>
 
 <!-- 6b TURMAS DA MANHÃ -->
 <section class="slide" aria-label="Graduação: turmas da manhã">
-  <span class="eyebrow rise">// 05 <b>Maior gargalo da Graduação</b></span>
+  <span class="eyebrow rise">// 05 <b>Maior gargalo da <b class="un">GRADUAÇÃO</b></b></span>
   <h2 class="ttl rise text-[44px] mt-4">Abrir mais turmas <em>de manhã, além da noite.</em></h2>
-  <p class="rise text-[17px] text-graph mt-4 max-w-[860px]">O crescimento da Graduação depende de abrir e lotar mais turmas no período da manhã, curso a curso, sem depender só da noite.</p>
+  <p class="rise text-[17px] text-graph mt-4 max-w-[860px]">O crescimento da <b class="un">GRADUAÇÃO</b> depende de abrir e lotar mais turmas no período da manhã, curso a curso, sem depender só da noite.</p>
   <div class="grid grid-cols-[1fr_1.5fr] gap-6 mt-auto mb-2">
     <div class="card p-6 rise flex flex-col gap-4">
       <div class="cat">Edital 2027.1 · vagas abertas por turno</div>
       <div><div class="flex justify-between font-mono text-[12px] text-mute"><span>DIURNO</span><span>675 vagas</span></div><div class="h-3 rounded-full bg-[#121821] mt-2 overflow-hidden"><div class="h-full rounded-full" style="width:30%;background:var(--cyan)"></div></div></div>
       <div><div class="flex justify-between font-mono text-[12px] text-mute"><span>NOTURNO</span><span>1.545 vagas</span></div><div class="h-3 rounded-full bg-[#121821] mt-2 overflow-hidden"><div class="h-full rounded-full" style="width:70%;background:var(--neon)"></div></div></div>
-      <p class="text-[13.5px] text-graph">Vagas oferecidas no edital da Graduação 2027.1, 2.220 no total. Cada turma nova de manhã precisa de demanda comprovada antes de abrir.</p>
+      <p class="text-[13.5px] text-graph">Vagas oferecidas no edital da <b class="un">GRADUAÇÃO</b> 2027.1, 2.220 no total. Cada turma nova de manhã precisa de demanda comprovada antes de abrir.</p>
       <div class="card p-4 mt-auto" style="background:#0C1118;border-style:dashed"><div class="cat">O que já está sendo feito</div><p class="text-[13px] text-graph mt-1">Ações atuais da FECAP para a manhã, levantadas na entrevista com a Reitoria.</p></div>
     </div>
     <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(0,255,135,.4)">
@@ -411,8 +412,15 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <!-- 7 PONTOS CEGOS -->
 <section class="slide" aria-label="Pontos cegos">
   <span class="eyebrow rise">// 06 <b>O que já vimos · gestão</b></span>
-  <h2 class="ttl rise text-[46px] mt-4">Sem números iguais, <em>não há decisão segura.</em></h2>
-  <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Antes de propor mudanças, todas as áreas precisam falar dos mesmos números.</p>
+  <h2 class="ttl rise text-[42px] mt-3">Sem números iguais, <em>não há decisão segura.</em></h2>
+  <p class="rise text-[16px] text-graph mt-3 max-w-[820px]">Antes de propor mudanças, todas as áreas precisam falar dos mesmos números.</p>
+  <div class="card px-6 py-5 mt-6 rise flex items-center gap-6" style="border-color:rgba(0,255,135,.6);background:linear-gradient(90deg,rgba(0,255,135,.14),rgba(0,255,135,.04));box-shadow:0 16px 40px -18px rgba(0,255,135,.5)">
+    <i data-lucide="door-open" class="w-8 h-8 text-emer flex-none"></i>
+    <div class="flex flex-col gap-3">
+      <p class="text-[17px] text-ink font-semibold leading-snug">Extensão e curta duração são a <span class="text-emer">porta de entrada mid ticket</span> para o upsell das demais unidades.</p>
+      <div class="flex flex-wrap items-center gap-2"><span class="font-mono text-[11px] tracking-[.14em] text-mute mr-1">HOJE</span><span class="rchip">Sem funil</span><span class="rchip">Sem estratégia</span><span class="rchip">Sem investimento</span><span class="rchip">Sem fluxo</span><span class="rchip">Desatualizado</span></div>
+    </div>
+  </div>
   <div class="grid grid-cols-3 gap-5 mt-auto mb-2">
     <div class="card p-6 rise flex flex-col gap-3"><div class="font-display font-extrabold text-[44px] text-emer leading-none">~90</div><div class="font-display font-extrabold uppercase text-[16px]">Cursos livres sem estratégia</div><p class="text-[14px] text-graph">Curta duração e educação executiva sem estratégia própria de captação.</p></div>
     <div class="card p-6 rise flex flex-col gap-3 alerta"><div class="cat flex items-center gap-2" style="color:#FF7A7A"><i data-lucide="triangle-alert" class="w-4 h-4"></i>Montar a estratégia</div><div class="font-display font-extrabold uppercase text-[16px]">Lançamento evergreen e low ticket</div><div class="flex flex-wrap gap-1.5"><span class="rchip">Funil</span><span class="rchip">KPIs</span><span class="rchip">Metas</span><span class="rchip">Pack de comunicação</span></div></div>
@@ -450,7 +458,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
     </div>
     <div class="flex flex-col gap-2">
       <div class="card px-4 py-3 rise" style="border-color:rgba(0,255,135,.5);background:linear-gradient(180deg,rgba(0,255,135,.08),rgba(14,18,26,.92))"><div class="cat" style="color:var(--neon)">Educação superior</div><div class="font-display font-extrabold text-[17px] mt-0.5">FECAP</div><p class="text-[12.5px] text-graph mt-0.5 leading-snug">Vivência de quem já passou pela FECAP e por todo o processo.</p></div>
-      <div class="card px-4 py-3 rise"><div class="cat">Educação superior · MBA</div><div class="font-display font-extrabold text-[17px] mt-0.5">Vitru Educação + Nathalia Arcuri</div><p class="text-[12.5px] text-graph mt-0.5 leading-snug">Cocriação de MBA certificado pelo MEC focado em transformar empreendedoras em CEOs.</p></div>
+      <div class="card px-4 py-3 rise"><div class="cat">Educação superior · <b class="un">MBA</b></div><div class="font-display font-extrabold text-[17px] mt-0.5">Vitru Educação + Nathalia Arcuri</div><p class="text-[12.5px] text-graph mt-0.5 leading-snug">Cocriação de <b class="un">MBA</b> certificado pelo MEC focado em transformar empreendedoras em CEOs.</p></div>
       <div class="card px-4 py-3 rise"><div class="cat">Educação financeira</div><div class="font-display font-extrabold text-[17px] mt-0.5">DSOP</div><p class="text-[12.5px] text-graph mt-0.5 leading-snug">Gestão de marketing em referência nacional de educação financeira.</p></div>
       <div class="card px-4 py-3 rise"><div class="cat">Produtos educacionais</div><div class="font-display font-extrabold text-[17px] mt-0.5">Me Poupe!</div><p class="text-[12.5px] text-graph mt-0.5 leading-snug">Produtos educacionais, lançamentos perpétuos, ofertas de alto ticket e gestão operacional de ponta a ponta.</p></div>
       <div class="card px-4 py-3 rise"><div class="cat">SaaS Fintech</div><div class="font-display font-extrabold text-[17px] mt-0.5">Meu Vista</div><p class="text-[12.5px] text-graph mt-0.5 leading-snug">Head de Marketing: aquisição paga, conteúdo B2B e B2C e integração do marketing com o comercial.</p></div>
@@ -528,9 +536,9 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   <p class="rise text-[15.5px] text-graph mt-3 max-w-[900px]">Cada coordenação acompanha o próprio curso, do lead à matrícula paga, sem pedir relatório ao Marketing. Os números vêm do CRM da FECAP.</p>
   <div class="grid grid-cols-[1.35fr_1fr] gap-7 flex-1 items-center mt-2">
     <div class="frame rise" style="background:#0C1118">
-      <div class="fbar"><i></i><i></i><i></i><span>central · captação · graduação</span></div>
+      <div class="fbar"><i></i><i></i><i></i><span>central · captação · <b class="un">GRADUAÇÃO</b></span></div>
       <div class="p-5">
-        <div class="flex flex-wrap gap-1.5 mb-4"><span class="chip g">Graduação</span><span class="chip">Curso: Administração</span><span class="chip" style="color:var(--cyan);border-color:rgba(0,229,255,.4)">Turno: manhã</span><span class="chip">Ciclo 2027.1</span></div>
+        <div class="flex flex-wrap gap-1.5 mb-4"><span class="chip g"><b class="un">GRADUAÇÃO</b></span><span class="chip">Curso: Administração</span><span class="chip" style="color:var(--cyan);border-color:rgba(0,229,255,.4)">Turno: manhã</span><span class="chip">Ciclo 2027.1</span></div>
         <div class="funil">
           <div class="fe" style="--w:100%"><span>Leads</span><em>origem · campanha · CPL</em></div>
           <div class="fe" style="--w:84%"><span>Inscritos</span><em>conversão da etapa</em></div>
@@ -564,8 +572,8 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
     </div>
     <div class="grid grid-cols-2 gap-3 rise">
       <div class="mcard on"><div class="mh"><b>Curso livre / Extensão</b><i class="tg"></i></div><p>Curta duração (15 h a 120 h), com turma e período de inscrições.</p><div class="mf">FECAP → curta duração e educação executiva</div></div>
-      <div class="mcard"><div class="mh"><b>Lançamento</b><i class="tg"></i></div><p>Janela de inscrições com aquecimento: aulas abertas, lives e grupos de WhatsApp.</p><div class="mf">FECAP → abertura de turma da Pós</div></div>
-      <div class="mcard"><div class="mh"><b>High Ticket</b><i class="tg"></i></div><p>Oferta premium vendida de forma consultiva: aplicação e conversa com o comercial.</p><div class="mf">FECAP → MBAs e programas executivos</div></div>
+      <div class="mcard"><div class="mh"><b>Lançamento</b><i class="tg"></i></div><p>Janela de inscrições com aquecimento: aulas abertas, lives e grupos de WhatsApp.</p><div class="mf">FECAP → abertura de turma da <b class="un">PÓS</b></div></div>
+      <div class="mcard"><div class="mh"><b>High Ticket</b><i class="tg"></i></div><p>Oferta premium vendida de forma consultiva: aplicação e conversa com o comercial.</p><div class="mf">FECAP → <b class="un">MBA<span style="text-transform:none">s</span></b> e programas executivos</div></div>
       <div class="mcard"><div class="mh"><b>Pré-venda</b><i class="tg"></i></div><p>Venda antes de o curso estar 100% pronto, para validar a oferta e formar a turma fundadora.</p><div class="mf">FECAP → testar demanda de uma turma nova</div></div>
       <div class="mcard"><div class="mh"><b>Evergreen</b><i class="tg"></i></div><p>Jornada automatizada por interessado, com prazo individual.</p><div class="mf">FECAP → interessados fora da janela de edital</div></div>
       <div class="mcard"><div class="mh"><b>Perpétuo</b><i class="tg"></i></div><p>Venda contínua, sem janela, com mídia sempre ativa.</p><div class="mf">FECAP → cursos EAD com matrícula contínua</div></div>
@@ -621,7 +629,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
         <div class="hcard"><div class="ic"><i data-lucide="megaphone" class="w-[18px] h-[18px]"></i></div><div><b>Agência de RP</b><p>Imprensa, reputação e pauta institucional da FECAP.</p></div></div>
         <div class="hcard"><div class="ic"><i data-lucide="trending-up" class="w-[18px] h-[18px]"></i></div><div><b>Agência de performance e growth</b><p>Mídia paga por curso, testes e otimização diária das campanhas.</p></div></div>
         <div class="hcard"><div class="ic"><i data-lucide="database" class="w-[18px] h-[18px]"></i></div><div><b>Dados e desenvolvimento</b><p>Integrações de CRM, páginas e automações, quando necessário.</p></div></div>
-        <div class="hcard" style="border-color:rgba(0,229,255,.35)"><div class="ic" style="color:var(--cyan)"><i data-lucide="headset" class="w-[18px] h-[18px]"></i></div><div><b>Apoio ao atendimento · Carol Farias</b><p>Facilitadora, com pós-graduação pela Gestão Barragan. Apoio externo ao atendimento.</p></div></div>
+        <div class="hcard" style="border-color:rgba(0,229,255,.35)"><div class="ic" style="color:var(--cyan)"><i data-lucide="headset" class="w-[18px] h-[18px]"></i></div><div><b>Apoio ao atendimento · Carol Farias</b><p>Facilitadora, com <b class="un">PÓS-GRADUAÇÃO</b> pela Gestão Barragan. Apoio externo ao atendimento.</p></div></div>
       </div>
     </div>
   </div>
@@ -654,14 +662,14 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   <span class="eyebrow rise">// 17 <b>Frente 2 · Estudo de viabilidade</b></span>
   <h2 class="ttl rise text-[42px] mt-4">Anúncios por curso, <em>não só por modalidade.</em></h2>
   <div class="grid grid-cols-3 gap-4 mt-6 rise">
-    <div class="card p-5"><div class="cat">Hoje · Pós e Colégio</div><p class="text-[14.5px] text-graph mt-2">Campanhas por modalidade e frente de estudo. Não se sabe quanto custa e quanto retorna cada curso.</p></div>
+    <div class="card p-5"><div class="cat">Hoje · <b class="un">PÓS</b> e Colégio</div><p class="text-[14.5px] text-graph mt-2">Campanhas por modalidade e frente de estudo. Não se sabe quanto custa e quanto retorna cada curso.</p></div>
     <div class="card p-5" style="border-color:rgba(0,255,135,.4)"><div class="cat" style="color:var(--neon)">Proposta</div><p class="text-[14.5px] text-graph mt-2">Cada curso com verba, CPL, CAC e retorno próprios, como já fazemos por campanha no ENEM e no vestibular.</p></div>
     <div class="card p-5 alerta"><div class="cat flex items-center gap-2" style="color:#FF5C5C"><i data-lucide="triangle-alert" class="w-4 h-4"></i>Atenção</div><p class="text-[14px] text-graph mt-2">A viabilidade da verba para verticalizar é validada a partir do diagnóstico. Para isso precisamos do <b class="text-ink">CPL e do CAC reais</b> por curso, e hoje não sabemos se há visibilidade desses números.</p></div>
   </div>
   <div class="grid grid-cols-4 gap-3 mt-auto mb-1 rise">
     <div class="card p-4 flex flex-col gap-2"><span class="num">01</span><div class="font-display font-extrabold uppercase text-[14px]">Orçamento</div><p class="text-[12.5px] text-graph">Levantamento prévio: sem ele, a verba por curso pode ficar pequena demais para a mídia render.</p></div>
     <div class="card p-4 flex flex-col gap-2"><span class="num">02</span><div class="font-display font-extrabold uppercase text-[14px]">Validação de CPL e CAC</div><p class="text-[12.5px] text-graph">A partir de dados reais do CRM e do investimento de mídia realizado.</p></div>
-    <div class="card p-4 flex flex-col gap-2"><span class="num">03</span><div class="font-display font-extrabold uppercase text-[14px]">Simulação</div><p class="text-[12.5px] text-graph">Verba mínima, CPL e CAC esperados por curso da Pós e do Colégio.</p></div>
+    <div class="card p-4 flex flex-col gap-2"><span class="num">03</span><div class="font-display font-extrabold uppercase text-[14px]">Simulação</div><p class="text-[12.5px] text-graph">Verba mínima, CPL e CAC esperados por curso da <b class="un">PÓS</b> e do Colégio.</p></div>
     <div class="card p-4 flex flex-col gap-2"><span class="num">04</span><div class="font-display font-extrabold uppercase text-[14px]">Decisão</div><p class="text-[12.5px] text-graph">A Reitoria decide quais cursos verticalizar e em que ordem.</p></div>
   </div>
 </section>
@@ -710,16 +718,16 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <!-- 18b NOVEMBRO -->
 <section class="slide" aria-label="Novembro: entrevistas">
   <span class="eyebrow rise">// 20 <b>Entrevistas do diagnóstico</b></span>
-  <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[40px]">Primeiro a Graduação, <em>depois a Pós.</em></h2><span class="chip g">ETAPAS INICIAIS</span></div>
-  <p class="rise text-[16px] text-graph mt-4 max-w-[900px]">Cada conversa é registrada na Central no mesmo dia. A Pós vem na sequência, porque a equipe administrativa e os projetos em andamento ainda estão em curso.</p>
+  <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[40px]">Primeiro a <b class="un">GRADUAÇÃO</b>, <em>depois a <b class="un">PÓS</b>.</em></h2><span class="chip g">ETAPAS INICIAIS</span></div>
+  <p class="rise text-[16px] text-graph mt-4 max-w-[900px]">Cada conversa é registrada na Central no mesmo dia. A <b class="un">PÓS</b> vem na sequência, porque a equipe administrativa e os projetos em andamento ainda estão em curso.</p>
   <div class="grid grid-cols-5 gap-3 mt-auto">
     <div class="card p-4 rise flex flex-col gap-2"><span class="num">01</span><div class="font-display font-extrabold uppercase text-[14px]">Reitoria e gestão</div><p class="text-[12.5px] text-graph">Reitoria, pró-reitorias e gestão de Marketing. Pedido dos acessos e das exportações.</p></div>
     <div class="card p-4 rise flex flex-col gap-2"><span class="num">02</span><div class="font-display font-extrabold uppercase text-[14px]">Time de Marketing</div><p class="text-[12.5px] text-graph">Cada pessoa, uma a uma. Central de atendimento e comercial.</p></div>
-    <div class="card p-4 rise flex flex-col gap-2"><span class="num">03</span><div class="font-display font-extrabold uppercase text-[14px]">Graduação</div><p class="text-[12.5px] text-graph">Coordenações dos cursos de Graduação.</p></div>
+    <div class="card p-4 rise flex flex-col gap-2"><span class="num">03</span><div class="font-display font-extrabold uppercase text-[14px]"><b class="un">GRADUAÇÃO</b></div><p class="text-[12.5px] text-graph">Coordenações dos cursos de <b class="un">GRADUAÇÃO</b>.</p></div>
     <div class="card p-4 rise flex flex-col gap-2"><span class="num">04</span><div class="font-display font-extrabold uppercase text-[14px]">Parceiros e consolidação</div><p class="text-[12.5px] text-graph">Parceiros e fornecedores. Diagnóstico consolidado na Central.</p></div>
-    <div class="card p-4 rise flex flex-col gap-2" style="border-color:rgba(0,229,255,.45);background:linear-gradient(180deg,rgba(0,229,255,.07),rgba(14,18,26,.92))"><span class="num" style="color:var(--cyan)">05</span><div class="font-mono text-[11px] tracking-[.14em] text-cyan">NA SEQUÊNCIA</div><div class="font-display font-extrabold uppercase text-[14px]">Pós-Graduação</div><p class="text-[12.5px] text-graph">Coordenações da Pós, agrupadas por área, quando a operação atual estiver encaminhada.</p></div>
+    <div class="card p-4 rise flex flex-col gap-2" style="border-color:rgba(0,229,255,.45);background:linear-gradient(180deg,rgba(0,229,255,.07),rgba(14,18,26,.92))"><span class="num" style="color:var(--cyan)">05</span><div class="font-mono text-[11px] tracking-[.14em] text-cyan">NA SEQUÊNCIA</div><div class="font-display font-extrabold uppercase text-[14px]"><b class="un">PÓS-GRADUAÇÃO</b></div><p class="text-[12.5px] text-graph">Coordenações da <b class="un">PÓS</b>, agrupadas por área, quando a operação atual estiver encaminhada.</p></div>
   </div>
-  <div class="card p-4 mt-4 mb-1 rise flex items-center gap-4" style="background:#0C1118"><i data-lucide="calendar-check" class="w-5 h-5 text-cyan flex-none"></i><p class="text-[13.5px] text-graph">Até 3 entrevistas por dia, de 45 a 60 minutos, com o roteiro enviado antes. O diagnóstico da Graduação e do Marketing vai à Reitoria primeiro, e a Pós entra na sequência. <b class="text-white">Condição: agenda das entrevistas reservada pela FECAP logo no início.</b></p></div>
+  <div class="card p-4 mt-4 mb-1 rise flex items-center gap-4" style="background:#0C1118"><i data-lucide="calendar-check" class="w-5 h-5 text-cyan flex-none"></i><p class="text-[13.5px] text-graph">Até 3 entrevistas por dia, de 45 a 60 minutos, com o roteiro enviado antes. O diagnóstico da <b class="un">GRADUAÇÃO</b> e do Marketing vai à Reitoria primeiro, e a <b class="un">PÓS</b> entra na sequência. <b class="text-white">Condição: agenda das entrevistas reservada pela FECAP logo no início.</b></p></div>
 </section>
 
 <!-- 22 INDICADORES -->
@@ -747,7 +755,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   </div>
   <p class="relative rise text-[17px] text-graph mt-4 max-w-[860px]">A Fase 01 deixa método, números e time rodando. A Fase 02 parte do que os resultados mostraram e deixa a próxima captação encaminhada.</p>
   <div class="relative grid grid-cols-3 gap-5 mt-auto mb-2">
-    <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(0,229,255,.55);background:linear-gradient(180deg,rgba(0,229,255,.10),rgba(14,18,26,.92));box-shadow:0 18px 44px -22px rgba(0,229,255,.55)"><span class="num" style="color:var(--cyan)">01</span><div class="font-display font-extrabold uppercase text-[19px]">Continuar</div><p class="text-[14px] text-graph">O que trouxe resultado na Graduação e na Pós vira rotina do time, com dono e indicador.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(0,229,255,.55);background:linear-gradient(180deg,rgba(0,229,255,.10),rgba(14,18,26,.92));box-shadow:0 18px 44px -22px rgba(0,229,255,.55)"><span class="num" style="color:var(--cyan)">01</span><div class="font-display font-extrabold uppercase text-[19px]">Continuar</div><p class="text-[14px] text-graph">O que trouxe resultado na <b class="un">GRADUAÇÃO</b> e na <b class="un">PÓS</b> vira rotina do time, com dono e indicador.</p></div>
     <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(0,229,255,.55);background:linear-gradient(180deg,rgba(0,229,255,.10),rgba(14,18,26,.92));box-shadow:0 18px 44px -22px rgba(0,229,255,.55)"><span class="num" style="color:var(--cyan)">02</span><div class="font-display font-extrabold uppercase text-[19px]">Refinar</div><p class="text-[14px] text-graph">Campanhas, réguas, fluxo de demandas e verba ajustados com o que os ciclos ensinaram.</p></div>
     <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(0,229,255,.55);background:linear-gradient(180deg,rgba(0,229,255,.10),rgba(14,18,26,.92));box-shadow:0 18px 44px -22px rgba(0,229,255,.55)"><span class="num" style="color:var(--cyan)">03</span><div class="font-display font-extrabold uppercase text-[19px]">Próximas unidades</div><p class="text-[14px] text-graph">O método levado às próximas unidades de negócio, começando por Colégio e curta duração.</p></div>
   </div>
@@ -758,7 +766,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   <span class="eyebrow rise">// 23 <b>Cronograma</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[42px]">Onze meses, <em>mês a mês.</em></h2><div class="flex gap-2"><span class="chip g">Fase 01 · nov → abr</span><span class="chip" style="color:var(--cyan);border-color:rgba(0,229,255,.4)">Fase 02 · mai → set</span></div></div>
   <p class="rise text-[17px] text-graph mt-4 max-w-[860px]">Da implantação ao acompanhamento: o que cada mês entrega até a próxima captação estar encaminhada.</p>
-  <div class="cview rise mt-auto"><div class="ctrack" id="ctrack"><div class="mcd f1" data-i="0"><div class="mtop"><span class="mnum">01</span><span class="mfase">FASE 01</span></div><div class="mnome">Novembro</div><ul><li>Entrevistas da Graduação</li><li>Anúncios "Em breve" ajustados e lista de interesse</li><li>Acessos a CRM, mídia, site e orçamento</li><li>Funil da Graduação diário</li></ul></div><div class="mcd f1" data-i="1"><div class="mtop"><span class="mnum">02</span><span class="mfase">FASE 01</span></div><div class="mnome">Dezembro</div><ul><li>Diagnóstico da Graduação e do Marketing à Reitoria</li><li>P&amp;L da Auditoria EAD</li><li>Formulário de interesse nos cursos</li><li>Agências de RP e performance para avaliação</li></ul></div><div class="mcd f1" data-i="2"><div class="mtop"><span class="mnum">03</span><span class="mfase">FASE 01</span></div><div class="mnome">Janeiro</div><ul><li>Entrevistas da Pós</li><li>Plano de ação aprovado e orçamento mapeado</li><li>WhatsApp e ManyChat no ar</li></ul></div><div class="mcd f1" data-i="3"><div class="mtop"><span class="mnum">04</span><span class="mfase">FASE 01</span></div><div class="mnome">Fevereiro</div><ul><li>Fechamento da Graduação 2027.1</li><li>Fluxo de demandas implantado</li><li>Retorno por campanha do ciclo</li></ul></div><div class="mcd f1" data-i="4"><div class="mtop"><span class="mnum">05</span><span class="mfase">FASE 01</span></div><div class="mnome">Março</div><ul><li>Estudo de anúncios por curso concluído</li><li>Nova gestão conduzindo os rituais</li><li>Playbooks revisados</li></ul></div><div class="mcd f1" data-i="5"><div class="mtop"><span class="mnum">06</span><span class="mfase">FASE 01</span></div><div class="mnome">Abril</div><ul><li>Pós 2027.2 abre com base de interessados</li><li>Decisões da Reitoria: anúncios por curso e Auditoria EAD</li><li>Relatório de transição</li></ul></div><div class="mcd f2" data-i="6"><div class="mtop"><span class="mnum">07</span><span class="mfase">FASE 02</span></div><div class="mnome">Maio</div><ul><li>Abordagem do Colégio</li><li>Curta duração: evergreen e low ticket</li><li>Pós 2027.2 acompanhada</li></ul></div><div class="mcd f2" data-i="7"><div class="mtop"><span class="mnum">08</span><span class="mfase">FASE 02</span></div><div class="mnome">Junho</div><ul><li>Pós 2027.2 até o fim das inscrições</li><li>Curta duração com meta e CAC</li><li>Rituais mantidos com o time</li></ul></div><div class="mcd f2" data-i="8"><div class="mtop"><span class="mnum">09</span><span class="mfase">FASE 02</span></div><div class="mnome">Julho</div><ul><li>Retorno por campanha da Pós 2027.2</li><li>Verba do próximo ciclo à Reitoria</li><li>Anúncios por curso rodando</li></ul></div><div class="mcd f2" data-i="9"><div class="mtop"><span class="mnum">10</span><span class="mfase">FASE 02</span></div><div class="mnome">Agosto</div><ul><li>Graduação 2028.1 planejada com o time</li><li>Páginas, réguas e listas revisadas</li><li>Listas de interesse prontas</li></ul></div><div class="mcd f2" data-i="10"><div class="mtop"><span class="mnum">11</span><span class="mfase">FASE 02</span></div><div class="mnome">Setembro</div><ul><li>Próxima captação encaminhada</li><li>Time operando com autonomia</li><li>Relatório da Fase 02</li></ul></div></div></div>
+  <div class="cview rise mt-auto"><div class="ctrack" id="ctrack"><div class="mcd f1" data-i="0"><div class="mtop"><span class="mnum">01</span><span class="mfase">FASE 01</span></div><div class="mnome">Novembro</div><ul><li><span>Entrevistas da <b class="un">GRADUAÇÃO</b></span></li><li>Anúncios "Em breve" ajustados e lista de interesse</li><li>Acessos a CRM, mídia, site e orçamento</li><li><span>Funil da <b class="un">GRADUAÇÃO</b> diário</span></li></ul></div><div class="mcd f1" data-i="1"><div class="mtop"><span class="mnum">02</span><span class="mfase">FASE 01</span></div><div class="mnome">Dezembro</div><ul><li><span>Diagnóstico da <b class="un">GRADUAÇÃO</b> e do Marketing à Reitoria</span></li><li>P&amp;L da Auditoria EAD</li><li>Formulário de interesse nos cursos</li><li>Agências de RP e performance para avaliação</li></ul></div><div class="mcd f1" data-i="2"><div class="mtop"><span class="mnum">03</span><span class="mfase">FASE 01</span></div><div class="mnome">Janeiro</div><ul><li><span>Entrevistas da <b class="un">PÓS</b></span></li><li>Plano de ação aprovado e orçamento mapeado</li><li>WhatsApp e ManyChat no ar</li></ul></div><div class="mcd f1" data-i="3"><div class="mtop"><span class="mnum">04</span><span class="mfase">FASE 01</span></div><div class="mnome">Fevereiro</div><ul><li><span>Fechamento da <b class="un">GRADUAÇÃO</b> 2027.1</span></li><li>Fluxo de demandas implantado</li><li>Retorno por campanha do ciclo</li></ul></div><div class="mcd f1" data-i="4"><div class="mtop"><span class="mnum">05</span><span class="mfase">FASE 01</span></div><div class="mnome">Março</div><ul><li>Estudo de anúncios por curso concluído</li><li>Nova gestão conduzindo os rituais</li><li>Playbooks revisados</li></ul></div><div class="mcd f1" data-i="5"><div class="mtop"><span class="mnum">06</span><span class="mfase">FASE 01</span></div><div class="mnome">Abril</div><ul><li><span><b class="un">PÓS</b> 2027.2 abre com base de interessados</span></li><li>Decisões da Reitoria: anúncios por curso e Auditoria EAD</li><li>Relatório de transição</li></ul></div><div class="mcd f2" data-i="6"><div class="mtop"><span class="mnum">07</span><span class="mfase">FASE 02</span></div><div class="mnome">Maio</div><ul><li>Abordagem do Colégio</li><li>Curta duração: evergreen e low ticket</li><li><span><b class="un">PÓS</b> 2027.2 acompanhada</span></li></ul></div><div class="mcd f2" data-i="7"><div class="mtop"><span class="mnum">08</span><span class="mfase">FASE 02</span></div><div class="mnome">Junho</div><ul><li><span><b class="un">PÓS</b> 2027.2 até o fim das inscrições</span></li><li>Curta duração com meta e CAC</li><li>Rituais mantidos com o time</li></ul></div><div class="mcd f2" data-i="8"><div class="mtop"><span class="mnum">09</span><span class="mfase">FASE 02</span></div><div class="mnome">Julho</div><ul><li><span>Retorno por campanha da <b class="un">PÓS</b> 2027.2</span></li><li>Verba do próximo ciclo à Reitoria</li><li>Anúncios por curso rodando</li></ul></div><div class="mcd f2" data-i="9"><div class="mtop"><span class="mnum">10</span><span class="mfase">FASE 02</span></div><div class="mnome">Agosto</div><ul><li><span><b class="un">GRADUAÇÃO</b> 2028.1 planejada com o time</span></li><li>Páginas, réguas e listas revisadas</li><li>Listas de interesse prontas</li></ul></div><div class="mcd f2" data-i="10"><div class="mtop"><span class="mnum">11</span><span class="mfase">FASE 02</span></div><div class="mnome">Setembro</div><ul><li>Próxima captação encaminhada</li><li>Time operando com autonomia</li><li>Relatório da Fase 02</li></ul></div></div></div>
   <div class="tline rise mt-6 mb-1">
     <div class="tbands"><div class="tb1"><span>FASE 01 · IMPLANTAÇÃO</span></div><div class="tb2"><span>FASE 02 · ACOMPANHAMENTO</span></div></div>
     <div class="trail"><div class="tfill" id="tfill"></div></div>
@@ -776,7 +784,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
       <ul class="ck rise">
         <li>Indicar o interlocutor, apresentar a nova gestão de Marketing e alinhar a vaga de performance e growth.</li>
         <li>Autorizar o ajuste imediato dos anúncios que levam a "Em breve".</li>
-        <li>Reservar a agenda das entrevistas: Reitoria, Marketing e coordenações da Graduação.</li>
+        <li><span>Reservar a agenda das entrevistas: Reitoria, Marketing e coordenações da <b class="un">GRADUAÇÃO</b>.</span></li>
         <li>Definir com a Reitoria a expectativa para cada unidade: crescer, manter ou reposicionar.</li>
       </ul>
     </div>
@@ -803,7 +811,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   <div class="relative mt-auto flex flex-col gap-6 max-w-[980px] mb-6">
     <h2 class="ttl rise text-[72px]">Investimento</h2>
     <p class="rise text-[28px] font-display font-extrabold leading-tight">Agora é hora de colocar o plano em ação. <em class="not-italic text-emer">Vamos iniciar?</em></p>
-    <div class="rise flex flex-wrap gap-3 mt-2"><span class="chip g">Fase 01 · novembro a abril</span><span class="chip g">Fase 02 · maio a setembro</span><span class="chip">Graduação · Pós · Equipe · Processos</span><span class="chip">LORSO Digital</span></div>
+    <div class="rise flex flex-wrap gap-3 mt-2"><span class="chip g">Fase 01 · novembro a abril</span><span class="chip g">Fase 02 · maio a setembro</span><span class="chip"><b class="un">GRADUAÇÃO</b> · <b class="un">PÓS</b> · Equipe · Processos</span><span class="chip">LORSO Digital</span></div>
   </div>
 </section>
 
