@@ -165,7 +165,7 @@ html.m .cnode .num{width:36px;height:36px}
 /* proposta FECAP */
 .chip.mod{color:#8FF4FF;border-color:rgba(0,229,255,.55);background:rgba(0,229,255,.10)}
 .hovgrid>.card{transition:transform .35s cubic-bezier(.3,.7,.2,1),border-color .35s,box-shadow .35s,background .35s;cursor:default}
-.hovgrid>.card:hover{transform:translateY(-6px) scale(1.02);border-color:rgba(0,255,135,.65);background:linear-gradient(180deg,rgba(0,255,135,.10),rgba(14,18,26,.95));box-shadow:0 22px 50px -20px rgba(0,255,135,.6);z-index:2}
+.hovgrid>.card:hover{transform:translateY(-6px) scale(1.02);border-color:rgba(0,255,135,.65)!important;background:linear-gradient(180deg,rgba(0,255,135,.10),rgba(14,18,26,.95))!important;box-shadow:0 22px 50px -20px rgba(0,255,135,.6);z-index:2}
 .hovgrid>.card:hover .como{color:#7CF3FF}
 .mt2{display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;border:1px solid var(--line);background:rgba(10,13,19,.6)}
 .mt2 b{font-family:Archivo,sans-serif;font-weight:800;font-size:15px;line-height:1.2;color:#F2F5F7}
@@ -726,12 +726,12 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   <span class="eyebrow rise">// 20 <b>Entrevistas do diagnóstico</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[40px]">Começamos pelo Marketing, <em>demandas e plano 2027.</em></h2><span class="chip g">ETAPAS INICIAIS</span></div>
   <p class="rise text-[16px] text-graph mt-4 max-w-[900px]">Cada conversa é registrada na Central no mesmo dia. A <b class="un">PÓS</b> vem na sequência, porque a equipe administrativa e os projetos em andamento ainda estão em curso.</p>
-  <div class="grid grid-cols-5 gap-3 mt-auto">
-    <div class="card p-4 rise flex flex-col gap-2"><span class="num">01</span><div class="font-display font-extrabold uppercase text-[14px]">Reitoria e gestão</div><p class="text-[12.5px] text-graph">Reitoria, pró-reitorias e gestão de Marketing. Pedido dos acessos e das exportações.</p></div>
+  <div class="grid grid-cols-5 gap-3 mt-auto hovgrid">
+    <div class="card p-4 rise flex flex-col gap-2" style="border-color:rgba(0,229,255,.45);background:linear-gradient(180deg,rgba(0,229,255,.07),rgba(14,18,26,.92))"><span class="num" style="color:var(--cyan)">01</span><div class="font-display font-extrabold uppercase text-[14px]">Reitoria e gestão</div><p class="text-[12.5px] text-graph">Reitoria, pró-reitorias e gestão de Marketing. Pedido dos acessos e das exportações.</p></div>
     <div class="card p-4 rise flex flex-col gap-2"><span class="num">02</span><div class="font-display font-extrabold uppercase text-[14px]">Time de Marketing</div><p class="text-[12.5px] text-graph">Cada pessoa, uma a uma. Central de atendimento e comercial.</p></div>
     <div class="card p-4 rise flex flex-col gap-2"><span class="num">03</span><div class="font-display font-extrabold uppercase text-[14px]"><b class="un">GRADUAÇÃO</b></div><p class="text-[12.5px] text-graph">Coordenações dos cursos de <b class="un">GRADUAÇÃO</b>.</p></div>
     <div class="card p-4 rise flex flex-col gap-2"><span class="num">04</span><div class="font-display font-extrabold uppercase text-[14px]">Parceiros e consolidação</div><p class="text-[12.5px] text-graph">Parceiros e fornecedores. Diagnóstico consolidado na Central.</p></div>
-    <div class="card p-4 rise flex flex-col gap-2" style="border-color:rgba(0,229,255,.45);background:linear-gradient(180deg,rgba(0,229,255,.07),rgba(14,18,26,.92))"><span class="num" style="color:var(--cyan)">05</span><div class="font-mono text-[11px] tracking-[.14em] text-cyan">NA SEQUÊNCIA</div><div class="font-display font-extrabold uppercase text-[14px]"><b class="un">PÓS-GRADUAÇÃO</b></div><p class="text-[12.5px] text-graph">Coordenações da <b class="un">PÓS</b>, agrupadas por área, quando a operação atual estiver encaminhada.</p></div>
+    <div class="card p-4 rise flex flex-col gap-2"><span class="num">05</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">NA SEQUÊNCIA</div><div class="font-display font-extrabold uppercase text-[14px]"><b class="un">PÓS-GRADUAÇÃO</b></div><p class="text-[12.5px] text-graph">Coordenações da <b class="un">PÓS</b>, agrupadas por área, quando a operação atual estiver encaminhada.</p></div>
   </div>
   <div class="card p-4 mt-4 mb-1 rise flex items-center gap-4" style="background:#0C1118"><i data-lucide="calendar-check" class="w-5 h-5 text-cyan flex-none"></i><p class="text-[13.5px] text-graph">Entrevistas uma a uma, com o roteiro enviado antes. O diagnóstico da <b class="un">GRADUAÇÃO</b> e do Marketing vai à Reitoria primeiro, e a <b class="un">PÓS</b> entra na sequência. <b class="text-white">Condição: agenda das entrevistas reservada pela FECAP logo no início.</b></p></div>
 </section>
@@ -903,9 +903,10 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
     mcs.forEach(function(c,j){c.classList.toggle('act',j===i);c.classList.toggle('past',j<i)});
     tns.forEach(function(n,j){n.classList.toggle('act',j===i);n.classList.toggle('done',j<=i)});
     tf.style.width=(i/(mcs.length-1)*100)+'%'}
-  function crun(){clearInterval(ct);ct=setInterval(function(){if(ci>=mcs.length-1){clearInterval(ct);return}cset(ci+1)},2300)}
-  mcs.concat(tns).forEach(function(el){el.addEventListener('click',function(){cset(+el.dataset.i);crun()})});
-  var _go2=go;go=function(i){_go2(i);if(S[i]&&S[i].id==='cronoSlide'){cset(0);setTimeout(crun,900)}else clearInterval(ct)};
+  function cmark(i){ci=i;mcs.forEach(function(c,j){c.classList.toggle('act',j===i);c.classList.toggle('past',j<i)});tns.forEach(function(n,j){n.classList.toggle('act',j===i);n.classList.toggle('done',j<=i)});tf.style.width=(i/(mcs.length-1)*100)+'%'}
+  tns.forEach(function(n){n.addEventListener('mouseenter',function(){cset(+n.dataset.i)});n.addEventListener('click',function(){cset(+n.dataset.i)})});
+  mcs.forEach(function(c){c.addEventListener('mouseenter',function(){cmark(+c.dataset.i)});c.addEventListener('click',function(){cset(+c.dataset.i)})});
+  var _go2=go;go=function(i){_go2(i);if(S[i]&&S[i].id==='cronoSlide'){cset(0)}};
   applyM();
   if(isM()){stage.querySelectorAll('video').forEach(function(v){v.controls=true})}
   if(isM()){S.forEach(function(s){s.classList.add('on')});S.forEach(countUp)}else go(0);
