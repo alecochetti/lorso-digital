@@ -163,6 +163,8 @@ html.m .cnode .num{width:36px;height:36px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* proposta FECAP */
+.f2big{flex:none;width:132px;height:132px;border-radius:24px;display:flex;align-items:center;justify-content:center;text-align:center;font-family:Archivo,sans-serif;font-weight:900;font-size:34px;line-height:.95;color:#0A0D13;background:linear-gradient(135deg,var(--cyan),#7CF3FF);box-shadow:0 0 0 6px rgba(0,229,255,.12),0 24px 60px -18px rgba(0,229,255,.8)}
+.xic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#FF5C5C;color:#0A0D13;box-shadow:0 0 18px rgba(255,92,92,.6)}
 .rt{border:1px solid var(--line);border-radius:12px;background:rgba(14,18,26,.92);padding:12px 13px;display:flex;flex-direction:column;gap:8px;transition:border-color .3s,transform .3s}
 .rt:hover{border-color:rgba(0,255,135,.5);transform:translateY(-2px)}
 .rth{display:flex;align-items:center;gap:8px;color:var(--neon)}.rth b{font-family:Archivo,sans-serif;font-weight:800;font-size:13.5px;color:#F2F5F7}
@@ -423,7 +425,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   <h2 class="ttl rise text-[40px] mt-3">O que vamos entender, <em>e como.</em></h2>
   <div class="grid grid-cols-4 gap-4 mt-auto mb-1">
     <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="landmark" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Reitoria e coordenação</div><p class="text-[13px] text-graph leading-snug">Como as demandas chegam ao Marketing, quem aprova e onde o fluxo trava.</p><p class="como">Entrevista 1 a 1 e o caminho de uma demanda real, do pedido à entrega.</p></div>
-    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="handshake" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Parcerias</div><p class="text-[13px] text-graph leading-snug">Convênios, empresas parceiras e times externos: o que trazem e como são acompanhados.</p><p class="como">Lista de convênios cruzada com os leads e matrículas de origem parceira no CRM.</p></div>
+    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="handshake" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Parcerias</div><p class="text-[13px] text-graph leading-snug">Convênios, empresas parceiras e times externos, e também UGC creators, formadores de opinião e influenciadores de destaque no Meta Business, captando via <b class="text-ink">programa de afiliados</b>.</p><p class="como">Convênios e afiliados cruzados com os leads e matrículas de origem parceira no CRM.</p></div>
     <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="monitor-cog" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Plataformas</div><p class="text-[13px] text-graph leading-snug">CRM, contas de anúncio, site e ferramentas: o que se usa, o que integra e o que se paga sem usar.</p><p class="como">Inventário de acessos e contratos: uso, integração e custo mensal.</p></div>
     <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="briefcase-business" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Serviços</div><p class="text-[13px] text-graph leading-snug">Agências e fornecedores: escopo, custo e entrega de cada um.</p><p class="como">Contrato e escopo de cada um, comparados às entregas dos últimos 6 meses.</p></div>
     <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="id-card" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[14.5px]">Folha do Marketing</div><p class="text-[13px] text-graph leading-snug">Equipe, papéis, a nova gestão, a vaga de performance e growth e o tempo entre tarefas administrativas e unidades.</p><p class="como">Entrevista com cada pessoa e registro do tempo por tipo de tarefa durante 2 semanas.</p></div>
@@ -612,7 +614,8 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
     </div>
     <div class="card p-7 rise flex flex-col gap-4" style="background:#0C1118">
       <div class="cat">Especialistas externos</div>
-      <p class="text-[14px] text-graph">Quando um gargalo pedir competência que o time não tem, a LORSO indica e a FECAP contrata direto, sem intermediação.</p>
+      <div class="px-4 py-3 rounded-xl flex items-center gap-3" style="border:1px solid rgba(0,255,135,.6);background:linear-gradient(90deg,rgba(0,255,135,.16),rgba(0,255,135,.05));box-shadow:0 14px 34px -16px rgba(0,255,135,.55)"><i data-lucide="handshake" class="w-5 h-5 text-emer flex-none"></i><p class="text-[14px] text-ink font-semibold leading-snug">Caso necessário, a LORSO conta com parceiros externos prontos para atuar na dor da FECAP.</p></div>
+      <p class="text-[13px] text-graph">A LORSO indica e a FECAP contrata direto, sem intermediação.</p>
       <div class="flex flex-col gap-3 mt-1">
         <div class="hcard"><div class="ic"><i data-lucide="megaphone" class="w-[18px] h-[18px]"></i></div><div><b>Agência de RP</b><p>Imprensa, reputação e pauta institucional da FECAP.</p></div></div>
         <div class="hcard"><div class="ic"><i data-lucide="trending-up" class="w-[18px] h-[18px]"></i></div><div><b>Agência de performance e growth</b><p>Mídia paga por curso, testes e otimização diária das campanhas.</p></div></div>
@@ -623,44 +626,19 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   </div>
 </section>
 
-<!-- 13 GRADUAÇÃO -->
-<section class="slide" aria-label="Captação da Graduação">
-  <span class="eyebrow rise">// 16 <b>Frente 1 · Captação ativa da Graduação</b></span>
-  <h2 class="ttl rise text-[44px] mt-4">O funil do CRM <em>lido todos os dias.</em></h2>
-  <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Durante o ciclo 2027.1, a captação é acompanhada com a nova gestão, a central e o comercial, sempre a partir do mesmo número: a matrícula paga no CRM. A manhã tem meta e acompanhamento próprios.</p>
-  <div class="grid grid-cols-4 gap-4 mt-auto mb-2">
-    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="filter" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Funil diário</div><p class="text-[13.5px] text-graph">Leads, inscritos, aprovados e matrículas pagas por curso, turno e origem, com comparação ao ciclo anterior.</p></div>
-    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="headset" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Central e comercial</div><p class="text-[13.5px] text-graph">Tempo até o primeiro contato e conversão por etapa e por atendente.</p></div>
-    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="percent" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Retorno por campanha</div><p class="text-[13.5px] text-graph">ENEM calculado com o desconto, vestibular com a mensalidade cheia, sempre sobre o investido.</p></div>
-    <div class="card p-5 rise flex flex-col gap-2"><i data-lucide="calendar-clock" class="w-5 h-5 text-emer"></i><div class="font-display font-extrabold uppercase text-[15px]">Verba mês a mês</div><p class="text-[13.5px] text-graph">Orçamento anual distribuído com peso nos meses de captação, como o período de vestibular.</p></div>
-  </div>
-</section>
-
-<!-- 14 PÓS -->
-<section class="slide" aria-label="Captação da Pós">
-  <span class="eyebrow rise">// 17 <b>Frente 2 · Captação ativa da Pós-Graduação</b></span>
-  <h2 class="ttl rise text-[44px] mt-4">Captar o ano todo, <em>converter na abertura.</em></h2>
-  <div class="grid grid-cols-[1.2fr_1fr] gap-6 mt-auto mb-2">
-    <div class="card p-6 rise"><ul class="ck">
-      <li>Formulário de interesse permanente em todas as páginas de curso, com ou sem edital.</li>
-      <li>Interessados no CRM separados por curso, com régua de nutrição até a abertura da turma.</li>
-      <li>Calendário anual de captação por curso, com edital pronto antes de abrir as inscrições.</li>
-      <li>Anúncios coerentes com a página: nenhum clique termina em "Em breve".</li>
-    </ul></div>
-    <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(0,255,135,.4)">
-      <div class="cat">Meta até abril</div>
-      <div class="font-display font-extrabold text-[24px] leading-tight">Pós 2027.2 abrindo com <em class="not-italic text-emer">base de interessados</em> já formada</div>
-      <p class="text-[13.5px] text-graph">E a Pós 2027.1 acompanhada até o fim das inscrições, em 01/02/2027.</p>
-    </div>
-  </div>
-</section>
-
 <!-- 15 AUTOMAÇÃO -->
 <section class="slide" aria-label="Automação e WhatsApp">
-  <span class="eyebrow rise">// 18 <b>Frente 3 · Automação e WhatsApp</b></span>
+  <span class="eyebrow rise">// 16 <b>Frente 1 · Automação e WhatsApp</b></span>
   <div class="flex items-end justify-between mt-3 rise">
     <h2 class="ttl text-[38px]">Cada mensagem <em>na categoria certa.</em></h2>
     <span class="chip">Regras da Meta · out/2026</span>
+  </div>
+  <div class="card px-5 py-4 mt-4 rise alerta flex items-center gap-5">
+    <div class="flex items-center gap-2 flex-none"><span class="xic"><i data-lucide="x" class="w-5 h-5"></i></span><i data-lucide="instagram" class="w-7 h-7" style="color:#FF7A7A"></i></div>
+    <div class="flex flex-col gap-1.5">
+      <div class="cat" style="color:#FF7A7A">Pergunta para a FECAP</div>
+      <p class="text-[15px] text-ink font-semibold leading-snug">Como o seu call center trabalha hoje? Como é a abordagem ativa da base? Por que não estamos captando e nutrindo leads?</p>
+    </div>
   </div>
   <div class="grid grid-cols-3 gap-4 mt-auto mb-1">
     <div class="card p-5 rise flex flex-col gap-2"><div class="cat">Utilidade · jornada do candidato</div><ul class="ck mt-2 !text-[13.5px] !gap-2"><li>Confirmação de inscrição</li><li>Lembrete de prova e resultado</li><li>Convocação para matrícula</li><li>Aviso de vencimento</li></ul><p class="text-[12.5px] text-mute mt-auto">Fora do limite de marketing por pessoa. Com conteúdo promocional, a Meta reclassifica como marketing.</p></div>
@@ -672,7 +650,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 16 VERTICALIZAÇÃO -->
 <section class="slide" aria-label="Verticalização dos anúncios">
-  <span class="eyebrow rise">// 19 <b>Frente 4 · Estudo de viabilidade</b></span>
+  <span class="eyebrow rise">// 17 <b>Frente 2 · Estudo de viabilidade</b></span>
   <h2 class="ttl rise text-[42px] mt-4">Anúncios por curso, <em>não só por modalidade.</em></h2>
   <div class="grid grid-cols-3 gap-4 mt-6 rise">
     <div class="card p-5"><div class="cat">Hoje · Pós e Colégio</div><p class="text-[14.5px] text-graph mt-2">Campanhas por modalidade e frente de estudo. Não se sabe quanto custa e quanto retorna cada curso.</p></div>
@@ -681,7 +659,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   </div>
   <div class="grid grid-cols-4 gap-3 mt-auto mb-1 rise">
     <div class="card p-4 flex flex-col gap-2"><span class="num">01</span><div class="font-display font-extrabold uppercase text-[14px]">Orçamento</div><p class="text-[12.5px] text-graph">Levantamento prévio: sem ele, a verba por curso pode ficar pequena demais para a mídia render.</p></div>
-    <div class="card p-4 flex flex-col gap-2"><span class="num">02</span><div class="font-display font-extrabold uppercase text-[14px]">Piloto real</div><p class="text-[12.5px] text-graph">P&amp;L da Auditoria EAD: o único curso que já opera assim dá o custo de referência.</p></div>
+    <div class="card p-4 flex flex-col gap-2"><span class="num">02</span><div class="font-display font-extrabold uppercase text-[14px]">Validação de CPL e CAC</div><p class="text-[12.5px] text-graph">A partir de dados reais do CRM e do investimento de mídia realizado.</p></div>
     <div class="card p-4 flex flex-col gap-2"><span class="num">03</span><div class="font-display font-extrabold uppercase text-[14px]">Simulação</div><p class="text-[12.5px] text-graph">Verba mínima, CPL e CAC esperados por curso da Pós e do Colégio.</p></div>
     <div class="card p-4 flex flex-col gap-2"><span class="num">04</span><div class="font-display font-extrabold uppercase text-[14px]">Decisão</div><p class="text-[12.5px] text-graph">A Reitoria decide quais cursos verticalizar e em que ordem.</p></div>
   </div>
@@ -689,7 +667,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 17 EQUIPE -->
 <section class="slide" aria-label="Equipe de Marketing">
-  <span class="eyebrow rise">// 20 <b>Frente 5 · Equipe de Marketing</b></span>
+  <span class="eyebrow rise">// 18 <b>Frente 3 · Equipe de Marketing</b></span>
   <h2 class="ttl rise text-[44px] mt-4">Gestão e growth treinados, <em>time desenvolvido.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">O objetivo é que, em abril, a nova gestão e a pessoa de performance e growth conduzam a operação com autonomia, e cada pessoa do time esteja no papel certo.</p>
   <div class="card p-4 mt-5 rise flex items-center gap-5" style="border-color:rgba(0,255,135,.45);background:linear-gradient(90deg,rgba(0,255,135,.08),rgba(14,18,26,.92) 55%)">
@@ -706,7 +684,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 18 PROCESSOS -->
 <section class="slide" aria-label="Processos">
-  <span class="eyebrow rise">// 21 <b>Frente 6 · Processos</b></span>
+  <span class="eyebrow rise">// 19 <b>Frente 4 · Processos</b></span>
   <h2 class="ttl rise text-[44px] mt-4">Marketing que responde <em>às unidades no prazo.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Hoje, as demandas das unidades e das coordenações chegam por vários caminhos. A proposta é um fluxo único, com prazo e responsável.</p>
   <div class="card p-5 mt-auto rise alerta">
@@ -730,22 +708,22 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 18b NOVEMBRO -->
 <section class="slide" aria-label="Novembro: entrevistas">
-  <span class="eyebrow rise">// 22 <b>Entrevistas do diagnóstico</b></span>
-  <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[40px]">Novembro com a Graduação, <em>Pós em janeiro.</em></h2><span class="chip g">03/11 → JAN</span></div>
-  <p class="rise text-[16px] text-graph mt-4 max-w-[900px]">Cada conversa é registrada na Central no mesmo dia. A Pós fica para janeiro, porque a equipe administrativa e os projetos em andamento ainda estão em curso.</p>
+  <span class="eyebrow rise">// 20 <b>Entrevistas do diagnóstico</b></span>
+  <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[40px]">Primeiro a Graduação, <em>depois a Pós.</em></h2><span class="chip g">ETAPAS INICIAIS</span></div>
+  <p class="rise text-[16px] text-graph mt-4 max-w-[900px]">Cada conversa é registrada na Central no mesmo dia. A Pós vem na sequência, porque a equipe administrativa e os projetos em andamento ainda estão em curso.</p>
   <div class="grid grid-cols-5 gap-3 mt-auto">
-    <div class="card p-4 rise flex flex-col gap-2"><span class="num">S1</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">03 a 06/11</div><div class="font-display font-extrabold uppercase text-[14px]">Reitoria e gestão</div><p class="text-[12.5px] text-graph">Reitoria, pró-reitorias e gestão de Marketing. Pedido dos acessos e das exportações.</p></div>
-    <div class="card p-4 rise flex flex-col gap-2"><span class="num">S2</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">09 a 13/11</div><div class="font-display font-extrabold uppercase text-[14px]">Time de Marketing</div><p class="text-[12.5px] text-graph">Cada pessoa, uma a uma. Central de atendimento e comercial.</p></div>
-    <div class="card p-4 rise flex flex-col gap-2"><span class="num">S3</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">16 a 19/11</div><div class="font-display font-extrabold uppercase text-[14px]">Graduação</div><p class="text-[12.5px] text-graph">Coordenações dos cursos de Graduação.</p></div>
-    <div class="card p-4 rise flex flex-col gap-2"><span class="num">S4</span><div class="font-mono text-[11px] tracking-[.14em] text-mute">23 a 27/11</div><div class="font-display font-extrabold uppercase text-[14px]">Parceiros e consolidação</div><p class="text-[12.5px] text-graph">Parceiros e fornecedores. Diagnóstico consolidado na Central.</p></div>
-    <div class="card p-4 rise flex flex-col gap-2" style="border-color:rgba(0,229,255,.45);background:linear-gradient(180deg,rgba(0,229,255,.07),rgba(14,18,26,.92))"><span class="num" style="color:var(--cyan)">JAN</span><div class="font-mono text-[11px] tracking-[.14em] text-cyan">JANEIRO</div><div class="font-display font-extrabold uppercase text-[14px]">Pós-Graduação</div><p class="text-[12.5px] text-graph">Coordenações da Pós, agrupadas por área, quando a operação atual estiver encaminhada.</p></div>
+    <div class="card p-4 rise flex flex-col gap-2"><span class="num">01</span><div class="font-display font-extrabold uppercase text-[14px]">Reitoria e gestão</div><p class="text-[12.5px] text-graph">Reitoria, pró-reitorias e gestão de Marketing. Pedido dos acessos e das exportações.</p></div>
+    <div class="card p-4 rise flex flex-col gap-2"><span class="num">02</span><div class="font-display font-extrabold uppercase text-[14px]">Time de Marketing</div><p class="text-[12.5px] text-graph">Cada pessoa, uma a uma. Central de atendimento e comercial.</p></div>
+    <div class="card p-4 rise flex flex-col gap-2"><span class="num">03</span><div class="font-display font-extrabold uppercase text-[14px]">Graduação</div><p class="text-[12.5px] text-graph">Coordenações dos cursos de Graduação.</p></div>
+    <div class="card p-4 rise flex flex-col gap-2"><span class="num">04</span><div class="font-display font-extrabold uppercase text-[14px]">Parceiros e consolidação</div><p class="text-[12.5px] text-graph">Parceiros e fornecedores. Diagnóstico consolidado na Central.</p></div>
+    <div class="card p-4 rise flex flex-col gap-2" style="border-color:rgba(0,229,255,.45);background:linear-gradient(180deg,rgba(0,229,255,.07),rgba(14,18,26,.92))"><span class="num" style="color:var(--cyan)">05</span><div class="font-mono text-[11px] tracking-[.14em] text-cyan">NA SEQUÊNCIA</div><div class="font-display font-extrabold uppercase text-[14px]">Pós-Graduação</div><p class="text-[12.5px] text-graph">Coordenações da Pós, agrupadas por área, quando a operação atual estiver encaminhada.</p></div>
   </div>
-  <div class="card p-4 mt-4 mb-1 rise flex items-center gap-4" style="background:#0C1118"><i data-lucide="calendar-check" class="w-5 h-5 text-cyan flex-none"></i><p class="text-[13.5px] text-graph">Até 3 entrevistas por dia, de 45 a 60 minutos, com o roteiro enviado antes. Feriados de 02/11 e 20/11 fora da agenda. Em dezembro, o diagnóstico da Graduação e do Marketing vai à Reitoria, e a Pós entra em janeiro. <b class="text-white">Condição: agenda de novembro reservada pela FECAP até 03/11.</b></p></div>
+  <div class="card p-4 mt-4 mb-1 rise flex items-center gap-4" style="background:#0C1118"><i data-lucide="calendar-check" class="w-5 h-5 text-cyan flex-none"></i><p class="text-[13.5px] text-graph">Até 3 entrevistas por dia, de 45 a 60 minutos, com o roteiro enviado antes. O diagnóstico da Graduação e do Marketing vai à Reitoria primeiro, e a Pós entra na sequência. <b class="text-white">Condição: agenda das entrevistas reservada pela FECAP logo no início.</b></p></div>
 </section>
 
 <!-- 22 INDICADORES -->
 <section class="slide" aria-label="Indicadores">
-  <span class="eyebrow rise">// 23 <b>O que a Reitoria acompanha</b></span>
+  <span class="eyebrow rise">// 21 <b>O que a Reitoria acompanha</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[40px]">A Reitoria acompanha <em>tudo, em tempo real.</em></h2><span class="chip g">Leitura integral na Central</span></div>
   <p class="rise text-[15.5px] text-graph mt-3 max-w-[900px]">Do diagnóstico ao PDI de cada pessoa, sem esperar relatório. Metas combinadas com a Reitoria no início e cada número com fonte e data.</p>
   <div class="frame rise mt-auto mb-1" style="background:#0C1118">
@@ -755,23 +733,28 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 </section>
 
 <!-- 20b PONTE FASE 02 -->
-<section class="slide" aria-label="Fase 02: continuidade">
+<section class="slide f2s" aria-label="Fase 02: continuidade">
   <div class="grain"></div>
-  <span class="eyebrow rise relative">// 24 <b>Fase 02</b></span>
-  <div class="relative mt-6 rise">
-    <h2 class="ttl text-[52px] max-w-[1000px]">Aqui damos continuidade <em>ao que deu certo.</em></h2>
-    <p class="text-[18px] text-graph mt-4 max-w-[820px]">A Fase 01 deixa método, números e time rodando. A Fase 02 parte do que os resultados mostraram.</p>
+  <div class="absolute -right-32 -top-32 w-[620px] h-[620px] rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(0,229,255,.20),transparent 65%)"></div>
+  <span class="eyebrow rise relative">// 22 <b style="color:var(--cyan)">Fase 02 · Acompanhamento</b></span>
+  <div class="relative mt-5 rise flex items-center gap-6">
+    <div class="f2big">FASE<br>02</div>
+    <div>
+      <div class="font-mono text-[12px] tracking-[.2em] text-cyan">MAIO → SETEMBRO</div>
+      <h2 class="ttl text-[48px] max-w-[900px] mt-2">Aqui damos continuidade <em style="color:var(--cyan)">ao que deu certo.</em></h2>
+    </div>
   </div>
+  <p class="relative rise text-[17px] text-graph mt-4 max-w-[860px]">A Fase 01 deixa método, números e time rodando. A Fase 02 parte do que os resultados mostraram e deixa a próxima captação encaminhada.</p>
   <div class="relative grid grid-cols-3 gap-5 mt-auto mb-2">
-    <div class="card p-6 rise flex flex-col gap-3"><span class="num">01</span><div class="font-display font-extrabold uppercase text-[19px]">Continuar</div><p class="text-[14px] text-graph">O que trouxe resultado na Graduação e na Pós vira rotina do time, com dono e indicador.</p></div>
-    <div class="card p-6 rise flex flex-col gap-3"><span class="num">02</span><div class="font-display font-extrabold uppercase text-[19px]">Refinar</div><p class="text-[14px] text-graph">Campanhas, réguas, fluxo de demandas e verba ajustados com o que os ciclos ensinaram.</p></div>
-    <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(0,229,255,.45)"><span class="num" style="color:var(--cyan)">03</span><div class="font-display font-extrabold uppercase text-[19px]">Próximas unidades</div><p class="text-[14px] text-graph">O método levado às próximas unidades de negócio, começando por Colégio e curta duração.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(0,229,255,.55);background:linear-gradient(180deg,rgba(0,229,255,.10),rgba(14,18,26,.92));box-shadow:0 18px 44px -22px rgba(0,229,255,.55)"><span class="num" style="color:var(--cyan)">01</span><div class="font-display font-extrabold uppercase text-[19px]">Continuar</div><p class="text-[14px] text-graph">O que trouxe resultado na Graduação e na Pós vira rotina do time, com dono e indicador.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(0,229,255,.55);background:linear-gradient(180deg,rgba(0,229,255,.10),rgba(14,18,26,.92));box-shadow:0 18px 44px -22px rgba(0,229,255,.55)"><span class="num" style="color:var(--cyan)">02</span><div class="font-display font-extrabold uppercase text-[19px]">Refinar</div><p class="text-[14px] text-graph">Campanhas, réguas, fluxo de demandas e verba ajustados com o que os ciclos ensinaram.</p></div>
+    <div class="card p-6 rise flex flex-col gap-3" style="border-color:rgba(0,229,255,.55);background:linear-gradient(180deg,rgba(0,229,255,.10),rgba(14,18,26,.92));box-shadow:0 18px 44px -22px rgba(0,229,255,.55)"><span class="num" style="color:var(--cyan)">03</span><div class="font-display font-extrabold uppercase text-[19px]">Próximas unidades</div><p class="text-[14px] text-graph">O método levado às próximas unidades de negócio, começando por Colégio e curta duração.</p></div>
   </div>
 </section>
 
 <!-- 23b CRONOGRAMA -->
 <section class="slide" aria-label="Cronograma" id="cronoSlide">
-  <span class="eyebrow rise">// 25 <b>Cronograma</b></span>
+  <span class="eyebrow rise">// 23 <b>Cronograma</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[42px]">Onze meses, <em>mês a mês.</em></h2><div class="flex gap-2"><span class="chip g">Fase 01 · nov → abr</span><span class="chip" style="color:var(--cyan);border-color:rgba(0,229,255,.4)">Fase 02 · mai → set</span></div></div>
   <p class="rise text-[17px] text-graph mt-4 max-w-[860px]">Da implantação ao acompanhamento: o que cada mês entrega até a próxima captação estar encaminhada.</p>
   <div class="cview rise mt-auto"><div class="ctrack" id="ctrack"><div class="mcd f1" data-i="0"><div class="mtop"><span class="mnum">01</span><span class="mfase">FASE 01</span></div><div class="mnome">Novembro</div><ul><li>Entrevistas da Graduação</li><li>Anúncios "Em breve" ajustados e lista de interesse</li><li>Acessos a CRM, mídia, site e orçamento</li><li>Funil da Graduação diário</li></ul></div><div class="mcd f1" data-i="1"><div class="mtop"><span class="mnum">02</span><span class="mfase">FASE 01</span></div><div class="mnome">Dezembro</div><ul><li>Diagnóstico da Graduação e do Marketing à Reitoria</li><li>P&amp;L da Auditoria EAD</li><li>Formulário de interesse nos cursos</li><li>Agências de RP e performance para avaliação</li></ul></div><div class="mcd f1" data-i="2"><div class="mtop"><span class="mnum">03</span><span class="mfase">FASE 01</span></div><div class="mnome">Janeiro</div><ul><li>Entrevistas da Pós</li><li>Plano de ação aprovado e orçamento mapeado</li><li>WhatsApp e ManyChat no ar</li><li>Pós 2027.1 até 01/02</li></ul></div><div class="mcd f1" data-i="3"><div class="mtop"><span class="mnum">04</span><span class="mfase">FASE 01</span></div><div class="mnome">Fevereiro</div><ul><li>Fechamento da Graduação 2027.1</li><li>Fluxo de demandas implantado</li><li>Retorno por campanha do ciclo</li></ul></div><div class="mcd f1" data-i="4"><div class="mtop"><span class="mnum">05</span><span class="mfase">FASE 01</span></div><div class="mnome">Março</div><ul><li>Estudo de anúncios por curso concluído</li><li>Nova gestão conduzindo os rituais</li><li>Playbooks revisados</li></ul></div><div class="mcd f1" data-i="5"><div class="mtop"><span class="mnum">06</span><span class="mfase">FASE 01</span></div><div class="mnome">Abril</div><ul><li>Pós 2027.2 abre com base de interessados</li><li>Decisões da Reitoria: anúncios por curso e Auditoria EAD</li><li>Relatório de transição</li></ul></div><div class="mcd f2" data-i="6"><div class="mtop"><span class="mnum">07</span><span class="mfase">FASE 02</span></div><div class="mnome">Maio</div><ul><li>Abordagem do Colégio</li><li>Curta duração: evergreen e low ticket</li><li>Pós 2027.2 acompanhada</li></ul></div><div class="mcd f2" data-i="7"><div class="mtop"><span class="mnum">08</span><span class="mfase">FASE 02</span></div><div class="mnome">Junho</div><ul><li>Pós 2027.2 até o fim das inscrições</li><li>Curta duração com meta e CAC</li><li>Rituais mantidos com o time</li></ul></div><div class="mcd f2" data-i="8"><div class="mtop"><span class="mnum">09</span><span class="mfase">FASE 02</span></div><div class="mnome">Julho</div><ul><li>Retorno por campanha da Pós 2027.2</li><li>Verba do próximo ciclo à Reitoria</li><li>Anúncios por curso rodando</li></ul></div><div class="mcd f2" data-i="9"><div class="mtop"><span class="mnum">10</span><span class="mfase">FASE 02</span></div><div class="mnome">Agosto</div><ul><li>Graduação 2028.1 planejada com o time</li><li>Páginas, réguas e listas revisadas</li><li>Listas de interesse prontas</li></ul></div><div class="mcd f2" data-i="10"><div class="mtop"><span class="mnum">11</span><span class="mfase">FASE 02</span></div><div class="mnome">Setembro</div><ul><li>Próxima captação encaminhada</li><li>Time operando com autonomia</li><li>Relatório da Fase 02</li></ul></div></div></div>
@@ -785,14 +768,14 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <!-- 23 O QUE PRECISO + PRÓXIMOS PASSOS -->
 <section class="slide" aria-label="Próximos passos">
   <div class="grain"></div>
-  <span class="eyebrow rise relative">// 26 <b>Para começar</b></span>
+  <span class="eyebrow rise relative">// 24 <b>Para começar</b></span>
   <div class="relative grid grid-cols-2 gap-10 flex-1 items-center mt-2">
     <div class="flex flex-col gap-5">
       <h2 class="ttl rise text-[52px]">Próximos <em>passos.</em></h2>
       <ul class="ck rise">
         <li>Indicar o interlocutor, apresentar a nova gestão de Marketing e alinhar a vaga de performance e growth.</li>
         <li>Autorizar o ajuste imediato dos anúncios que levam a "Em breve".</li>
-        <li>Reservar até 03/11 a agenda de novembro: Reitoria, Marketing e coordenações da Graduação.</li>
+        <li>Reservar a agenda das entrevistas: Reitoria, Marketing e coordenações da Graduação.</li>
         <li>Definir com a Reitoria a expectativa para cada unidade: crescer, manter ou reposicionar.</li>
       </ul>
     </div>
@@ -815,7 +798,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <section class="slide" aria-label="Investimento">
   <div class="grain"></div>
   <div class="absolute -right-24 -bottom-24 w-[580px] h-[580px] rounded-full" style="background:radial-gradient(circle,rgba(0,255,135,.18),transparent 65%)"></div>
-  <span class="eyebrow rise relative">// 27 <b>Investimento</b></span>
+  <span class="eyebrow rise relative">// 25 <b>Investimento</b></span>
   <div class="relative mt-auto flex flex-col gap-6 max-w-[980px] mb-6">
     <h2 class="ttl rise text-[72px]">Investimento</h2>
     <p class="rise text-[28px] font-display font-extrabold leading-tight">Agora é hora de colocar o plano em ação. <em class="not-italic text-emer">Vamos iniciar?</em></p>
