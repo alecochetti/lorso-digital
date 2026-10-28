@@ -163,6 +163,21 @@ html.m .cnode .num{width:36px;height:36px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* proposta FECAP */
+.hchip{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;border-radius:99px;border:1px solid rgba(0,255,135,.5);color:var(--neon);background:rgba(0,255,135,.08)}
+/* conexões */
+.cx{transition:transform .35s cubic-bezier(.3,.7,.2,1),border-color .35s,box-shadow .35s}
+.cx:hover{transform:translateY(-6px);border-color:rgba(0,255,135,.6);box-shadow:0 22px 50px -20px rgba(0,255,135,.55)}
+.cxl{display:flex;align-items:center;gap:6px}
+.cxn{display:flex;align-items:center;gap:6px;font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:8px;border:1px solid rgba(255,92,92,.45);color:#FF9B9B;background:rgba(255,92,92,.08);white-space:nowrap}
+.cxn.on{border-color:rgba(0,255,135,.5);color:var(--neon);background:rgba(0,255,135,.08)}
+.cxw{flex:1;height:2px;background:linear-gradient(90deg,rgba(255,92,92,.6),rgba(0,255,135,.8));position:relative;overflow:hidden;border-radius:2px}
+.cxw i{position:absolute;top:-2px;left:-20%;width:20%;height:6px;border-radius:3px;background:#fff;box-shadow:0 0 10px var(--neon);animation:flow 1.8s linear infinite}
+@keyframes flow{to{left:100%}}
+.cxa,.cxd{font-size:12.5px;line-height:1.42;color:#A9B3C1}
+.cxa b,.cxd b{display:block;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:2px}
+.cxa b{color:#FF7A7A}.cxd b{color:var(--neon)}
+.cxd{padding-top:8px;border-top:1px dashed var(--line);margin-top:auto}
+
 .chip.mod{color:#8FF4FF;border-color:rgba(0,229,255,.55);background:rgba(0,229,255,.10)}
 .hovgrid>.card{transition:transform .35s cubic-bezier(.3,.7,.2,1),border-color .35s,box-shadow .35s,background .35s;cursor:default}
 .hovgrid>.card:hover{transform:translateY(-6px) scale(1.02);border-color:rgba(0,255,135,.65)!important;background:linear-gradient(180deg,rgba(0,255,135,.10),rgba(14,18,26,.95))!important;box-shadow:0 22px 50px -20px rgba(0,255,135,.6);z-index:2}
@@ -495,9 +510,51 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
   </div>
 </section>
 
+<!-- 4 CONEXÕES -->
+<section class="slide" aria-label="Conexões">
+  <span class="eyebrow rise">// 10 <b>O que entregamos</b></span>
+  <h2 class="ttl rise text-[42px] mt-3">Conexões que <em>entregam resultado.</em></h2>
+  <p class="rise text-[15.5px] text-graph mt-2 max-w-[960px]">A operação não perde por falta de esforço. Perde nas passagens entre uma etapa e outra.</p>
+  <div class="rise mt-4 px-5 py-4 rounded-xl flex items-center gap-5" style="border:1px solid rgba(0,255,135,.55);background:linear-gradient(90deg,rgba(0,255,135,.14),rgba(0,255,135,.03));box-shadow:0 14px 34px -16px rgba(0,255,135,.5)">
+    <span class="w-11 h-11 rounded-xl flex items-center justify-center flex-none" style="background:var(--neon);color:#0A0D13"><i data-lucide="users-round" class="w-5 h-5"></i></span>
+    <div class="flex-1"><div class="font-display font-extrabold uppercase text-[15px]">Projetos humanizados</div><p class="text-[13.5px] text-graph mt-0.5">Cada briefing de unidade de negócio vira conversa, não ticket.</p></div>
+    <div class="flex gap-2 flex-none"><span class="hchip">Dono</span><span class="hchip">Entrega</span><span class="hchip">Resultado</span><span class="hchip">Objetivo</span></div>
+  </div>
+  <div class="grid grid-cols-4 gap-4 mt-4">
+    <div class="card cx p-5 rise flex flex-col gap-3">
+      <div class="cxl"><span class="cxn"><i data-lucide="megaphone" class="w-4 h-4"></i>Anúncio</span><span class="cxw"><i></i></span><span class="cxn on"><i data-lucide="headset" class="w-4 h-4"></i>Atendimento</span></div>
+      <div class="font-display font-extrabold uppercase text-[16.5px] leading-tight">Nenhum clique numa porta fechada</div>
+      <p class="cxa"><b>Hoje</b>A mídia leva a páginas paradas e o lead some.</p>
+      <p class="cxd"><b>Com a LORSO</b>Captura, nutrição e conversão 365 dias, sem esperar janela.</p>
+    </div>
+    <div class="card cx p-5 rise flex flex-col gap-3">
+      <div class="cxl"><span class="cxn"><i data-lucide="inbox" class="w-4 h-4"></i>Pedido</span><span class="cxw"><i></i></span><span class="cxn on"><i data-lucide="package-check" class="w-4 h-4"></i>Entrega</span></div>
+      <div class="font-display font-extrabold uppercase text-[16.5px] leading-tight">Demanda com dono, prazo e SLA</div>
+      <p class="cxa"><b>Hoje</b>Pedidos por vários caminhos, briefing vago, tudo urgente.</p>
+      <p class="cxd"><b>Com a LORSO</b>Briefing 1:1, fluxo único e prazo que todos enxergam.</p>
+    </div>
+    <div class="card cx p-5 rise flex flex-col gap-3">
+      <div class="cxl"><span class="cxn"><i data-lucide="filter" class="w-4 h-4"></i>Marketing</span><span class="cxw"><i></i></span><span class="cxn on"><i data-lucide="handshake" class="w-4 h-4"></i>Comercial</span></div>
+      <div class="font-display font-extrabold uppercase text-[16.5px] leading-tight">O lead chega e alguém responde</div>
+      <p class="cxa"><b>Hoje</b>Marketing gera, comercial não vê, ninguém mede o contato.</p>
+      <p class="cxd"><b>Com a LORSO</b>Lead quente no CRM, régua de WhatsApp e tempo de resposta medido.</p>
+    </div>
+    <div class="card cx p-5 rise flex flex-col gap-3">
+      <div class="cxl"><span class="cxn"><i data-lucide="database" class="w-4 h-4"></i>Dados</span><span class="cxw"><i></i></span><span class="cxn on"><i data-lucide="target" class="w-4 h-4"></i>Decisão</span></div>
+      <div class="font-display font-extrabold uppercase text-[16.5px] leading-tight">Um número só para decidir</div>
+      <p class="cxa"><b>Hoje</b>Cada área com sua planilha e sua versão da verdade.</p>
+      <p class="cxd"><b>Com a LORSO</b>Mídia, CRM e DRE no mesmo painel, com fonte e data.</p>
+    </div>
+  </div>
+  <div class="rise mt-auto mb-1 px-5 py-3 rounded-xl flex items-center gap-4" style="border:1px solid rgba(0,229,255,.4);background:linear-gradient(90deg,rgba(0,229,255,.10),rgba(0,255,135,.06))">
+    <i data-lucide="cpu" class="w-5 h-5 text-cyan flex-none"></i>
+    <p class="text-[14.5px] text-ink"><b>Sem apego ao que já foi feito:</b> <span class="text-graph">CRM, WhatsApp API, ManyChat, IA e painéis em tempo real. Mantemos o que funciona e trocamos o que trava.</span></p>
+  </div>
+</section>
+
 <!-- 10 MÉTODO -->
 <section class="slide" aria-label="Método">
-  <span class="eyebrow rise">// 10 <b>Método LORSO</b></span>
+  <span class="eyebrow rise">// 11 <b>Método LORSO</b></span>
   <h2 class="ttl rise text-[48px] mt-4">Cinco fases, <em>aplicadas a cada unidade.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[700px]">A ordem e a intensidade de cada fase seguem o calendário de captação de cada unidade de negócio.</p>
   <div class="grid grid-cols-5 gap-4 mt-auto mb-1 rise" id="method">
@@ -512,7 +569,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <!-- 10b COMO FAZEMOS · CENTRAL -->
 <section class="slide" aria-label="Como fazemos: Central de Diagnóstico">
   <div class="flex items-end justify-between rise">
-    <div><span class="eyebrow">// 11 <b>Como fazemos · Sistemas LORSO 1 de 3</b></span>
+    <div><span class="eyebrow">// 12 <b>Como fazemos · Sistemas LORSO 1 de 3</b></span>
     <h2 class="ttl text-[32px] mt-3 whitespace-nowrap">Central de Diagnóstico: <em>o método na plataforma.</em></h2></div>
     <div class="flex gap-2"><span class="chip g">Plataforma própria</span><span class="chip">Dados só da FECAP</span></div>
   </div>
@@ -535,7 +592,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <!-- 10b2 FUNIL DE CAPTAÇÃO -->
 <section class="slide" aria-label="Como fazemos: funil de captação" id="funilSlide">
   <div class="flex items-end justify-between rise">
-    <div><span class="eyebrow">// 12 <b>Como fazemos · Sistemas LORSO 2 de 3</b></span>
+    <div><span class="eyebrow">// 13 <b>Como fazemos · Sistemas LORSO 2 de 3</b></span>
     <h2 class="ttl text-[32px] mt-3 whitespace-nowrap">Captação: <em>o funil que o coordenador vê.</em></h2></div>
     <span class="chip mod">Módulo da Central</span>
   </div>
@@ -567,7 +624,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <!-- 10c COMO FAZEMOS · LANÇAMENTOS -->
 <section class="slide" aria-label="Como fazemos: Plataforma de Lançamentos">
   <div class="flex items-end justify-between rise">
-    <div><span class="eyebrow">// 13 <b>Como fazemos · Sistemas LORSO 3 de 3</b></span>
+    <div><span class="eyebrow">// 14 <b>Como fazemos · Sistemas LORSO 3 de 3</b></span>
     <h2 class="ttl text-[32px] mt-3 whitespace-nowrap">Lançamentos: <em>um modelo de venda para cada curso.</em></h2></div>
     <span class="chip mod">Módulo da Central</span>
   </div>
@@ -589,7 +646,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 11 BASE CIENTÍFICA -->
 <section class="slide" aria-label="Base científica">
-  <span class="eyebrow rise">// 14 <b>Base científica</b></span>
+  <span class="eyebrow rise">// 15 <b>Base científica</b></span>
   <div class="flex items-end justify-between mt-3 rise">
     <h2 class="ttl text-[38px]">Método LORSO, <em>fundamentado em…</em></h2>
     <span class="chip">Referências reconhecidas · aplicação LORSO</span>
@@ -615,7 +672,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 12 COMO ATUO -->
 <section class="slide" aria-label="Como atuo com o time">
-  <span class="eyebrow rise">// 15 <b>Como atuo com o time</b></span>
+  <span class="eyebrow rise">// 16 <b>Como atuo com o time</b></span>
   <div class="grid grid-cols-[1fr_1fr] gap-12 flex-1 items-center mt-2">
     <div class="flex flex-col gap-5">
       <h2 class="ttl rise text-[42px]">A LORSO recomenda <em>a partir de dados, não por achismos.</em></h2>
@@ -643,7 +700,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 17 EQUIPE -->
 <section class="slide" aria-label="Equipe de Marketing">
-  <span class="eyebrow rise">// 16 <b>Frente 1 · Equipe de Marketing</b></span>
+  <span class="eyebrow rise">// 17 <b>Frente 1 · Equipe de Marketing</b></span>
   <h2 class="ttl rise text-[44px] mt-4">Gestão e growth treinados, <em>time desenvolvido.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">O objetivo é que, em abril, a nova gestão e a pessoa de performance e growth conduzam a operação com autonomia, e cada pessoa do time esteja no papel certo.</p>
   <div class="card p-4 mt-5 rise flex items-center gap-5" style="border-color:rgba(0,255,135,.45);background:linear-gradient(90deg,rgba(0,255,135,.08),rgba(14,18,26,.92) 55%)">
@@ -660,7 +717,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 15 AUTOMAÇÃO -->
 <section class="slide" aria-label="Automação e WhatsApp">
-  <span class="eyebrow rise">// 17 <b>Frente 2 · Automação e WhatsApp</b></span>
+  <span class="eyebrow rise">// 18 <b>Frente 2 · Automação e WhatsApp</b></span>
   <div class="flex items-end justify-between mt-3 rise">
     <h2 class="ttl text-[38px]">Cada mensagem <em>na categoria certa.</em></h2>
     <span class="chip">Regras da Meta · out/2026</span>
@@ -682,7 +739,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 16 VERTICALIZAÇÃO -->
 <section class="slide" aria-label="Verticalização dos anúncios">
-  <span class="eyebrow rise">// 18 <b>Frente 3 · Estudo de viabilidade</b></span>
+  <span class="eyebrow rise">// 19 <b>Frente 3 · Estudo de viabilidade</b></span>
   <h2 class="ttl rise text-[42px] mt-4">Anúncios por curso, <em>não só por modalidade.</em></h2>
   <div class="grid grid-cols-3 gap-4 mt-6 rise">
     <div class="card p-5"><div class="cat">Hoje · <b class="un">PÓS</b> e Colégio</div><p class="text-[14.5px] text-graph mt-2">Campanhas por modalidade e frente de estudo. Não se sabe quanto custa e quanto retorna cada curso.</p></div>
@@ -701,7 +758,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 18 PROCESSOS -->
 <section class="slide" aria-label="Processos">
-  <span class="eyebrow rise">// 19 <b>Frente 4 · Processos</b></span>
+  <span class="eyebrow rise">// 20 <b>Frente 4 · Processos</b></span>
   <h2 class="ttl rise text-[44px] mt-4">Marketing que responde <em>às unidades no prazo.</em></h2>
   <p class="rise text-[17px] text-graph mt-4 max-w-[820px]">Hoje, as demandas das unidades e das coordenações chegam por vários caminhos. A proposta é um fluxo único, com prazo e responsável.</p>
   <div class="card p-5 mt-auto rise alerta">
@@ -725,7 +782,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 18b NOVEMBRO -->
 <section class="slide" aria-label="Novembro: entrevistas">
-  <span class="eyebrow rise">// 20 <b>Entrevistas do diagnóstico</b></span>
+  <span class="eyebrow rise">// 21 <b>Entrevistas do diagnóstico</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[40px]">Começamos pelo Marketing, <em>demandas e plano 2027.</em></h2><span class="chip g">ETAPAS INICIAIS</span></div>
   <p class="rise text-[16px] text-graph mt-4 max-w-[900px]">Cada conversa é registrada na Central no mesmo dia. A <b class="un">PÓS</b> vem na sequência, porque a equipe administrativa e os projetos em andamento ainda estão em curso.</p>
   <div class="grid grid-cols-5 gap-3 mt-auto hovgrid">
@@ -740,7 +797,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 22 INDICADORES -->
 <section class="slide" aria-label="Indicadores">
-  <span class="eyebrow rise">// 21 <b>O que a Reitoria acompanha</b></span>
+  <span class="eyebrow rise">// 22 <b>O que a Reitoria acompanha</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[40px]">A Reitoria acompanha <em>tudo, em tempo real.</em></h2><span class="chip g">Leitura integral na Central</span></div>
   <p class="rise text-[15.5px] text-graph mt-3 max-w-[900px]">Do diagnóstico ao PDI de cada pessoa, sem esperar relatório. Metas combinadas com a Reitoria no início e cada número com fonte e data.</p>
   <div class="frame rise mt-auto mb-1" style="background:#0C1118">
@@ -753,7 +810,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <section class="slide f2s" aria-label="Fase 02: continuidade">
   <div class="grain"></div>
   <div class="absolute -right-32 -top-32 w-[620px] h-[620px] rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(0,229,255,.20),transparent 65%)"></div>
-  <span class="eyebrow rise relative">// 22 <b style="color:var(--cyan)">Fase 02 · Acompanhamento</b></span>
+  <span class="eyebrow rise relative">// 23 <b style="color:var(--cyan)">Fase 02 · Acompanhamento</b></span>
   <div class="relative mt-5 rise flex items-center gap-6">
     <div class="f2big">FASE<br>02</div>
     <div>
@@ -771,7 +828,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 
 <!-- 23b CRONOGRAMA -->
 <section class="slide" aria-label="Cronograma" id="cronoSlide">
-  <span class="eyebrow rise">// 23 <b>Cronograma</b></span>
+  <span class="eyebrow rise">// 24 <b>Cronograma</b></span>
   <div class="flex items-end justify-between mt-3 rise"><h2 class="ttl text-[42px]">Onze meses, <em>mês a mês.</em></h2><div class="flex gap-2"><span class="chip g">Fase 01 · nov → abr</span><span class="chip" style="color:var(--cyan);border-color:rgba(0,229,255,.4)">Fase 02 · mai → set</span></div></div>
   <div class="cview rise mt-auto"><div class="ctrack" id="ctrack"><div class="mcd f1" data-i="0"><div class="mtop"><span class="mnum">01</span><span class="mfase">FASE 01</span></div><div class="mnome">Novembro</div><ul><li><span>Início das entrevistas: Reitoria, Marketing e depois <b class="un">GRADUAÇÃO</b></span></li><li><span>Contratação da nova gestão</span></li><li><span>Anúncios "Em breve" ajustados e lista de interesse</span></li><li><span>Acessos e funil da <b class="un">GRADUAÇÃO</b> diário</span></li></ul></div><div class="mcd f1" data-i="1"><div class="mtop"><span class="mnum">02</span><span class="mfase">FASE 01</span></div><div class="mnome">Dezembro</div><ul><li><span>Treinamento da nova gestão e da equipe</span></li><li><span>Diagnóstico do Marketing e da <b class="un">GRADUAÇÃO</b> à Reitoria</span></li><li><span>Auditoria EAD: continuidade do curso e da captação</span></li><li><span>Preparo para o começo do ano</span></li></ul></div><div class="mcd f1" data-i="2"><div class="mtop"><span class="mnum">03</span><span class="mfase">FASE 01</span></div><div class="mnome">Janeiro</div><ul><li><span>Entrevistas da <b class="un">PÓS</b></span></li><li><span>Plano de ação aprovado e orçamento mapeado</span></li><li><span>WhatsApp e ManyChat no ar</span></li><li><span>Formulário de interesse nos cursos</span></li></ul></div><div class="mcd f1" data-i="3"><div class="mtop"><span class="mnum">04</span><span class="mfase">FASE 01</span></div><div class="mnome">Fevereiro</div><ul><li><span>Fechamento da <b class="un">GRADUAÇÃO</b> 2027.1</span></li><li><span>Fluxo de demandas implantado</span></li><li><span>Retorno por campanha do ciclo</span></li><li><span>Agências de RP e performance para avaliação</span></li></ul></div><div class="mcd f1" data-i="4"><div class="mtop"><span class="mnum">05</span><span class="mfase">FASE 01</span></div><div class="mnome">Março</div><ul><li><span>Campanha da <b class="un">GRADUAÇÃO</b> 2027.2</span></li><li>Estudo de anúncios por curso concluído</li><li>Nova gestão conduzindo os rituais</li><li>Playbooks revisados</li></ul></div><div class="mcd f1" data-i="5"><div class="mtop"><span class="mnum">06</span><span class="mfase">FASE 01</span></div><div class="mnome">Abril</div><ul><li>Estratégia de curta duração</li><li>Estratégia de captação 2027.2</li><li>Decisão da Reitoria sobre anúncios por curso</li><li>Relatório de transição</li></ul></div><div class="mcd f2" data-i="6"><div class="mtop"><span class="mnum">07</span><span class="mfase">FASE 02</span></div><div class="mnome">Maio</div><ul><li>Abordagem do Colégio</li><li>Curta duração: evergreen e low ticket</li><li><span><b class="un">PÓS</b> 2027.2 acompanhada</span></li></ul></div><div class="mcd f2" data-i="7"><div class="mtop"><span class="mnum">08</span><span class="mfase">FASE 02</span></div><div class="mnome">Junho</div><ul><li><span><b class="un">PÓS</b> 2027.2 até o fim das inscrições</span></li><li>Curta duração com meta e CAC</li><li>Rituais mantidos com o time</li></ul></div><div class="mcd f2" data-i="8"><div class="mtop"><span class="mnum">09</span><span class="mfase">FASE 02</span></div><div class="mnome">Julho</div><ul><li><span>Retorno por campanha da <b class="un">PÓS</b> 2027.2</span></li><li>Verba do próximo ciclo à Reitoria</li><li>Anúncios por curso rodando</li></ul></div><div class="mcd f2" data-i="9"><div class="mtop"><span class="mnum">10</span><span class="mfase">FASE 02</span></div><div class="mnome">Agosto</div><ul><li><span><b class="un">GRADUAÇÃO</b> 2028.1 planejada com o time</span></li><li>Páginas, réguas e listas revisadas</li><li>Novas campanhas no ar</li></ul></div><div class="mcd f2" data-i="10"><div class="mtop"><span class="mnum">11</span><span class="mfase">FASE 02</span></div><div class="mnome">Setembro</div><ul><li>Próxima captação encaminhada</li><li>Time operando com autonomia</li><li>Relatório da Fase 02</li></ul></div></div></div>
   <div class="tline rise mt-4">
@@ -789,7 +846,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <section class="slide" aria-label="Investimento">
   <div class="grain"></div>
   <div class="absolute -right-24 -bottom-24 w-[580px] h-[580px] rounded-full" style="background:radial-gradient(circle,rgba(0,255,135,.18),transparent 65%)"></div>
-  <span class="eyebrow rise relative">// 24 <b>Investimento</b></span>
+  <span class="eyebrow rise relative">// 25 <b>Investimento</b></span>
   <div class="relative mt-auto flex flex-col gap-6 max-w-[980px] mb-6">
     <h2 class="ttl rise text-[72px]">Investimento</h2>
     <p class="rise text-[28px] font-display font-extrabold leading-tight">Agora é hora de colocar o plano em ação. <em class="not-italic text-emer">Vamos iniciar?</em></p>
@@ -800,7 +857,7 @@ html.m .slide .text-\[150px\],html.m .slide .text-\[120px\]{font-size:84px!impor
 <!-- 23 O QUE PRECISO + PRÓXIMOS PASSOS -->
 <section class="slide" aria-label="Próximos passos">
   <div class="grain"></div>
-  <span class="eyebrow rise relative">// 25 <b>Para começar</b></span>
+  <span class="eyebrow rise relative">// 26 <b>Para começar</b></span>
   <div class="relative grid grid-cols-2 gap-10 flex-1 items-center mt-2">
     <div class="flex flex-col gap-5">
       <h2 class="ttl rise text-[52px]">Próximos <em>passos.</em></h2>
