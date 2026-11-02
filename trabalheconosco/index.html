@@ -66,6 +66,7 @@
 </script>
 
 <link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/site-chrome.css">
 <style>
   .file-drop {
     display: flex; align-items: center; justify-content: center; gap: 0.5rem;
@@ -82,40 +83,30 @@
 </head>
 <body class="bg-surface-base font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container">
 
-<header class="fixed top-0 left-0 right-0 z-50 bg-surface-base/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.4)]">
-  <div class="h-20 max-w-[1440px] mx-auto px-grid-margin-mobile md:px-grid-margin-tablet lg:px-grid-margin-desktop flex items-center justify-between gap-space-lg">
-    <a href="/" class="flex items-center" aria-label="LORSO Digital — página inicial">
-      <img alt="LORSO DIGITAL" class="h-10 lg:h-12 w-auto object-contain" src="/assets/img/logo-lorso.svg">
-    </a>
-
-    <nav class="hidden lg:flex items-center gap-space-lg">
-      <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors tracking-wide" href="/#hubs-de-atuacao">Serviços</a>
-      <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors tracking-wide" href="/#o-metodo">O Método</a>
-      <a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors tracking-wide" href="/#cases">Cases</a>
-      <a class="font-body-sm text-body-sm text-primary-container font-semibold tracking-wide" href="/trabalheconosco/" aria-current="page">Trabalhe Conosco</a>
-      <a class="inline-flex items-center gap-space-xs px-space-md py-space-xs rounded-full bg-primary-container text-surface-base font-label-pill text-label-pill uppercase font-bold transition-all duration-200 hover:opacity-95 hover:shadow-[0_0_24px_rgba(0,255,135,0.35)] shadow-md" href="#vagas">
-        <span>Ver Vagas Abertas</span>
-        <span class="font-label-technical text-label-technical">↓</span>
-      </a>
-    </nav>
-
-    <button id="mobile-menu-toggle" class="lg:hidden inline-flex items-center justify-center w-11 h-11 rounded-full bg-surface-raised text-text-primary hover:bg-surface-panel transition-colors" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobile-menu">
-      <span class="material-symbols-outlined" id="mobile-menu-icon">menu</span>
-    </button>
-  </div>
-
-  <div id="mobile-menu" class="mobile-menu lg:hidden" aria-hidden="true">
-    <nav class="flex flex-col px-grid-margin-mobile py-space-lg gap-space-xs">
-      <a class="mobile-menu-link" href="/#hubs-de-atuacao">Serviços</a>
-      <a class="mobile-menu-link" href="/#o-metodo">O Método</a>
-      <a class="mobile-menu-link" href="/#cases">Cases</a>
-      <a class="mobile-menu-link !text-primary-container" href="/trabalheconosco/" aria-current="page">Trabalhe Conosco</a>
-      <a class="inline-flex items-center justify-center gap-space-xs mt-space-sm px-space-lg py-space-sm rounded-full bg-primary-container text-surface-base font-label-pill text-label-pill uppercase font-bold shadow-md" href="#vagas">
-        <span>Ver Vagas Abertas</span>
-        <span class="font-label-technical text-label-technical">↓</span>
-      </a>
-    </nav>
-  </div>
+<header class="lorso-site-header" style="position: fixed; top: 12px; left: 0; right: 0; z-index: 40; padding: 0 16px; font-family: Inter, system-ui, sans-serif">
+<div class="lorso-head" style="max-width: 1200px; margin: 0 auto; padding: 10px 10px 10px 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; background: rgba(13,15,23,0.78); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid #1E2433; border-radius: 14px">
+<a href="/" aria-label="LORSO Digital, início" style="display: flex; align-items: center"><img src="/assets/img/v2/logo.svg" alt="LORSO Digital" style="height: 30px; width: auto; display: block"></a>
+<nav class="lorso-nav" aria-label="Principal" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 22px; font-size: 14px">
+<a href="/#hubs-de-atuacao" style="color: #C7D0DD">Serviços</a>
+<a href="/#o-metodo" style="color: #C7D0DD">Método</a>
+<a href="/#portfolio" style="color: #C7D0DD">Portfólio</a>
+<a href="/#cases" style="color: #C7D0DD">Cases</a>
+<a href="/trabalheconosco/" style="color: #C7D0DD">Trabalhe Conosco</a>
+</nav>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<button type="button" class="lorso-hide-m" data-open-area style="display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; color: #C7D0DD; font: inherit; font-size: 14px; border-radius: 10px; border: 1px solid #2A324B; background: transparent; cursor: pointer">Área do Cliente</button>
+<a href="/#contato-diagnostico" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; background: #00FF87; color: #00210C; font-weight: 600; font-size: 14px; border-radius: 10px">Diagnóstico <span aria-hidden="true">↗</span></a>
+<button type="button" class="lorso-show-m" id="site-menu-toggle" aria-expanded="false" aria-controls="site-menu" aria-label="Abrir menu" style="display: none; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 10px; border: 1px solid #2A324B; background: transparent; color: #FFFFFF; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+</div>
+</div>
+<nav id="site-menu" aria-label="Menu" hidden style="max-width: 1200px; margin: 8px auto 0; padding: 12px; flex-direction: column; gap: 2px; background: rgba(13,15,23,0.97); border: 1px solid #1E2433; border-radius: 14px; font-size: 16px">
+<a href="/#hubs-de-atuacao" style="padding: 12px; color: #FFFFFF; border-radius: 8px">Serviços</a>
+<a href="/#o-metodo" style="padding: 12px; color: #FFFFFF; border-radius: 8px">Método</a>
+<a href="/#portfolio" style="padding: 12px; color: #FFFFFF; border-radius: 8px">Portfólio</a>
+<a href="/#cases" style="padding: 12px; color: #FFFFFF; border-radius: 8px">Cases</a>
+<a href="/trabalheconosco/" style="padding: 12px; color: #FFFFFF; border-radius: 8px">Trabalhe Conosco</a>
+<button type="button" data-open-area style="text-align: left; padding: 12px; color: #00E5FF; border-radius: 8px; border: 0; background: transparent; font: inherit; cursor: pointer">Área do Cliente</button>
+</nav>
 </header>
 
 <main class="w-full pt-20 bg-surface-base">
@@ -185,7 +176,7 @@
       <div class="bg-surface-raised rounded-xl p-space-lg flex flex-col gap-space-md group hover:bg-surface-panel transition-all duration-300">
         <span class="material-symbols-outlined text-secondary-container text-[28px]">smart_toy</span>
         <h3 class="font-headline-sm text-headline-sm text-text-primary uppercase tracking-tight">IA no Dia a Dia</h3>
-        <p class="font-body-sm text-body-sm text-text-muted leading-relaxed">n8n, LLMs, agentes e automações fazem parte da rotina, e você aprende usando.</p>
+        <p class="font-body-sm text-body-sm text-text-muted leading-relaxed">Claude, agentes de IA e automações fazem parte da rotina, e você aprende usando.</p>
       </div>
       <div class="bg-surface-raised rounded-xl p-space-lg flex flex-col gap-space-md group hover:bg-surface-panel transition-all duration-300">
         <span class="material-symbols-outlined text-primary-container text-[28px]">school</span>
@@ -407,45 +398,53 @@
 </div>
 </main>
 
-<footer class="w-full bg-surface-raised">
-  <div class="max-w-[1440px] mx-auto px-grid-margin-mobile md:px-grid-margin-tablet lg:px-grid-margin-desktop py-space-3xl">
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-gutter-desktop mb-space-2xl">
-      <div class="md:col-span-6 flex flex-col gap-space-md">
-        <a href="/" class="flex items-center" aria-label="LORSO Digital">
-          <img alt="LORSO DIGITAL" class="h-10 lg:h-12 w-auto object-contain" src="/assets/img/logo-lorso.svg">
-        </a>
-        <p class="font-body-sm text-body-sm text-text-muted max-w-sm">Arquitetura estratégica de crescimento, engenharia de alta performance e consultoria executiva para operações líderes.</p>
-        <div class="flex items-center gap-space-xs">
-          <span class="inline-block w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
-          <span class="font-label-technical text-label-technical text-text-muted uppercase tracking-wider">Operação Ativa // São Paulo</span>
-        </div>
-      </div>
-      <div class="md:col-span-3 flex flex-col gap-space-sm">
-        <span class="font-label-technical text-label-technical uppercase text-on-surface-variant">Navegação</span>
-        <nav class="flex flex-col gap-space-xs">
-          <a class="font-body-sm text-body-sm text-text-muted hover:text-on-surface transition-colors" href="/#hubs-de-atuacao">Serviços Especializados</a>
-          <a class="font-body-sm text-body-sm text-text-muted hover:text-on-surface transition-colors" href="/#o-metodo">Metodologia &amp; Rigor</a>
-          <a class="font-body-sm text-body-sm text-text-muted hover:text-on-surface transition-colors" href="/#cases">Estudos de Caso</a>
-          <a class="font-body-sm text-body-sm text-text-muted hover:text-on-surface transition-colors" href="/trabalheconosco/">Trabalhe Conosco</a>
-          <a class="font-body-sm text-body-sm text-text-muted hover:text-on-surface transition-colors" href="/#contato-diagnostico">Agendar Diagnóstico</a>
-        </nav>
-      </div>
-      <div class="md:col-span-3 flex flex-col gap-space-sm">
-        <span class="font-label-technical text-label-technical uppercase text-on-surface-variant">Área do Cliente</span>
-        <nav class="flex flex-col gap-space-xs" aria-label="Área do Cliente">
-          <a class="font-body-sm text-body-sm text-text-muted hover:text-on-surface transition-colors" href="/admin/login.html?app=diagnostico">Diagnóstico</a>
-          <a class="font-body-sm text-body-sm text-text-muted hover:text-on-surface transition-colors" href="/admin/login.html?app=lancamento">Lançamentos</a>
-          <a class="font-body-sm text-body-sm text-text-muted hover:text-on-surface transition-colors" href="/admin/login.html?app=dre">DRE</a>
-        </nav>
-      </div>
-    </div>
-    <div class="pt-space-lg flex flex-col sm:flex-row items-center justify-between gap-space-md text-text-muted border-t border-border-subtle">
-      <span class="font-label-technical text-label-technical text-center sm:text-left">© <span id="current-year">2026</span> LORSO DIGITAL. TODOS OS DIREITOS RESERVADOS.</span>
-    </div>
-  </div>
+<div id="area-modal" hidden style="position: fixed; inset: 0; z-index: 60; background: rgba(4,5,8,0.72); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 16px; font-family: Inter, system-ui, sans-serif; color: #FFFFFF">
+<div role="dialog" aria-modal="true" aria-label="Área do Cliente" style="position: relative; width: 100%; max-width: 980px; max-height: 90vh; overflow: auto; box-sizing: border-box; background: #0B0D13; border: 1px solid #2A324B; border-radius: 22px; padding: 36px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 40px 120px rgba(0,0,0,0.6)">
+<button type="button" data-close-area aria-label="Fechar" style="position: absolute; top: 14px; right: 14px; width: 44px; height: 44px; border-radius: 10px; border: 1px solid #2A324B; background: transparent; color: #FFFFFF; font-size: 20px; cursor: pointer">×</button>
+<div style="display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between">
+<div><p style="margin: 0 0 10px; display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.12em; color: #00E5FF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>ÁREA DO CLIENTE</p>
+<h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: clamp(26px, 3vw, 36px); letter-spacing: -0.03em">Já é cliente? Acesse seus módulos.</h2></div>
+<p style="margin: 0; font-size: 14px; color: #94A3B8">Ainda não tem acesso? <a href="/admin/login.html?aba=solicitar" style="color: #00FF87; font-weight: 600">Solicitar acesso →</a></p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+<a href="/admin/login.html?app=diagnostico" class="lorso-card" style="flex: 1 1 240px; min-width: 0; border: 1px solid #2A324B; border-radius: 16px; background: #0D0F17; padding: 22px; display: flex; flex-direction: column; gap: 12px; color: #FFFFFF">
+<div style="display: flex; justify-content: space-between; align-items: center"><span aria-hidden="true" style="width: 40px; height: 40px; border-radius: 10px; background: #0B1A13; border: 1px solid #14402A; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00FF87" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path><path d="M8 11h6M11 8v6"></path></svg></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; padding: 4px 8px; border-radius: 999px; background: #00FF87; color: #00210C">COMPLETO</span></div>
+<p style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 22px">Diagnóstico</p>
+<p style="margin: 0; font-size: 14px; color: #94A3B8">Maturidade, causas raiz e plano de ação. Inclui Lançamentos e DRE.</p>
+<span style="margin-top: auto; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #00FF87">Entrar <span aria-hidden="true">→</span></span>
+</a>
+<a href="/admin/login.html?app=lancamento" class="lorso-card" style="flex: 1 1 240px; min-width: 0; border: 1px solid #2A324B; border-radius: 16px; background: #0D0F17; padding: 22px; display: flex; flex-direction: column; gap: 12px; color: #FFFFFF">
+<div style="display: flex; justify-content: space-between; align-items: center"><span aria-hidden="true" style="width: 40px; height: 40px; border-radius: 10px; background: #0B1A13; border: 1px solid #14402A; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00FF87" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2c3 2 5 6 5 10l-5 5-5-5c0-4 2-8 5-10z"></path><circle cx="12" cy="9" r="2"></circle></svg></span></div>
+<p style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 22px">Lançamentos</p>
+<p style="margin: 0; font-size: 14px; color: #94A3B8">Cronograma, checklist, ofertas e metas do seu lançamento.</p>
+<span style="margin-top: auto; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #00FF87">Entrar <span aria-hidden="true">→</span></span>
+</a>
+<a href="/admin/login.html?app=dre" class="lorso-card" style="flex: 1 1 240px; min-width: 0; border: 1px solid #2A324B; border-radius: 16px; background: #0D0F17; padding: 22px; display: flex; flex-direction: column; gap: 12px; color: #FFFFFF">
+<div style="display: flex; justify-content: space-between; align-items: center"><span aria-hidden="true" style="width: 40px; height: 40px; border-radius: 10px; background: #0B1A13; border: 1px solid #14402A; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00FF87" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"></path><path d="M7 15l4-4 3 3 5-6"></path></svg></span></div>
+<p style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 22px">DRE</p>
+<p style="margin: 0; font-size: 14px; color: #94A3B8">Resultado da operação mês a mês, do varejo ao atacado.</p>
+<span style="margin-top: auto; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #00FF87">Entrar <span aria-hidden="true">→</span></span>
+</a>
+</div>
+<p style="margin: 0; font-size: 12px; color: #7C879C">Acesso com login e senha, liberado pela equipe LORSO após aprovação.</p>
+</div>
+</div>
+<footer class="lorso-site-footer" style="border-top: 1px solid #1E2433; background: #07080C; color: #FFFFFF; font-family: Inter, system-ui, sans-serif; line-height: 1.55">
+<div style="max-width: 1200px; margin: 0 auto; padding: 64px 24px 24px; display: flex; flex-wrap: wrap; gap: 48px; justify-content: space-between">
+<div style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 16px; max-width: 380px">
+<img src="/assets/img/v2/logo.svg" alt="LORSO Digital" style="height: 34px; width: auto; align-self: flex-start">
+<p style="margin: 0; font-size: 14px; color: #94A3B8">Arquitetura de crescimento, sistemas próprios e consultoria executiva para operações que querem escalar.</p>
+<p style="margin: 0; display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #00FF87"><span class="lorso-pulse" aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: #00FF87; display: inline-block"></span>Operação ativa // São Paulo</p>
+</div>
+<nav aria-label="Rodapé" style="display: flex; flex-direction: column; gap: 10px; font-size: 14px"><p style="margin: 0 0 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #94A3B8">NAVEGAÇÃO</p><a href="/#hubs-de-atuacao" style="color: #C7D0DD">Serviços</a><a href="/#o-metodo" style="color: #C7D0DD">Método</a><a href="/#portfolio" style="color: #C7D0DD">Portfólio</a><a href="/#cases" style="color: #C7D0DD">Cases</a><a href="/apresentacao/" style="color: #C7D0DD">Apresentação institucional</a><a href="/trabalheconosco/" style="color: #C7D0DD">Trabalhe Conosco</a><button type="button" data-open-area style="text-align: left; padding: 0; border: 0; background: transparent; color: #00E5FF; font: inherit; cursor: pointer">Área do Cliente</button></nav>
+<nav aria-label="Redes" style="display: flex; flex-direction: column; gap: 10px; font-size: 14px"><p style="margin: 0 0 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #94A3B8">REDES</p><a href="https://www.instagram.com/lorsodigital/" target="_blank" rel="noopener" style="color: #C7D0DD">Instagram @lorsodigital</a></nav>
+</div>
+<div style="max-width: 1200px; margin: 0 auto; padding: 24px; overflow: hidden"><p aria-hidden="true" style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: clamp(64px, 15vw, 210px); line-height: 0.85; letter-spacing: -0.06em; color: #10131C">LORSO DIGITAL.</p></div>
+<div style="max-width: 1200px; margin: 0 auto; padding: 20px 24px 32px; border-top: 1px solid #1E2433; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; font-size: 12px; color: #94A3B8"><p style="margin: 0">© <span id="current-year">2026</span> LORSO DIGITAL. Todos os direitos reservados.</p><p style="margin: 0">Privacidade · Termos de Serviço · Compliance</p></div>
 </footer>
 
 <script src="/js/script.js"></script>
+<script src="/js/site-chrome.js"></script>
 <script src="/js/candidatura.js"></script>
 </body>
 </html>

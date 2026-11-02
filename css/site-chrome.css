@@ -1,0 +1,17 @@
+/* Menu, rodapé e Área do Cliente compartilhados (gerado por chrome.py) */
+.lorso-site-header a, .lorso-site-footer a, #area-modal a { text-decoration: none; }
+.lorso-site-header a:hover, .lorso-site-footer a:hover { color: #FFFFFF !important; }
+#site-menu:not([hidden]) { display: flex; }
+#area-modal:not([hidden]) { display: flex; }
+.lorso-show-m { display: none !important; }
+@media (max-width: 860px) {
+  .lorso-nav, .lorso-hide-m { display: none !important; }
+  .lorso-show-m { display: inline-flex !important; }
+  .lorso-head { padding: 8px 8px 8px 14px !important; }
+}
+@media (min-width: 861px) { #site-menu { display: none !important; } }
+@keyframes lorso-pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.8); } }
+.lorso-pulse { animation: lorso-pulse 1.8s ease-in-out infinite; }
+#area-modal .lorso-card { transition: border-color .2s ease, transform .2s ease; }
+#area-modal .lorso-card:hover { border-color: #00FF87 !important; transform: translateY(-3px); }
+@media (prefers-reduced-motion: reduce) { .lorso-pulse { animation: none; } }

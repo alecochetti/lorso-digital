@@ -20,6 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Space+Grotesk:wght@500;600;700&amp;family=Instrument+Serif:ital@0;1&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/site-chrome.css">
 <style>
 body{margin:0;background:#07080C}
 a{color:#00FF87;text-decoration:none}a:hover{color:#60FF98}
@@ -68,30 +69,30 @@ input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{ou
 <div style="background: #07080C; color: #FFFFFF; font-family: Inter, system-ui, sans-serif; font-size: 16px; line-height: 1.55; min-width: 320px">
 
 
-<header style="position: sticky; top: 12px; z-index: 20; padding: 0 16px">
-<div class="lorso-head" style="max-width: 1200px; margin: 0 auto; padding: 10px 10px 10px 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; background: rgba(13,15,23,0.78); backdrop-filter: blur(16px); border: 1px solid #1E2433; border-radius: 14px">
-<a href="#topo" aria-label="LORSO Digital, início" style="display: flex; align-items: center"><img src="/assets/img/v2/logo.svg" alt="LORSO Digital" style="height: 30px; width: auto; display: block"></a>
+<header class="lorso-site-header" style="position: sticky; top: 12px; z-index: 40; padding: 0 16px; font-family: Inter, system-ui, sans-serif">
+<div class="lorso-head" style="max-width: 1200px; margin: 0 auto; padding: 10px 10px 10px 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; background: rgba(13,15,23,0.78); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid #1E2433; border-radius: 14px">
+<a href="/" aria-label="LORSO Digital, início" style="display: flex; align-items: center"><img src="/assets/img/v2/logo.svg" alt="LORSO Digital" style="height: 30px; width: auto; display: block"></a>
 <nav class="lorso-nav" aria-label="Principal" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 22px; font-size: 14px">
-<a href="#hubs-de-atuacao" style="color: #C7D0DD">Serviços</a>
-<a href="#o-metodo" style="color: #C7D0DD">Método</a>
-<a href="#portfolio" style="color: #C7D0DD">Portfólio</a>
-<a href="#cases" style="color: #C7D0DD">Cases</a>
+<a href="/#hubs-de-atuacao" style="color: #C7D0DD">Serviços</a>
+<a href="/#o-metodo" style="color: #C7D0DD">Método</a>
+<a href="/#portfolio" style="color: #C7D0DD">Portfólio</a>
+<a href="/#cases" style="color: #C7D0DD">Cases</a>
 <a href="/trabalheconosco/" style="color: #C7D0DD">Trabalhe Conosco</a>
 </nav>
 <div style="display: flex; gap: 8px; flex-wrap: wrap">
-<button type="button" class="lorso-hide-m" data-on-click="openArea" style="display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; color: #C7D0DD; font: inherit; font-size: 14px; border-radius: 10px; border: 1px solid #2A324B; background: transparent; cursor: pointer">Área do Cliente</button>
-<a href="#contato-diagnostico" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; background: #00FF87; color: #00210C; font-weight: 600; font-size: 14px; border-radius: 10px">Diagnóstico <span aria-hidden="true">↗</span></a>
-<button type="button" class="lorso-show-m" data-on-click="toggleMenu" aria-expanded="false" data-tpl-aria-expanded="{{menuExpanded}}" aria-label="Abrir menu" style="display: none; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 10px; border: 1px solid #2A324B; background: transparent; color: #FFFFFF; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+<button type="button" class="lorso-hide-m" data-open-area style="display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; color: #C7D0DD; font: inherit; font-size: 14px; border-radius: 10px; border: 1px solid #2A324B; background: transparent; cursor: pointer">Área do Cliente</button>
+<a href="/#contato-diagnostico" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; background: #00FF87; color: #00210C; font-weight: 600; font-size: 14px; border-radius: 10px">Diagnóstico <span aria-hidden="true">↗</span></a>
+<button type="button" class="lorso-show-m" id="site-menu-toggle" aria-expanded="false" aria-controls="site-menu" aria-label="Abrir menu" style="display: none; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 10px; border: 1px solid #2A324B; background: transparent; color: #FFFFFF; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
 </div>
 </div>
-<div data-if="menuOpen" style="display: none"><nav aria-label="Menu" style="max-width: 1200px; margin: 8px auto 0; padding: 12px; display: flex; flex-direction: column; gap: 2px; background: rgba(13,15,23,0.96); border: 1px solid #1E2433; border-radius: 14px; font-size: 16px">
-<a href="#hubs-de-atuacao" data-on-click="closeMenu" style="padding: 12px; color: #FFFFFF; border-radius: 8px">Serviços</a>
-<a href="#o-metodo" data-on-click="closeMenu" style="padding: 12px; color: #FFFFFF; border-radius: 8px">Método</a>
-<a href="#portfolio" data-on-click="closeMenu" style="padding: 12px; color: #FFFFFF; border-radius: 8px">Portfólio</a>
-<a href="#cases" data-on-click="closeMenu" style="padding: 12px; color: #FFFFFF; border-radius: 8px">Cases</a>
+<nav id="site-menu" aria-label="Menu" hidden style="max-width: 1200px; margin: 8px auto 0; padding: 12px; flex-direction: column; gap: 2px; background: rgba(13,15,23,0.97); border: 1px solid #1E2433; border-radius: 14px; font-size: 16px">
+<a href="/#hubs-de-atuacao" style="padding: 12px; color: #FFFFFF; border-radius: 8px">Serviços</a>
+<a href="/#o-metodo" style="padding: 12px; color: #FFFFFF; border-radius: 8px">Método</a>
+<a href="/#portfolio" style="padding: 12px; color: #FFFFFF; border-radius: 8px">Portfólio</a>
+<a href="/#cases" style="padding: 12px; color: #FFFFFF; border-radius: 8px">Cases</a>
 <a href="/trabalheconosco/" style="padding: 12px; color: #FFFFFF; border-radius: 8px">Trabalhe Conosco</a>
-<button type="button" data-on-click="openAreaFromMenu" style="text-align: left; padding: 12px; color: #00E5FF; border-radius: 8px; border: 0; background: transparent; font: inherit; cursor: pointer">Área do Cliente</button>
-</nav></div>
+<button type="button" data-open-area style="text-align: left; padding: 12px; color: #00E5FF; border-radius: 8px; border: 0; background: transparent; font: inherit; cursor: pointer">Área do Cliente</button>
+</nav>
 </header>
 
 
@@ -567,9 +568,10 @@ input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{ou
 </section>
 
 
-<div data-if="areaOpen" style="display: none"><div data-on-click="closeArea" style="position: fixed; inset: 0; z-index: 50; background: rgba(4,5,8,0.72); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px">
-<div role="dialog" aria-modal="true" aria-label="Área do Cliente" data-on-click="stop" style="position: relative; width: 100%; max-width: 980px; max-height: 90vh; overflow: auto; box-sizing: border-box; background: #0B0D13; border: 1px solid #2A324B; border-radius: 22px; padding: 36px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 40px 120px rgba(0,0,0,0.6)">
-<button type="button" data-on-click="closeArea" aria-label="Fechar" style="position: absolute; top: 14px; right: 14px; width: 44px; height: 44px; border-radius: 10px; border: 1px solid #2A324B; background: transparent; color: #FFFFFF; font-size: 20px; cursor: pointer">×</button>
+
+<div id="area-modal" hidden style="position: fixed; inset: 0; z-index: 60; background: rgba(4,5,8,0.72); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 16px; font-family: Inter, system-ui, sans-serif; color: #FFFFFF">
+<div role="dialog" aria-modal="true" aria-label="Área do Cliente" style="position: relative; width: 100%; max-width: 980px; max-height: 90vh; overflow: auto; box-sizing: border-box; background: #0B0D13; border: 1px solid #2A324B; border-radius: 22px; padding: 36px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 40px 120px rgba(0,0,0,0.6)">
+<button type="button" data-close-area aria-label="Fechar" style="position: absolute; top: 14px; right: 14px; width: 44px; height: 44px; border-radius: 10px; border: 1px solid #2A324B; background: transparent; color: #FFFFFF; font-size: 20px; cursor: pointer">×</button>
 <div style="display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between">
 <div><p style="margin: 0 0 10px; display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.12em; color: #00E5FF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>ÁREA DO CLIENTE</p>
 <h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: clamp(26px, 3vw, 36px); letter-spacing: -0.03em">Já é cliente? Acesse seus módulos.</h2></div>
@@ -597,17 +599,16 @@ input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{ou
 </div>
 <p style="margin: 0; font-size: 12px; color: #7C879C">Acesso com login e senha, liberado pela equipe LORSO após aprovação.</p>
 </div>
-</div></div>
-<footer style="border-top: 1px solid #1E2433">
+</div>
+<footer class="lorso-site-footer" style="border-top: 1px solid #1E2433; background: #07080C; color: #FFFFFF; font-family: Inter, system-ui, sans-serif; line-height: 1.55">
 <div style="max-width: 1200px; margin: 0 auto; padding: 64px 24px 24px; display: flex; flex-wrap: wrap; gap: 48px; justify-content: space-between">
 <div style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 16px; max-width: 380px">
 <img src="/assets/img/v2/logo.svg" alt="LORSO Digital" style="height: 34px; width: auto; align-self: flex-start">
 <p style="margin: 0; font-size: 14px; color: #94A3B8">Arquitetura de crescimento, sistemas próprios e consultoria executiva para operações que querem escalar.</p>
 <p style="margin: 0; display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #00FF87"><span class="lorso-pulse" aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: #00FF87; display: inline-block"></span>Operação ativa // São Paulo</p>
 </div>
-<nav aria-label="Rodapé" style="display: flex; flex-direction: column; gap: 10px; font-size: 14px"><p style="margin: 0 0 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #94A3B8">NAVEGAÇÃO</p><a href="#hubs-de-atuacao" style="color: #C7D0DD">Serviços</a><a href="#o-metodo" style="color: #C7D0DD">Método</a><a href="#portfolio" style="color: #C7D0DD">Portfólio</a><a href="#cases" style="color: #C7D0DD">Cases</a><a href="/apresentacao/" style="color: #C7D0DD">Apresentação institucional</a><a href="/trabalheconosco/" style="color: #C7D0DD">Trabalhe Conosco</a><button type="button" data-on-click="openArea" style="text-align: left; padding: 0; border: 0; background: transparent; color: #00E5FF; font: inherit; cursor: pointer">Área do Cliente</button></nav>
-
-<nav aria-label="Redes" style="display: flex; flex-direction: column; gap: 10px; font-size: 14px"><p style="margin: 0 0 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #94A3B8">REDES</p><a href="https://www.instagram.com/lorsodigital/" target="_blank" rel="noopener" style="color: #C7D0DD">Instagram @lorsodigital</a><a href="#" style="color: #C7D0DD">LinkedIn</a></nav>
+<nav aria-label="Rodapé" style="display: flex; flex-direction: column; gap: 10px; font-size: 14px"><p style="margin: 0 0 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #94A3B8">NAVEGAÇÃO</p><a href="/#hubs-de-atuacao" style="color: #C7D0DD">Serviços</a><a href="/#o-metodo" style="color: #C7D0DD">Método</a><a href="/#portfolio" style="color: #C7D0DD">Portfólio</a><a href="/#cases" style="color: #C7D0DD">Cases</a><a href="/apresentacao/" style="color: #C7D0DD">Apresentação institucional</a><a href="/trabalheconosco/" style="color: #C7D0DD">Trabalhe Conosco</a><button type="button" data-open-area style="text-align: left; padding: 0; border: 0; background: transparent; color: #00E5FF; font: inherit; cursor: pointer">Área do Cliente</button></nav>
+<nav aria-label="Redes" style="display: flex; flex-direction: column; gap: 10px; font-size: 14px"><p style="margin: 0 0 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #94A3B8">REDES</p><a href="https://www.instagram.com/lorsodigital/" target="_blank" rel="noopener" style="color: #C7D0DD">Instagram @lorsodigital</a></nav>
 </div>
 <div style="max-width: 1200px; margin: 0 auto; padding: 24px; overflow: hidden"><p aria-hidden="true" style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: clamp(64px, 15vw, 210px); line-height: 0.85; letter-spacing: -0.06em; color: #10131C">LORSO DIGITAL.</p></div>
 <div style="max-width: 1200px; margin: 0 auto; padding: 20px 24px 32px; border-top: 1px solid #1E2433; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; font-size: 12px; color: #94A3B8"><p style="margin: 0">© <span id="current-year">2026</span> LORSO DIGITAL. Todos os direitos reservados.</p><p style="margin: 0">Privacidade · Termos de Serviço · Compliance</p></div>
@@ -616,6 +617,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{ou
 </div>
 
 <script src="js/script.js"></script>
+<script src="js/site-chrome.js"></script>
 <script>
 window.__LorsoComponent = function () {
 
