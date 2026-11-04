@@ -115,6 +115,8 @@ function setupWhatsAppMask() {
    configurado no atributo "action" do <form> em index.html.
    Não requer backend próprio nem chave de API.
 ------------------------------ */
+const FORMULARIO_SITE_URL = "https://wloetjknoxynstzsfchp.supabase.co/functions/v1/formulario-site";
+
 function setupContactForm() {
   const form = document.getElementById("growth-diag-form");
   if (!form) return;
@@ -137,26 +139,35 @@ function setupContactForm() {
     setLoading(true);
 
     try {
-      // Endpoint AJAX do FormSubmit: mesma conta do "action" do form,
-      // mas devolve JSON em vez de redirecionar a página.
-      const actionEmail = form.getAttribute("action").split("/").pop();
-      const endpoint = `https://formsubmit.co/ajax/${actionEmail}`;
+      // 1º: Supabase (grava no banco e manda o e-mail). Se falhar por rede ou
+      // erro do servidor, cai no FormSubmit como antes.
+      const dados = new FormData(form);
+      dados.set("_tipo", "diagnostico");
+      let enviado = false;
+      try {
+        const r = await fetch(FORMULARIO_SITE_URL, { method: "POST", body: dados });
+        const res = await r.json().catch(() => ({}));
+        if (r.ok && res.ok) enviado = true;
+        else if (r.status >= 400 && r.status < 500 && r.status !== 404) throw new Error(res.erro || "Envio recusado");
+      } catch (e) {
+        if (e.message && e.message !== "Failed to fetch" && !(e instanceof TypeError)) throw e;
+      }
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-        },
-        body: new FormData(form),
-      });
-
-      if (!response.ok) throw new Error("Falha no envio");
-
-      // O FormSubmit pode responder 200 mesmo recusando o envio
-      // (ex.: formulário não ativado) — confere o campo "success".
-      const result = await response.json().catch(() => ({}));
-      if (String(result.success) !== "true") {
-        throw new Error(result.message || "Envio recusado pelo FormSubmit");
+      if (!enviado) {
+        // Endpoint AJAX do FormSubmit: mesma conta do "action" do form,
+        // mas devolve JSON em vez de redirecionar a página.
+        const actionEmail = form.getAttribute("action").split("/").pop();
+        const response = await fetch(`https://formsubmit.co/ajax/${actionEmail}`, {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          body: new FormData(form),
+        });
+        if (!response.ok) throw new Error("Falha no envio");
+        // O FormSubmit pode responder 200 mesmo recusando o envio
+        const result = await response.json().catch(() => ({}));
+        if (String(result.success) !== "true") {
+          throw new Error(result.message || "Envio recusado pelo FormSubmit");
+        }
       }
 
       showSuccess();

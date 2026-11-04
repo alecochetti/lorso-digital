@@ -9,6 +9,9 @@
    - A cada 5 minutos, responderCandidaturas() procura essas mensagens,
      lê nome, e-mail e vaga da tabela do FormSubmit e envia ao candidato
      o e-mail de confirmação (com topo e assinatura).
+   - Desde nov/2026 o site envia primeiro pelo Supabase (que já responde o
+     candidato). Este script cobre o envio de reserva pelo FormSubmit e põe
+     o rótulo de triagem também nos e-mails que chegam pelo Supabase.
    - Vagas com perguntas de triagem também recebem o rótulo
      "Triagem/Alto fit", "Triagem/Médio fit" ou "Triagem/Não atende".
    - Cada candidatura respondida recebe o rótulo "Candidatura respondida"
@@ -70,6 +73,14 @@ function responderCandidaturas() {
       console.log(`Resposta enviada para ${candidatura.email} (${candidatura.vaga})`);
     });
   });
+
+  // Candidaturas que chegam pelo Supabase (site@lorsodigital.com.br) já foram
+  // respondidas pelo próprio site: aqui só recebem o rótulo da triagem.
+  GmailApp.search('from:site@lorsodigital.com.br subject:"Nova candidatura" newer_than:7d -label:"Triagem/Alto fit" -label:"Triagem/Médio fit" -label:"Triagem/Não atende"', 0, 50)
+    .forEach((thread) => {
+      const achado = thread.getFirstMessageSubject().match(/\| (Alto fit|Médio fit|Não atende) \|/);
+      if (achado) thread.addLabel(obterRotulo('Triagem/' + achado[1]));
+    });
 
   salvarProcessadas(processadas);
 }

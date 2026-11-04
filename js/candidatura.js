@@ -12,6 +12,8 @@
    [data-submit], [data-submit-label] e [data-feedback].
    ========================================================== */
 
+const CANDIDATURA_ENDPOINT = "https://wloetjknoxynstzsfchp.supabase.co/functions/v1/formulario-site";
+
 document.querySelectorAll("form.js-candidatura").forEach((form) => {
   const MAX_FILE = 5 * 1024 * 1024;
   const ALLOWED = /\.(pdf|docx?)$/i;
@@ -137,7 +139,39 @@ document.querySelectorAll("form.js-candidatura").forEach((form) => {
     applyTriagem();
     submitBtn.disabled = true;
     submitLabel.textContent = "Enviando...";
+
+    // 1º: Supabase (grava a candidatura, guarda o currículo e manda os e-mails).
+    // Se falhar por rede ou erro do servidor, envia pelo FormSubmit como antes.
+    if (form.dataset.fallback === "1") return; // já é o envio de reserva
+    event.preventDefault();
+    enviarSupabase().catch(() => {
+      form.dataset.fallback = "1";
+      HTMLFormElement.prototype.submit.call(form);
+    });
   });
+
+  async function enviarSupabase() {
+    let r;
+    try {
+      r = await fetch(CANDIDATURA_ENDPOINT, { method: "POST", body: new FormData(form) });
+    } catch (_) {
+      throw new Error("rede");
+    }
+    const res = await r.json().catch(() => ({}));
+    if (r.ok && res.ok) {
+      const next = form.querySelector('input[name="_next"]');
+      window.location.href = next ? next.value : "/trabalheconosco/obrigado/";
+      return;
+    }
+    if (r.status >= 400 && r.status < 500 && r.status !== 404) {
+      // Erro de validação ou excesso de envios: mostra a mensagem e não reenvia
+      submitBtn.disabled = false;
+      submitLabel.textContent = submitText;
+      showError(res.erro || "Não foi possível enviar. Confira os campos e tente de novo.");
+      return;
+    }
+    throw new Error("servidor");
+  }
 
   // Ao voltar para a página pelo navegador, reabilita o botão
   window.addEventListener("pageshow", () => {
