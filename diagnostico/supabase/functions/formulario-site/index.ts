@@ -76,8 +76,10 @@ Deno.serve(async (req) => {
   let form: FormData;
   try { form = await req.formData(); } catch { return json({ erro: "Envio inválido." }, 400, h); }
 
-  // Anti-spam: campo invisível preenchido = robô. Responde ok sem gravar nada.
-  if (limpa(form.get("_honey"))) return json({ ok: true }, 200, h);
+  // Anti-spam: campo invisível preenchido costuma ser robô, mas o preenchimento
+  // automático do navegador também pode preencher. Por isso não descarta:
+  // grava e marca o e-mail interno para conferir.
+  const suspeito = !!limpa(form.get("_honey"));
 
   const vaga = limpa(form.get("Vaga"), 200);
   const tipo = limpa(form.get("_tipo")) === "diagnostico" ? "diagnostico" : vaga === BANCO ? "banco_talentos" : "candidatura";
@@ -142,7 +144,8 @@ Deno.serve(async (req) => {
 
   const { error: ei } = await sb.from("formularios_site").insert({
     id, tipo, vaga: tipo === "diagnostico" ? null : vaga, nome, email, telefone: telefone || null,
-    dados, fit, triagem, curriculo_path, ip, user_agent: ua,
+    dados: suspeito ? { ...dados, _suspeito: "campo anti-spam preenchido" } : dados,
+    fit, triagem, curriculo_path, ip, user_agent: ua,
   });
   if (ei) {
     console.error("insert", ei.message);
@@ -154,6 +157,8 @@ Deno.serve(async (req) => {
   if (tipo === "diagnostico") assuntoInterno = `🚀 Novo Diagnóstico solicitado | ${nome}${dados["Empresa"] ? " | " + dados["Empresa"] : ""}`;
   else if (tipo === "banco_talentos") assuntoInterno = `💼 Banco de talentos: novo perfil | ${nome}`;
   else assuntoInterno = `💼 Nova candidatura: ${vaga}${triagem ? ` | ${triagem}` : ""}${fit !== null ? ` | Fit ${fit}` : ""} | ${nome}`;
+
+  if (suspeito) assuntoInterno = "[conferir: possível spam] " + assuntoInterno;
 
   const linhas: [string, string][] = [["Nome", nome], ["E-mail", email]];
   if (telefone) linhas.push([tipo === "diagnostico" ? "WhatsApp" : "Celular", telefone]);
